@@ -432,8 +432,13 @@ set_env CACHE_STORE      "file"
 set_env VPN_ADMIN_PATH    "$ADMIN_PATH"
 set_env SECURITY_FIREWALL "true"
 
-run sudo -u www-data "php${PHP_VER}" "$APP_DIR/artisan" key:generate --force
-lock_env
+# The application key is 32 random bytes, base64-encoded — byte for byte what
+# `artisan key:generate` writes. It is generated here rather than through
+# artisan so that every writer of .env runs as root: the file is root-owned and
+# mode 640, so php running as www-data cannot rewrite it, and storage/ is not
+# chowned until the next step, so such a run could not even log its own failure.
+# set_env re-locks the file afterwards.
+set_env APP_KEY "base64:$(openssl rand -base64 32)"
 
 # ---------------------------------------------------------------------------
 # step 8 — permissions and migrations
