@@ -225,9 +225,30 @@ if [[ "$MODE" == "domain" ]]; then
     fi
 fi
 
+# Resolve a domain the way the rest of the internet sees it.
+#
+# getent alone is wrong here: it reads /etc/hosts first, and a server whose
+# own domain is mapped to 127.0.0.1 there — a very common setup — would look
+# like it points somewhere else and lose its certificate for no reason.
+# Certbot validates over public DNS, so ask public DNS. Fall back to the
+# system resolver (ignoring loopback answers) when DNS-over-HTTPS is blocked.
+resolve_a_record() {
+    local host="$1" ip=''
+
+    for doh in 'https://1.1.1.1/dns-query' 'https://dns.google/resolve'; do
+        ip="$(curl -fsS --max-time 10 -H 'accept: application/dns-json' \
+              "${doh}?name=${host}&type=A" 2>/dev/null \
+              | grep -oE '"data":"[0-9]{1,3}(\.[0-9]{1,3}){3}"' \
+              | head -1 | grep -oE '[0-9]{1,3}(\.[0-9]{1,3}){3}')"
+        [[ -n "$ip" ]] && { printf '%s' "$ip"; return 0; }
+    done
+
+    getent ahostsv4 "$host" 2>/dev/null | awk '$1 !~ /^127\./ {print $1; exit}'
+}
+
 if [[ "$MODE" == "domain" ]]; then
     SERVER_NAME="$DOMAIN"
-    DOMAIN_IP="$(getent ahostsv4 "$DOMAIN" 2>/dev/null | awk 'NR==1{print $1}' || echo '')"
+    DOMAIN_IP="$(resolve_a_record "$DOMAIN")"
 
     info "Domain:    $DOMAIN"
     info "Domain IP: ${DOMAIN_IP:-not resolving}"
