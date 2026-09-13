@@ -1,0 +1,41 @@
+ShahPanel — Proprietary License
+Copyright (c) 2026 shahinst. All rights reserved.
+
+This software and its source code are proprietary and confidential.
+
+PERMITTED
+
+  1. A customer who has obtained a licensed copy from the copyright holder
+     may install and run the software on servers they own or control, for
+     their own business purposes.
+  2. A licensed customer may modify the software for their own internal use.
+
+NOT PERMITTED without prior written permission from the copyright holder
+
+  1. Redistributing, publishing, sublicensing, renting, leasing or selling
+     the software or any part of it, modified or unmodified.
+  2. Making the software available to third parties as a hosted or managed
+     service, whether or not a fee is charged.
+  3. Removing or altering any copyright, trademark or attribution notice.
+  4. Reverse engineering for the purpose of producing a competing product.
+
+NO WARRANTY
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+  WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF
+  OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN IT.
+
+THIRD-PARTY COMPONENTS
+
+  This product bundles third-party open-source components, each governed by
+  its own license. See composer.json / composer.lock and package.json for the
+  full dependency list and their respective terms. Those licenses apply to
+  those components only, not to this software.
+
+CONTACT
+
+  For licensing enquiries, open an issue at:
+  https://github.com/shahinst/shahpanel

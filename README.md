@@ -1,0 +1,850 @@
+<div align="center">
+
+<img src="public/images/shahpanel-logo.png" alt="shahpanel" width="380">
+
+### پنل مدیریت و نمایندگی VPN
+
+**چندسطحی · فارسی · نصب با یک دستور**
+
+<br>
+
+[![License](https://img.shields.io/badge/license-proprietary-red?style=flat-square)](#-مجوز)
+[![PHP](https://img.shields.io/badge/PHP-8.2%2B-777bb4?style=flat-square&logo=php&logoColor=white)](https://php.net)
+[![Laravel](https://img.shields.io/badge/Laravel-11-ff2d20?style=flat-square&logo=laravel&logoColor=white)](https://laravel.com)
+[![MySQL](https://img.shields.io/badge/MySQL-8%2B-4479a1?style=flat-square&logo=mysql&logoColor=white)](https://mysql.com)
+[![Tests](https://img.shields.io/badge/tests-97-0ca30c?style=flat-square)](#-تست)
+
+[![Release](https://img.shields.io/github/v/release/shahinst/shahpanel?style=flat-square&logo=github&color=1668dc&label=نسخه)](https://github.com/shahinst/shahpanel/releases/latest)
+[![Stars](https://img.shields.io/github/stars/shahinst/shahpanel?style=flat-square&logo=github&color=1668dc)](https://github.com/shahinst/shahpanel/stargazers)
+[![Forks](https://img.shields.io/github/forks/shahinst/shahpanel?style=flat-square&logo=github&color=1668dc)](https://github.com/shahinst/shahpanel/network/members)
+[![Issues](https://img.shields.io/github/issues/shahinst/shahpanel?style=flat-square&logo=github)](https://github.com/shahinst/shahpanel/issues)
+[![Last commit](https://img.shields.io/github/last-commit/shahinst/shahpanel?style=flat-square&logo=github)](https://github.com/shahinst/shahpanel/commits)
+[![Repo size](https://img.shields.io/github/repo-size/shahinst/shahpanel?style=flat-square&logo=github)](https://github.com/shahinst/shahpanel)
+
+<br>
+
+[نصب سریع](#-نصب) · [امکانات](#-امکانات) · [به‌روزرسانی](#-بهروزرسانی) · [نگهداری](#-نگهداری) · [رفع مشکل](#-رفع-مشکل) · [سؤالات پرتکرار](#-سؤالات-پرتکرار) · [حمایت](#-حمایت-از-پروژه)
+
+<br>
+
+⭐ اگر به کارتان آمد، به پروژه ستاره بدهید.
+
+</div>
+
+---
+
+## 📌 shahpanel چیست؟
+
+یک پنل تحت وب برای **فروش و مدیریت سرویس VPN** با ساختار چندسطحی. هر سطح کیف پول، قیمت‌گذاری، مشتریان و گزارش مستقل خودش را دارد:
+
+```
+مدیر  ─┬─ نماینده ─┬─ فروشنده ─┬─ مشتری
+       │           │           └─ مشتری
+       │           └─ فروشنده ──── مشتری
+       └─ نماینده ──── فروشنده ─── مشتری
+```
+
+پنل مستقیم با سرورهای شما حرف می‌زند و اکانت را همان‌جا **می‌سازد، تمدید می‌کند، محدود می‌کند و می‌بندد**:
+
+| سرور | سرویس‌های پشتیبانی‌شده |
+|:--|:--|
+| 🖧 **MikroTik RouterOS** | PPPoE / PPP · WireGuard · OpenVPN · L2TP |
+| 🌐 **Sanaei (3x-ui)** | VMess · VLESS · Trojan |
+| 🛡 **Pasarguard** | همه‌ی inboundها |
+| 🌊 **Remnawave** | Internal Squads — سازگار با API نسخه ۳.x |
+| 🔒 **Cisco AnyConnect (ASA)** | کاربران VPN از طریق REST API دستگاه |
+
+---
+
+## ✨ امکانات
+
+<table>
+<tr><td width="50%" valign="top">
+
+**💰 فروش و نمایندگی**
+- سلسله‌مراتب مدیر / نماینده / فروشنده / مشتری
+- کیف پول با قفل ردیف و محاسبات `bcmath`
+- پکیج حجمی، زمانی و آکاردئونی
+- کمیسیون نماینده و تخفیف سراسری
+- پلن مالی اختصاصی هر نماینده
+- فاکتور خودکار با خروجی PDF
+
+</td><td width="50%" valign="top">
+
+**👤 اکانت‌ها**
+- ساخت، تمدید، ارتقا و انتقال بین سرورها
+- همگام‌سازی مصرف هر ۵ دقیقه
+- انقضا و قطع خودکار سر موعد
+- پورتال مشتری با لینک اختصاصی و QR
+- اکانت هدیه و اکانت تست
+- ورود جانشینی (impersonation) با لاگ
+
+</td></tr>
+<tr><td valign="top">
+
+**💳 پرداخت**
+- زرین‌پال
+- کارت‌به‌کارت با تأیید مدیر
+- NOWPayments (ارز دیجیتال)
+- تأیید امضای وب‌هوک با HMAC
+- محافظت در برابر replay و پرداخت ناقص
+
+</td><td valign="top">
+
+**🔐 امنیت**
+- رمزنگاری کردنشیال سرورها با `APP_KEY`
+- ورود دومرحله‌ای (TOTP) با QR محلی
+- فایروال لایه ۷ و محدودسازی IP مدیر
+- مسیر ورود هر پنل قابل تغییر
+- کپچا، محدودیت نرخ و لاگ فعالیت
+- تأیید گواهی TLS پنل‌های ریموت، قابل تنظیم برای هر سرور
+
+</td></tr>
+<tr><td valign="top">
+
+**🛡 فایروال ورود**
+- بلاک آی‌پی پس از چند رمز اشتباه
+- انتقال مهاجم سمج به `ipset` در سطح کرنل
+- مسدودسازی کامل رنج‌های یک کشور
+- فهرست بلاک‌شده‌ها با پرچم کشور و آنبلاک
+- لیست سفید، و کنترل کامل از خط فرمان
+
+</td><td valign="top">
+
+**🔌 API نمایندگی**
+- توکن اختصاصی برای ربات تلگرام (میرزا، دیبات و…)
+- فروش، تمدید، افزایش حجم و کانفیگ مشتری
+- قیمت اختصاصی هر نماینده و فروشنده
+- محدودسازی دسترسی توکن و قفل روی IP
+- راهنمای اندپوینت‌ها داخل خود پنل
+
+</td></tr>
+<tr><td valign="top">
+
+**🔀 زیرساخت شبکه**
+- تانلینگ desired-state بین روترها
+- تونل GRE با لود بالانس و failover
+- تشخیص drift و ترمیم خودکار
+- پایش CPU/RAM/conntrack هر روتر
+- هشدار ظرفیت از طریق تلگرام
+
+</td><td valign="top">
+
+**📊 مدیریت**
+- داشبورد زنده با نمودارهای پویا
+- گزارش درآمد، مصرف و وضعیت اکانت‌ها
+- بک‌آپ خودکار روترها و دیتابیس
+- ابزار انتقال Sanaei ← Remnawave
+- مدیریت پیامک و اعلان همگانی
+
+</td></tr>
+</table>
+
+---
+
+## 🚀 نصب
+
+> **نصب فقط از راه SSH انجام می‌شود.** نصب‌کننده‌ی تحت وب وجود ندارد — هیچ آدرسی روی خود پنل نصب را انجام نمی‌دهد.
+
+### گام ۰ — چه چیزی لازم دارید
+
+| مورد | توضیح |
+|:--|:--|
+| **سرور** | اوبونتو ۲۲.۰۴ یا ۲۴.۰۴ (تازه و خالی، حداقل ۱ گیگ رم) |
+| **دسترسی** | کاربر `root` یا `sudo` |
+| **دامنه** | **اختیاری.** اگر دارید، رکورد `A` آن را به IP سرور بدهید تا گواهی معتبر گرفته شود. اگر ندارید، نصب روی IP انجام می‌شود. |
+
+نیازی به نصب دستی PHP، MySQL، Nginx یا Composer **نیست** — اسکریپت همه را خودش نصب می‌کند.
+
+<details>
+<summary><b>چطور رکورد A را تنظیم کنم؟</b></summary>
+
+<br>
+
+در پنل دامنه‌تان یک رکورد بسازید:
+
+| Type | Name | Content |
+|:--|:--|:--|
+| `A` | `panel` | IP سرور شما |
+
+اگر Cloudflare دارید، ابر نارنجی (Proxy) را برای گرفتن گواهی **موقتاً خاکستری** کنید.
+
+با این دستور مطمئن شوید DNS منتشر شده:
+
+```bash
+dig +short panel.example.com
+```
+
+باید دقیقاً IP سرورتان را برگرداند. انتشار DNS گاهی تا چند ساعت طول می‌کشد.
+
+</details>
+
+### گام ۱ — اتصال به سرور
+
+```bash
+ssh root@YOUR_SERVER_IP
+```
+
+### گام ۲ — اجرای نصب
+
+```bash
+curl -fsSLO https://raw.githubusercontent.com/shahinst/shahpanel/master/install.sh
+sudo bash install.sh
+```
+
+اسکریپت خوش‌آمد می‌گوید و **یک سؤال می‌پرسد: دامنه دارید یا نه؟**
+
+- **دامنه دارم** → دامنه را وارد کنید. نصاب بررسی می‌کند که رکورد `A` واقعاً به همین سرور اشاره کند، و اگر درست بود گواهی رایگان **Let's Encrypt** می‌گیرد. مرورگر هیچ هشداری نمی‌دهد.
+- **دامنه ندارم** → Enter بزنید. پنل روی **IP سرور** با یک گواهی **self-signed** بالا می‌آید. HTTPS کار می‌کند، ولی مرورگر بار اول هشدار می‌دهد (روی «Advanced» بزنید و ادامه بدهید). هر وقت دامنه گرفتید می‌توانید گواهی معتبر را اضافه کنید.
+
+اگر دامنه را از قبل می‌دانید یا نصب باید بدون تعامل انجام شود:
+
+```bash
+sudo bash install.sh panel.example.com     # مستقیم با دامنه
+sudo bash install.sh --ip --yes            # مستقیم روی IP، بدون هیچ سؤالی
+```
+
+گزینه‌های اختیاری:
+
+| گزینه | کار |
+|:--|:--|
+| `--ip` | بدون دامنه؛ نصب روی IP سرور با گواهی self-signed |
+| `--yes` | هیچ سؤالی نپرس و پیش‌فرض‌ها را بردار |
+| `--with-phpmyadmin` | نصب phpMyAdmin روی یک مسیر تصادفی |
+| `--with-security` | نصب سپر امنیتی (CrowdSec + fail2ban + ClamAV) |
+| `--no-ssl` | بدون TLS (فقط HTTP) — توصیه نمی‌شود |
+
+### گام ۳ — منتظر بمانید
+
+نصب حدود **۵ تا ۱۰ دقیقه** طول می‌کشد. اسکریپت ۱۳ مرحله را به‌ترتیب انجام می‌دهد:
+
+```
+[1/13]  بررسی سرور و تعیین دامنه یا IP
+[2/13]  نصب PHP 8.3 · MySQL · Nginx · ipset   (+ certbot در حالت دامنه)
+[3/13]  نصب Composer
+[4/13]  دریافت کد پنل
+[5/13]  نصب وابستگی‌های PHP (composer install)
+[6/13]  ساخت دیتابیس و کاربر آن
+[7/13]  تنظیم .env و کلید رمزنگاری
+[8/13]  دسترسی فایل‌ها و ساخت جدول‌های دیتابیس
+[9/13]  نصب هلپر فایروال و دانلود رنج‌های کشور
+[10/13] پیکربندی Nginx        (+ ساخت گواهی self-signed در حالت IP)
+[11/13] فعال‌سازی TLS
+[12/13] نصب کران زمان‌بند     (+ phpMyAdmin و سپر امنیتی، در صورت انتخاب)
+[13/13] ساخت کاربر مدیر
+```
+
+### گام ۴ — یادداشت اطلاعات ورود
+
+در پایان، **آدرس ورود مدیر**، رمز مدیر و رمز دیتابیس **فقط روی صفحه** چاپ می‌شوند — عمداً وارد فایل لاگ نمی‌شوند. **همان لحظه یادداشتشان کنید.**
+
+یک نسخه هم اینجا ذخیره می‌شود (فقط `root` می‌تواند بخواند):
+
+```bash
+sudo cat /var/www/shahpanel/storage/app/INSTALL_CREDENTIALS.txt
+```
+
+خروجی چیزی شبیه این است:
+
+```
+Panel URL : https://panel.example.com/p7f3a9c2e51
+Username  : admin
+Password  : ••••••••••••
+
+Database  : shahpanel
+DB user   : shahpanel@127.0.0.1
+DB pass   : ••••••••••••
+```
+
+لاگ کامل نصب (بدون هیچ رمزی) در `/var/log/shahpanel-install.log` است.
+
+### گام ۵ — ورود
+
+از **همان آدرس تصادفی** که در گام قبل چاپ شد وارد شوید — نه `/admin`:
+
+```
+https://panel.example.com/p7f3a9c2e51     ← نصب با دامنه
+https://203.0.113.45/p7f3a9c2e51          ← نصب روی IP
+```
+
+اگر روی IP نصب کرده‌اید، مرورگر بار اول هشدار گواهی می‌دهد؛ این طبیعی است — روی «Advanced» و سپس ادامه بزنید.
+
+> ⚠️ **مسیر ورود مدیر تصادفی است، نه `/admin`.** اولین چیزی که هر اسکنر خودکار می‌زند `/admin` است، پس عمداً از آن استفاده نمی‌شود. اگر این آدرس را گم کنید، از فایل بالا دوباره بخوانیدش.
+
+> ⚠️ **اولین کاری که می‌کنید: رمز مدیر را عوض کنید.**
+> بعدش پیشنهاد می‌شود ورود دومرحله‌ای را از بخش پروفایل فعال کنید.
+
+<details>
+<summary><b>عوض کردن مسیر ورود پنل‌ها</b></summary>
+
+<br>
+
+از داخل پنل مدیر: **تنظیمات → امنیت → مسیرهای ورود**. هر سه مسیر آنجا قابل تغییرند:
+
+| پنل | پیش‌فرض | توضیح |
+|:--|:--|:--|
+| مدیر | تصادفی هنگام نصب | فقط خودتان می‌بینیدش |
+| نماینده | `agent` | مدیر می‌تواند عوضش کند |
+| فروشنده | `seller` | مدیر می‌تواند عوضش کند |
+
+فقط مدیر به این صفحه دسترسی دارد؛ نماینده و فروشنده نمی‌توانند مسیر خودشان را عوض کنند.
+
+مسیر باید دست‌کم ۳ نویسه و فقط شامل `a-z`، `0-9`، `-` و `_` باشد. چند کلمه رزرو شده‌اند (`api`، `client`، `install`، `login`، `portal`، `up` و…) و پذیرفته نمی‌شوند.
+
+گزینه‌ی «مسدود کردن مسیرهای پیش‌فرض» هم باعث می‌شود آدرس‌های قدیمی (`/admin`، `/agent`، `/seller`) دیگر جواب ندهند.
+
+</details>
+
+<details>
+<summary><b>phpMyAdmin</b></summary>
+
+<br>
+
+فقط با `--with-phpmyadmin` نصب می‌شود و روی یک مسیر تصادفی می‌نشیند (نه `/phpmyadmin`). با **همان کاربر و رمز دیتابیس پنل** وارد می‌شوید؛ آن کاربر فقط روی دیتابیس خود پنل دسترسی دارد، نه کل MySQL.
+
+⚠️ phpMyAdmin یکی از پرحمله‌ترین نرم‌افزارهای وب است. توصیه این است که نصبش نکنید مگر واقعاً لازم باشد. برای حذف بعدی:
+
+```bash
+apt-get remove --purge phpmyadmin
+rm -f /etc/nginx/snippets/vpnpanel-phpmyadmin.conf
+systemctl reload nginx
+```
+
+</details>
+
+### گام ۶ — راه‌اندازی اولیه پنل
+
+پس از ورود، به‌ترتیب:
+
+1. **سرورها** → سرور MikroTik / 3x-ui / Pasarguard / Remnawave / Cisco خود را اضافه کنید و «تست اتصال» بزنید.
+2. **پکیج‌ها** → پکیج‌های فروش (حجم، مدت، قیمت) را تعریف کنید.
+3. **نمایندگان** → در صورت نیاز نماینده بسازید و سقف اعتبارش را مشخص کنید.
+4. **تنظیمات → درگاه‌های پرداخت** → درگاه دلخواه را فعال و کلیدهایش را وارد کنید.
+
+<details>
+<summary><b>تنظیمات دلخواه نصب</b></summary>
+
+<br>
+
+با متغیر محیطی قابل تغییرند:
+
+```bash
+sudo APP_DIR=/var/www/panel DB_NAME=mypanel ADMIN_USER=root \
+     EMAIL=me@example.com bash install.sh panel.example.com
+```
+
+| متغیر | پیش‌فرض | توضیح |
+|:--|:--|:--|
+| `APP_DIR` | `/var/www/shahpanel` | مسیر نصب |
+| `REPO` | مخزن رسمی | آدرس مخزن گیت |
+| `BRANCH` | `master` | شاخه |
+| `DB_NAME` | `shahpanel` | نام دیتابیس |
+| `DB_USER` | `shahpanel` | کاربر دیتابیس |
+| `ADMIN_USER` | `admin` | نام کاربری مدیر |
+| `EMAIL` | ندارد | ایمیل Let's Encrypt و مدیر |
+
+اگر مخزن خصوصی است، `GITHUB_TOKEN` را هم بدهید. توکن بعد از clone از `.git/config` پاک می‌شود و در لاگ هم ماسک می‌خورد.
+
+</details>
+
+<details>
+<summary><b>اگر گواهی SSL گرفته نشد</b></summary>
+
+<br>
+
+معمولاً یعنی DNS هنوز منتشر نشده. بعد از درست شدن DNS:
+
+```bash
+certbot --nginx -d panel.example.com --redirect
+```
+
+سپس در `.env` این مقدار را `true` کنید تا کوکی نشست فقط روی HTTPS برود:
+
+```env
+SESSION_SECURE_COOKIE=true
+```
+
+و کش را پاک کنید:
+
+```bash
+cd /var/www/shahpanel && sudo -u www-data php artisan optimize:clear
+```
+
+</details>
+
+<details>
+<summary><b>نصب دستی (برای وقتی که سرور از قبل آماده است)</b></summary>
+
+<br>
+
+اگر PHP، MySQL و وب‌سرور را خودتان مدیریت می‌کنید و `install.sh` را نمی‌خواهید.
+
+**پیش‌نیاز:** PHP 8.2+ با افزونه‌های `mbstring`، `xml`، `curl`، `zip`، `bcmath`، `mysql`، `gd`، `openssl`، `dom` · MySQL 8 یا MariaDB · Composer.
+نیازی به Node/npm نیست — فایل‌های بیلدشده (`public/build`) داخل مخزن هستند.
+
+```bash
+git clone https://github.com/shahinst/shahpanel.git /var/www/shahpanel
+cd /var/www/shahpanel
+
+composer install --no-dev --optimize-autoloader
+
+cp .env.example .env
+php artisan key:generate
+```
+
+سپس `.env` را ویرایش کنید:
+
+```env
+APP_URL=https://your-domain.com
+APP_ENV=production
+APP_DEBUG=false
+
+DB_DATABASE=your_db
+DB_USERNAME=your_db_user
+DB_PASSWORD=your_db_password
+SESSION_SECURE_COOKIE=true
+
+# مسیر ورود مدیر — یک رشته‌ی تصادفی بگذارید، نه admin
+VPN_ADMIN_PATH=p7f3a9c2e51
+```
+
+```bash
+php artisan migrate --force
+php artisan storage:link
+
+# دسترسی‌ها
+chown -R www-data:www-data storage bootstrap/cache
+chmod -R 775 storage bootstrap/cache
+
+# .env شامل APP_KEY است و نباید برای بقیه کاربران سرور خواندنی باشد
+chown root:www-data .env && chmod 640 .env
+
+# ساخت کاربر مدیر و برداشتن قفل نصب
+php artisan install:finalize \
+  --admin-username=admin \
+  --admin-email=admin@example.com \
+  --admin-password='<رمز>' \
+  --admin-name=Administrator
+
+echo "installed $(date -Is)" > .installed.lock
+chown www-data:www-data .installed.lock
+```
+
+> 🔒 به‌جای `--admin-password` می‌توانید متغیر محیطی `VPN_ADMIN_PASSWORD` را ست کنید تا رمز در خروجی `ps` دیده نشود. `install.sh` خودش همین کار را می‌کند.
+
+document root را روی `public/` بگذارید و کران زمان‌بند را از بخش [نگهداری](#-نگهداری) اضافه کنید. تا وقتی `.installed.lock` ساخته نشود، پنل به هر درخواستی صفحه‌ی «هنوز نصب نشده» می‌دهد.
+
+</details>
+
+---
+
+## 🔌 API نمایندگی (اتصال به ربات تلگرام)
+
+نماینده و فروشنده می‌توانند پنل را به ربات تلگرام خودشان وصل کنند و اکانت بفروشند،
+تمدید کنند، کانفیگ مشتری بگیرند و کیف پول و زیرمجموعه‌هایشان را ببینند.
+
+**ساخت توکن:** ورود به پنل ← منوی **تنظیمات** ← **API و ربات** ← ساخت توکن.
+همان‌جا صفحه‌ی **راهنمای API** هم هست که پارامتر تک‌تک اندپوینت‌ها را نشان می‌دهد.
+
+یا مستقیم از خود API:
+
+```bash
+curl -X POST https://YOUR-PANEL/api/v1/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"reseller1","password":"...","device_name":"my-bot"}'
+```
+
+بعد توکن را در هر درخواست بفرستید:
+
+```bash
+curl https://YOUR-PANEL/api/v1/accounts \
+  -H 'Authorization: Bearer mp_xxxxxxxx'
+```
+
+هر پاسخ یک قالب ثابت دارد، پس ربات فقط کافی است `ok` را بررسی کند:
+
+```json
+{ "ok": true,  "data": { }, "meta": { "pagination": { } } }
+{ "ok": false, "error": { "code": "...", "message": "..." } }
+```
+
+**نکات مهم**
+
+- فقط نقش نماینده و فروشنده توکن می‌گیرند؛ مدیر و مشتری نه.
+- فروشنده فقط اکانت‌های خودش را می‌بیند، نماینده کل زیرمجموعه‌اش — همان قواعد خود پنل.
+- هر توکن می‌تواند محدود به چند دسترسی مشخص و قفل روی IP باشد.
+- شارژ کیف پول از API ممکن نیست؛ در خود پنل هم فقط مدیر این اجازه را دارد.
+- سقف پیش‌فرض ۱۲۰ درخواست در دقیقه برای هر توکن (بین ۱۰ تا ۶۰۰ قابل تنظیم).
+
+مستندات کامل: [`docs/API.md`](docs/API.md) — نمونه‌ی آماده‌ی PHP و پایتون: [`docs/bot-client/`](docs/bot-client/)
+برای Cisco AnyConnect: [`docs/CISCO_ANYCONNECT_API.md`](docs/CISCO_ANYCONNECT_API.md)
+
+---
+
+## 🛡 فایروال ورود
+
+جلوی حدس‌زدن رمز را می‌گیرد و می‌تواند کل رنج یک کشور را ببندد.
+
+**چطور کار می‌کند**
+
+۱. چند رمز اشتباه پشت‌سرهم از یک آی‌پی ⇒ آن آی‌پی مدتی به صفحه‌ی ورود دسترسی ندارد.
+۲. اگر بعد از بلاک شدن باز هم بکوبد، به `ipset` سپرده می‌شود و کرنل رهایش می‌کند.
+۳. ورود موفق، خطاهای قبلی همان آی‌پی را پاک می‌کند.
+
+فقط **مسیرهای ورود** بسته می‌شوند، نه کل سایت: در شبکه‌هایی که ده‌ها مشترک پشت یک آی‌پی
+هستند (CGNAT)، بستن کامل سایت مشتری‌های بی‌گناه را هم قطع می‌کرد. پورتال مشتری و لینک
+اشتراک همیشه باز می‌ماند.
+
+**مدیریت از پنل:** مدیر ← **تنظیمات** ← **فایروال ورود** — فهرست آی‌پی‌های بلاک‌شده با
+پرچم کشور، آنبلاک یک‌کلیکی، بلاک دستی و لیست سفید.
+
+**مدیریت از خط فرمان**
+
+```bash
+php artisan firewall status            # وضعیت زنجیره و تعداد بلاک‌ها
+php artisan firewall block 1.2.3.4     # بلاک دستی (--minutes=0 یعنی دائمی)
+php artisan firewall unblock 1.2.3.4   # آزادسازی یک آی‌پی
+php artisan firewall flush             # برداشتن همه‌ی بلاک‌ها
+```
+
+**مسدودسازی یک کشور** — رنج‌های چین بارگذاری می‌شود و هر دوشنبه ساعت ۰۳:۳۰ به‌روز می‌شود:
+
+```bash
+php artisan firewall:sync-country-data   # دانلود و بارگذاری مجدد
+php artisan firewall cn-clear            # برداشتن مسدودسازی کشور
+```
+
+**زیرساخت.** کار در سطح کرنل را یک هلپر ریشه‌ای انجام می‌دهد که نصاب در
+`/usr/local/sbin/panel-firewall` می‌گذارد و فقط همان یک فایل را در sudoers به
+`www-data` می‌دهد. یعنی کاربر وب می‌تواند درخواست بلاک بدهد، ولی **نمی‌تواند
+لیستی را که خودش با آن فیلتر می‌شود بنویسد**. داده‌های کشور در
+`/var/lib/panel-firewall` نگهداری می‌شوند.
+
+> هلپر فقط زنجیره‌ی `INPUT` را دست می‌زند؛ `OUTPUT` و `FORWARD` هرگز. بلاک روی
+> لوپ‌بک، رنج‌های خصوصی و آی‌پی خود سرور را هم رد می‌کند، پس یک قاعده‌ی اشتباه
+> نمی‌تواند سرور را از دسترس خارج کند. آی‌پی خودتان را در لیست سفید بگذارید تا
+> رمز اشتباه قفل‌تان نکند.
+
+---
+
+## 🔄 به‌روزرسانی
+
+```bash
+cd /var/www/shahpanel
+sudo bash update.sh
+```
+
+اسکریپت به‌ترتیب:
+
+1. **اول از دیتابیس بک‌آپ می‌گیرد** (در `/var/backups/shahpanel/`، ۱۰ نسخه‌ی آخر نگه داشته می‌شود)
+2. کد جدید را می‌کشد
+3. `composer install` و `migrate` می‌زند
+4. کش را پاک و worker صف را ری‌استارت می‌کند
+
+اگر بک‌آپ نگیرد، **به کد دست نمی‌زند**. اگر فایلی را روی سرور دستی تغییر داده باشید، **متوقف می‌شود** و چیزی را بازنویسی نمی‌کند.
+
+---
+
+## 🔧 نگهداری
+
+### کران (زمان‌بند)
+
+بدون این، صف پردازش نمی‌شود و اکانت‌ها سر موعد منقضی نمی‌شوند. `install.sh` خودش نصبش می‌کند:
+
+```
+* * * * * www-data cd /var/www/shahpanel && php artisan schedule:run >> /dev/null 2>&1
+```
+
+همین یک خط کافی است — **سرویس جداگانه‌ای برای صف لازم نیست**، چون زمان‌بند خودش هر دقیقه یک
+`queue:work --stop-when-empty` اجرا می‌کند.
+
+بررسی سلامتش از پنل: **تنظیمات → اتوماسیون → کران جاب**
+
+### کارهایی که خودکار انجام می‌شوند
+
+| کار | زمان |
+|:--|:--|
+| همگام‌سازی مصرف اکانت‌ها (`sync:usage`) | هر ۵ دقیقه |
+| بررسی انقضا و قطع اکانت (`accounts:check-expiry`) | هر ۱۰ دقیقه |
+| پردازش صف (`queue:work`) | هر دقیقه |
+| جمع‌آوری متریک روترها و تشخیص drift | هر ۱ تا ۵ دقیقه |
+| پاک‌سازی بلاک‌های منقضی فایروال | هر ۱۵ دقیقه |
+| ارسال هشدارها (`alerts:dispatch`) | ساعتی |
+| بک‌آپ دیتابیس (`backup:database`) | هر شب ۰۲:۰۰ |
+| گزارش روزانه (`reports:daily-rollup`) | هر شب ۰۰:۰۰ |
+| بستن خودکار تیکت‌ها | روزانه |
+| پاک‌سازی متریک تونل‌ها | هر شب ۰۳:۳۰ |
+| به‌روزرسانی رنج‌های کشور | دوشنبه‌ها ۰۳:۳۰ |
+
+> ⚠️ بک‌آپ شبانه هر شب یک فایل به `storage` اضافه می‌کند. فضای دیسک را هر چند وقت
+> یک‌بار نگاه کنید و فایل‌های قدیمی را پاک کنید.
+
+### بک‌آپ و انتقال به سرور جدید
+
+```bash
+# گرفتن بک‌آپ و ارسال به سرور دیگر
+bash scripts/db-migrate.sh backup --send root@newhost:/root/
+
+# بازگردانی روی سرور جدید
+bash scripts/db-migrate.sh restore --latest
+```
+
+> 🔑 حتماً فایل `.env` را هم منتقل کنید. بدون `APP_KEY` **قبلی**، یوزر و پسورد ذخیره‌شده‌ی روترها قابل رمزگشایی نیست.
+
+### کش مسیرها (اختیاری، برای سرعت)
+
+```bash
+cd /var/www/shahpanel
+sudo -u www-data php artisan route:cache
+```
+
+مسیر ورود هر پنل قابل تغییر است و از دیتابیس خوانده می‌شود، پس داخل کش فریز می‌شود. پنل خودش این را مدیریت می‌کند: با هر تغییر مسیر از بخش امنیت، کش بازسازی می‌شود.
+
+---
+
+## 🆘 رفع مشکل
+
+### پنل بالا نمی‌آید
+
+یک صفحه‌ی تشخیص بدون Laravel وجود دارد که وضعیت دیتابیس، دسترسی فایل‌ها و آخرین خطاها را نشان می‌دهد و می‌تواند کش را پاک کند یا migration بزند.
+
+چون کار خطرناکی می‌کند، **به‌صورت پیش‌فرض بسته است** و به همه ۴۰۴ می‌دهد. برای باز کردنش یک توکن در `.env` بگذارید:
+
+```bash
+cd /var/www/shahpanel
+echo "MAINTAIN_TOKEN=$(php -r 'echo bin2hex(random_bytes(16));')" >> .env
+```
+
+سپس باز کنید: `https://panel.example.com/maintain.php?key=<توکن>`
+
+> بعد از رفع مشکل حتماً `MAINTAIN_TOKEN` را خالی کنید تا صفحه دوباره بسته شود. تا وقتی این مقدار خالی باشد، آن آدرس برای همه ۴۰۴ است.
+
+### مشکلات رایج
+
+<details>
+<summary><b>بعد از ریستارت سرور، پنل ۵۰۲ می‌دهد</b></summary>
+
+<br>
+
+معمولاً MySQL یا PHP-FPM بالا نیامده:
+
+```bash
+systemctl start mysql php8.3-fpm nginx
+systemctl enable mysql php8.3-fpm nginx   # تا دفعه بعد خودکار بالا بیایند
+```
+
+</details>
+
+<details>
+<summary><b>اکانت‌ها منقضی نمی‌شوند / مصرف به‌روز نمی‌شود</b></summary>
+
+<br>
+
+کران کار نمی‌کند. بررسی کنید:
+
+```bash
+systemctl status cron
+cat /etc/cron.d/shahpanel-scheduler
+cd /var/www/shahpanel && sudo -u www-data php artisan schedule:run
+```
+
+</details>
+
+<details>
+<summary><b>صفحه‌ی سفید یا خطای ۵۰۰</b></summary>
+
+<br>
+
+```bash
+tail -50 /var/www/shahpanel/storage/logs/laravel.log
+cd /var/www/shahpanel && sudo -u www-data php artisan optimize:clear
+chown -R www-data:www-data storage bootstrap/cache
+chmod -R 775 storage bootstrap/cache
+```
+
+</details>
+
+<details>
+<summary><b>مسیر ورود پنل را عوض کردم و حالا دسترسی ندارم</b></summary>
+
+<br>
+
+مسیر فعلی را از دیتابیس بخوانید:
+
+```bash
+cd /var/www/shahpanel
+sudo -u www-data php artisan tinker --execute="echo App\Models\Setting::getValue('portal_path_admin');"
+```
+
+برای برگرداندن به حالت پیش‌فرض:
+
+```bash
+sudo -u www-data php artisan tinker --execute="App\Models\Setting::setValue('portal_path_admin','admin');"
+sudo -u www-data php artisan optimize:clear
+```
+
+> `tinker` یک وابستگی توسعه است. اگر با `composer install --no-dev` نصب کرده‌اید، مقدار `VPN_ADMIN_PATH` را از `.env` بخوانید.
+
+</details>
+
+<details>
+<summary><b>اتصال به سرور MikroTik برقرار نمی‌شود</b></summary>
+
+<br>
+
+- سرویس API روی روتر فعال باشد: `/ip service enable api`
+- پورت (پیش‌فرض `8728`، با SSL `8729`) از سمت سرور پنل باز باشد
+- کاربر RouterOS دسترسی `api` داشته باشد
+- اگر فایروال دارید، IP سرور پنل را مجاز کنید
+
+</details>
+
+<details>
+<summary><b>خطای گواهی SSL هنگام اتصال به پنل 3x-ui یا Remnawave</b></summary>
+
+<br>
+
+پنل به‌صورت پیش‌فرض گواهی TLS سرورهای ریموت را **بررسی می‌کند**، چون نام کاربری و رمز
+مدیر آن پنل در هر درخواست فرستاده می‌شود.
+
+اگر پنل مقصد گواهی self-signed دارد، در صفحه‌ی ویرایش همان سرور تیک «تأیید گواهی SSL پنل»
+را بردارید. این تنظیم برای هر سرور جداگانه است.
+
+</details>
+
+---
+
+## ❓ سؤالات پرتکرار
+
+<details>
+<summary><b>روی هاست اشتراکی (cPanel / DirectAdmin) نصب می‌شود؟</b></summary>
+
+<br>
+
+پشتیبانی نمی‌شود. پنل به کران دقیقه‌ای، صف پس‌زمینه و اتصال مستقیم به API روترها نیاز دارد. یک VPS ارزان کافی است.
+
+</details>
+
+<details>
+<summary><b>چند سرور می‌توانم اضافه کنم؟</b></summary>
+
+<br>
+
+محدودیتی ندارد. هر سرور سقف اکانت مستقل خودش را دارد که از صفحه‌ی سرور تنظیم می‌شود.
+
+</details>
+
+<details>
+<summary><b>می‌شود همزمان MikroTik و Remnawave داشت؟</b></summary>
+
+<br>
+
+بله. هر پکیج به یک نوع سرویس گره می‌خورد و پنل خودش اکانت را روی سرور درست می‌سازد.
+
+</details>
+
+<details>
+<summary><b>اگر APP_KEY را عوض کنم چه می‌شود؟</b></summary>
+
+<br>
+
+یوزر و پسورد همه‌ی روترها و پنل‌های ذخیره‌شده **غیرقابل بازیابی** می‌شوند. هرگز عوضش نکنید و از `.env` بک‌آپ بگیرید.
+
+</details>
+
+<details>
+<summary><b>پنل چه اطلاعاتی به بیرون می‌فرستد؟</b></summary>
+
+<br>
+
+هیچ. تنها ارتباط خارجی، اتصال به سرورهای خودتان، درگاه‌های پرداختی که فعال کرده‌اید، و دانلود رنج‌های کشور برای فایروال است. QR کد دومرحله‌ای هم روی همین سرور تولید می‌شود.
+
+</details>
+
+---
+
+## 🛠 توسعه
+
+```bash
+git clone https://github.com/shahinst/shahpanel.git shahpanel
+cd shahpanel
+
+composer install
+cp .env.example .env && php artisan key:generate
+php artisan migrate
+
+npm ci && npm run build     # فقط اگر UI را تغییر دادید
+php artisan serve
+```
+
+### 🧪 تست
+
+```bash
+./vendor/bin/phpunit
+```
+
+۹۷ تست در ۱۶ فایل. سوئیت روی SQLite در حافظه اجرا می‌شود و به `.env` نیاز ندارد. افزونه‌ی `bcmath` باید نصب باشد — کد مالی به آن وابسته است و `composer.json` اعلامش می‌کند.
+
+### ساختار پروژه
+
+```
+app/Services/           منطق دامنه (اکانت، کیف پول، سرورها، پنل‌های ریموت)
+app/Services/RouterOs/  لایه desired-state میکروتیک
+app/Services/Tunneling/ ارکستریتور تونل بین روترها
+app/Http/Controllers/   کنترلرها، به تفکیک نقش
+resources/views/        رابط کاربری (Blade + Tailwind + Chart.js)
+database/migrations/    ۸۹ migration
+modules/                ماژول‌ها (تانلینگ، پرداخت، انتقال)
+tests/                  سوئیت تست (Unit + Feature)
+scripts/panel-firewall  هلپر ریشه‌ای فایروال (ipset/iptables)
+scripts/db-migrate.sh   بک‌آپ و انتقال دیتابیس به سرور جدید
+ops/security-shield/    نصب CrowdSec + fail2ban + ClamAV
+docs/CRM_TUNNELING.md   مستندات تونل‌سازی (Tunnel Groups و CRM Tunnels)
+docs/fa/                راهنمای مدیر، نماینده، فروشنده و راه‌اندازی Remnawave
+tools/maintain-core.php صفحه‌ی تشخیص مستقل از Laravel (پشت توکن)
+```
+
+---
+
+## ⚠️ نکات مهم
+
+| | |
+|:--|:--|
+| 🔑 | **`APP_KEY` را جدی بگیرید.** کلید رمزگشایی همه‌ی کردنشیال‌های ذخیره‌شده است. از `.env` بک‌آپ بگیرید. |
+| 🔒 | `install.sh` فایل `.env` را با مالکیت `root:www-data` و مجوز `640` می‌گذارد تا کاربران دیگر سرور نتوانند بخوانندش. |
+| 🌐 | روی نصب HTTPS حتماً `SESSION_SECURE_COOKIE=true` باشد (نصب خودکار خودش ست می‌کند). |
+| 📁 | document root باید روی `public/` باشد. اگر روی ریشه‌ی پروژه بگذارید، فایل `.htaccess` ریشه لازم است — بدون آن `.env` و `.git/` از وب قابل خواندن‌اند. |
+| 🧹 | بعد از رفع مشکل، `MAINTAIN_TOKEN` را خالی کنید تا صفحه‌ی نگهداری بسته شود. |
+
+---
+
+## 💚 حمایت از پروژه
+
+اگر این پنل برایتان مفید بوده و دوست دارید در توسعه‌اش سهیم باشید، می‌توانید از این آدرس حمایت کنید:
+
+**تتر (USDT) — شبکه TRC20**
+
+```
+TB3aXqkMioddzcgtqPfeBFthYUY9tj9kbs
+```
+
+> ⚠️ فقط **USDT روی شبکه‌ی TRC20** بفرستید. ارسال هر ارز دیگر یا روی شبکه‌ی دیگر باعث از دست رفتن دارایی می‌شود.
+
+هر حمایتی صرف توسعه‌ی امکانات جدید، رفع اشکال و پشتیبانی از پنل‌های بیشتر می‌شود. 🙏
+
+اگر امکان حمایت مالی ندارید، ⭐ دادن به مخزن و گزارش باگ هم کمک بزرگی است.
+
+---
+
+## 📄 مجوز
+
+این پروژه **اختصاصی (proprietary)** است. استفاده، انتشار مجدد یا فروش بدون اجازه‌ی کتبی مجاز نیست.
+
+<div align="center">
+<br>
+
+**ساخته‌شده برای فروشندگان و نمایندگان فارسی‌زبان**
+
+اگر به کارتان آمد ⭐ بدهید
+
+</div>

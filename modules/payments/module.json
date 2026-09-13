@@ -1,0 +1,10 @@
+{
+    "slug": "payments",
+    "name": "سیستم پرداخت و درگاه‌ها",
+    "version": "1.0.0",
+    "description": "کل سیستم پرداخت پنل: درگاه‌های زرین‌پال، کارت‌به‌کارت و NowPayments (ارز دیجیتال)، به‌همراه صفحات مدیریت درگاه، تاریخچه پرداخت و افزایش موجودی. با غیرفعال‌کردن این ماژول، تمام بخش پرداخت از پنل حذف می‌شود (منوها، صفحات، وب‌هوک‌ها و همه‌ی درگاه‌ها).",
+    "author": "ShahPanel",
+    "namespace": "Modules\\NowPayments\\",
+    "autoload": "src",
+    "provider": "Modules\\NowPayments\\NowPaymentsServiceProvider"
+}

@@ -1,0 +1,21 @@
+<?php
+
+return [
+    'name' => 'Customer Affairs System',
+    'tagline' => 'VPN Reseller Management System',
+    'welcome' => 'Welcome',
+    'loading' => 'Loading...',
+    'save' => 'Save',
+    'cancel' => 'Cancel',
+    'confirm' => 'Confirm',
+    'delete' => 'Delete',
+    'edit' => 'Edit',
+    'back' => 'Back',
+    'search' => 'Search',
+    'actions' => 'Actions',
+    'status' => 'Status',
+    'created_at' => 'Created at',
+    'updated_at' => 'Updated at',
+    'no_results' => 'No results found.',
+    'install_required' => 'Please run the installer first.',
+];

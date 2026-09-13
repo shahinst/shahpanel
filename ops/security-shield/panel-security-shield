@@ -1,0 +1,492 @@
+#!/usr/bin/env bash
+# panel-security-shield — root helper for Imunify-like Web Shield.
+#
+# Safety contract (do not weaken):
+# - Never touches OUTPUT / FORWARD — MikroTik/ASA API egress must keep working.
+# - No HTTP body WAF / ModSecurity / CrowdSec AppSec in blocking mode.
+# - IP-layer decisions + malware filesystem scans only.
+# - Refuse loopback bans; refuse nginx stop; refuse scans outside allowlist.
+set -euo pipefail
+
+STATE="/var/lib/panel-security-shield"
+WL_FILE="$STATE/whitelist.txt"
+SCAN_JSON="$STATE/last-scan.json"
+SCAN_RAW="$STATE/scan-raw.txt"
+SCAN_PID="$STATE/scan.pid"
+SCAN_LOCK="$STATE/scan.lock"
+CS_WL="/etc/crowdsec/parsers/s02-enrich/panel-whitelist.yaml"
+NGX_SNIP="/etc/nginx/snippets/panel-security-hardening.conf"
+APP="/var/www/your-domain.example"
+FW="/usr/local/sbin/panel-firewall"
+LOG_AUDIT="$STATE/audit.log"
+
+mkdir -p "$STATE/quarantine"
+chmod 750 "$STATE" || true
+touch "$WL_FILE" "$LOG_AUDIT"
+chmod 640 "$WL_FILE" "$LOG_AUDIT" || true
+
+die() { echo "error: $*" >&2; exit 1; }
+have() { command -v "$1" >/dev/null 2>&1; }
+active() { systemctl is-active --quiet "$1" 2>/dev/null; }
+
+audit() {
+  printf '%s %s\n' "$(date -Is)" "$*" >> "$LOG_AUDIT" || true
+}
+
+valid_ip() {
+  [[ "$1" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]] || return 1
+  local IFS=.
+  # shellcheck disable=SC2086
+  set -- $1
+  local o
+  for o in "$1" "$2" "$3" "$4"; do
+    ((10#$o >= 0 && 10#$o <= 255)) || return 1
+  done
+  [[ "$1.$2.$3.$4" != "0.0.0.0" ]]
+}
+
+is_whitelisted() {
+  local ip="$1"
+  [[ "$ip" == "127.0.0.1" || "$ip" == "::1" ]] && return 0
+  grep -qxF "$ip" "$WL_FILE" 2>/dev/null
+}
+
+sync_crowdsec_wl() {
+  mkdir -p "$(dirname "$CS_WL")"
+  {
+    echo "name: panel-whitelist"
+    echo "description: VPN panel allowlist managed by panel-security-shield"
+    echo "whitelist:"
+    echo "  reason: panel managed allowlist"
+    echo "  ip:"
+    echo "    - \"127.0.0.1\""
+    echo "    - \"::1\""
+    while read -r ip; do
+      [[ -z "${ip:-}" || "$ip" == \#* ]] && continue
+      valid_ip "$ip" || continue
+      echo "    - \"$ip\""
+    done < "$WL_FILE"
+  } > "$CS_WL"
+  if active crowdsec; then
+    systemctl reload crowdsec 2>/dev/null || systemctl restart crowdsec 2>/dev/null || true
+  fi
+}
+
+harden_nginx() {
+  cat > "$NGX_SNIP" <<'NGX'
+# Managed by panel-security-shield — deny PHP under writable trees only.
+# Does not inspect request bodies (safe for account create/delete APIs).
+location ^~ /storage/ {
+    location ~* \.php(?:$|/) { return 403; }
+    try_files $uri =404;
+}
+location ^~ /uploads/ {
+    location ~* \.php(?:$|/) { return 403; }
+    try_files $uri =404;
+}
+location ~* \.(?:bak|old|sql|env|log|swp)$ {
+    deny all;
+    return 404;
+}
+NGX
+  local site="/etc/nginx/sites-enabled/your-domain.example.conf"
+  if [[ -f "$site" ]] && ! grep -q 'panel-security-hardening.conf' "$site"; then
+    if grep -q 'root /var/www/your-domain.example/public;' "$site"; then
+      sed -i '/root \/var\/www\/your-domain.example\/public;/a\    include snippets/panel-security-hardening.conf;' "$site" || true
+    fi
+  fi
+  if nginx -t >/dev/null 2>&1; then
+    systemctl reload nginx || true
+  else
+    # Roll back include if nginx -t fails
+    if [[ -f "$site" ]]; then
+      sed -i '/panel-security-hardening.conf/d' "$site" || true
+    fi
+    die "nginx config test failed; hardening include rolled back"
+  fi
+}
+
+scan_running() {
+  if [[ -f "$SCAN_PID" ]]; then
+    local pid
+    pid=$(cat "$SCAN_PID" 2>/dev/null || true)
+    if [[ -n "${pid:-}" ]] && kill -0 "$pid" 2>/dev/null; then
+      return 0
+    fi
+  fi
+  return 1
+}
+
+cmd_status() {
+  local cs=down f2b=down clam=down ngx=down bouncer=down modsec=down
+  active crowdsec && cs=up
+  active fail2ban && f2b=up
+  if active clamav-daemon; then clam=up; elif active clamav-freshclam; then clam=freshclam; fi
+  active nginx && ngx=up
+  active crowdsec-firewall-bouncer && bouncer=up
+  if [[ -f /etc/nginx/modsec/main.conf ]] && grep -Rqs 'modsecurity on' /etc/nginx/sites-enabled 2>/dev/null; then
+    modsec=up
+  fi
+
+  local decisions=0 bans=0 infected=0 wl=0 scanning=false danger=0
+  if have cscli; then
+    decisions=$(cscli decisions list -o raw 2>/dev/null | grep -c . || true)
+    decisions=${decisions:-0}
+  fi
+  if [[ -x "$FW" ]]; then
+    bans=$("$FW" status 2>/dev/null | awk -F= '/^blocked=/{print $2; found=1} END{if(!found) print 0}')
+    bans=${bans:-0}
+  fi
+  if [[ -f "$SCAN_JSON" ]]; then
+    infected=$(python3 -c 'import json;print(int(json.load(open("'"$SCAN_JSON"'")).get("infected",0)))' 2>/dev/null || true)
+    infected=${infected:-0}
+  fi
+  wl=$(grep -cE '^[0-9]' "$WL_FILE" 2>/dev/null || true)
+  wl=${wl:-0}
+  if [[ -f /var/log/modsec/danger.log ]]; then
+    danger=$(grep -c . /var/log/modsec/danger.log 2>/dev/null || true)
+    danger=${danger:-0}
+  fi
+  # strip accidental newlines from command substitution
+  decisions=${decisions//$'\n'/}
+  bans=${bans//$'\n'/}
+  infected=${infected//$'\n'/}
+  wl=${wl//$'\n'/}
+  danger=${danger//$'\n'/}
+  scan_running && scanning=true
+
+  # body_waf=upload-only: ClamAV/webshell on uploads; CRS SQLi/XSS stripped on panel POSTs
+  printf '{"ok":true,"crowdsec":"%s","fail2ban":"%s","clamav":"%s","nginx":"%s","bouncer":"%s","modsecurity":"%s","decisions":%s,"panel_bans":%s,"whitelist":%s,"infected":%s,"danger_events":%s,"scanning":%s,"scan_report":%s,"mode":"ip-layer+l7-upload-guard","body_waf":"upload-only","egress_safe":true}\n' \
+    "$cs" "$f2b" "$clam" "$ngx" "$bouncer" "$modsec" "${decisions:-0}" "${bans:-0}" "${wl:-0}" "${infected:-0}" "${danger:-0}" "$scanning" \
+    "$( [[ -f $SCAN_JSON ]] && echo true || echo false )"
+}
+
+cmd_decisions() {
+  if ! have cscli; then echo '{"ok":true,"items":[]}'; return 0; fi
+  local raw
+  raw=$(cscli decisions list -o json 2>/dev/null || echo '[]')
+  DECISIONS_JSON="$raw" python3 - <<'PY'
+import json, os
+raw = os.environ.get("DECISIONS_JSON") or "[]"
+try:
+    data = json.loads(raw)
+except Exception:
+    data = []
+items = []
+
+def push(row):
+    if not isinstance(row, dict):
+        return
+    ip = row.get("value") or row.get("ip") or ""
+    # raw-style "Ip:1.2.3.4"
+    if isinstance(ip, str) and ip.lower().startswith("ip:"):
+        ip = ip.split(":", 1)[1]
+    items.append({
+        "id": row.get("id"),
+        "source": row.get("origin") or row.get("source") or "crowdsec",
+        "ip": ip,
+        "reason": row.get("scenario") or row.get("reason") or "",
+        "type": row.get("type") or row.get("action") or "ban",
+        "scope": (row.get("scope") or "ip"),
+        "until": row.get("until") or row.get("duration") or row.get("expiration") or "",
+    })
+
+if isinstance(data, list):
+    for row in data:
+        if isinstance(row, dict) and isinstance(row.get("decisions"), list):
+            for d in row["decisions"]:
+                push(d)
+        else:
+            push(row)
+elif isinstance(data, dict):
+    for d in data.get("new") or data.get("decisions") or []:
+        push(d)
+
+print(json.dumps({"ok": True, "items": items[:300]}, ensure_ascii=False))
+PY
+}
+
+cmd_ban() {
+  local ip="${1:-}" sec="${2:-3600}"
+  valid_ip "$ip" || die "invalid ip"
+  [[ "$sec" =~ ^[0-9]+$ ]] || die "invalid ttl"
+  (( sec >= 60 && sec <= 31536000 )) || die "ttl out of range"
+  is_whitelisted "$ip" && die "ip is whitelisted"
+  if [[ -x "$FW" ]]; then "$FW" block "$ip" "$sec" >/dev/null; fi
+  if have cscli; then
+    cscli decisions add -i "$ip" -t ban -d "${sec}s" --reason panel-web-shield >/dev/null 2>&1 || true
+  fi
+  audit "ban $ip ttl=$sec"
+  printf '{"ok":true,"ip":"%s","seconds":%s}\n' "$ip" "$sec"
+}
+
+cmd_unban() {
+  local ip="${1:-}"
+  valid_ip "$ip" || die "invalid ip"
+  [[ -x "$FW" ]] && "$FW" unblock "$ip" >/dev/null || true
+  have cscli && cscli decisions delete -i "$ip" >/dev/null 2>&1 || true
+  if have fail2ban-client; then
+    local jails j
+    jails=$(fail2ban-client status 2>/dev/null | awk -F: '/Jail list/{print $2}' | tr ',' ' ' || true)
+    for j in $jails; do
+      j=$(echo "$j" | xargs)
+      [[ -n "$j" ]] || continue
+      fail2ban-client set "$j" unbanip "$ip" >/dev/null 2>&1 || true
+    done
+  fi
+  audit "unban $ip"
+  printf '{"ok":true,"ip":"%s"}\n' "$ip"
+}
+
+cmd_wl_list() {
+  python3 - <<PY
+import json
+items=[]
+for line in open("$WL_FILE"):
+  ip=line.strip()
+  if ip and not ip.startswith("#"):
+    items.append(ip)
+print(json.dumps({"ok": True, "items": items}, ensure_ascii=False))
+PY
+}
+
+cmd_wl_add() {
+  local ip="${1:-}"
+  valid_ip "$ip" || die "invalid ip"
+  grep -qxF "$ip" "$WL_FILE" || echo "$ip" >> "$WL_FILE"
+  cmd_unban "$ip" >/dev/null || true
+  sync_crowdsec_wl
+  audit "whitelist-add $ip"
+  printf '{"ok":true,"ip":"%s"}\n' "$ip"
+}
+
+cmd_wl_del() {
+  local ip="${1:-}"
+  valid_ip "$ip" || die "invalid ip"
+  grep -vxF "$ip" "$WL_FILE" > "$WL_FILE.tmp" || true
+  mv "$WL_FILE.tmp" "$WL_FILE"
+  sync_crowdsec_wl
+  audit "whitelist-del $ip"
+  printf '{"ok":true,"ip":"%s"}\n' "$ip"
+}
+
+cmd_wl_sync_file() {
+  # Replace whitelist from stdin or file arg (one IP per line). Keeps 127.0.0.1 implicitly via sync.
+  local src="${1:-}"
+  if [[ -n "$src" && -f "$src" ]]; then
+    grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' "$src" | sort -u > "$WL_FILE.tmp" || true
+  else
+    grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | sort -u > "$WL_FILE.tmp" || true
+  fi
+  mv "$WL_FILE.tmp" "$WL_FILE"
+  sync_crowdsec_wl
+  audit "whitelist-sync"
+  cmd_wl_list
+}
+
+cmd_logs() {
+  local kind="${1:-crowdsec}" file=""
+  case "$kind" in
+    crowdsec) file=/var/log/crowdsec.log ;;
+    nginx) file=/var/log/nginx/access.log ;;
+    nginx-error) file=/var/log/nginx/error.log ;;
+    fail2ban) file=/var/log/fail2ban.log ;;
+    clamav) file=/var/log/clamav/clamav.log ;;
+    modsec) file=/var/log/modsec/audit.log ;;
+    modsec-danger) file=/var/log/modsec/danger.log ;;
+    audit) file="$LOG_AUDIT" ;;
+    *) die "unknown log" ;;
+  esac
+  LOG_FILE="$file" python3 - <<'PY'
+import json, os
+path=os.environ["LOG_FILE"]; lines=[]
+try:
+  with open(path,"rb") as f:
+    f.seek(0,2); size=f.tell(); f.seek(max(0,size-160000))
+    data=f.read().decode("utf-8","replace")
+  lines=[ln for ln in data.splitlines() if ln.strip()][-150:]
+except Exception as e:
+  lines=[f"log unavailable: {e}"]
+print(json.dumps({"ok": True, "file": path, "lines": lines}, ensure_ascii=False))
+PY
+}
+
+_run_clamscan() {
+  local target="$1"
+  local started; started=$(date -Is)
+  set +e
+  clamscan -r -i \
+    --exclude-dir='/\.git' --exclude-dir='/vendor' --exclude-dir='/node_modules' \
+    --exclude-dir='/storage/framework' --exclude-dir='/storage/logs' --exclude-dir='/bootstrap/cache' \
+    --exclude-dir='/var/lib/panel-security-shield/quarantine' \
+    -l "$SCAN_RAW" "$target" >/dev/null 2>&1
+  local rc=$?
+  set -e
+  SCAN_RAW_PATH="$SCAN_RAW" STARTED="$started" TARGET="$target" RC="$rc" OUT="$SCAN_JSON" python3 - <<'PY'
+import json,re,datetime,os
+text=""
+try:
+  text=open(os.environ["SCAN_RAW_PATH"],encoding="utf-8",errors="replace").read()
+except Exception:
+  pass
+infected=[ln.strip()[:500] for ln in text.splitlines() if "FOUND" in ln and ":" in ln]
+m=re.search(r"Scanned files:\s*(\d+)", text)
+report={
+  "ok": True,
+  "started_at": os.environ["STARTED"],
+  "finished_at": datetime.datetime.now().isoformat(timespec="seconds"),
+  "target": os.environ["TARGET"],
+  "scanned_files": int(m.group(1)) if m else 0,
+  "infected": len(infected),
+  "findings": infected[:100],
+  "exit_code": int(os.environ["RC"]),
+  "status": "finished",
+}
+open(os.environ["OUT"],"w",encoding="utf-8").write(json.dumps(report, ensure_ascii=False, indent=2))
+print(json.dumps(report, ensure_ascii=False))
+PY
+  rm -f "$SCAN_PID" || true
+}
+
+cmd_scan() {
+  local target="${1:-$APP}"
+  case "$target" in
+    "$APP"|"$APP"/*|/tmp|/tmp/*) ;;
+    *) die "scan path not allowed" ;;
+  esac
+  have clamscan || { echo '{"ok":false,"error":"clamscan missing"}'; return 0; }
+  scan_running && { echo '{"ok":false,"error":"scan already running"}'; return 0; }
+  _run_clamscan "$target"
+}
+
+cmd_scan_start() {
+  local target="${1:-$APP}"
+  case "$target" in
+    "$APP"|"$APP"/*|/tmp|/tmp/*) ;;
+    *) die "scan path not allowed" ;;
+  esac
+  have clamscan || { echo '{"ok":false,"error":"clamscan missing"}'; return 0; }
+  scan_running && { echo '{"ok":false,"error":"scan already running","scanning":true}'; return 0; }
+
+  python3 - <<PY
+import json,datetime
+open("$SCAN_JSON","w").write(json.dumps({
+  "ok": True,
+  "status": "running",
+  "started_at": datetime.datetime.now().isoformat(timespec="seconds"),
+  "target": "$target",
+  "infected": 0,
+  "findings": [],
+  "scanned_files": 0,
+}, ensure_ascii=False, indent=2))
+PY
+
+  (
+    flock -n 9 || exit 0
+    _run_clamscan "$target" >/dev/null 2>&1
+    audit "scan-finished $target"
+  ) 9>"$SCAN_LOCK" &
+  echo $! > "$SCAN_PID"
+  audit "scan-start $target pid=$(cat "$SCAN_PID")"
+  echo '{"ok":true,"scanning":true,"target":"'"$target"'"}'
+}
+
+cmd_scan_report() {
+  if scan_running; then
+    if [[ -f "$SCAN_JSON" ]]; then
+      python3 - <<'PY'
+import json
+p="/var/lib/panel-security-shield/last-scan.json"
+try:
+  d=json.load(open(p))
+except Exception:
+  d={"ok":True}
+d["status"]="running"
+d["scanning"]=True
+print(json.dumps(d, ensure_ascii=False))
+PY
+    else
+      echo '{"ok":true,"status":"running","scanning":true,"infected":0,"findings":[]}'
+    fi
+    return 0
+  fi
+  if [[ -f "$SCAN_JSON" ]]; then cat "$SCAN_JSON"
+  else echo '{"ok":true,"infected":0,"findings":[],"status":"idle","note":"no scan yet"}'
+  fi
+}
+
+cmd_alerts() {
+  # Recent nginx 4xx/5xx + crowdsec decisions summary for dashboard
+  python3 - <<'PY'
+import json,re,collections,os
+alerts=[]
+path="/var/log/nginx/access.log"
+try:
+  with open(path,"rb") as f:
+    f.seek(0,2); size=f.tell(); f.seek(max(0,size-250000))
+    data=f.read().decode("utf-8","replace").splitlines()
+  rx=re.compile(r'^(\S+).*"\s(\d{3})\s')
+  counts=collections.Counter()
+  for ln in data[-2000:]:
+    m=rx.search(ln)
+    if not m: continue
+    ip,code=m.group(1),m.group(2)
+    if code.startswith("4") or code.startswith("5"):
+      counts[(ip,code)]+=1
+  for (ip,code),n in counts.most_common(40):
+    alerts.append({"type":"http","ip":ip,"code":code,"count":n})
+except Exception as e:
+  alerts.append({"type":"error","message":str(e)})
+print(json.dumps({"ok":True,"items":alerts}, ensure_ascii=False))
+PY
+}
+
+cmd_services() {
+  local action="${1:-}" name="${2:-}"
+  case "$name" in
+    crowdsec|fail2ban|clamav-daemon|clamav-freshclam|crowdsec-firewall-bouncer|nginx) ;;
+    *) die "service not allowed" ;;
+  esac
+  case "$action" in start|stop|restart|reload|status) ;; *) die "action not allowed" ;; esac
+  [[ "$name" == nginx && "$action" == stop ]] && die "refusing to stop nginx"
+  if [[ "$action" == status ]]; then
+    local st
+    st=$(systemctl is-active "$name" 2>/dev/null || echo unknown)
+    printf '{"ok":true,"service":"%s","state":"%s"}\n' "$name" "$st"
+    return 0
+  fi
+  systemctl "$action" "$name"
+  audit "service $action $name"
+  printf '{"ok":true,"service":"%s","action":"%s"}\n' "$name" "$action"
+}
+
+cmd_init() {
+  touch "$WL_FILE"
+  sync_crowdsec_wl
+  harden_nginx
+  [[ -x "$FW" ]] && "$FW" init >/dev/null || true
+  audit "init"
+  echo '{"ok":true,"initialized":true}'
+}
+
+case "${1:-}" in
+  status) cmd_status ;;
+  decisions) cmd_decisions ;;
+  ban) cmd_ban "${2:-}" "${3:-3600}" ;;
+  unban) cmd_unban "${2:-}" ;;
+  whitelist-list) cmd_wl_list ;;
+  whitelist-add) cmd_wl_add "${2:-}" ;;
+  whitelist-del) cmd_wl_del "${2:-}" ;;
+  whitelist-sync) cmd_wl_sync_file "${2:-}" ;;
+  logs) cmd_logs "${2:-crowdsec}" ;;
+  scan) cmd_scan "${2:-$APP}" ;;
+  scan-start) cmd_scan_start "${2:-$APP}" ;;
+  scan-report) cmd_scan_report ;;
+  alerts) cmd_alerts ;;
+  services) cmd_services "${2:-}" "${3:-}" ;;
+  init) cmd_init ;;
+  *)
+    echo "usage: $0 status|decisions|ban|unban|whitelist-*|logs|scan|scan-start|scan-report|alerts|services|init" >&2
+    exit 2
+    ;;
+esac

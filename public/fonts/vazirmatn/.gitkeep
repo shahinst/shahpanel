@@ -1,0 +1,8 @@
+Download Vazirmatn woff2 files from https://github.com/rastikerdar/vazirmatn
+and place them in this directory:
+
+- Vazirmatn-Regular.woff2
+- Vazirmatn-Medium.woff2
+- Vazirmatn-Bold.woff2
+
+These fonts are required for Persian PDF invoices (Phase 16).

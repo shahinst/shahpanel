@@ -1,0 +1,10 @@
+{
+    "slug": "migrate",
+    "name": "انتقال Sanaei → Remnawave",
+    "version": "1.0.0",
+    "description": "ابزار انتقال اکانت‌ها از پنل Sanaei به Remnawave، همراه با گزارش و لاگ هر انتقال. با غیرفعال‌کردن ماژول، این بخش از پنل حذف می‌شود.",
+    "author": "ShahPanel",
+    "namespace": "Modules\\Migrate\\",
+    "autoload": "src",
+    "provider": "Modules\\Migrate\\MigrateServiceProvider"
+}
