@@ -6,6 +6,7 @@ use App\Enums\UserRole;
 use App\Enums\UserStatus;
 use App\Models\Setting;
 use App\Models\User;
+use App\Support\PortalPaths;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Schema;
 
@@ -26,6 +27,7 @@ class InstallFinalizeCommand extends Command
         {--admin-email= : ایمیل مدیر (یا متغیر VPN_ADMIN_EMAIL)}
         {--admin-password= : رمز عبور مدیر (یا متغیر VPN_ADMIN_PASSWORD)}
         {--admin-name= : نام کامل مدیر (یا متغیر VPN_ADMIN_NAME)}
+        {--admin-path= : مسیر اختصاصی پنل مدیر، مثلاً p4ba5e8c6f7}
         {--site-name= : نام سایت}
         {--site-url= : آدرس کامل سایت}';
 
@@ -106,6 +108,23 @@ class InstallFinalizeCommand extends Command
 
         if ($siteUrl !== '') {
             Setting::setValue('site_url', $siteUrl);
+        }
+
+        // مهاجرت 2026_05_25_000001 مقدار portal_path_admin را با «admin» پر می‌کند و
+        // PortalPaths::all() بعد از نصب، مقدار جدول settings را بر config (و در نتیجه بر
+        // VPN_ADMIN_PATH در .env) ترجیح می‌دهد. پس اگر مسیر تصادفی اینجا در دیتابیس ذخیره
+        // نشود، بی‌صدا نادیده گرفته می‌شود و پنل روی /admin باقی می‌ماند.
+        $adminPath = trim((string) $this->option('admin-path'));
+
+        if ($adminPath !== '') {
+            $slug = PortalPaths::sanitizeSlug($adminPath, '');
+
+            if ($slug === '') {
+                $this->warn("مسیر پنل مدیر نامعتبر بود و نادیده گرفته شد: {$adminPath}");
+            } else {
+                Setting::setValue('portal_path_admin', $slug);
+                $this->info("مسیر پنل مدیر تنظیم شد: /{$slug}");
+            }
         }
 
         if (Setting::getValue('installed_at') === null) {

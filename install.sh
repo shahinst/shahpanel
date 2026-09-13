@@ -156,7 +156,8 @@ secret ""
 secret "  This installer sets up everything on a clean Ubuntu server:"
 secret "    PHP ${PHP_VER} · MySQL · Nginx · the panel · TLS · the scheduler"
 secret ""
-secret "  It takes about 5–10 minutes and asks at most one question."
+secret "  It takes 10-45 minutes (database migrations are slow on small"
+secret "  servers) and asks at most one question."
 secret ""
 
 # ---------------------------------------------------------------------------
@@ -713,6 +714,7 @@ export VPN_ADMIN_NAME="Administrator"
 sudo -u www-data \
     --preserve-env=VPN_ADMIN_USERNAME,VPN_ADMIN_EMAIL,VPN_ADMIN_PASSWORD,VPN_ADMIN_NAME \
     "php${PHP_VER}" "$APP_DIR/artisan" install:finalize \
+        --admin-path="$ADMIN_PATH" \
         --site-name="$APP_TITLE" \
         --site-url="$APP_URL"
 
@@ -752,7 +754,10 @@ chmod 000 "$CRED_FILE"
 step "Verifying the installation"
 
 # -k because an IP install is deliberately serving a self-signed certificate.
-HTTP_CODE="$(curl -fsSk -o /dev/null -w '%{http_code}' --max-time 20 -L "$PANEL_URL" 2>/dev/null || echo '000')"
+# No -f: with it curl exits non-zero on a 4xx, the `||` branch fires *as well as*
+# the -w output, and the two get concatenated into nonsense like "404000".
+HTTP_CODE="$(curl -sk -o /dev/null -w '%{http_code}' --max-time 20 -L "$PANEL_URL" 2>/dev/null)"
+[[ -z "$HTTP_CODE" ]] && HTTP_CODE="000"
 
 case "$HTTP_CODE" in
     200|302) info "Panel responded with HTTP ${HTTP_CODE} — looks healthy." ;;
