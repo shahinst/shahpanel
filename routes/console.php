@@ -108,9 +108,14 @@ Schedule::call(function (): void {
 
 // Process database queue (tunneling + default). Without this, apply/reconcile
 // jobs sit in `jobs` forever when crontab only runs schedule:run.
+// `--stop-when-empty` is a flag, not an option with a value. Schedule::command()
+// compiles the array into a shell string, so a `=> true` entry becomes
+// `--stop-when-empty=1` and Symfony rejects the whole command every minute
+// ("option does not accept a value") — the queue then never runs. A flag has to
+// be a bare list entry. (Artisan::call() elsewhere does accept `=> true`.)
 Schedule::command('queue:work', [
     '--queue' => implode(',', \App\Support\TunnelQueueHealth::queueNames()),
-    '--stop-when-empty' => true,
+    '--stop-when-empty',
     '--max-time' => 55,
     '--tries' => 3,
 ])
