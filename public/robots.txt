@@ -1,0 +1,11 @@
+User-agent: *
+Disallow: /portal/
+
+User-agent: Googlebot
+Disallow: /portal/
+
+User-agent: Googlebot-Image
+Disallow: /portal/
+
+User-agent: Bingbot
+Disallow: /portal/

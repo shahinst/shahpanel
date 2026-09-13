@@ -1,0 +1,31 @@
+# جلوگیری از ایندکس شدن در موتورهای جستجو (کل سایت)
+<IfModule mod_headers.c>
+    Header set X-Robots-Tag "noindex, nofollow, noarchive, nosnippet"
+</IfModule>
+
+<IfModule mod_rewrite.c>
+    <IfModule mod_negotiation.c>
+        Options -MultiViews -Indexes
+    </IfModule>
+
+    RewriteEngine On
+
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Block sensitive directories
+    RewriteRule ^(app|bootstrap|config|database|resources|routes|vendor)(/|$) - [F,L]
+
+    RewriteRule ^build/(.*)$ public/build/$1 [L,QSA]
+    RewriteRule ^fonts/(.*)$ public/fonts/$1 [L,QSA]
+    RewriteRule ^images/(.*)$ public/images/$1 [L,QSA]
+    RewriteRule ^storage/(.*)$ public/storage/$1 [L,QSA]
+
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} (.+)/$
+    RewriteRule ^ %1 [L,R=301]
+
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^ index.php [L]
+</IfModule>

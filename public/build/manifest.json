@@ -1,0 +1,54 @@
+{
+  "node_modules/boxicons/fonts/boxicons.eot": {
+    "file": "assets/boxicons-CSrLvhY_.eot",
+    "src": "node_modules/boxicons/fonts/boxicons.eot"
+  },
+  "node_modules/boxicons/fonts/boxicons.svg": {
+    "file": "assets/boxicons-Dp7W9qN3.svg",
+    "src": "node_modules/boxicons/fonts/boxicons.svg"
+  },
+  "node_modules/boxicons/fonts/boxicons.ttf": {
+    "file": "assets/boxicons-EIQNrSje.ttf",
+    "src": "node_modules/boxicons/fonts/boxicons.ttf"
+  },
+  "node_modules/boxicons/fonts/boxicons.woff": {
+    "file": "assets/boxicons-CTVby2V1.woff",
+    "src": "node_modules/boxicons/fonts/boxicons.woff"
+  },
+  "node_modules/boxicons/fonts/boxicons.woff2": {
+    "file": "assets/boxicons-CeGEncwm.woff2",
+    "src": "node_modules/boxicons/fonts/boxicons.woff2"
+  },
+  "resources/css/app.css": {
+    "file": "assets/app-B52uaDO3.css",
+    "src": "resources/css/app.css",
+    "isEntry": true
+  },
+  "resources/css/auth.css": {
+    "file": "assets/auth-mwgICX-8.css",
+    "src": "resources/css/auth.css",
+    "isEntry": true
+  },
+  "resources/css/icons.css": {
+    "file": "assets/icons-CwE5mAo4.css",
+    "src": "resources/css/icons.css",
+    "isEntry": true
+  },
+  "resources/css/portal.css": {
+    "file": "assets/portal-CNbAdyfn.css",
+    "src": "resources/css/portal.css",
+    "isEntry": true
+  },
+  "resources/js/app.js": {
+    "file": "assets/app-D07ENAuZ.js",
+    "name": "app",
+    "src": "resources/js/app.js",
+    "isEntry": true
+  },
+  "resources/js/portal.js": {
+    "file": "assets/portal-l0sNRNKZ.js",
+    "name": "portal",
+    "src": "resources/js/portal.js",
+    "isEntry": true
+  }
+}

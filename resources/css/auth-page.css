@@ -1,0 +1,85 @@
+/* Login / 2FA pages (standalone from panel chrome) */
+
+.authentication-bg {
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: linear-gradient(145deg, #eef2ff 0%, #f8fafc 45%, #ecfdf5 100%);
+}
+
+.authentication-bg .bg-overlay.bg-light {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: rgba(255, 255, 255, 0.35);
+}
+
+.auth-brand {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.65rem;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text, #0f172a);
+    text-decoration: none;
+    letter-spacing: -0.02em;
+}
+
+.auth-brand:hover {
+    color: var(--accent, #4f46e5);
+}
+
+.auth-brand__img {
+    display: block;
+    width: 48px;
+    height: 48px;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.auth-brand__text {
+    line-height: 1.3;
+}
+
+.login-captcha-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 56px;
+    font-size: 0.8rem;
+    color: var(--muted, #64748b);
+}
+
+.input-custom-icon {
+    position: relative;
+}
+
+.input-custom-icon > .bx {
+    position: absolute;
+    inset-inline-end: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted, #64748b);
+    font-size: 1.15rem;
+    line-height: 1;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.input-custom-icon .form-control {
+    padding-inline-end: 2.65rem;
+}
+
+.auth-pass-inputgroup .bx {
+    inset-inline-end: 0.75rem;
+}
+
+@media (max-width: 575.98px) {
+    .authentication-bg .container {
+        padding-inline: 0.75rem;
+    }
+
+    .authentication-bg .card-body {
+        padding: 1.25rem !important;
+    }
+}

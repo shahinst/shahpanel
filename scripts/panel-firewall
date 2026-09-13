@@ -1,0 +1,384 @@
+#!/usr/bin/env bash
+#
+# panel-firewall — root-side firewall helper for ShahPanel.
+#
+# The web user (www-data) may ask for changes through sudo, but must never be
+# able to write the lists it is filtered by. Every path this script writes to is
+# root-owned; the only input taken from the caller is an IP address, and that is
+# validated before it reaches iptables/ipset.
+#
+# Installed at: /usr/local/sbin/panel-firewall  (mode 0750, root:root)
+# Called by:    App\Services\FirewallService via `sudo -n panel-firewall <cmd>`
+#
+# Subcommand contract (must stay in sync with FirewallService):
+#   init                   create sets + chain, restore saved state
+#   block <ip> <seconds>   block an IP; 0 seconds = until flushed
+#   unblock <ip>           remove a block
+#   list                   one blocked IP per line
+#   status                 key=value lines: blocked=N cn=N chain=NAME
+#   fetch                  download the China ranges
+#   zones-fetch            download + extract per-country zone files
+#   cn-load                load the China ranges into the drop set
+#   cn-clear               empty the China set
+#   flush                  empty the manual block set
+#   allow <ip> | unallow <ip> | allow-list   (admin convenience, not used by PHP)
+#
+# Safety rules this script will not break:
+#   - only the INPUT chain is ever touched; OUTPUT and FORWARD are left alone
+#   - loopback, private, link-local, multicast and the host's own addresses can
+#     never be blocked, so a misfiring rule cannot cut the server off
+#   - the allow set is consulted before every drop rule
+#   - list downloads are atomic: a failed download leaves the previous set intact
+
+set -euo pipefail
+
+umask 077
+
+STATE="/var/lib/panel-firewall"
+ZONES="$STATE/zones"
+CN_FILE="$STATE/cn.zone"
+BLOCK_SAVE="$STATE/panel_block.ipset"
+ALLOW_SAVE="$STATE/panel_allow.ipset"
+
+SET_BLOCK="panel_block"
+SET_ALLOW="panel_allow"
+SET_CN="panel_cn"
+CHAIN="PANEL_FW"
+
+CN_URL="https://www.ipdeny.com/ipblocks/data/countries/cn.zone"
+ALL_URL="https://www.ipdeny.com/ipblocks/data/countries/all-zones.tar.gz"
+
+die() { echo "panel-firewall: $*" >&2; exit 1; }
+
+[[ ${EUID:-$(id -u)} -eq 0 ]] || die "must run as root"
+
+for bin in ipset iptables curl; do
+    command -v "$bin" >/dev/null 2>&1 || die "missing required command: $bin"
+done
+
+mkdir -p "$STATE" "$ZONES"
+chmod 0750 "$STATE"
+
+# ---------------------------------------------------------------------------
+# validation
+# ---------------------------------------------------------------------------
+
+# Rejects anything that is not a plain IPv4 address, and refuses the ranges that
+# blocking would be self-destructive on. Mirrors the FILTER_FLAG_NO_PRIV_RANGE /
+# NO_RES_RANGE check FirewallService already does, so a bypass of one still hits
+# the other.
+valid_ip() {
+    local ip="$1" o1 o2 o3 o4
+
+    [[ "$ip" =~ ^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})$ ]] || return 1
+
+    o1=${BASH_REMATCH[1]}; o2=${BASH_REMATCH[2]}
+    o3=${BASH_REMATCH[3]}; o4=${BASH_REMATCH[4]}
+
+    (( o1 <= 255 && o2 <= 255 && o3 <= 255 && o4 <= 255 )) || return 1
+
+    # 0.0.0.0/8, 10/8, 127/8, 169.254/16, 172.16/12, 192.168/16, 224/4, 240/4
+    (( o1 == 0 || o1 == 10 || o1 == 127 )) && return 1
+    (( o1 == 169 && o2 == 254 )) && return 1
+    (( o1 == 172 && o2 >= 16 && o2 <= 31 )) && return 1
+    (( o1 == 192 && o2 == 168 )) && return 1
+    (( o1 >= 224 )) && return 1
+
+    return 0
+}
+
+# The host's own addresses must survive any block request.
+is_local_ip() {
+    local ip="$1"
+    ip -4 -o addr show scope global 2>/dev/null \
+        | awk '{split($4, a, "/"); print a[1]}' \
+        | grep -qxF "$ip"
+}
+
+require_ip() {
+    local ip="${1:-}"
+    [[ -n "$ip" ]] || die "missing IP argument"
+    valid_ip "$ip" || die "refusing to act on non-routable or malformed address: $ip"
+    is_local_ip "$ip" && die "refusing to act on this host's own address: $ip"
+    return 0
+}
+
+# ---------------------------------------------------------------------------
+# set + chain plumbing
+# ---------------------------------------------------------------------------
+
+ensure_sets() {
+    # `timeout 0` enables per-entry expiry with "never" as the default, which is
+    # what lets `block <ip> 0` mean "until flushed".
+    ipset create "$SET_BLOCK" hash:ip  timeout 0 -exist
+    ipset create "$SET_ALLOW" hash:ip             -exist
+    ipset create "$SET_CN"    hash:net maxelem 262144 -exist
+}
+
+ensure_chain() {
+    iptables -N "$CHAIN" 2>/dev/null || true
+    iptables -F "$CHAIN"
+
+    # Allow list wins over every drop rule below it.
+    iptables -A "$CHAIN" -m set --match-set "$SET_ALLOW" src -j RETURN
+    iptables -A "$CHAIN" -m set --match-set "$SET_BLOCK" src -j DROP
+    iptables -A "$CHAIN" -m set --match-set "$SET_CN"    src -j DROP
+
+    # Hook it into INPUT exactly once, at the top. OUTPUT and FORWARD are never
+    # touched — an accidental drop there would break the panel's own outbound
+    # calls to the VPN servers.
+    iptables -C INPUT -j "$CHAIN" 2>/dev/null || iptables -I INPUT 1 -j "$CHAIN"
+}
+
+save_sets() {
+    local tmp
+    tmp="$(mktemp "$STATE/.save.XXXXXX")"
+    ipset save "$SET_BLOCK" > "$tmp" && mv -f "$tmp" "$BLOCK_SAVE" || rm -f "$tmp"
+
+    tmp="$(mktemp "$STATE/.save.XXXXXX")"
+    ipset save "$SET_ALLOW" > "$tmp" && mv -f "$tmp" "$ALLOW_SAVE" || rm -f "$tmp"
+}
+
+restore_sets() {
+    local file
+    for file in "$BLOCK_SAVE" "$ALLOW_SAVE"; do
+        [[ -s "$file" ]] || continue
+        # `-exist` keeps a restore over already-created sets from aborting.
+        ipset restore -exist < "$file" 2>/dev/null || true
+    done
+}
+
+count_entries() {
+    ipset list "$1" -t 2>/dev/null \
+        | awk -F': ' '/Number of entries/ {print $2; found=1} END {if (!found) print 0}'
+}
+
+# ---------------------------------------------------------------------------
+# downloads
+# ---------------------------------------------------------------------------
+
+# Downloads to a scratch file and only swaps it in once it is non-empty, so a
+# truncated or failed transfer leaves the working copy alone.
+download() {
+    local url="$1" target="$2" tmp
+    tmp="$(mktemp "$STATE/.dl.XXXXXX")"
+
+    if ! curl -fsS --max-time 180 -L -o "$tmp" "$url"; then
+        rm -f "$tmp"
+        die "download failed: $url"
+    fi
+
+    if [[ ! -s "$tmp" ]]; then
+        rm -f "$tmp"
+        die "download was empty: $url"
+    fi
+
+    mv -f "$tmp" "$target"
+    chmod 0640 "$target"
+}
+
+# ---------------------------------------------------------------------------
+# subcommands
+# ---------------------------------------------------------------------------
+
+cmd_init() {
+    ensure_sets
+    restore_sets
+    ensure_chain
+
+    # A saved China list survives reboots; reload it so `cn` is not silently 0.
+    if [[ -s "$CN_FILE" ]]; then
+        cmd_cn_load >/dev/null
+    fi
+
+    echo "initialised"
+}
+
+cmd_block() {
+    local ip="${1:-}" seconds="${2:-0}"
+    require_ip "$ip"
+
+    [[ "$seconds" =~ ^[0-9]+$ ]] || die "seconds must be a non-negative integer"
+
+    ensure_sets
+    ensure_chain
+
+    ipset add "$SET_BLOCK" "$ip" timeout "$seconds" -exist
+    save_sets
+
+    if [[ "$seconds" == "0" ]]; then
+        echo "blocked $ip permanently"
+    else
+        echo "blocked $ip for ${seconds}s"
+    fi
+}
+
+cmd_unblock() {
+    local ip="${1:-}"
+    [[ -n "$ip" ]] || die "missing IP argument"
+    valid_ip "$ip" || die "malformed address: $ip"
+
+    ensure_sets
+    ipset del "$SET_BLOCK" "$ip" -exist 2>/dev/null || true
+    save_sets
+
+    echo "unblocked $ip"
+}
+
+# FirewallService reads the first whitespace-separated token of each line, so the
+# trailing "timeout N" that ipset prints is ignored on its side and kept here for
+# an operator reading the output directly.
+cmd_list() {
+    ensure_sets
+    ipset list "$SET_BLOCK" 2>/dev/null | sed -n '/^Members:/,$p' | tail -n +2
+}
+
+cmd_status() {
+    ensure_sets
+
+    local blocked cn chain="absent"
+
+    blocked="$(count_entries "$SET_BLOCK")"
+    cn="$(count_entries "$SET_CN")"
+
+    if iptables -C INPUT -j "$CHAIN" 2>/dev/null; then
+        chain="$CHAIN"
+    fi
+
+    echo "blocked=${blocked:-0}"
+    echo "cn=${cn:-0}"
+    echo "chain=${chain}"
+    echo "allowed=$(count_entries "$SET_ALLOW")"
+}
+
+cmd_fetch() {
+    download "$CN_URL" "$CN_FILE"
+    echo "fetched $(grep -c . "$CN_FILE" || echo 0) China ranges"
+}
+
+cmd_zones_fetch() {
+    local archive tmpdir
+    archive="$STATE/all-zones.tar.gz"
+
+    download "$ALL_URL" "$archive"
+
+    tmpdir="$(mktemp -d "$STATE/.zones.XXXXXX")"
+
+    if ! tar -xzf "$archive" -C "$tmpdir" 2>/dev/null; then
+        rm -rf "$tmpdir"
+        die "could not extract the zone archive"
+    fi
+
+    # The archive may or may not carry a leading directory; normalise both.
+    find "$tmpdir" -name '*.zone' -type f -exec mv -f {} "$tmpdir/" \; 2>/dev/null || true
+
+    if ! ls "$tmpdir"/*.zone >/dev/null 2>&1; then
+        rm -rf "$tmpdir"
+        die "the archive held no zone files"
+    fi
+
+    rm -f "$ZONES"/*.zone
+    mv -f "$tmpdir"/*.zone "$ZONES"/
+    rm -rf "$tmpdir"
+    rm -f "$archive"
+
+    # The artisan command globs these as www-data, so they must be readable.
+    chmod 0755 "$ZONES"
+    chmod 0644 "$ZONES"/*.zone
+
+    echo "extracted $(ls -1 "$ZONES"/*.zone | wc -l) zone files"
+}
+
+# Builds into a scratch set and swaps it in, so the drop rule never points at a
+# half-loaded list.
+cmd_cn_load() {
+    [[ -s "$CN_FILE" ]] || die "no China list on disk; run 'fetch' first"
+
+    ensure_sets
+
+    local tmpset="${SET_CN}_tmp"
+    ipset destroy "$tmpset" 2>/dev/null || true
+    ipset create "$tmpset" hash:net maxelem 262144
+
+    local cidr loaded=0
+    while IFS= read -r cidr; do
+        cidr="${cidr%%[[:space:]]*}"
+        [[ -n "$cidr" ]] || continue
+        [[ "$cidr" =~ ^[0-9.]+/[0-9]{1,2}$ ]] || continue
+        if ipset add "$tmpset" "$cidr" -exist 2>/dev/null; then
+            loaded=$((loaded + 1))
+        fi
+    done < "$CN_FILE"
+
+    if (( loaded == 0 )); then
+        ipset destroy "$tmpset" 2>/dev/null || true
+        die "no usable ranges parsed; the existing set is left alone"
+    fi
+
+    ipset swap "$tmpset" "$SET_CN"
+    ipset destroy "$tmpset" 2>/dev/null || true
+
+    ensure_chain
+
+    echo "loaded $loaded ranges"
+}
+
+cmd_cn_clear() {
+    ensure_sets
+    ipset flush "$SET_CN"
+    echo "country set cleared"
+}
+
+cmd_flush() {
+    ensure_sets
+    ipset flush "$SET_BLOCK"
+    save_sets
+    echo "block set flushed"
+}
+
+cmd_allow() {
+    local ip="${1:-}"
+    require_ip "$ip"
+    ensure_sets
+    ensure_chain
+    ipset add "$SET_ALLOW" "$ip" -exist
+    save_sets
+    echo "allowed $ip"
+}
+
+cmd_unallow() {
+    local ip="${1:-}"
+    [[ -n "$ip" ]] || die "missing IP argument"
+    valid_ip "$ip" || die "malformed address: $ip"
+    ensure_sets
+    ipset del "$SET_ALLOW" "$ip" -exist 2>/dev/null || true
+    save_sets
+    echo "removed $ip from the allow list"
+}
+
+cmd_allow_list() {
+    ensure_sets
+    ipset list "$SET_ALLOW" 2>/dev/null | sed -n '/^Members:/,$p' | tail -n +2
+}
+
+usage() {
+    sed -n '/^# Subcommand contract/,/^#   allow <ip>/p' "$0" | sed 's/^# \{0,1\}//'
+    exit 1
+}
+
+case "${1:-}" in
+    init)         shift; cmd_init "$@" ;;
+    block)        shift; cmd_block "$@" ;;
+    unblock)      shift; cmd_unblock "$@" ;;
+    list)         shift; cmd_list "$@" ;;
+    status)       shift; cmd_status "$@" ;;
+    fetch)        shift; cmd_fetch "$@" ;;
+    zones-fetch)  shift; cmd_zones_fetch "$@" ;;
+    cn-load)      shift; cmd_cn_load "$@" ;;
+    cn-clear)     shift; cmd_cn_clear "$@" ;;
+    flush)        shift; cmd_flush "$@" ;;
+    allow)        shift; cmd_allow "$@" ;;
+    unallow)      shift; cmd_unallow "$@" ;;
+    allow-list)   shift; cmd_allow_list "$@" ;;
+    *)            usage ;;
+esac

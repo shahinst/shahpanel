@@ -1,0 +1,10 @@
+{
+    "slug": "tunneling",
+    "name": "تانلینگ (سیستم desired-state)",
+    "version": "1.0.0",
+    "description": "بخش تانلینگ پنل: گروه‌های تانل، ویزارد راه‌اندازی، لوکیشن‌ها، متریک‌ها و زمان‌بندهای مربوطه. با غیرفعال‌کردن ماژول کل این بخش از پنل حذف می‌شود.",
+    "author": "ShahPanel",
+    "namespace": "Modules\\Tunneling\\",
+    "autoload": "src",
+    "provider": "Modules\\Tunneling\\TunnelingServiceProvider"
+}
