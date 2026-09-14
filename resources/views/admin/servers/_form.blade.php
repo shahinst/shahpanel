@@ -1,4 +1,4 @@
-@php
+    @php
     $server = $server ?? null;
     $selectedType = old('type', $server?->type?->value ?? \App\Enums\ServerType::Mikrotik->value);
     $isMikrotikForm = $selectedType === \App\Enums\ServerType::Mikrotik->value;
@@ -101,10 +101,6 @@
                        placeholder="مثلاً dashboard (اختیاری)">
                 <small class="text-muted d-block mt-1" id="panel-base-path-hint"></small>
             </x-form.group>
-            <div id="panel-verify-ssl-group" style="display:none">
-                <x-form.checkbox name="sanaei_verify_ssl" :label="__('servers.sanaei_verify_ssl')" :checked="old('sanaei_verify_ssl', $server?->sanaei_verify_ssl ?? true)" :hiddenZero="true" />
-                <small class="text-muted d-block mb-3">{{ __('servers.sanaei_verify_ssl_hint') }}</small>
-            </div>
             <x-form.group :label="__('servers.panel_username')" id="panel-username-group" @style(['display: none' => ! $showUserPassForm])>
                 <input name="username" class="form-control" autocomplete="off"
                        value="{{ old('username', $isMikrotikForm && $server?->username_enc ? $server->username_enc : '') }}"
@@ -210,31 +206,25 @@
 
     <div class="col-12" id="ocserv-section" @style(['display: none' => ! $isOcservForm])>
         <div class="panel-form-section">
-            <h4 class="panel-form-section-title"><i class="bx bx-shield-quarter align-middle"></i> OpenConnect / ocserv</h4>
+            <h4 class="panel-form-section-title"><i class="bx bx-globe align-middle"></i> OpenConnect (ocserv)</h4>
             <p class="text-muted small">{{ __('servers.ocserv_section_hint') }}</p>
             <div class="row">
                 <div class="col-md-6">
-                    <x-form.group :label="__('servers.ocserv_api_port')">
-                        <input name="ocserv_api_port" type="number" min="1" max="65535" value="{{ old('ocserv_api_port', $server?->ocserv_api_port ?? config('vpnpanel.ocserv.default_port', 9443)) }}" class="form-control" dir="ltr" placeholder="9443">
-                        <small class="text-muted d-block mt-1">{{ __('servers.ocserv_api_port_hint') }}</small>
+                    <x-form.group :label="__('servers.ocserv_vpn_address')">
+                        <input name="ocserv_vpn_address" value="{{ old('ocserv_vpn_address', $server?->ocserv_vpn_address) }}" class="form-control" dir="ltr" placeholder="ocserv1.example.com">
+                        <small class="text-muted d-block mt-1">{{ __('servers.ocserv_vpn_address_hint') }}</small>
                     </x-form.group>
                 </div>
                 <div class="col-md-6">
-                    <x-form.group :label="__('servers.ocserv_vpn_hostname')">
-                        <input name="ocserv_vpn_hostname" value="{{ old('ocserv_vpn_hostname', $server?->ocserv_vpn_hostname) }}" class="form-control" dir="ltr" placeholder="vpn.example.com">
-                        <small class="text-muted d-block mt-1">{{ __('servers.ocserv_vpn_hostname_hint') }}</small>
+                    <x-form.group :label="__('servers.ocserv_default_max_sessions')">
+                        <input name="ocserv_default_max_sessions" type="number" min="0" max="1000" value="{{ old('ocserv_default_max_sessions', $server?->ocserv_default_max_sessions ?? 1) }}" class="form-control">
+                        <small class="text-muted d-block mt-1">{{ __('servers.ocserv_default_max_sessions_hint') }}</small>
                     </x-form.group>
                 </div>
                 <div class="col-md-6">
                     <x-form.group :label="__('servers.ocserv_group')">
-                        <input name="ocserv_group" value="{{ old('ocserv_group', $server?->ocserv_group) }}" class="form-control" dir="ltr" placeholder="default">
+                        <input name="ocserv_group" value="{{ old('ocserv_group', $server?->ocserv_group) }}" class="form-control" dir="ltr" placeholder="">
                         <small class="text-muted d-block mt-1">{{ __('servers.ocserv_group_hint') }}</small>
-                    </x-form.group>
-                </div>
-                <div class="col-md-6">
-                    <x-form.group :label="__('servers.ocserv_max_sessions')">
-                        <input name="ocserv_max_sessions" type="number" min="0" max="1000" value="{{ old('ocserv_max_sessions', $server?->ocserv_max_sessions ?? 1) }}" class="form-control">
-                        <small class="text-muted d-block mt-1">{{ __('servers.ocserv_max_sessions_hint') }}</small>
                     </x-form.group>
                 </div>
                 <div class="col-md-6">
@@ -291,7 +281,7 @@ document.addEventListener('DOMContentLoaded', function () {
         pasarguard: { host: @json(__('servers.pasarguard_host_hint')), base: @json(__('servers.pasarguard_base_path_hint')), token: @json(__('servers.pasarguard_token_hint')), port: '443' },
         remnawave: { host: @json(__('servers.remnawave_host_hint')), base: @json(__('servers.remnawave_base_path_hint')), token: @json(__('servers.remnawave_token_hint')), tokenLabel: @json(__('servers.remnawave_api_token')), port: '443' },
         cisco_anyconnect: { host: @json(__('servers.cisco_anyconnect_host_hint')), base: '', token: '', port: '443' },
-        ocserv: { host: @json(__('servers.ocserv_host_hint')), base: '', token: @json(__('servers.ocserv_token_hint')), port: '9443' }
+        ocserv: { host: @json(__('servers.ocserv_host_hint')), base: '', token: '', port: '9443' }
     };
     if (!typeSelect) return;
 
@@ -332,8 +322,6 @@ document.addEventListener('DOMContentLoaded', function () {
         if (mikrotikPublicIpGroup) mikrotikPublicIpGroup.style.display = isMikrotik ? 'block' : 'none';
         if (basePathGroup) basePathGroup.style.display = isPanel ? 'block' : 'none';
         if (basePathHint) basePathHint.textContent = cfg ? cfg.base : '';
-        var verifySslGroup = document.getElementById('panel-verify-ssl-group');
-        if (verifySslGroup) verifySslGroup.style.display = (type === 'sanaei') ? 'block' : 'none';
         if (panelUser) panelUser.style.display = showUserPass ? 'block' : 'none';
         if (panelPass) panelPass.style.display = showUserPass ? 'block' : 'none';
         setGroupLabel('panel-username-group', isMikrotik ? authLabels.username.mikrotik : authLabels.username.panel);
@@ -343,14 +331,14 @@ document.addEventListener('DOMContentLoaded', function () {
             passHint.textContent = isMikrotik ? authHints.mikrotikEdit : '';
             passHint.style.display = isMikrotik ? 'block' : 'none';
         }
-        if (panelToken) panelToken.style.display = (isPanel || isOcserv) ? 'block' : 'none';
+        if (panelToken) panelToken.style.display = isPanel ? 'block' : 'none';
         if (panelTokenHint) panelTokenHint.textContent = cfg ? cfg.token : '';
         if (panelTokenLabel) {
             var labelEl = panelTokenLabel.querySelector('label') || panelTokenLabel;
             labelEl.textContent = (type === 'remnawave' && cfg && cfg.tokenLabel) ? cfg.tokenLabel : defaultTokenLabel;
         }
         if (mikrotikApiFields) mikrotikApiFields.style.display = isMikrotik ? 'block' : 'none';
-        setFieldGroupEnabled(document.getElementById('panel-token-group'), isPanel || isOcserv);
+        setFieldGroupEnabled(document.getElementById('panel-token-group'), isPanel);
         setFieldGroupEnabled(document.getElementById('panel-username-group'), showUserPass);
         setFieldGroupEnabled(document.getElementById('panel-password-group'), showUserPass);
         setFieldGroupEnabled(mikrotikApiFields, isMikrotik);
@@ -365,7 +353,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (ocservSec) ocservSec.style.display = isOcserv ? 'block' : 'none';
         setFieldGroupEnabled(ocservSec, isOcserv);
         if (cfg && portInput && (portInput.value === '8728' || portInput.value === '' || portInput.value === '2053' || portInput.value === '443' || portInput.value === '9443')) {
-            if (isCisco || isPanel) portInput.value = cfg.port;
+            if (isCisco || isOcserv || isPanel) portInput.value = cfg.port;
             else if (isMikrotik) portInput.value = '8728';
             else portInput.value = cfg.port;
         }

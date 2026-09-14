@@ -11,7 +11,7 @@
                     <dt>شماره</dt>
                     <dd>{{ $invoice->invoice_number }}</dd>
                     <dt>مبلغ</dt>
-                    <dd>{{ format_toman($invoice->total) }}</dd>
+                    <dd>{{ format_money($invoice->total, $invoice->currency) }}</dd>
                     <dt>وضعیت</dt>
                     <dd>{{ $invoice->status->value }}</dd>
                     <dt>تاریخ</dt>

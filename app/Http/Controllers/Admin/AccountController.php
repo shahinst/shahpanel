@@ -121,7 +121,10 @@ class AccountController extends Controller
             $clientData['auto_random_remote_identity'] = true;
         }
 
-        $adminCustomCharge = $this->resolveAdminCustomCharge($validated);
+        $adminCustomCharge = $this->resolveAdminCustomCharge(
+            $request->boolean('admin_free_account'),
+            $validated['admin_custom_charge'] ?? null,
+        );
 
         try {
             $account = $accountService->createAccount(
@@ -171,12 +174,14 @@ class AccountController extends Controller
     ): JsonResponse {
         $this->authorize('create', Account::class);
 
-        // The preview must resolve the charge exactly like store() does, otherwise the
-        // admin is quoted one price and the wallet is debited another.
-        $adminCustomCharge = $this->resolveAdminCustomCharge($request->validate([
-            'admin_custom_charge' => ['nullable', 'numeric', 'min:0'],
-            'admin_free_account' => ['sometimes', 'boolean'],
-        ]));
+        $adminCustomCharge = null;
+
+        if ($request->boolean('admin_free_account')) {
+            $adminCustomCharge = '0.00';
+        } elseif ($request->filled('admin_custom_charge')) {
+            $request->validate(['admin_custom_charge' => ['numeric', 'min:0.01']]);
+            $adminCustomCharge = money_string((string) $request->input('admin_custom_charge'));
+        }
 
         return $this->purchasePreviewResponse(
             $request,
@@ -187,38 +192,6 @@ class AccountController extends Controller
             $financialPlanService,
             $adminCustomCharge,
         );
-    }
-
-    /**
-     * Resolve the admin-only price override for a new account.
-     *
-     * An empty field, a null, or a stray "0" all mean "charge the normal wholesale
-     * price": returning null makes AccountService fall through to buyerWholesaleTotal().
-     * Treating "0" as an override is what previously made every such account free and
-     * skipped the wallet debit entirely — no transaction row was written, so the refund
-     * path later had no ledger to work from either.
-     *
-     * A free account is a deliberate act and needs the explicit admin_free_account
-     * checkbox, which returns '0.00' so the override branch runs with a zero charge.
-     * Any positive amount is a genuine custom price.
-     *
-     * @param  array<string, mixed>  $input
-     */
-    protected function resolveAdminCustomCharge(array $input): ?string
-    {
-        if (filter_var($input['admin_free_account'] ?? false, FILTER_VALIDATE_BOOL)) {
-            return '0.00';
-        }
-
-        $raw = $input['admin_custom_charge'] ?? null;
-
-        if ($raw === null || $raw === '') {
-            return null;
-        }
-
-        $charge = money_string((string) $raw);
-
-        return bccomp($charge, '0', 2) > 0 ? $charge : null;
     }
 
     public function edit(Account $account): View
@@ -445,5 +418,31 @@ class AccountController extends Controller
         }
 
         return $base->copy()->endOfDay();
+    }
+
+    /**
+     * Empty / missing / accidental "0" → normal wholesale.
+     * Explicit free checkbox → 0.00.
+     * Positive number → custom override.
+     */
+    protected function resolveAdminCustomCharge(bool $freeAccount, mixed $rawCharge): ?string
+    {
+        if ($freeAccount) {
+            return '0.00';
+        }
+
+        if ($rawCharge === null || $rawCharge === '') {
+            return null;
+        }
+
+        $amount = money_string((string) $rawCharge);
+
+        // Bare zero without free-account flag is treated as "use wholesale"
+        // so empty number inputs / spinner accidents never create free accounts.
+        if (bccomp($amount, '0', 2) <= 0) {
+            return null;
+        }
+
+        return $amount;
     }
 }

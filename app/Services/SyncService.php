@@ -384,30 +384,8 @@ class SyncService
      */
     protected function fetchTraffic(Account $account, Server $server): array
     {
-        if ($server->isCiscoAnyconnect() || $account->service_type->isCiscoAnyconnect() || $account->cisco_asa_username) {
-            $this->lastPortalTrafficMeta = [
-                'raw' => null,
-                'normalized' => [
-                    'up' => 0,
-                    'down' => 0,
-                    'used_bytes' => 0,
-                    'limit_bytes' => null,
-                    'remaining_bytes' => null,
-                ],
-            ];
-
-            return [
-                'rx_bytes' => 0,
-                'tx_bytes' => 0,
-                'rx_snapshot' => 0,
-                'tx_snapshot' => 0,
-            ];
-        }
-
-        // ocserv's management API does expose per-user traffic (GET /api/traffic),
-        // but OcservService does not surface it yet, so report zeros for now and
-        // wire the real counters here once that method exists.
-        if ($server->isOcserv() || $account->service_type->isOcserv() || $account->ocserv_username) {
+        if ($server->isOcserv() || $account->service_type->isOcserv()
+            || $server->isCiscoAnyconnect() || $account->service_type->isCiscoAnyconnect() || $account->cisco_asa_username) {
             $this->lastPortalTrafficMeta = [
                 'raw' => null,
                 'normalized' => [

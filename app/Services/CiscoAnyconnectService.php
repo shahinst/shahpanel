@@ -214,6 +214,7 @@ class CiscoAnyconnectService
             'server_name' => $server?->name,
             'server_host' => $host,
             'port' => $port,
+            'show_port' => true,
             'username' => $username,
             'password' => $password,
             'group_policy' => $group,

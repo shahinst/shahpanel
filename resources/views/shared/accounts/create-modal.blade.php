@@ -154,26 +154,34 @@
         pricingDebounceTimer = setTimeout(loadPricingPreview, 200);
     }
 
-    // Prices come from packages that may be priced in TRY/USD/EUR, so the suffix has to
-    // follow the package currency instead of being hard-coded to Toman.
-    function currentPackageMeta() {
-        return optionsById[String(packageSelect.value)] || {};
-    }
-
-    function formatMoney(value, meta) {
-        meta = meta || {};
-        const decimals = Number.isFinite(meta.currency_decimals) ? meta.currency_decimals : 0;
-        const suffix = meta.currency_symbol || meta.currency_label || 'تومان';
-
-        return Number(value).toLocaleString('fa-IR', {
+    function formatMoney(value, currencyMeta) {
+        const meta = currencyMeta || {};
+        const decimals = Number.isFinite(Number(meta.decimals)) ? Number(meta.decimals) : 0;
+        const symbol = meta.symbol || meta.label || 'تومان';
+        const amount = Number(value);
+        if (!Number.isFinite(amount)) {
+            return '—';
+        }
+        return amount.toLocaleString('fa-IR', {
             minimumFractionDigits: decimals,
             maximumFractionDigits: decimals,
-        }) + ' ' + suffix;
+        }) + ' ' + symbol;
     }
 
-    // Kept so every existing call site becomes currency-aware without being touched.
+    function packageCurrencyMeta(pkg) {
+        if (!pkg) {
+            return { symbol: 'تومان', label: 'تومان', decimals: 0 };
+        }
+        return {
+            code: pkg.currency || 'IRT',
+            symbol: pkg.currency_symbol || pkg.currency_label || 'تومان',
+            label: pkg.currency_label || pkg.currency_symbol || 'تومان',
+            decimals: Number.isFinite(Number(pkg.currency_decimals)) ? Number(pkg.currency_decimals) : 0,
+        };
+    }
+
     function formatToman(value) {
-        return formatMoney(value, currentPackageMeta());
+        return formatMoney(value, { symbol: 'تومان', decimals: 0 });
     }
 
     function openModal() {
@@ -311,8 +319,14 @@
                 }
                 pricingBox.hidden = false;
                 pricingError.hidden = true;
-                pricingWholesale.textContent = formatMoney(result.payload.wholesale_price, result.payload);
-                pricingCharge.textContent = formatMoney(result.payload.final_charge, result.payload);
+                const currencyMeta = {
+                    code: result.payload.currency,
+                    symbol: result.payload.currency_symbol || result.payload.currency_label,
+                    label: result.payload.currency_label || result.payload.currency_symbol,
+                    decimals: result.payload.currency_decimals,
+                };
+                pricingWholesale.textContent = formatMoney(result.payload.wholesale_price, currencyMeta);
+                pricingCharge.textContent = formatMoney(result.payload.final_charge, currencyMeta);
             })
             .catch(function () { hidePricing(); });
     }
@@ -366,7 +380,7 @@
             opt.selected = true;
             durationSelect.appendChild(opt);
             durationSelect.classList.add('d-none');
-            durationHint.textContent = only.label + ' — ' + formatToman(only.price);
+            durationHint.textContent = only.label + ' — ' + formatMoney(only.price, packageCurrencyMeta(pkg));
             loadPricingPreview();
             return;
         }
@@ -374,7 +388,7 @@
         enabledDurations.forEach(function (d) {
             const opt = document.createElement('option');
             opt.value = d.id;
-            opt.textContent = d.label + ' — ' + formatToman(d.price) + (d.is_test ? ' ({{ __('packages.test_badge') }})' : '');
+            opt.textContent = d.label + ' — ' + formatMoney(d.price, packageCurrencyMeta(pkg)) + (d.is_test ? ' ({{ __('packages.test_badge') }})' : '');
             if (String(d.id) === String(oldDurationId)) opt.selected = true;
             durationSelect.appendChild(opt);
         });

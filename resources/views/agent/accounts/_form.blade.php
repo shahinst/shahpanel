@@ -602,24 +602,34 @@
         return fallback;
     }
 
-    // Currency of whatever is currently being priced; refreshed from the selected
-    // package and from each preview payload, so prices never default to Toman.
-    let currencyMeta = {};
-
-    function formatMoney(value, meta) {
-        meta = meta || currencyMeta || {};
-        const decimals = Number.isFinite(meta.currency_decimals) ? meta.currency_decimals : 0;
-        const suffix = meta.currency_symbol || meta.currency_label || 'تومان';
-
-        return Number(value).toLocaleString('fa-IR', {
+    function formatMoney(value, currencyMeta) {
+        const meta = currencyMeta || {};
+        const decimals = Number.isFinite(Number(meta.decimals)) ? Number(meta.decimals) : 0;
+        const symbol = meta.symbol || meta.label || 'تومان';
+        const amount = Number(value);
+        if (!Number.isFinite(amount)) {
+            return '—';
+        }
+        return amount.toLocaleString('fa-IR', {
             minimumFractionDigits: decimals,
             maximumFractionDigits: decimals,
-        }) + ' ' + suffix;
+        }) + ' ' + symbol;
     }
 
-    // Kept so every existing call site becomes currency-aware without being touched.
+    function currencyMetaFrom(source) {
+        if (!source) {
+            return { symbol: 'تومان', label: 'تومان', decimals: 0 };
+        }
+        return {
+            code: source.currency || 'IRT',
+            symbol: source.currency_symbol || source.currency_label || 'تومان',
+            label: source.currency_label || source.currency_symbol || 'تومان',
+            decimals: Number.isFinite(Number(source.currency_decimals)) ? Number(source.currency_decimals) : 0,
+        };
+    }
+
     function formatToman(value) {
-        return formatMoney(value, currencyMeta);
+        return formatMoney(value, { label: 'تومان', symbol: 'تومان', decimals: 0 });
     }
 
     function hidePricing() {
@@ -641,22 +651,21 @@
 
     function renderPricing(data) {
         if (!pricingBox) return;
-        currencyMeta = data;
         pricingBox.hidden = false;
         if (pricingError) pricingError.hidden = true;
-        const currencySymbol = data.currency_symbol || 'تومان';
-        let listText = formatMoney(data.wholesale_price || data.list_price, data);
+        const currencyMeta = currencyMetaFrom(data);
+        let listText = formatMoney(data.wholesale_price || data.list_price, currencyMeta);
         if (data.is_elastic && data.data_gb && data.unit_price) {
             listText = Number(data.data_gb).toLocaleString('fa-IR') + ' {{ __('packages.gb_unit') }} × '
-                + Number(data.unit_price).toLocaleString('fa-IR') + ' ' + currencySymbol + ' / {{ __('packages.gb_unit') }} = '
+                + formatMoney(data.unit_price, currencyMeta) + ' = '
                 + listText;
         }
         pricingList.textContent = listText;
-        pricingFinal.textContent = formatToman(data.final_charge);
+        pricingFinal.textContent = formatMoney(data.final_charge, currencyMeta);
         if (pricingDiscountHint) {
             pricingDiscountHint.textContent = '';
             if (data.plan_applied && Number(data.plan_discount) > 0) {
-                pricingDiscountHint.textContent = 'تخفیف بسته مالی: ' + formatToman(data.plan_discount);
+                pricingDiscountHint.textContent = 'تخفیف بسته مالی: ' + formatMoney(data.plan_discount, currencyMeta);
             } else if (data.discount_active && Number(data.list_price) !== Number(data.charged_price)) {
                 pricingDiscountHint.textContent = pricingLabels.discount_hint.replace(':percent', String(data.discount_percent));
             }
@@ -664,7 +673,7 @@
         if (pricingMarginHint && pricingLabels.margin_hint) {
             pricingMarginHint.textContent = '';
             if (Number(data.agent_margin) > 0) {
-                let hint = pricingLabels.margin_hint.replace(':amount', formatToman(data.agent_margin));
+                let hint = pricingLabels.margin_hint.replace(':amount', formatMoney(data.agent_margin, currencyMeta));
                 if (data.agent_margin_percent) {
                     hint = hint.replace(':percent', String(data.agent_margin_percent));
                 } else {
@@ -750,15 +759,13 @@
 
         if (!pkg) return;
 
-        currencyMeta = pkg;
-
         pkg.durations.forEach(function (d) {
             const opt = document.createElement('option');
             opt.value = d.id;
-            const symbol = pkg.currency_symbol || 'تومان';
+            const currencyMeta = currencyMetaFrom(pkg);
             const priceLabel = pkg.is_elastic
-                ? Number(d.price).toLocaleString('fa-IR') + ' ' + symbol + ' / {{ __('packages.gb_unit') }}'
-                : Number(d.price).toLocaleString('fa-IR') + ' ' + symbol;
+                ? formatMoney(d.price, currencyMeta) + ' / {{ __('packages.gb_unit') }}'
+                : formatMoney(d.price, currencyMeta);
             opt.textContent = d.label + ' — ' + priceLabel + (d.is_test ? ' ({{ __('packages.test_badge') }})' : '');
             if (String(d.id) === @json(old('package_duration_id'))) opt.selected = true;
             durationSelect.appendChild(opt);

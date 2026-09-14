@@ -11,7 +11,7 @@ return [
     'accounts' => 'اکانت‌ها',
     'accounts_wireguard' => 'اکانت WireGuard',
     'accounts_ppp' => 'اکانت OpenVPN, L2TP',
-    'accounts_anyconnect' => 'اکانت Cisco AnyConnect',
+    'accounts_anyconnect' => 'اکانت AnyConnect',
     'accounts_v2ray' => 'اکانت V2Ray',
     'account_groups' => 'انواع اکانت',
     'main_menu' => 'منوی اصلی',

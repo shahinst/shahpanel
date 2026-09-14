@@ -4,6 +4,8 @@
     $defaultRenewalMode = ($account->status === AccountStatus::Exhausted || $account->isQuotaExhausted())
         ? 'add_volume'
         : 'same';
+
+    $renewCurrency = $account->package?->moneyCurrency() ?? \App\Enums\MoneyCurrency::default();
 @endphp
 
 @extends('layouts.panel')
@@ -93,16 +95,16 @@
                 <label>
                     <input type="radio" name="package_duration_id" value="{{ $duration->id }}" @checked((int) old('package_duration_id', $account->package_duration_id) === (int) $duration->id) required>
                     {{ $duration->displayLabel() }} —
-                    <strong class="renew-duration-price" data-duration-id="{{ $duration->id }}">{{ format_toman($duration->display_price) }}</strong>
+                    <strong class="renew-duration-price" data-duration-id="{{ $duration->id }}">{{ format_money($duration->display_price, $renewCurrency) }}</strong>
                     @if (is_array($quote) && ($quote['is_per_gb'] ?? false))
                         <span class="text-muted small renew-duration-formula" data-duration-id="{{ $duration->id }}">
                             ({{ __('accounts.renew_price_formula', [
-                                'unit' => format_toman($quote['unit_price']),
+                                'unit' => format_money($quote['unit_price'], $renewCurrency),
                                 'gb' => persian_digits($quote['data_gb'] ?? '1'),
                             ]) }})
                         </span>
                     @elseif (is_array($quote))
-                        <span class="text-muted small renew-duration-formula" data-duration-id="{{ $duration->id }}">({{ __('accounts.renew_price_fixed_once', ['unit' => format_toman($quote['unit_price'])]) }})</span>
+                        <span class="text-muted small renew-duration-formula" data-duration-id="{{ $duration->id }}">({{ __('accounts.renew_price_fixed_once', ['unit' => format_money($quote['unit_price'], $renewCurrency)]) }})</span>
                     @endif
                 </label>
             </div>
@@ -148,6 +150,12 @@
     const tomanPerGb = @json(__('packages.toman_per_gb'));
     const priceFormulaTpl = @json(__('accounts.renew_price_formula', ['unit' => ':unit', 'gb' => ':gb']));
     const fixedOnceTpl = @json(__('accounts.renew_price_fixed_once', ['unit' => ':unit']));
+    let currencyMeta = {
+        symbol: @json($renewCurrency->symbol()),
+        label: @json($renewCurrency->label()),
+        decimals: @json($renewCurrency->displayDecimals()),
+        code: @json($renewCurrency->value),
+    };
 
     const modeInputs = form.querySelectorAll('[name="renewal_mode"]');
     const gbGroup = document.getElementById('renew-upgrade-gb-group');
@@ -173,22 +181,22 @@
         return checked ? checked.value : 'same';
     }
 
-    // The renew quote carries the package currency; fall back to Toman only if a very
-    // old cached response has no currency in it.
     function formatMoney(value, meta) {
-        meta = meta || lastQuote || {};
-        const decimals = Number.isFinite(meta.currency_decimals) ? meta.currency_decimals : 0;
-        const suffix = meta.currency_symbol || meta.currency_label || 'تومان';
-
-        return Number(value).toLocaleString('fa-IR', {
+        const m = meta || currencyMeta || {};
+        const decimals = Number.isFinite(Number(m.decimals)) ? Number(m.decimals) : 0;
+        const symbol = m.symbol || m.label || 'تومان';
+        const amount = Number(value);
+        if (!Number.isFinite(amount)) {
+            return '—';
+        }
+        return amount.toLocaleString('fa-IR', {
             minimumFractionDigits: decimals,
             maximumFractionDigits: decimals,
-        }) + ' ' + suffix;
+        }) + ' ' + symbol;
     }
 
-    // Kept so every existing call site becomes currency-aware without being touched.
     function formatToman(value) {
-        return formatMoney(value, lastQuote);
+        return formatMoney(value, currencyMeta);
     }
 
     function toggleUpgradeGb() {
@@ -227,35 +235,41 @@
         const durationId = selectedDurationId();
         const priceEl = form.querySelector('.renew-duration-price[data-duration-id="' + durationId + '"]');
         const formulaEl = form.querySelector('.renew-duration-formula[data-duration-id="' + durationId + '"]');
-        const currencySymbol = data.currency_symbol || 'تومان';
         if (priceEl) {
-            priceEl.textContent = formatMoney(data.charged_total, data);
+            priceEl.textContent = formatToman(data.charged_total);
         }
         if (formulaEl && data.is_per_gb && data.data_gb && data.unit_price) {
             formulaEl.textContent = '(' + priceFormulaTpl
-                .replace(':unit', Number(data.unit_price).toLocaleString('fa-IR') + ' ' + currencySymbol)
+                .replace(':unit', formatMoney(data.unit_price))
                 .replace(':gb', Number(data.data_gb).toLocaleString('fa-IR')) + ')';
         } else if (formulaEl && data.unit_price) {
             formulaEl.textContent = '(' + fixedOnceTpl
-                .replace(':unit', Number(data.unit_price).toLocaleString('fa-IR') + ' ' + currencySymbol) + ')';
+                .replace(':unit', formatMoney(data.unit_price)) + ')';
         }
     }
 
     function renderPreview(data) {
         if (!pricingBox) return;
         lastQuote = data;
+        if (data.currency_symbol || data.currency) {
+            currencyMeta = {
+                symbol: data.currency_symbol || currencyMeta.symbol,
+                label: data.currency_label || currencyMeta.label,
+                decimals: Number.isFinite(Number(data.currency_decimals)) ? Number(data.currency_decimals) : currencyMeta.decimals,
+                code: data.currency || currencyMeta.code,
+            };
+        }
         pricingBox.hidden = false;
         if (pricingError) pricingError.hidden = true;
 
-        let wholesaleText = formatMoney(data.wholesale_total, data);
+        let wholesaleText = formatToman(data.wholesale_total);
         if (data.is_per_gb && data.data_gb && data.unit_price) {
             wholesaleText = Number(data.data_gb).toLocaleString('fa-IR') + ' ' + gbUnit + ' × '
-                + Number(data.unit_price).toLocaleString('fa-IR') + ' '
-                + (data.currency_symbol || 'تومان') + ' / ' + gbUnit + ' = '
+                + formatMoney(data.unit_price) + ' = '
                 + wholesaleText;
         }
         if (pricingWholesale) pricingWholesale.textContent = wholesaleText;
-        if (pricingFinal) pricingFinal.textContent = formatMoney(data.charged_total, data);
+        if (pricingFinal) pricingFinal.textContent = formatToman(data.charged_total);
 
         if (pricingDiscount) {
             pricingDiscount.hidden = true;

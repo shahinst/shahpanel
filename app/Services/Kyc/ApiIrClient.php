@@ -20,19 +20,24 @@ final class ApiIrClient
     }
 
     /**
-     * Shahkar: confirms that the mobile number belongs to the given national ID.
-     *
-     * Trust level 1 (sw1) endpoint — deliberately the only identity call we make,
-     * so the panel never triggers api.ir's "access level 2" rejection.
-     *
      * @return array{success: bool, code: int|string|null, message: ?string, data: mixed}
      */
-    public function shahkarMatch(string $nationalCode, string $mobile): array
+    public function shahkar(string $nationalCode, string $mobile): array
     {
         return $this->post('api/sw1/Shahkar', [
             'nationalCode' => $nationalCode,
             'mobile' => $mobile,
-            'isCompany' => false,
+        ]);
+    }
+
+    /**
+     * @return array{success: bool, code: int|string|null, message: ?string, data: mixed}
+     */
+    public function personInfo(string $nationalCode, string $birthDate): array
+    {
+        return $this->post('api/sw1/PersonInfo', [
+            'nationalCode' => $nationalCode,
+            'birthDate' => $birthDate,
         ]);
     }
 

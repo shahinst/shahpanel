@@ -385,8 +385,8 @@ class PackageController extends Controller
 
         if ($hasOcserv) {
             $ocservRules = $request->validate([
-                'ocserv_group' => ['nullable', 'string', 'max:128'],
                 'ocserv_max_sessions' => ['nullable', 'integer', 'min:0', 'max:1000'],
+                'ocserv_group' => ['nullable', 'string', 'max:128'],
             ]);
             $validated = array_merge($validated, $ocservRules);
 
@@ -444,10 +444,10 @@ class PackageController extends Controller
             'cisco_simultaneous_logins' => $hasCisco && isset($validated['cisco_simultaneous_logins']) && $validated['cisco_simultaneous_logins'] !== null && $validated['cisco_simultaneous_logins'] !== ''
                 ? (int) $validated['cisco_simultaneous_logins']
                 : null,
-            'ocserv_group' => $hasOcserv ? ($validated['ocserv_group'] ?? null) : null,
             'ocserv_max_sessions' => $hasOcserv && isset($validated['ocserv_max_sessions']) && $validated['ocserv_max_sessions'] !== null && $validated['ocserv_max_sessions'] !== ''
                 ? (int) $validated['ocserv_max_sessions']
                 : null,
+            'ocserv_group' => $hasOcserv ? ($validated['ocserv_group'] ?? null) : null,
             'mikrotik_profile_keys' => ($hasMikrotik && $serviceTypeEnum->isMikrotik())
                 ? array_values(array_unique(array_map('strval', $validated['mikrotik_profile_keys'])))
                 : null,

@@ -16,8 +16,8 @@
             @forelse ($transactions as $transaction)
                 <tr>
                     <td>{{ $transaction->type->value }}</td>
-                    <td>{{ format_toman($transaction->amount) }}</td>
-                    <td>{{ format_toman($transaction->balance_after) }}</td>
+                    <td>{{ format_money($transaction->amount, $transaction->currency) }}</td>
+                    <td>{{ format_money($transaction->balance_after, $transaction->currency) }}</td>
                     <td>{{ jalali_date($transaction->created_at) }}</td>
                 </tr>
             @empty

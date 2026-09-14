@@ -36,15 +36,13 @@ class Server extends Model
         'cisco_verify_ssl',
         'cisco_write_memory',
         'cisco_simultaneous_logins',
-        'ocserv_api_port',
-        'ocserv_vpn_hostname',
+        'ocserv_vpn_address',
+        'ocserv_default_max_sessions',
         'ocserv_group',
-        'ocserv_max_sessions',
         'ocserv_verify_ssl',
         'port',
         'ssh_port',
         'web_base_path',
-        'sanaei_verify_ssl',
         'username_enc',
         'password_enc',
         'api_token_enc',
@@ -101,12 +99,10 @@ class Server extends Model
             'is_hub' => 'boolean',
             'api_ssl' => 'boolean',
             'cisco_verify_ssl' => 'boolean',
-            'sanaei_verify_ssl' => 'boolean',
             'cisco_write_memory' => 'boolean',
             'cisco_simultaneous_logins' => 'integer',
+            'ocserv_default_max_sessions' => 'integer',
             'ocserv_verify_ssl' => 'boolean',
-            'ocserv_api_port' => 'integer',
-            'ocserv_max_sessions' => 'integer',
             'show_in_account_filters' => 'boolean',
             'show_on_dashboard' => 'boolean',
             'last_health_check_at' => 'datetime',
@@ -384,6 +380,11 @@ class Server extends Model
     public function isOcserv(): bool
     {
         return $this->type === ServerType::Ocserv;
+    }
+
+    public function isAnyconnectFamily(): bool
+    {
+        return $this->isCiscoAnyconnect() || $this->isOcserv();
     }
 
     public function hasStoredRemnawaveApiToken(): bool

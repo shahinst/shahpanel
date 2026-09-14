@@ -23,7 +23,10 @@ class AccountKycVerification extends Model
         'birth_date',
         'mobile',
         'mobile_enc',
-        'mobile_last4',
+        'mobile_masked',
+        'card_number',
+        'card_number_enc',
+        'card_number_last4',
         'document_disk',
         'document_path',
         'document_path_enc',
@@ -104,11 +107,46 @@ class AccountKycVerification extends Model
         }
     }
 
-    public function setMobileAttribute(string $value): void
+    public function setCardNumberAttribute(?string $value): void
     {
+        if ($value === null || trim($value) === '') {
+            $this->attributes['card_number_enc'] = null;
+            $this->attributes['card_number_last4'] = null;
+
+            return;
+        }
+
+        $normalized = \App\Services\Kyc\IranIdentityValidator::normalizeCardNumber($value);
+        $this->attributes['card_number_enc'] = Crypt::encryptString($normalized);
+        $this->attributes['card_number_last4'] = substr($normalized, -4);
+    }
+
+    public function getCardNumberAttribute(): ?string
+    {
+        $enc = $this->attributes['card_number_enc'] ?? null;
+        if (! $enc) {
+            return null;
+        }
+
+        try {
+            return Crypt::decryptString($enc);
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    public function setMobileAttribute(?string $value): void
+    {
+        if ($value === null || trim($value) === '') {
+            $this->attributes['mobile_enc'] = null;
+            $this->attributes['mobile_masked'] = null;
+
+            return;
+        }
+
         $normalized = \App\Services\Kyc\IranIdentityValidator::normalizeMobile($value);
         $this->attributes['mobile_enc'] = Crypt::encryptString($normalized);
-        $this->attributes['mobile_last4'] = substr($normalized, -4);
+        $this->attributes['mobile_masked'] = \App\Services\Kyc\IranIdentityValidator::maskMobile($normalized);
     }
 
     public function getMobileAttribute(): ?string
@@ -123,6 +161,12 @@ class AccountKycVerification extends Model
         } catch (\Throwable) {
             return null;
         }
+    }
+
+    public function maskedMobile(): string
+    {
+        return $this->mobile_masked
+            ?: \App\Services\Kyc\IranIdentityValidator::maskMobile((string) $this->mobile);
     }
 
     public function setDocumentPathAttribute(?string $path): void
@@ -181,16 +225,6 @@ class AccountKycVerification extends Model
         }
 
         return substr($code, 0, 3).'****'.substr($code, -3);
-    }
-
-    public function maskedMobile(): string
-    {
-        $mobile = $this->mobile ?? '';
-        if (strlen($mobile) < 7) {
-            return '***********';
-        }
-
-        return substr($mobile, 0, 4).'****'.substr($mobile, -3);
     }
 
     public function fullName(): string

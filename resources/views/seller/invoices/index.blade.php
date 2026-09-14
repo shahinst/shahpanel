@@ -16,7 +16,7 @@
             @forelse ($invoices as $invoice)
                 <tr>
                     <td>{{ $invoice->invoice_number }}</td>
-                    <td>{{ format_toman($invoice->total) }}</td>
+                    <td>{{ format_money($invoice->total, $invoice->currency) }}</td>
                     <td>{{ $invoice->status->value }}</td>
                     <td><a href="{{ route('seller.invoices.show', $invoice) }}" class="btn btn-sm btn-primary">{{ __('app.view') }}</a></td>
                 </tr>

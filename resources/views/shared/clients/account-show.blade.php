@@ -244,10 +244,12 @@
                                     <th scope="row" class="text-muted" style="width: 200px;">{{ __('accounts.anyconnect_server_address') }}</th>
                                     <td dir="ltr"><code class="user-select-all">{{ $ac['server_host'] ?? '—' }}</code></td>
                                 </tr>
+                                @if (($ac['show_port'] ?? true) && ! empty($ac['port']))
                                 <tr>
                                     <th scope="row" class="text-muted">{{ __('accounts.anyconnect_port') }}</th>
-                                    <td dir="ltr"><code class="user-select-all">{{ $ac['port'] ?? 443 }}</code></td>
+                                    <td dir="ltr"><code class="user-select-all">{{ $ac['port'] }}</code></td>
                                 </tr>
+                                @endif
                                 <tr>
                                     <th scope="row" class="text-muted">{{ __('accounts.service_username') }}</th>
                                     <td dir="ltr"><code class="user-select-all">{{ $ac['username'] ?? $account->remote_username }}</code></td>
@@ -379,14 +381,14 @@
                 @if ($purchaseInvoice)
                     <div class="border rounded p-2 mb-2">
                         <div class="small text-muted">{{ __('clients.tx_purchase') }}</div>
-                        <div class="fw-semibold">{{ format_toman($purchaseInvoice->total) }}</div>
+                        <div class="fw-semibold">{{ format_money($purchaseInvoice->total, $purchaseInvoice->currency) }}</div>
                         <div class="small text-muted">{{ jalali_date($purchaseInvoice->issued_at, 'Y/m/d H:i') }}</div>
                     </div>
                 @endif
                 @forelse ($renewalInvoices as $invoice)
                     <div class="border rounded p-2 mb-2">
                         <div class="small text-muted">{{ __('clients.tx_renewal') }}</div>
-                        <div class="fw-semibold">{{ format_toman($invoice->total) }}</div>
+                        <div class="fw-semibold">{{ format_money($invoice->total, $invoice->currency) }}</div>
                         <div class="small text-muted">{{ jalali_date($invoice->issued_at, 'Y/m/d H:i') }}</div>
                     </div>
                 @empty
@@ -408,7 +410,7 @@
                                 <div class="text-muted small">{{ jalali_date($tx->created_at, 'Y/m/d H:i') }}</div>
                             </div>
                             <div class="fw-semibold @if((float)$tx->amount < 0) text-danger @else text-success @endif">
-                                {{ format_toman($tx->amount) }}
+                                {{ format_money($tx->amount, $tx->currency ?? null) }}
                             </div>
                         </div>
                     @endforeach

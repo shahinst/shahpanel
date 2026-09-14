@@ -123,21 +123,24 @@ class AccountRefundService
         // periods (e.g. the original purchase of a renewed account) — an over-refund.
         $ledger = $this->purchaseLedgerForAccount((int) $account->id, (int) $invoice->id);
         $ownerRefundAmount = $this->ownerRefundPortion($owner, $ledger, $refundRatio);
-        $ledgerCurrency = $this->resolveLedgerCurrency($ledger->first(), $account, $invoice);
+
+        if ($ledger->isEmpty()) {
+            $ownerRefundAmount = $refundAmount;
+        }
 
         try {
             DB::transaction(function () use (
                 $account,
                 $performedBy,
                 $owner,
+                $invoice,
                 $refundAmount,
                 $ownerRefundAmount,
                 $refundRatio,
                 $usedAmount,
                 $hoursUsed,
                 $totalHours,
-                $ledger,
-                $ledgerCurrency
+                $ledger
             ): void {
                 $this->financialPlanService->restoreForAccount((int) $account->id, $refundRatio);
 
@@ -147,56 +150,67 @@ class AccountRefundService
                     'related_account_id' => $account->id,
                     'description' => 'Account refund (pro-rated)',
                     'source_user_id' => $owner->id,
-                    // Without this, WalletService::applyMovement() normalizes a missing
-                    // currency to the default (IRT) and a TRY purchase is refunded into
-                    // the Toman wallet.
-                    'currency' => $ledgerCurrency->value,
                 ];
 
-                foreach ($ledger as $transaction) {
-                    $portion = bcmul(money_string($transaction->amount), $refundRatio, 2);
+                if ($ledger->isEmpty()) {
+                    // Invoice exists but purchase ledger was never written (e.g. accidental free create).
+                    // Still return the unused portion to the owner in the invoice currency.
+                    $currency = $this->resolveLedgerCurrency(null, $account, $invoice);
+                    $this->walletService->credit($owner, $refundAmount, TransactionType::Refund, array_merge($context, [
+                        'currency' => $currency,
+                        'description' => self::DESC_BUYER_RETURNED,
+                        'related_invoice_id' => $invoice->id,
+                    ]));
+                } else {
+                    foreach ($ledger as $transaction) {
+                        $portion = bcmul(money_string($transaction->amount), $refundRatio, 2);
 
-                    if (bccomp($portion, '0', 2) <= 0) {
-                        continue;
-                    }
+                        if (bccomp($portion, '0', 2) <= 0) {
+                            continue;
+                        }
 
-                    $user = User::query()->find($transaction->user_id);
+                        $user = User::query()->find($transaction->user_id);
 
-                    if ($user === null) {
-                        continue;
-                    }
+                        if ($user === null) {
+                            continue;
+                        }
 
-                    $type = $this->resolveTransactionType($transaction);
+                        $type = $this->resolveTransactionType($transaction);
 
-                    if ($type === null) {
-                        continue;
-                    }
+                        if ($type === null) {
+                            continue;
+                        }
 
-                    if (in_array($type, [TransactionType::Purchase, TransactionType::Renewal], true)) {
-                        // Money the buyer (seller/agent) paid is returned to their wallet.
-                        $this->walletService->credit($user, $portion, TransactionType::Refund, array_merge($context, [
-                            'description' => self::DESC_BUYER_RETURNED,
-                        ]));
-                    } elseif (in_array($type, [TransactionType::Margin, TransactionType::Revenue, TransactionType::Commission], true)) {
-                        // Commission/revenue the upline (agent) and admin earned at purchase
-                        // is clawed back so a seller refund cannot leave the system out of pocket.
-                        // allowNegative keeps the ledger balanced even if the earner already spent it.
-                        $this->walletService->debit($user, $portion, TransactionType::Refund, array_merge($context, [
-                            'description' => $type === TransactionType::Margin || $type === TransactionType::Commission
-                                ? self::DESC_COMMISSION_REVERSED
-                                : self::DESC_REVENUE_REVERSED,
-                        ]), allowNegative: true);
+                        $currency = $this->resolveLedgerCurrency($transaction, $account, $invoice);
+                        $movementContext = array_merge($context, ['currency' => $currency]);
 
-                        $balanceAfter = $this->walletService->getOrCreateWallet($user, $ledgerCurrency)->fresh()->balance;
+                        if (in_array($type, [TransactionType::Purchase, TransactionType::Renewal], true)) {
+                            // Money the buyer (seller/agent) paid is returned to their wallet.
+                            $this->walletService->credit($user, $portion, TransactionType::Refund, array_merge($movementContext, [
+                                'description' => self::DESC_BUYER_RETURNED,
+                            ]));
+                        } elseif (in_array($type, [TransactionType::Margin, TransactionType::Revenue, TransactionType::Commission], true)) {
+                            // Commission/revenue the upline (agent) and admin earned at purchase
+                            // is clawed back so a seller refund cannot leave the system out of pocket.
+                            // allowNegative keeps the ledger balanced even if the earner already spent it.
+                            $this->walletService->debit($user, $portion, TransactionType::Refund, array_merge($movementContext, [
+                                'description' => $type === TransactionType::Margin || $type === TransactionType::Commission
+                                    ? self::DESC_COMMISSION_REVERSED
+                                    : self::DESC_REVENUE_REVERSED,
+                            ]), allowNegative: true);
 
-                        if (bccomp((string) $balanceAfter, '0', 2) < 0) {
-                            Log::warning('Refund commission clawback drove wallet negative', [
-                                'account_id' => $account->id,
-                                'user_id' => $user->id,
-                                'role' => $user->role->value,
-                                'clawback' => $portion,
-                                'balance_after' => $balanceAfter,
-                            ]);
+                            $balanceAfter = $this->walletService->getOrCreateWallet($user, $currency)->fresh()->balance;
+
+                            if (bccomp((string) $balanceAfter, '0', 2) < 0) {
+                                Log::warning('Refund commission clawback drove wallet negative', [
+                                    'account_id' => $account->id,
+                                    'user_id' => $user->id,
+                                    'role' => $user->role->value,
+                                    'currency' => $currency,
+                                    'clawback' => $portion,
+                                    'balance_after' => $balanceAfter,
+                                ]);
+                            }
                         }
                     }
                 }
@@ -229,31 +243,7 @@ class AccountRefundService
             'days_used' => round($hoursUsed / 24, 2),
             'total_days' => round($totalHours / 24, 2),
             'owner' => $owner,
-            'currency' => $ledgerCurrency->value,
         ];
-    }
-
-    /**
-     * Currency the money actually moved in.
-     *
-     * The purchase ledger is the most reliable source: those rows were written with the
-     * package currency at the time of sale. The package is the fallback for an account
-     * whose ledger is empty (an admin-created free account wrote no transaction at all),
-     * and the invoice is the last resort. Never guess the panel default — doing so is
-     * what refunded TRY purchases into the Toman wallet.
-     */
-    protected function resolveLedgerCurrency(
-        ?Transaction $transaction,
-        ?Account $account,
-        ?Invoice $invoice,
-    ): \App\Enums\MoneyCurrency {
-        foreach ([$transaction?->currency, $account?->package?->moneyCurrency()?->value, $invoice?->currency] as $candidate) {
-            if (is_string($candidate) && $candidate !== '') {
-                return \App\Enums\MoneyCurrency::normalize($candidate);
-            }
-        }
-
-        return \App\Enums\MoneyCurrency::default();
     }
 
     /**
@@ -299,8 +289,6 @@ class AccountRefundService
             }
         }
 
-        $ledgerCurrency = $this->resolveLedgerCurrency($ledger->first(), $account, null);
-
         foreach ($buyerCharges as $userId => $amount) {
             $user = User::query()->find($userId);
 
@@ -308,9 +296,13 @@ class AccountRefundService
                 continue;
             }
 
-            // Check the balance of the wallet that will actually be debited below,
-            // not the Toman one.
-            $this->walletService->assertSufficientBalance($user, $amount, $ledgerCurrency);
+            $sample = $ledger->first(
+                static fn (Transaction $tx): bool => (int) $tx->user_id === $userId
+                    && (string) $tx->description === self::DESC_BUYER_RETURNED
+            );
+            $currency = $this->resolveLedgerCurrency($sample, $account);
+
+            $this->walletService->assertSufficientBalance($user, $amount, $currency);
         }
 
         if (bccomp($ownerRefundAmount, '0', 2) <= 0) {
@@ -325,8 +317,7 @@ class AccountRefundService
             $owner,
             $ledger,
             $ownerRefundAmount,
-            $refundRatio,
-            $ledgerCurrency
+            $refundRatio
         ): void {
             $this->financialPlanService->reapplyForAccount((int) $account->id, $refundRatio);
 
@@ -334,7 +325,6 @@ class AccountRefundService
                 'related_account_id' => $account->id,
                 'description' => 'Account reactivation after refund',
                 'source_user_id' => $owner->id,
-                'currency' => $ledgerCurrency->value,
             ];
 
             foreach ($ledger as $transaction) {
@@ -351,17 +341,19 @@ class AccountRefundService
                 }
 
                 $description = (string) $transaction->description;
+                $currency = $this->resolveLedgerCurrency($transaction, $account);
+                $movementContext = array_merge($context, ['currency' => $currency]);
 
                 if ($description === self::DESC_BUYER_RETURNED) {
-                    $this->walletService->debit($user, $amount, TransactionType::Reactivation, array_merge($context, [
+                    $this->walletService->debit($user, $amount, TransactionType::Reactivation, array_merge($movementContext, [
                         'description' => self::DESC_BUYER_RECHARGED,
                     ]));
                 } elseif ($description === self::DESC_COMMISSION_REVERSED) {
-                    $this->walletService->credit($user, $amount, TransactionType::Reactivation, array_merge($context, [
+                    $this->walletService->credit($user, $amount, TransactionType::Reactivation, array_merge($movementContext, [
                         'description' => self::DESC_COMMISSION_RESTORED,
                     ]));
                 } elseif ($description === self::DESC_REVENUE_REVERSED) {
-                    $this->walletService->credit($user, $amount, TransactionType::Reactivation, array_merge($context, [
+                    $this->walletService->credit($user, $amount, TransactionType::Reactivation, array_merge($movementContext, [
                         'description' => self::DESC_REVENUE_RESTORED,
                     ]));
                 }
@@ -394,7 +386,6 @@ class AccountRefundService
         return [
             'owner_refund_amount' => $ownerRefundAmount,
             'owner' => $owner,
-            'currency' => $ledgerCurrency->value,
         ];
     }
 
@@ -513,5 +504,25 @@ class AccountRefundService
         }
 
         return bcdiv($refundAmount, $price, 4);
+    }
+
+    protected function resolveLedgerCurrency(?Transaction $transaction = null, ?Account $account = null, ?Invoice $invoice = null): string
+    {
+        $packageCurrency = $account?->package?->moneyCurrency()->value;
+
+        $candidates = [
+            $transaction?->currency,
+            $invoice?->currency,
+            $packageCurrency,
+        ];
+
+        foreach ($candidates as $candidate) {
+            $code = strtoupper(trim((string) $candidate));
+            if ($code !== '') {
+                return \App\Enums\MoneyCurrency::normalize($code)->value;
+            }
+        }
+
+        return \App\Enums\MoneyCurrency::default()->value;
     }
 }

@@ -122,7 +122,7 @@ class ClientAccountDetailService
             'isPanelV2ray' => $account->service_type->isPanelV2ray(),
             'isPpp' => $account->service_type->accountCategory() === AccountCategory::Ppp,
             'ppp' => $this->pppConnectionDetails($account),
-            'isAnyconnect' => $account->service_type->isCiscoAnyconnect() || $account->service_type->isOcserv(),
+            'isAnyconnect' => $account->service_type->isAnyconnectFamily(),
             'anyconnect' => $this->anyconnectConnectionDetails($account),
         ];
     }

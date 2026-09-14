@@ -211,7 +211,6 @@ class ServerController extends Controller
             'port' => ['required', 'integer', 'min:1', 'max:65535'],
             'ssh_port' => ['nullable', 'integer', 'min:1', 'max:65535'],
             'web_base_path' => ['nullable', 'string', 'max:255'],
-            'sanaei_verify_ssl' => ['sometimes', 'boolean'],
             'username' => ['nullable', 'string', 'max:255'],
             'password' => ['nullable', 'string', 'max:255'],
             'remnawave_api_key' => ['nullable', 'string', 'max:2000'],
@@ -231,10 +230,9 @@ class ServerController extends Controller
             'cisco_simultaneous_logins' => ['nullable', 'integer', 'min:0', 'max:100'],
             'cisco_verify_ssl' => ['sometimes', 'boolean'],
             'cisco_write_memory' => ['sometimes', 'boolean'],
-            'ocserv_api_port' => ['nullable', 'integer', 'min:1', 'max:65535'],
-            'ocserv_vpn_hostname' => ['nullable', 'string', 'max:255'],
+            'ocserv_vpn_address' => ['nullable', 'string', 'max:255'],
+            'ocserv_default_max_sessions' => ['nullable', 'integer', 'min:0', 'max:1000'],
             'ocserv_group' => ['nullable', 'string', 'max:128'],
-            'ocserv_max_sessions' => ['nullable', 'integer', 'min:0', 'max:1000'],
             'ocserv_verify_ssl' => ['sometimes', 'boolean'],
         ]);
 
@@ -346,49 +344,31 @@ class ServerController extends Controller
         }
 
         if ($typeValue === ServerType::Ocserv->value) {
-            $payload['ocserv_api_port'] = isset($validated['ocserv_api_port']) && $validated['ocserv_api_port'] !== null && $validated['ocserv_api_port'] !== ''
-                ? (int) $validated['ocserv_api_port']
-                : (int) config('vpnpanel.ocserv.default_port', 9443);
-            $payload['ocserv_vpn_hostname'] = isset($validated['ocserv_vpn_hostname']) && trim((string) $validated['ocserv_vpn_hostname']) !== ''
-                ? trim((string) $validated['ocserv_vpn_hostname'])
+            $payload['ocserv_vpn_address'] = isset($validated['ocserv_vpn_address']) && trim((string) $validated['ocserv_vpn_address']) !== ''
+                ? trim((string) $validated['ocserv_vpn_address'])
                 : null;
+            $payload['ocserv_default_max_sessions'] = isset($validated['ocserv_default_max_sessions'])
+                ? (int) $validated['ocserv_default_max_sessions']
+                : 1;
             $payload['ocserv_group'] = isset($validated['ocserv_group']) && trim((string) $validated['ocserv_group']) !== ''
                 ? trim((string) $validated['ocserv_group'])
                 : null;
-            $payload['ocserv_max_sessions'] = isset($validated['ocserv_max_sessions']) && $validated['ocserv_max_sessions'] !== null && $validated['ocserv_max_sessions'] !== ''
-                ? (int) $validated['ocserv_max_sessions']
-                : 1;
             $payload['ocserv_verify_ssl'] = $request->boolean('ocserv_verify_ssl', true);
 
             if (empty($validated['username']) && ($server === null || blank($server->username_enc))) {
                 throw ValidationException::withMessages([
-                    'username' => [__('servers.ocserv_api_username_required')],
+                    'username' => [__('servers.ocserv_username_required')],
                 ]);
             }
-            if (empty($validated['api_token']) && ($server === null || blank($server->api_token_enc))) {
+            if (empty($validated['password']) && ($server === null || blank($server->password_enc))) {
                 throw ValidationException::withMessages([
-                    'api_token' => [__('servers.ocserv_api_token_required')],
+                    'password' => [__('servers.ocserv_password_required')],
                 ]);
             }
-        }
-
-        // Only the panel form renders this toggle; other server types keep theirs.
-        if ($request->has('sanaei_verify_ssl')) {
-            $payload['sanaei_verify_ssl'] = $request->boolean('sanaei_verify_ssl');
         }
 
         if (! Schema::hasColumn('servers', 'ssh_port')) {
             unset($payload['ssh_port']);
-        }
-
-        if (! Schema::hasColumn('servers', 'sanaei_verify_ssl')) {
-            unset($payload['sanaei_verify_ssl']);
-        }
-
-        foreach (['ocserv_api_port', 'ocserv_vpn_hostname', 'ocserv_group', 'ocserv_max_sessions', 'ocserv_verify_ssl'] as $ocservColumn) {
-            if (array_key_exists($ocservColumn, $payload) && ! Schema::hasColumn('servers', $ocservColumn)) {
-                unset($payload[$ocservColumn]);
-            }
         }
 
         return $payload;

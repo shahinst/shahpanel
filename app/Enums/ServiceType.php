@@ -17,7 +17,7 @@ enum ServiceType: string
     case Remnawave = 'remnawave';
     /** پکیج/اکانت اختصاصی Cisco AnyConnect روی ASA */
     case CiscoAnyconnect = 'cisco_anyconnect';
-    /** پکیج/اکانت OpenConnect روی ocserv با API مدیریتی JSON */
+    /** پکیج/اکانت OpenConnect روی ocserv (همان اپ AnyConnect برای مشتری) */
     case Ocserv = 'ocserv';
 
     public function isMikrotik(): bool
@@ -57,6 +57,12 @@ enum ServiceType: string
     public function isOcserv(): bool
     {
         return $this === self::Ocserv;
+    }
+
+    /** Cisco ASA یا ocserv — دسته AnyConnect در پنل. */
+    public function isAnyconnectFamily(): bool
+    {
+        return $this->isCiscoAnyconnect() || $this->isOcserv();
     }
 
     /** V2ray-style panel account (Sanaei, PasarGuard or Remnawave). */
@@ -105,8 +111,7 @@ enum ServiceType: string
             self::Pasarguard => 'pg-',
             self::Remnawave => 'rw-',
             self::CiscoAnyconnect => 'ac-',
-            // Readable credentials handed to end users by phone/chat: VPL847291.
-            self::Ocserv => (string) config('vpnpanel.ocserv.username_prefix', 'VPL'),
+            self::Ocserv => 'VPL',
         };
     }
 }

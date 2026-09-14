@@ -9,7 +9,7 @@ enum ServerType: string
     case Pasarguard = 'pasarguard';
     case Remnawave = 'remnawave';
     case CiscoAnyconnect = 'cisco_anyconnect';
-    /** ocserv با API مدیریتی JSON — جدا از Cisco ASA. */
+    /** OpenConnect server (ocserv) — customers use AnyConnect / OpenConnect apps. */
     case Ocserv = 'ocserv';
 
     public function label(): string
@@ -19,8 +19,8 @@ enum ServerType: string
             self::Sanaei => 'Sanaei / 3x-ui',
             self::Pasarguard => 'PasarGuard',
             self::Remnawave => 'Remnawave',
-            self::CiscoAnyconnect => 'Cisco AnyConnect',
-            self::Ocserv => 'OpenConnect / ocserv',
+            self::CiscoAnyconnect => 'Cisco AnyConnect (ASA)',
+            self::Ocserv => 'OpenConnect (ocserv)',
         };
     }
 
