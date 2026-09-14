@@ -13,7 +13,6 @@ use App\Http\Controllers\Admin\FinancialPlanTemplateController as AdminFinancial
 use App\Http\Controllers\Admin\AgentFinancialPlanPurchaseController as AdminAgentFinancialPlanPurchaseController;
 use App\Http\Controllers\Admin\MaintenanceController as AdminMaintenanceController;
 use App\Http\Controllers\Admin\ModuleController as AdminModuleController;
-use App\Http\Controllers\Admin\MigrateController as AdminMigrateController;
 use App\Http\Controllers\Admin\SellerController as AdminSellerController;
 use App\Http\Controllers\Admin\ServerClientImportController as AdminServerClientImportController;
 use App\Http\Controllers\Admin\ServerOperationsController as AdminServerOperationsController;
@@ -29,11 +28,6 @@ use App\Http\Controllers\Admin\PaymentGatewayController as AdminPaymentGatewayCo
 use App\Http\Controllers\Admin\GatewayPaymentController as AdminGatewayPaymentController;
 use App\Http\Controllers\Admin\GiftAccountController as AdminGiftAccountController;
 use App\Http\Controllers\Admin\GiftRewardController as AdminGiftRewardController;
-use App\Http\Controllers\Admin\TunnelGroupController as AdminTunnelGroupController;
-use App\Http\Controllers\Admin\TunnelGroupActionController as AdminTunnelGroupActionController;
-use App\Http\Controllers\Admin\TunnelLocationController as AdminTunnelLocationController;
-use App\Http\Controllers\Admin\TunnelingMetricsController as AdminTunnelingMetricsController;
-use App\Http\Controllers\Admin\TunnelWizardController as AdminTunnelWizardController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\ClientController as AdminClientController;
 use App\Http\Controllers\Agent\ClientController as AgentClientController;
@@ -70,8 +64,6 @@ use App\Http\Controllers\Client\DashboardController as ClientDashboardController
 use App\Http\Controllers\Client\ShopController as ClientShopController;
 use App\Http\Controllers\Client\PaymentRequestController as ClientPaymentRequestController;
 use App\Http\Controllers\GatewayTopUpController;
-use App\Http\Controllers\NowPaymentsWebhookController;
-use App\Http\Controllers\ZarinpalWebhookController;
 use App\Http\Controllers\Admin\ClientPortalSettingsController as AdminClientPortalSettingsController;
 use App\Http\Controllers\Admin\SupportTicketController as AdminSupportTicketController;
 use App\Http\Controllers\Agent\ClientPortalSettingsController as AgentClientPortalSettingsController;
@@ -125,18 +117,12 @@ Route::get('/portal-icons/{filename}', [PortalIconController::class, 'show'])
     ->name('portal-icons.show');
 Route::get('/s/{slug}', [PublicStorefrontController::class, 'show'])->name('storefront.public');
 
-// Probe reports POSTed by the on-router vpnl-probe script (token-authenticated, CSRF-exempt).
-Route::post('/tunneling/report', [\App\Http\Controllers\TunnelReportController::class, 'store'])
-    ->middleware('throttle:240,1')
-    ->name('tunneling.report');
 
-Route::post('/webhooks/nowpayments', [NowPaymentsWebhookController::class, 'handle'])
-    ->middleware('throttle:120,1')
-    ->name('webhooks.nowpayments');
 
-Route::match(['get', 'post'], '/webhooks/zarinpal', [ZarinpalWebhookController::class, 'handle'])
-    ->middleware('throttle:120,1')
-    ->name('webhooks.zarinpal');
+// The payment webhooks (zarinpal, nowpayments) live in modules/payments and are
+// registered by its service provider, so they disappear when the module is
+// deactivated. Keeping a copy here would register the name twice and break
+// `route:cache`.
 
 Route::post('impersonate/leave', [ImpersonationController::class, 'leave'])
     ->middleware(['auth', 'throttle:impersonation'])
@@ -205,59 +191,6 @@ Route::prefix($adminPath)->name('admin.')->middleware($adminMiddleware)->group(f
     Route::post('servers/{server}/import-clients/preview', [AdminServerClientImportController::class, 'preview'])->name('servers.import-clients.preview');
     Route::get('servers/{server}/import-clients/assign', [AdminServerClientImportController::class, 'assign'])->name('servers.import-clients.assign');
     Route::post('servers/{server}/import-clients', [AdminServerClientImportController::class, 'store'])->name('servers.import-clients.store');
-    Route::prefix('tunneling')->name('tunneling.')->group(function (): void {
-        Route::get('/', [AdminTunnelGroupController::class, 'index'])->name('index');
-
-        Route::prefix('wizard')->name('wizard.')->group(function (): void {
-            Route::get('step1', [AdminTunnelWizardController::class, 'step1'])->name('step1');
-            Route::post('step1', [AdminTunnelWizardController::class, 'step1Store'])->name('step1.store');
-            Route::get('step2', [AdminTunnelWizardController::class, 'step2'])->name('step2');
-            Route::post('step2', [AdminTunnelWizardController::class, 'step2Store'])->name('step2.store');
-            Route::get('step3', [AdminTunnelWizardController::class, 'step3'])->name('step3');
-            Route::post('step3', [AdminTunnelWizardController::class, 'step3Store'])->name('step3.store');
-            Route::get('step4', [AdminTunnelWizardController::class, 'step4'])->name('step4');
-            Route::post('step4', [AdminTunnelWizardController::class, 'step4Store'])->name('step4.store');
-            Route::get('step5', [AdminTunnelWizardController::class, 'step5'])->name('step5');
-            Route::post('finish', [AdminTunnelWizardController::class, 'finish'])->name('finish');
-            Route::post('restart', [AdminTunnelWizardController::class, 'restart'])->name('restart');
-        });
-
-        Route::get('groups/create', [AdminTunnelGroupController::class, 'create'])->name('groups.create');
-        Route::post('groups', [AdminTunnelGroupController::class, 'store'])->name('groups.store');
-        Route::get('groups/{group}', [AdminTunnelGroupController::class, 'show'])->name('groups.show');
-        Route::get('groups/{group}/edit', [AdminTunnelGroupController::class, 'edit'])->name('groups.edit');
-        Route::put('groups/{group}', [AdminTunnelGroupController::class, 'update'])->name('groups.update');
-        Route::delete('groups/{group}', [AdminTunnelGroupController::class, 'destroy'])->name('groups.destroy');
-        Route::post('groups/{group}/delete', [AdminTunnelGroupController::class, 'destroy'])->name('groups.delete');
-
-        Route::post('groups/{group}/configure-test', [AdminTunnelGroupActionController::class, 'configureAndTest'])->name('groups.configure-test');
-        Route::post('groups/{group}/wipe-routers', [AdminTunnelGroupActionController::class, 'wipeRouters'])->name('groups.wipe-routers');
-        Route::post('groups/{group}/wipe-and-apply', [AdminTunnelGroupActionController::class, 'wipeAndApply'])->name('groups.wipe-and-apply');
-        Route::post('groups/{group}/reverse', [AdminTunnelGroupActionController::class, 'reverse'])->name('groups.reverse');
-        Route::post('groups/{group}/promote-kind', [AdminTunnelGroupActionController::class, 'promoteKind'])->name('groups.promote-kind');
-        Route::post('groups/{group}/reconcile', [AdminTunnelGroupActionController::class, 'reconcile'])->name('groups.reconcile');
-        Route::post('groups/{group}/probe-mtu', [AdminTunnelGroupActionController::class, 'probeMtu'])->name('groups.probe-mtu');
-        Route::post('groups/{group}/traffic-test', [AdminTunnelGroupActionController::class, 'trafficTest'])->name('groups.traffic-test');
-        Route::post('groups/{group}/rollback/{version}', [AdminTunnelGroupActionController::class, 'rollback'])->name('groups.rollback');
-
-        Route::post('agents/{agent}/toggle', [AdminTunnelGroupActionController::class, 'toggleAgent'])->name('agents.toggle');
-        Route::post('agents/{agent}/weight', [AdminTunnelGroupActionController::class, 'setAgentWeight'])->name('agents.weight');
-        Route::post('agents/{agent}/switch', [AdminTunnelGroupActionController::class, 'switchAgent'])->name('agents.switch');
-
-        Route::post('servers/{server}/install-script', [AdminTunnelGroupActionController::class, 'installScript'])->name('servers.install-script');
-
-        Route::post('interfaces', [AdminTunnelGroupActionController::class, 'storeInterface'])->name('interfaces.store');
-        Route::delete('interfaces/{interface}', [AdminTunnelGroupActionController::class, 'destroyInterface'])->name('interfaces.destroy');
-
-        Route::get('locations', [AdminTunnelLocationController::class, 'index'])->name('locations.index');
-        Route::post('locations', [AdminTunnelLocationController::class, 'store'])->name('locations.store');
-        Route::put('locations/{location}', [AdminTunnelLocationController::class, 'update'])->name('locations.update');
-        Route::delete('locations/{location}', [AdminTunnelLocationController::class, 'destroy'])->name('locations.destroy');
-
-        Route::get('groups/{group}/metrics', [AdminTunnelingMetricsController::class, 'group'])->name('groups.metrics');
-        Route::get('groups/{group}/status', [AdminTunnelingMetricsController::class, 'groupStatus'])->name('groups.status');
-        Route::get('groups/{group}/server-metrics', [AdminTunnelingMetricsController::class, 'servers'])->name('groups.server-metrics');
-    });
 
     Route::resource('package-categories', AdminPackageCategoryController::class)->except(['show']);
     Route::patch('package-categories/{package_category}/toggle-active', [AdminPackageCategoryController::class, 'toggleActive'])
@@ -380,10 +313,6 @@ Route::prefix($adminPath)->name('admin.')->middleware($adminMiddleware)->group(f
     Route::post('profile/two-factor/enable', [TwoFactorSettingsController::class, 'enable'])->name('two-factor.enable');
     Route::post('profile/two-factor/disable', [TwoFactorSettingsController::class, 'disable'])->name('two-factor.disable');
 
-    Route::get('migrate', [AdminMigrateController::class, 'index'])->name('migrate.index');
-    Route::get('migrate/logs/{migration}', [AdminMigrateController::class, 'show'])->name('migrate.show');
-    Route::post('migrate', [AdminMigrateController::class, 'store'])->name('migrate.store');
-    Route::get('migrate/entries/{entry}/qr', [AdminMigrateController::class, 'qr'])->name('migrate.entry.qr');
 
     Route::get('automation/pricing', [AdminAutomationController::class, 'pricing'])->name('automation.pricing');
     Route::put('automation/pricing', [AdminAutomationController::class, 'updatePricing'])->name('automation.pricing.update');
