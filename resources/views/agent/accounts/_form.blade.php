@@ -602,8 +602,24 @@
         return fallback;
     }
 
+    // Currency of whatever is currently being priced; refreshed from the selected
+    // package and from each preview payload, so prices never default to Toman.
+    let currencyMeta = {};
+
+    function formatMoney(value, meta) {
+        meta = meta || currencyMeta || {};
+        const decimals = Number.isFinite(meta.currency_decimals) ? meta.currency_decimals : 0;
+        const suffix = meta.currency_symbol || meta.currency_label || 'تومان';
+
+        return Number(value).toLocaleString('fa-IR', {
+            minimumFractionDigits: decimals,
+            maximumFractionDigits: decimals,
+        }) + ' ' + suffix;
+    }
+
+    // Kept so every existing call site becomes currency-aware without being touched.
     function formatToman(value) {
-        return Number(value).toLocaleString('fa-IR') + ' تومان';
+        return formatMoney(value, currencyMeta);
     }
 
     function hidePricing() {
@@ -625,12 +641,14 @@
 
     function renderPricing(data) {
         if (!pricingBox) return;
+        currencyMeta = data;
         pricingBox.hidden = false;
         if (pricingError) pricingError.hidden = true;
-        let listText = formatToman(data.wholesale_price || data.list_price);
+        const currencySymbol = data.currency_symbol || 'تومان';
+        let listText = formatMoney(data.wholesale_price || data.list_price, data);
         if (data.is_elastic && data.data_gb && data.unit_price) {
             listText = Number(data.data_gb).toLocaleString('fa-IR') + ' {{ __('packages.gb_unit') }} × '
-                + Number(data.unit_price).toLocaleString('fa-IR') + ' {{ __('packages.toman_per_gb') }} = '
+                + Number(data.unit_price).toLocaleString('fa-IR') + ' ' + currencySymbol + ' / {{ __('packages.gb_unit') }} = '
                 + listText;
         }
         pricingList.textContent = listText;
@@ -732,12 +750,15 @@
 
         if (!pkg) return;
 
+        currencyMeta = pkg;
+
         pkg.durations.forEach(function (d) {
             const opt = document.createElement('option');
             opt.value = d.id;
+            const symbol = pkg.currency_symbol || 'تومان';
             const priceLabel = pkg.is_elastic
-                ? Number(d.price).toLocaleString('fa-IR') + ' {{ __('packages.toman_per_gb') }}'
-                : Number(d.price).toLocaleString('fa-IR') + ' تومان';
+                ? Number(d.price).toLocaleString('fa-IR') + ' ' + symbol + ' / {{ __('packages.gb_unit') }}'
+                : Number(d.price).toLocaleString('fa-IR') + ' ' + symbol;
             opt.textContent = d.label + ' — ' + priceLabel + (d.is_test ? ' ({{ __('packages.test_badge') }})' : '');
             if (String(d.id) === @json(old('package_duration_id'))) opt.selected = true;
             durationSelect.appendChild(opt);

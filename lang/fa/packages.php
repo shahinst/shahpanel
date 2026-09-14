@@ -148,6 +148,7 @@ return [
     'pasarguard_fields_required' => 'برای سرور PasarGuard باید گروه و نحوهٔ انقضا را در پکیج تنظیم کنید.',
 
     'service_type_cisco_anyconnect' => 'Cisco AnyConnect',
+    'service_type_ocserv' => 'OpenConnect / ocserv',
     'service_type_remnawave' => 'پنل Remnawave',
     'remnawave_section_title' => 'تنظیمات Remnawave (squads)',
     'remnawave_help' => 'کاربران از بخش Users ساخته می‌شوند. پنل Remnawave squad پیش‌فرض خودش را اعمال می‌کند — انتخاب squad لازم نیست.',
@@ -188,4 +189,11 @@ return [
     'cisco_inherit_from_server' => 'از سرور',
     'cisco_requires_service_type' => 'برای سرور Cisco AnyConnect باید نوع سرویس Cisco AnyConnect انتخاب شود.',
     'cisco_servers_only' => 'پکیج Cisco AnyConnect فقط می‌تواند به سرورهای Cisco AnyConnect متصل شود.',
+
+    'ocserv_fields_hint' => 'این فیلدها اختیاری‌اند؛ در صورت خالی بودن از تنظیمات سرور ocserv استفاده می‌شود.',
+    'ocserv_group' => 'گروه (group)',
+    'ocserv_max_sessions' => 'نشست همزمان',
+    'ocserv_inherit_from_server' => 'از سرور',
+    'ocserv_requires_service_type' => 'برای سرور ocserv باید نوع سرویس OpenConnect / ocserv انتخاب شود.',
+    'ocserv_servers_only' => 'پکیج OpenConnect / ocserv فقط می‌تواند به سرورهای ocserv متصل شود.',
 ];

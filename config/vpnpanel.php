@@ -145,6 +145,25 @@ return [
         'write_memory_timeout_seconds' => (int) env('CISCO_ANYCONNECT_WRITE_MEMORY_TIMEOUT', 180),
     ],
 
+    'ocserv' => [
+        // The JSON management API that runs alongside ocserv, not the VPN port itself
+        // (clients still connect on 443).
+        'default_port' => (int) env('OCSERV_DEFAULT_PORT', 9443),
+        'timeout_seconds' => (int) env('OCSERV_TIMEOUT', 30),
+        'connect_timeout_seconds' => (int) env('OCSERV_CONNECT_TIMEOUT', 10),
+        // The API token and the user's VPN password travel on every call, so
+        // verification defaults to on. Opt out per server (servers.ocserv_verify_ssl)
+        // for a self-signed certificate.
+        'verify_ssl' => filter_var(env('OCSERV_VERIFY_SSL', true), FILTER_VALIDATE_BOOL),
+        'default_max_sessions' => (int) env('OCSERV_DEFAULT_MAX_SESSIONS', 1),
+        // Credentials are read out to customers over the phone, so they are built to be
+        // dictated: VPL847291 / 847291ab.
+        'username_prefix' => env('OCSERV_USERNAME_PREFIX', 'VPL'),
+        'username_digits' => (int) env('OCSERV_USERNAME_DIGITS', 6),
+        'password_digits' => (int) env('OCSERV_PASSWORD_DIGITS', 6),
+        'password_letters' => (int) env('OCSERV_PASSWORD_LETTERS', 2),
+    ],
+
     'remnawave' => [
         'default_port' => (int) env('REMNAWAVE_DEFAULT_PORT', 443),
         'api_prefix' => env('REMNAWAVE_API_PREFIX', '/api'),

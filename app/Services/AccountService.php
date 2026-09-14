@@ -39,6 +39,7 @@ class AccountService
         protected PasarguardService $pasarguardService,
         protected RemnawaveService $remnawaveService,
         protected CiscoAnyconnectService $ciscoAnyconnectService,
+        protected OcservService $ocservService,
         protected ActivityLogService $activityLogService,
         protected UserHierarchyService $userHierarchyService,
         protected GlobalDiscountService $globalDiscountService,
@@ -683,6 +684,15 @@ class AccountService
             return;
         }
 
+        if ($server->isOcserv() || ($serviceType?->isOcserv() ?? false)) {
+            $username = (string) ($snapshot->remoteUsername ?? '');
+            if ($username !== '') {
+                $this->ocservService->removeVpnUser($server, $username);
+            }
+
+            return;
+        }
+
         if ($server->isRemnawave() || ($serviceType?->isRemnawave() ?? false) || filled($snapshot->remnawaveUuid)) {
             if (filled($snapshot->remnawaveUuid) || filled($snapshot->remoteUsername)) {
                 $this->remnawaveService->removePanelUser(
@@ -741,6 +751,7 @@ class AccountService
         return filled($account->pasarguard_user_id)
             || filled($account->remnawave_uuid)
             || filled($account->cisco_asa_username)
+            || filled($account->ocserv_username)
             || filled($account->sanaei_client_uuid);
     }
 
@@ -789,6 +800,10 @@ class AccountService
 
         if ($server->isCiscoAnyconnect() || $account->service_type->isCiscoAnyconnect() || $account->cisco_asa_username) {
             return $this->pushCiscoAnyconnectAccount($account, $onlyMissing);
+        }
+
+        if ($server->isOcserv() || $account->service_type->isOcserv() || $account->ocserv_username) {
+            return $this->pushOcservAccount($account, $onlyMissing);
         }
 
         if ($server->isRemnawave() || $account->service_type->isRemnawave() || $account->remnawave_uuid) {
@@ -1422,6 +1437,10 @@ class AccountService
             return $this->generateNumericPppUsername();
         }
 
+        if ($serviceType->isOcserv()) {
+            return $this->generateOcservUsername();
+        }
+
         $prefix = $serviceType->usernamePrefix();
 
         for ($attempt = 0; $attempt < 15; $attempt++) {
@@ -1435,10 +1454,58 @@ class AccountService
         throw new \RuntimeException('تولید نام کاربری یکتا ممکن نشد. دوباره تلاش کنید.');
     }
 
+    /**
+     * OpenConnect credentials are read out to customers over the phone, so they are
+     * built to be dictated rather than to be maximally random: VPL847291.
+     */
+    protected function generateOcservUsername(): string
+    {
+        $prefix = (string) config('vpnpanel.ocserv.username_prefix', 'VPL');
+        $digits = max(4, (int) config('vpnpanel.ocserv.username_digits', 6));
+        $min = (int) str_pad('1', $digits, '0');
+        $max = (int) str_repeat('9', $digits);
+
+        for ($attempt = 0; $attempt < 30; $attempt++) {
+            $username = $prefix.random_int($min, $max);
+
+            if (! Account::query()->where('remote_username', $username)->exists()) {
+                return $username;
+            }
+        }
+
+        throw new \RuntimeException('تولید نام کاربری یکتا ممکن نشد. دوباره تلاش کنید.');
+    }
+
+    /**
+     * Digits first, then a couple of lowercase letters: 847291ab.
+     * i, l and o are excluded because they are misheard as 1 and 0 when dictated.
+     */
+    protected function generateOcservPassword(): string
+    {
+        $digitCount = max(4, (int) config('vpnpanel.ocserv.password_digits', 6));
+        $letterCount = max(0, (int) config('vpnpanel.ocserv.password_letters', 2));
+        $alphabet = 'abcdefghjkmnpqrstuvwxyz';
+
+        $password = (string) random_int(
+            (int) str_pad('1', $digitCount, '0'),
+            (int) str_repeat('9', $digitCount)
+        );
+
+        for ($i = 0; $i < $letterCount; $i++) {
+            $password .= $alphabet[random_int(0, strlen($alphabet) - 1)];
+        }
+
+        return $password;
+    }
+
     protected function generateRemotePassword(ServiceType $serviceType): string
     {
         if ($this->usesNumericPppCredentials($serviceType)) {
             return $this->generateUniqueNumericPassword();
+        }
+
+        if ($serviceType->isOcserv()) {
+            return $this->generateOcservPassword();
         }
 
         return Str::password(12);
@@ -2041,6 +2108,12 @@ class AccountService
             return;
         }
 
+        if ($server->isOcserv() || $account->service_type->isOcserv() || $account->ocserv_username) {
+            // The ocserv management API exposes traffic read-only (GET /api/traffic);
+            // there is no per-user counter reset, so quota is tracked panel-side.
+            return;
+        }
+
         if ($server->isRemnawave() || $account->service_type->isRemnawave() || $account->remnawave_uuid) {
             $uuid = $this->resolveRemnawaveUuid($account);
 
@@ -2334,6 +2407,7 @@ class AccountService
             'remnawave_uuid' => $remoteMeta['remnawave_uuid'] ?? null,
             'remnawave_subscription_url' => $remoteMeta['remnawave_subscription_url'] ?? null,
             'cisco_asa_username' => $remoteMeta['cisco_asa_username'] ?? null,
+            'ocserv_username' => $remoteMeta['ocserv_username'] ?? null,
             'client_email' => $email,
             'client_panel_password_hash' => $portalPassword,
             'portal_token' => Str::random((int) config('vpnpanel.portal_token_length', 32)),
@@ -2400,6 +2474,19 @@ class AccountService
 
             return [
                 'cisco_asa_username' => $username,
+            ];
+        }
+
+        if ($server->isOcserv() || $serviceType->isOcserv()) {
+            $this->ocservService->createVpnUser(
+                $server,
+                $package,
+                $username,
+                $password,
+            );
+
+            return [
+                'ocserv_username' => $username,
             ];
         }
 
@@ -2727,6 +2814,12 @@ class AccountService
             return;
         }
 
+        if ($server->isOcserv() || $account->service_type->isOcserv() || $account->ocserv_username) {
+            $this->renewOcservAccount($account, $forceEnable);
+
+            return;
+        }
+
         if ($server->isRemnawave() || $account->service_type->isRemnawave() || $account->remnawave_uuid) {
             $this->renewRemnawaveAccount($account, $resetTraffic, $forceEnable);
 
@@ -2777,6 +2870,12 @@ class AccountService
             return;
         }
 
+        if ($server->isOcserv() || $account->service_type->isOcserv() || $account->ocserv_username) {
+            $this->ocservService->setUserEnabled($account, false);
+
+            return;
+        }
+
         if ($server->isRemnawave() || $account->service_type->isRemnawave() || $account->remnawave_uuid) {
             $uuid = $this->resolveRemnawaveUuid($account);
             if ($uuid !== null) {
@@ -2821,6 +2920,12 @@ class AccountService
 
         if ($server->isCiscoAnyconnect() || $account->service_type->isCiscoAnyconnect() || $account->cisco_asa_username) {
             $this->ciscoAnyconnectService->setUserEnabled($account, true);
+
+            return;
+        }
+
+        if ($server->isOcserv() || $account->service_type->isOcserv() || $account->ocserv_username) {
+            $this->ocservService->setUserEnabled($account, true);
 
             return;
         }
@@ -2874,6 +2979,15 @@ class AccountService
             $username = (string) ($account->cisco_asa_username ?: $account->remote_username);
             if ($username !== '') {
                 $this->ciscoAnyconnectService->removeVpnUser($server, $username);
+            }
+
+            return;
+        }
+
+        if ($server->isOcserv() || ($serviceType?->isOcserv() ?? false) || $account->ocserv_username) {
+            $username = (string) ($account->ocserv_username ?: $account->remote_username);
+            if ($username !== '') {
+                $this->ocservService->removeVpnUser($server, $username);
             }
 
             return;
@@ -3071,6 +3185,26 @@ class AccountService
     {
         // Local ASA users have no traffic counter via REST; renew = re-enable + refresh attributes.
         $this->ciscoAnyconnectService->syncVpnUser($account, forceEnable: $forceEnable || true);
+    }
+
+    /**
+     * @return array{action: string, message: string}
+     */
+    protected function pushOcservAccount(Account $account, bool $onlyMissing = false): array
+    {
+        $this->ocservService->syncVpnUser($account, forceEnable: $account->status === AccountStatus::Active);
+
+        return [
+            'action' => 'synced',
+            'message' => 'کاربر OpenConnect روی سرور ocserv همگام شد.',
+        ];
+    }
+
+    protected function renewOcservAccount(Account $account, bool $forceEnable = false): void
+    {
+        // Quota is tracked panel-side; renewing means re-enabling the user and
+        // re-applying the session limit and group from the package.
+        $this->ocservService->syncVpnUser($account, forceEnable: $forceEnable || $account->status === AccountStatus::Active);
     }
 
 }

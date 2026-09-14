@@ -96,6 +96,7 @@ class AccountController extends Controller
             'client_user_id' => ['required_if:client_mode,existing', 'nullable', 'integer', 'exists:users,id'],
             'account_display_name' => ['required_if:client_mode,display_name', 'nullable', 'string', 'max:255'],
             'admin_custom_charge' => ['nullable', 'numeric', 'min:0'],
+            'admin_free_account' => ['sometimes', 'boolean'],
             'kyc_verification_id' => ['nullable', 'integer', 'exists:account_kyc_verifications,id'],
         ];
 
@@ -120,11 +121,7 @@ class AccountController extends Controller
             $clientData['auto_random_remote_identity'] = true;
         }
 
-        $adminCustomCharge = array_key_exists('admin_custom_charge', $validated)
-            && $validated['admin_custom_charge'] !== null
-            && $validated['admin_custom_charge'] !== ''
-            ? money_string((string) $validated['admin_custom_charge'])
-            : null;
+        $adminCustomCharge = $this->resolveAdminCustomCharge($validated);
 
         try {
             $account = $accountService->createAccount(
@@ -174,12 +171,12 @@ class AccountController extends Controller
     ): JsonResponse {
         $this->authorize('create', Account::class);
 
-        $adminCustomCharge = null;
-
-        if ($request->filled('admin_custom_charge')) {
-            $request->validate(['admin_custom_charge' => ['numeric', 'min:0']]);
-            $adminCustomCharge = money_string((string) $request->input('admin_custom_charge'));
-        }
+        // The preview must resolve the charge exactly like store() does, otherwise the
+        // admin is quoted one price and the wallet is debited another.
+        $adminCustomCharge = $this->resolveAdminCustomCharge($request->validate([
+            'admin_custom_charge' => ['nullable', 'numeric', 'min:0'],
+            'admin_free_account' => ['sometimes', 'boolean'],
+        ]));
 
         return $this->purchasePreviewResponse(
             $request,
@@ -190,6 +187,38 @@ class AccountController extends Controller
             $financialPlanService,
             $adminCustomCharge,
         );
+    }
+
+    /**
+     * Resolve the admin-only price override for a new account.
+     *
+     * An empty field, a null, or a stray "0" all mean "charge the normal wholesale
+     * price": returning null makes AccountService fall through to buyerWholesaleTotal().
+     * Treating "0" as an override is what previously made every such account free and
+     * skipped the wallet debit entirely — no transaction row was written, so the refund
+     * path later had no ledger to work from either.
+     *
+     * A free account is a deliberate act and needs the explicit admin_free_account
+     * checkbox, which returns '0.00' so the override branch runs with a zero charge.
+     * Any positive amount is a genuine custom price.
+     *
+     * @param  array<string, mixed>  $input
+     */
+    protected function resolveAdminCustomCharge(array $input): ?string
+    {
+        if (filter_var($input['admin_free_account'] ?? false, FILTER_VALIDATE_BOOL)) {
+            return '0.00';
+        }
+
+        $raw = $input['admin_custom_charge'] ?? null;
+
+        if ($raw === null || $raw === '') {
+            return null;
+        }
+
+        $charge = money_string((string) $raw);
+
+        return bccomp($charge, '0', 2) > 0 ? $charge : null;
     }
 
     public function edit(Account $account): View

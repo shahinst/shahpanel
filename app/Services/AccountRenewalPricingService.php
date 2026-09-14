@@ -118,7 +118,13 @@ class AccountRenewalPricingService
             scaleCommissionsToCharge: $override !== null,
         );
 
+        $currency = $package->moneyCurrency();
+
         return [
+            'currency' => $currency->value,
+            'currency_symbol' => $currency->symbol(),
+            'currency_label' => $currency->label(),
+            'currency_decimals' => $currency->displayDecimals(),
             'is_per_gb' => $isPerGb,
             'is_elastic' => $isPerGb,
             'data_gb' => $gb !== null ? number_format($gb, 2, '.', '') : null,

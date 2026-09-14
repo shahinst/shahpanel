@@ -13,6 +13,7 @@ class ServerConnectionService
         protected PasarguardService $pasarguardService,
         protected RemnawaveService $remnawaveService,
         protected CiscoAnyconnectService $ciscoAnyconnectService,
+        protected OcservService $ocservService,
     ) {}
 
     /**
@@ -25,6 +26,7 @@ class ServerConnectionService
             $server->isPasarguard() => $this->pasarguardService->testConnectionDetails($server),
             $server->isRemnawave() => $this->remnawaveService->testConnectionDetails($server),
             $server->isCiscoAnyconnect() => $this->ciscoAnyconnectService->testConnectionDetails($server),
+            $server->isOcserv() => $this->ocservService->testConnectionDetails($server),
             $server->isSanaei() => $this->sanaeiService->testConnectionDetails($server),
             default => [
                 'ok' => false,

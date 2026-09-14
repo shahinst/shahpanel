@@ -24,8 +24,11 @@
         firstName: document.getElementById(prefix + '-kyc-first-name'),
         lastName: document.getElementById(prefix + '-kyc-last-name'),
         nationalCode: document.getElementById(prefix + '-kyc-national-code'),
+        birthYear: document.getElementById(prefix + '-kyc-birth-year'),
+        birthMonth: document.getElementById(prefix + '-kyc-birth-month'),
+        birthDay: document.getElementById(prefix + '-kyc-birth-day'),
         birthDate: document.getElementById(prefix + '-kyc-birth-date'),
-        cardNumber: document.getElementById(prefix + '-kyc-card-number'),
+        mobile: document.getElementById(prefix + '-kyc-mobile'),
         document: document.getElementById(prefix + '-kyc-document'),
         submitBtn: document.getElementById(prefix + '-kyc-submit-btn'),
         verifyBtn: document.getElementById(prefix + '-kyc-verify-btn'),
@@ -41,6 +44,69 @@
     let currentVerification = null;
     let kycRequired = false;
     let optionsByIdRef = null;
+
+    const dayPlaceholder = @json(__('kyc.birth_day'));
+
+    function jalaliIsLeapYear(year) {
+        const mod = (((year - 474) % 2820) + 2820) % 2820;
+        return ((mod + 474 + 38) * 682) % 2816 < 682;
+    }
+
+    function jalaliDaysInMonth(year, month) {
+        if (month >= 1 && month <= 6) return 31;
+        if (month >= 7 && month <= 11) return 30;
+        if (month === 12) return jalaliIsLeapYear(year) ? 30 : 29;
+        return 31;
+    }
+
+    function composeBirthDate() {
+        const year = els.birthYear ? els.birthYear.value : '';
+        const month = els.birthMonth ? els.birthMonth.value : '';
+        const day = els.birthDay ? els.birthDay.value : '';
+        const value = (year && month && day)
+            ? year + '/' + String(month).padStart(2, '0') + '/' + String(day).padStart(2, '0')
+            : '';
+        if (els.birthDate) els.birthDate.value = value;
+        return value;
+    }
+
+    function refreshDayOptions() {
+        if (!els.birthDay) return;
+        const year = parseInt((els.birthYear && els.birthYear.value) || '0', 10) || 0;
+        const month = parseInt((els.birthMonth && els.birthMonth.value) || '0', 10) || 0;
+        const maxDay = jalaliDaysInMonth(year, month);
+        const previous = els.birthDay.value;
+
+        els.birthDay.innerHTML = '';
+        const blank = document.createElement('option');
+        blank.value = '';
+        blank.textContent = dayPlaceholder;
+        els.birthDay.appendChild(blank);
+        for (let day = 1; day <= maxDay; day++) {
+            const option = document.createElement('option');
+            option.value = String(day);
+            option.textContent = String(day);
+            els.birthDay.appendChild(option);
+        }
+        if (previous && parseInt(previous, 10) <= maxDay) {
+            els.birthDay.value = previous;
+        }
+
+        composeBirthDate();
+    }
+
+    function normalizeMobileDigits(value) {
+        return String(value || '')
+            .replace(/[۰-۹]/g, function (d) { return String(d.charCodeAt(0) - 0x06F0); })
+            .replace(/[٠-٩]/g, function (d) { return String(d.charCodeAt(0) - 0x0660); })
+            .replace(/\D+/g, '');
+    }
+
+    [els.birthYear, els.birthMonth].forEach(function (el) {
+        if (el) el.addEventListener('change', refreshDayOptions);
+    });
+    if (els.birthDay) els.birthDay.addEventListener('change', composeBirthDate);
+    refreshDayOptions();
 
     function setError(msg) {
         if (!els.error) return;
@@ -102,9 +168,13 @@
         currentVerification = null;
         if (els.verificationId) els.verificationId.value = '';
         if (!keepFields) {
-            [els.firstName, els.lastName, els.nationalCode, els.birthDate, els.cardNumber].forEach(function (el) {
+            [els.firstName, els.lastName, els.nationalCode, els.mobile].forEach(function (el) {
                 if (el) el.value = '';
             });
+            [els.birthYear, els.birthMonth, els.birthDay].forEach(function (el) {
+                if (el) el.value = '';
+            });
+            refreshDayOptions();
             if (els.document) els.document.value = '';
         }
         setError('');
@@ -152,12 +222,24 @@
                 return;
             }
 
+            const birthDate = composeBirthDate();
+            if (!birthDate) {
+                setError(@json(__('kyc.birth_date_invalid')));
+                return;
+            }
+
+            const mobile = normalizeMobileDigits(els.mobile?.value);
+            if (!/^(?:0098|98|0)?9\d{9}$/.test(mobile)) {
+                setError(@json(__('kyc.mobile_invalid')));
+                return;
+            }
+
             const fd = new FormData();
             fd.append('first_name', els.firstName?.value || '');
             fd.append('last_name', els.lastName?.value || '');
             fd.append('national_code', els.nationalCode?.value || '');
-            fd.append('birth_date', els.birthDate?.value || '');
-            fd.append('card_number', els.cardNumber?.value || '');
+            fd.append('birth_date', birthDate);
+            fd.append('mobile', mobile);
             fd.append('document', els.document.files[0]);
             fd.append('package_id', pkgId);
             if (els.ownerSelect && els.ownerSelect.value) {

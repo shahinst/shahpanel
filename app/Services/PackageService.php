@@ -163,9 +163,18 @@ class PackageService
             ->get()
             ->pipe(fn ($packages) => $categoryService->sortPackages($packages))
             ->map(function (Package $package) use ($seller, $pricing): array {
+                // The create-account UI formats every price client-side, so it needs the
+                // package currency here — otherwise it falls back to Toman and a TRY
+                // package is shown in the wrong currency.
+                $currency = $package->moneyCurrency();
+
                 return [
                     'id' => $package->id,
                     'name' => $package->name,
+                    'currency' => $currency->value,
+                    'currency_symbol' => $currency->symbol(),
+                    'currency_label' => $currency->label(),
+                    'currency_decimals' => $currency->displayDecimals(),
                     'category_id' => $package->package_category_id,
                     'category_name' => $package->category?->name,
                     'service_type' => $package->service_type->value,

@@ -325,4 +325,20 @@ return [
     'cisco_admin_username_required' => 'نام کاربری ادمین ASA با privilege 15 الزامی است.',
     'cisco_admin_password_required' => 'رمز ادمین ASA الزامی است.',
 
+    'ocserv_section_hint' => 'اتصال به API مدیریت ocserv (OpenConnect) برای ساخت، حذف و قطع کاربران. این بخش فقط ارتباط پنل با سرور است؛ مشتری همچنان روی پورت ۴۴۳ وصل می‌شود.',
+    'ocserv_host_hint' => 'آدرس HTTPS سرور ocserv — همان دامنه یا IP سرور OpenConnect.',
+    'ocserv_token_hint' => 'توکن API مدیریت ocserv — همراه نام کاربری API در هر درخواست ارسال می‌شود.',
+    'ocserv_api_port' => 'پورت API مدیریت',
+    'ocserv_api_port_hint' => 'پورت سرویس مدیریتی ocserv (پیش‌فرض ۹۴۴۳). فقط برای ارتباط پنل است — مشتری روی پورت ۴۴۳ وصل می‌شود.',
+    'ocserv_vpn_hostname' => 'آدرس VPN برای مشتری',
+    'ocserv_vpn_hostname_hint' => 'آدرسی که در OpenConnect/AnyConnect به مشتری داده می‌شود، روی پورت ۴۴۳ (اگر خالی باشد همان host سرور استفاده می‌شود).',
+    'ocserv_group' => 'گروه پیش‌فرض (group)',
+    'ocserv_group_hint' => 'اختیاری — نام گروه ocserv که کاربر در آن ساخته می‌شود؛ باید روی سرور از قبل تعریف شده باشد.',
+    'ocserv_max_sessions' => 'حداکثر نشست همزمان',
+    'ocserv_max_sessions_hint' => 'تعداد اتصال همزمان مجاز برای هر کاربر (پیش‌فرض ۱).',
+    'ocserv_verify_ssl' => 'تأیید گواهی SSL API',
+    'ocserv_verify_ssl_hint' => 'روشن بماند: توکن API و رمز VPN کاربر در هر عملیات ارسال می‌شود. فقط برای گواهی self-signed خاموش کنید.',
+    'ocserv_api_username_required' => 'نام کاربری API سرور ocserv الزامی است.',
+    'ocserv_api_token_required' => 'توکن API سرور ocserv الزامی است.',
+
 ];

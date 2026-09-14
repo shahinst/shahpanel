@@ -123,6 +123,7 @@ class AccountRefundService
         // periods (e.g. the original purchase of a renewed account) — an over-refund.
         $ledger = $this->purchaseLedgerForAccount((int) $account->id, (int) $invoice->id);
         $ownerRefundAmount = $this->ownerRefundPortion($owner, $ledger, $refundRatio);
+        $ledgerCurrency = $this->resolveLedgerCurrency($ledger->first(), $account, $invoice);
 
         try {
             DB::transaction(function () use (
@@ -135,7 +136,8 @@ class AccountRefundService
                 $usedAmount,
                 $hoursUsed,
                 $totalHours,
-                $ledger
+                $ledger,
+                $ledgerCurrency
             ): void {
                 $this->financialPlanService->restoreForAccount((int) $account->id, $refundRatio);
 
@@ -145,6 +147,10 @@ class AccountRefundService
                     'related_account_id' => $account->id,
                     'description' => 'Account refund (pro-rated)',
                     'source_user_id' => $owner->id,
+                    // Without this, WalletService::applyMovement() normalizes a missing
+                    // currency to the default (IRT) and a TRY purchase is refunded into
+                    // the Toman wallet.
+                    'currency' => $ledgerCurrency->value,
                 ];
 
                 foreach ($ledger as $transaction) {
@@ -181,7 +187,7 @@ class AccountRefundService
                                 : self::DESC_REVENUE_REVERSED,
                         ]), allowNegative: true);
 
-                        $balanceAfter = $this->walletService->getOrCreateWallet($user)->fresh()->balance;
+                        $balanceAfter = $this->walletService->getOrCreateWallet($user, $ledgerCurrency)->fresh()->balance;
 
                         if (bccomp((string) $balanceAfter, '0', 2) < 0) {
                             Log::warning('Refund commission clawback drove wallet negative', [
@@ -223,7 +229,31 @@ class AccountRefundService
             'days_used' => round($hoursUsed / 24, 2),
             'total_days' => round($totalHours / 24, 2),
             'owner' => $owner,
+            'currency' => $ledgerCurrency->value,
         ];
+    }
+
+    /**
+     * Currency the money actually moved in.
+     *
+     * The purchase ledger is the most reliable source: those rows were written with the
+     * package currency at the time of sale. The package is the fallback for an account
+     * whose ledger is empty (an admin-created free account wrote no transaction at all),
+     * and the invoice is the last resort. Never guess the panel default — doing so is
+     * what refunded TRY purchases into the Toman wallet.
+     */
+    protected function resolveLedgerCurrency(
+        ?Transaction $transaction,
+        ?Account $account,
+        ?Invoice $invoice,
+    ): \App\Enums\MoneyCurrency {
+        foreach ([$transaction?->currency, $account?->package?->moneyCurrency()?->value, $invoice?->currency] as $candidate) {
+            if (is_string($candidate) && $candidate !== '') {
+                return \App\Enums\MoneyCurrency::normalize($candidate);
+            }
+        }
+
+        return \App\Enums\MoneyCurrency::default();
     }
 
     /**
@@ -269,6 +299,8 @@ class AccountRefundService
             }
         }
 
+        $ledgerCurrency = $this->resolveLedgerCurrency($ledger->first(), $account, null);
+
         foreach ($buyerCharges as $userId => $amount) {
             $user = User::query()->find($userId);
 
@@ -276,7 +308,9 @@ class AccountRefundService
                 continue;
             }
 
-            $this->walletService->assertSufficientBalance($user, $amount);
+            // Check the balance of the wallet that will actually be debited below,
+            // not the Toman one.
+            $this->walletService->assertSufficientBalance($user, $amount, $ledgerCurrency);
         }
 
         if (bccomp($ownerRefundAmount, '0', 2) <= 0) {
@@ -291,7 +325,8 @@ class AccountRefundService
             $owner,
             $ledger,
             $ownerRefundAmount,
-            $refundRatio
+            $refundRatio,
+            $ledgerCurrency
         ): void {
             $this->financialPlanService->reapplyForAccount((int) $account->id, $refundRatio);
 
@@ -299,6 +334,7 @@ class AccountRefundService
                 'related_account_id' => $account->id,
                 'description' => 'Account reactivation after refund',
                 'source_user_id' => $owner->id,
+                'currency' => $ledgerCurrency->value,
             ];
 
             foreach ($ledger as $transaction) {
@@ -358,6 +394,7 @@ class AccountRefundService
         return [
             'owner_refund_amount' => $ownerRefundAmount,
             'owner' => $owner,
+            'currency' => $ledgerCurrency->value,
         ];
     }
 

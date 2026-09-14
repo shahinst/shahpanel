@@ -2,6 +2,8 @@
 
 namespace App\Services\Kyc;
 
+use Morilog\Jalali\Jalalian;
+
 final class IranIdentityValidator
 {
     public static function normalizeDigits(string $value): string
@@ -44,38 +46,42 @@ final class IranIdentityValidator
             || ($remainder >= 2 && $check === 11 - $remainder);
     }
 
-    public static function normalizeCardNumber(string $value): string
+    /**
+     * Accepts Persian/Arabic digits and the +98 / 0098 / 98 / bare 9xxxxxxxxx forms,
+     * and normalises everything to the canonical 09xxxxxxxxx shape.
+     */
+    public static function normalizeMobile(string $value): string
     {
-        return preg_replace('/\D+/', '', self::normalizeDigits($value)) ?? '';
-    }
+        $digits = preg_replace('/\D+/', '', self::normalizeDigits($value)) ?? '';
 
-    public static function isValidCardNumber(string $value): bool
-    {
-        $card = self::normalizeCardNumber($value);
-        if (strlen($card) !== 16 || ! ctype_digit($card)) {
-            return false;
+        if (str_starts_with($digits, '0098')) {
+            $digits = substr($digits, 4);
+        } elseif (strlen($digits) === 12 && str_starts_with($digits, '98')) {
+            $digits = substr($digits, 2);
         }
 
-        $sum = 0;
-        for ($i = 0; $i < 16; $i++) {
-            $digit = (int) $card[$i];
-            if ($i % 2 === 0) {
-                $digit *= 2;
-                if ($digit > 9) {
-                    $digit -= 9;
-                }
-            }
-            $sum += $digit;
+        if (strlen($digits) === 10 && str_starts_with($digits, '9')) {
+            $digits = '0'.$digits;
         }
 
-        return $sum % 10 === 0;
+        return $digits;
     }
 
+    public static function isValidMobile(string $value): bool
+    {
+        return (bool) preg_match('/^09\d{9}$/', self::normalizeMobile($value));
+    }
+
+    /**
+     * Returns a zero-padded Jalali date (YYYY/MM/DD) — the same convention
+     * parse_jalali_date() and Jalalian::fromFormat('Y/m/d') expect — or null
+     * when the date does not exist in the Jalali calendar (e.g. 1370/12/31).
+     */
     public static function normalizeJalaliBirthDate(string $value): ?string
     {
         $value = trim(self::normalizeDigits($value));
         $value = str_replace(['-', '.', ' '], '/', $value);
-        if (! preg_match('#^(\d{3,4})/(\d{1,2})/(\d{1,2})$#', $value, $m)) {
+        if (! preg_match('#^(\d{4})/(\d{1,2})/(\d{1,2})$#', $value, $m)) {
             return null;
         }
 
@@ -83,62 +89,24 @@ final class IranIdentityValidator
         $month = (int) $m[2];
         $day = (int) $m[3];
 
-        if ($year < 1250 || $year > 1450 || $month < 1 || $month > 12 || $day < 1 || $day > 31) {
+        if ($year < 1250 || $year > 1450) {
             return null;
         }
 
-        return $year.'/'.$month.'/'.$day;
-    }
+        $canonical = sprintf('%04d/%02d/%02d', $year, $month, $day);
 
-    public static function normalizePersonName(string $value): string
-    {
-        $value = trim($value);
-        $value = str_replace(['ي', 'ك', '‌', '‍'], ['ی', 'ک', '', ''], $value);
-        $value = preg_replace('/\s+/u', '', $value) ?? '';
-
-        return mb_strtolower($value, 'UTF-8');
-    }
-
-    public static function namesMatch(string $firstName, string $lastName, ?string $apiFirst, ?string $apiLast): bool
-    {
-        $enteredFull = self::normalizePersonName($firstName.$lastName);
-        $apiFull = self::normalizePersonName(((string) $apiFirst).((string) $apiLast));
-
-        if ($enteredFull === '' || $apiFull === '') {
-            return false;
+        try {
+            $jalali = Jalalian::fromFormat('Y/m/d', $canonical);
+        } catch (\Throwable) {
+            return null;
         }
 
-        if ($enteredFull === $apiFull) {
-            return true;
+        // fromFormat() silently rolls overflowing days forward on some inputs,
+        // so round-trip the parts to reject dates that do not really exist.
+        if ($jalali->getYear() !== $year || $jalali->getMonth() !== $month || $jalali->getDay() !== $day) {
+            return null;
         }
 
-        $enteredFirst = self::normalizePersonName($firstName);
-        $enteredLast = self::normalizePersonName($lastName);
-        $remoteFirst = self::normalizePersonName((string) $apiFirst);
-        $remoteLast = self::normalizePersonName((string) $apiLast);
-
-        return $enteredFirst !== '' && $enteredLast !== ''
-            && $enteredFirst === $remoteFirst
-            && $enteredLast === $remoteLast;
-    }
-
-    public static function cardOwnerMatches(string $firstName, string $lastName, ?string $cardOwnerName): bool
-    {
-        $owner = self::normalizePersonName((string) $cardOwnerName);
-        if ($owner === '') {
-            return false;
-        }
-
-        $full = self::normalizePersonName($firstName.$lastName);
-        if ($full !== '' && str_contains($owner, $full)) {
-            return true;
-        }
-
-        $first = self::normalizePersonName($firstName);
-        $last = self::normalizePersonName($lastName);
-
-        return $first !== '' && $last !== ''
-            && str_contains($owner, $first)
-            && str_contains($owner, $last);
+        return $canonical;
     }
 }

@@ -13,6 +13,7 @@
     $isPasarguardPackage = $currentServiceType->isPasarguard();
     $isRemnawavePackage = $currentServiceType->isRemnawave();
     $isCiscoAnyconnectPackage = $currentServiceType->isCiscoAnyconnect();
+    $isOcservPackage = $currentServiceType->isOcserv();
     $isMikrotikPackage = $currentServiceType->isMikrotik();
 
     $remnawaveTrafficStrategy = old('remnawave_traffic_strategy', $package?->remnawaveTrafficStrategy() ?? 'NO_RESET');
@@ -117,7 +118,7 @@
     <select name="service_type" id="package-service-type" required class="form-control">
         <optgroup label="{{ __('packages.service_type_mikrotik') }}">
             @foreach (\App\Enums\ServiceType::cases() as $type)
-                @continue($type->isSanaei() || $type->isPasarguard() || $type->isRemnawave() || $type->isCiscoAnyconnect())
+                @continue($type->isSanaei() || $type->isPasarguard() || $type->isRemnawave() || $type->isCiscoAnyconnect() || $type->isOcserv())
                 <option value="{{ $type->value }}" @selected($serviceType === $type->value)>{{ $type->label() }}</option>
             @endforeach
         </optgroup>
@@ -140,6 +141,11 @@
         <optgroup label="{{ __('packages.service_type_cisco_anyconnect') }}">
             <option value="{{ \App\Enums\ServiceType::CiscoAnyconnect->value }}" @selected($serviceType === \App\Enums\ServiceType::CiscoAnyconnect->value)>
                 {{ __('packages.service_type_cisco_anyconnect') }}
+            </option>
+        </optgroup>
+        <optgroup label="{{ __('packages.service_type_ocserv') }}">
+            <option value="{{ \App\Enums\ServiceType::Ocserv->value }}" @selected($serviceType === \App\Enums\ServiceType::Ocserv->value)>
+                {{ __('packages.service_type_ocserv') }}
             </option>
         </optgroup>
     </select>
@@ -480,6 +486,25 @@
     </div>
 </div>
 
+<div id="package-ocserv-fields" class="col-12 mb-3 {{ $isOcservPackage ? '' : 'd-none' }}">
+    <div class="panel-form-section">
+        <h4 class="panel-form-section-title">OpenConnect / ocserv</h4>
+        <p class="text-muted small">{{ __('packages.ocserv_fields_hint') }}</p>
+        <div class="row">
+            <div class="col-md-4">
+                <x-form.group :label="__('packages.ocserv_group')">
+                    <input name="ocserv_group" value="{{ old('ocserv_group', $package?->ocserv_group) }}" class="form-control" dir="ltr" placeholder="{{ __('packages.ocserv_inherit_from_server') }}">
+                </x-form.group>
+            </div>
+            <div class="col-md-4">
+                <x-form.group :label="__('packages.ocserv_max_sessions')">
+                    <input name="ocserv_max_sessions" type="number" min="0" max="1000" value="{{ old('ocserv_max_sessions', $package?->ocserv_max_sessions) }}" class="form-control" placeholder="{{ __('packages.ocserv_inherit_from_server') }}">
+                </x-form.group>
+            </div>
+        </div>
+    </div>
+</div>
+
 <x-form.checkbox name="is_active" :label="__('packages.package_active')" :checked="old('is_active', $package?->is_active ?? true)" :hiddenZero="true" />
 <x-form.checkbox name="kyc_required" :label="__('kyc.package_required')" :hint="__('kyc.package_required_hint')" :checked="old('kyc_required', $package?->kyc_required ?? false)" :hiddenZero="true" />
 
@@ -491,6 +516,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const pasarguardType = @json(\App\Enums\ServiceType::Pasarguard->value);
     const remnawaveType = @json(\App\Enums\ServiceType::Remnawave->value);
     const ciscoAnyconnectType = @json(\App\Enums\ServiceType::CiscoAnyconnect->value);
+    const ocservType = @json(\App\Enums\ServiceType::Ocserv->value);
     const sanaeiTypes = @json(array_map(
         fn ($t) => $t->value,
         array_filter(\App\Enums\ServiceType::cases(), fn ($t) => $t->isSanaei())
@@ -507,9 +533,10 @@ document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('.package-server-option').forEach(function (el) {
             const type = el.dataset.serverType;
             const isCisco = value === ciscoAnyconnectType;
+            const isOcserv = value === ocservType;
             const compatible = isPasarguard
                 ? type === 'pasarguard'
-                : (isRemnawave ? type === 'remnawave' : (isCisco ? type === 'cisco_anyconnect' : (isSanaei ? type === 'sanaei' : type === 'mikrotik')));
+                : (isRemnawave ? type === 'remnawave' : (isCisco ? type === 'cisco_anyconnect' : (isOcserv ? type === 'ocserv' : (isSanaei ? type === 'sanaei' : type === 'mikrotik'))));
             const input = el.querySelector('input[type=checkbox]');
             el.classList.toggle('d-none', !compatible);
             if (!input) {
@@ -601,6 +628,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const pasarguardFields = document.getElementById('package-pasarguard-fields');
     const remnawaveFields = document.getElementById('package-remnawave-fields');
     const ciscoFields = document.getElementById('package-cisco-anyconnect-fields');
+    const ocservFields = document.getElementById('package-ocserv-fields');
     const groupSelect = document.getElementById('pasarguard-group-select');
     const groupHint = document.getElementById('pasarguard-group-hint');
 
@@ -608,8 +636,10 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!remnawaveFields) return;
         const isRemnawave = serviceSelect.value === remnawaveType;
         const isCisco = serviceSelect.value === ciscoAnyconnectType;
+        const isOcserv = serviceSelect.value === ocservType;
         if (remnawaveFields) remnawaveFields.classList.toggle('d-none', !isRemnawave);
         if (ciscoFields) ciscoFields.classList.toggle('d-none', !isCisco);
+        if (ocservFields) ocservFields.classList.toggle('d-none', !isOcserv);
         if (!isRemnawave) {
             return;
         }
