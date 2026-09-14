@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Enums\ServerType;
 use App\Exceptions\RemoteProvisionException;
 use App\Models\Account;
 use App\Models\Package;
@@ -12,12 +11,6 @@ use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
 use Throwable;
 
-/**
- * ocserv / OpenConnect provisioning, isolated from the Cisco ASA provider.
- *
- * All work goes through the HTTP JSON management API next to ocserv; changes
- * apply immediately, so there is no configuration-save step.
- */
 class OcservService
 {
     /** @var array<int, OcservClient> */
@@ -29,7 +22,7 @@ class OcservService
     }
 
     /**
-     * @return array{ok: bool, message: string, error?: string, user_count?: int, api_url?: string}
+     * @return array{ok: bool, message: string, error?: string, api_url?: string}
      */
     public function testConnectionDetails(Server $server): array
     {
@@ -45,7 +38,7 @@ class OcservService
 
             return [
                 'ok' => false,
-                'message' => 'اتصال به سرویس مدیریتی ocserv ناموفق بود.',
+                'message' => 'اتصال به OpenConnect (ocserv) ناموفق بود.',
                 'error' => $exception->getMessage(),
             ];
         }
@@ -61,14 +54,14 @@ class OcservService
         string $password,
     ): array {
         $this->assertOcservServer($server);
+        $this->assertUsername($username);
+        $this->assertPassword($password);
+
+        $maxSessions = $this->resolvedMaxSessions($server, $package);
+        $group = $this->resolvedGroup($server, $package);
 
         try {
-            $this->client($server)->createUser(
-                $username,
-                $password,
-                $this->resolvedGroup($server, $package) ?: null,
-                $this->resolvedMaxSessions($server, $package),
-            );
+            $this->client($server)->createUser($username, $password, $maxSessions, $group);
         } catch (Throwable $exception) {
             Log::channel('ocserv')->error('Failed to create ocserv user', [
                 'server_id' => $server->id,
@@ -77,15 +70,10 @@ class OcservService
             ]);
 
             throw new RemoteProvisionException(
-                'ساخت کاربر OpenConnect روی سرور ocserv ناموفق بود: '.$exception->getMessage(),
+                'ساخت کاربر OpenConnect (ocserv) ناموفق بود: '.$exception->getMessage(),
                 previous: $exception
             );
         }
-
-        Log::channel('ocserv')->info('ocserv user provisioned', [
-            'server_id' => $server->id,
-            'username' => $username,
-        ]);
 
         return ['ocserv_username' => $username];
     }
@@ -102,39 +90,51 @@ class OcservService
 
         $this->assertOcservServer($server);
 
-        $username = $this->accountUsername($account);
+        $username = (string) ($account->remote_username ?? '');
         $password = (string) ($account->remote_password_enc ?? '');
 
         if ($username === '' || $password === '') {
-            throw new RemoteProvisionException('نام کاربری یا رمز OpenConnect برای همگام‌سازی موجود نیست.');
+            throw new RemoteProvisionException('نام کاربری یا رمز ocserv برای همگام‌سازی موجود نیست.');
         }
 
+        $this->assertUsername($username);
+        $this->assertPassword($password);
+
         $client = $this->client($server);
+        $maxSessions = $this->resolvedMaxSessions($server, $package);
+        $enabled = $forceEnable || $account->status?->value === 'active';
 
         try {
-            $client->upsertUser(
-                $username,
-                $password,
-                $this->resolvedGroup($server, $package) ?: null,
-                $this->resolvedMaxSessions($server, $package),
-            );
+            try {
+                $client->getUser($username);
+                $client->setPassword($username, $password);
+                $client->setLimits($username, $maxSessions);
+            } catch (RemoteProvisionException $exception) {
+                if (! str_contains($exception->getMessage(), 'یافت نشد')) {
+                    throw $exception;
+                }
+                $client->createUser(
+                    $username,
+                    $password,
+                    $maxSessions,
+                    $this->resolvedGroup($server, $package),
+                );
+            }
 
-            if ($forceEnable || $account->status?->value === 'active') {
+            if ($enabled) {
                 $client->unlockUser($username);
             } else {
                 $client->lockUser($username);
-                $client->disconnectUser($username);
             }
         } catch (Throwable $exception) {
             Log::channel('ocserv')->error('Failed to sync ocserv user', [
                 'account_id' => $account->id,
-                'server_id' => $server->id,
                 'username' => $username,
                 'error' => $exception->getMessage(),
             ]);
 
             throw new RemoteProvisionException(
-                'همگام‌سازی کاربر OpenConnect ناموفق بود: '.$exception->getMessage(),
+                'همگام‌سازی کاربر ocserv ناموفق: '.$exception->getMessage(),
                 previous: $exception
             );
         }
@@ -142,7 +142,7 @@ class OcservService
 
     public function setUserEnabled(Account $account, bool $enabled): void
     {
-        $account->loadMissing(['server', 'package']);
+        $account->loadMissing('server');
         $server = $account->server;
 
         if ($server === null) {
@@ -151,43 +151,29 @@ class OcservService
 
         $this->assertOcservServer($server);
 
-        $username = $this->accountUsername($account);
+        $username = (string) ($account->remote_username ?? '');
         if ($username === '') {
             return;
         }
 
-        $client = $this->client($server);
-
         try {
             if ($enabled) {
-                $client->setMaxSessions(
-                    $username,
-                    $this->resolvedMaxSessions($server, $account->package),
-                );
-                $client->unlockUser($username);
+                $this->client($server)->unlockUser($username);
             } else {
-                $client->lockUser($username);
-                $client->disconnectUser($username);
+                $this->client($server)->lockUser($username);
             }
         } catch (Throwable $exception) {
             Log::channel('ocserv')->error('Failed to toggle ocserv user', [
                 'account_id' => $account->id,
-                'username' => $username,
                 'enabled' => $enabled,
                 'error' => $exception->getMessage(),
             ]);
 
             throw new RemoteProvisionException(
-                ($enabled ? 'فعال‌سازی' : 'غیرفعال‌سازی').' کاربر OpenConnect ناموفق: '.$exception->getMessage(),
+                ($enabled ? 'فعال‌سازی' : 'غیرفعال‌سازی').' کاربر ocserv ناموفق: '.$exception->getMessage(),
                 previous: $exception
             );
         }
-
-        Log::channel('ocserv')->info('ocserv user toggled', [
-            'account_id' => $account->id,
-            'username' => $username,
-            'enabled' => $enabled,
-        ]);
     }
 
     public function removeVpnUser(Server $server, string $username): void
@@ -208,15 +194,10 @@ class OcservService
             ]);
 
             throw new RemoteProvisionException(
-                'حذف کاربر OpenConnect از سرور ocserv ناموفق: '.$exception->getMessage(),
+                'حذف کاربر ocserv ناموفق: '.$exception->getMessage(),
                 previous: $exception
             );
         }
-
-        Log::channel('ocserv')->info('ocserv user removed', [
-            'server_id' => $server->id,
-            'username' => $username,
-        ]);
     }
 
     /**
@@ -224,11 +205,12 @@ class OcservService
      *     service_label: string,
      *     server_name: ?string,
      *     server_host: string,
-     *     port: int,
+     *     port: ?int,
+     *     show_port: bool,
      *     username: string,
      *     password: string,
-     *     group: string,
-     *     max_sessions: int,
+     *     group_policy: string,
+     *     tunnel_group: string,
      *     setup_guide_text: string
      * }
      */
@@ -236,40 +218,36 @@ class OcservService
     {
         $account->loadMissing(['server', 'package']);
         $server = $account->server;
-        $package = $account->package;
 
         $host = '';
         if ($server !== null) {
-            $vpnHost = trim((string) ($server->ocserv_vpn_hostname ?? ''));
+            $vpnHost = trim((string) ($server->ocserv_vpn_address ?? ''));
             $host = $vpnHost !== '' ? $vpnHost : $server->vpnClientEndpointHost();
+            if ($host === '') {
+                $host = (string) $server->host;
+            }
         }
 
-        $username = $this->accountUsername($account);
+        $username = (string) ($account->remote_username ?? '');
         $password = (string) ($account->remote_password_enc ?? '');
-        $group = $this->resolvedGroup($server, $package);
-        $maxSessions = $this->resolvedMaxSessions($server, $package);
-        // Clients connect to ocserv itself on 443 — the management API port is
-        // panel-side only and never handed to the customer.
-        $port = 443;
 
         $guide = implode("\n", array_filter([
-            'OpenConnect / Cisco AnyConnect',
+            'Cisco Secure Client (AnyConnect) یا OpenConnect',
             'Server Address: '.$host,
-            'Port: '.$port.' (HTTPS)',
             'Username: '.$username,
             'Password: '.$password,
-            $group !== '' ? 'Group: '.$group : null,
         ]));
 
         return [
             'service_label' => 'OpenConnect (ocserv)',
             'server_name' => $server?->name,
             'server_host' => $host,
-            'port' => $port,
+            'port' => null,
+            'show_port' => false,
             'username' => $username,
             'password' => $password,
-            'group' => $group,
-            'max_sessions' => $maxSessions,
+            'group_policy' => '',
+            'tunnel_group' => '',
             'setup_guide_text' => $guide,
         ];
     }
@@ -281,37 +259,48 @@ class OcservService
         return $this->clients[$id] ??= new OcservClient($server);
     }
 
-    protected function accountUsername(Account $account): string
-    {
-        return (string) ($account->ocserv_username ?: $account->remote_username);
-    }
-
-    protected function resolvedGroup(?Server $server, ?Package $package): string
-    {
-        $fromPackage = trim((string) ($package?->ocserv_group ?? ''));
-
-        return $fromPackage !== ''
-            ? $fromPackage
-            : trim((string) ($server?->ocserv_group ?? ''));
-    }
-
-    protected function resolvedMaxSessions(?Server $server, ?Package $package): int
+    protected function resolvedMaxSessions(Server $server, ?Package $package): int
     {
         if ($package !== null && $package->ocserv_max_sessions !== null) {
-            return max(0, (int) $package->ocserv_max_sessions);
+            return max(0, min(1000, (int) $package->ocserv_max_sessions));
         }
 
-        if ($server !== null && $server->ocserv_max_sessions !== null) {
-            return max(0, (int) $server->ocserv_max_sessions);
+        return max(0, min(1000, (int) ($server->ocserv_default_max_sessions ?? 1)));
+    }
+
+    protected function resolvedGroup(Server $server, ?Package $package): ?string
+    {
+        $fromPackage = trim((string) ($package?->ocserv_group ?? ''));
+        if ($fromPackage !== '') {
+            return $fromPackage;
         }
 
-        return max(0, (int) config('vpnpanel.ocserv.default_max_sessions', 1));
+        $fromServer = trim((string) ($server->ocserv_group ?? ''));
+
+        return $fromServer !== '' ? $fromServer : null;
+    }
+
+    protected function assertUsername(string $username): void
+    {
+        if (preg_match('/^[A-Za-z0-9._@-]{1,64}$/', $username) !== 1) {
+            throw new InvalidArgumentException(
+                'نام کاربری ocserv نامعتبر است (فقط حروف، عدد، . _ @ - و حداکثر ۶۴ کاراکتر).'
+            );
+        }
+    }
+
+    protected function assertPassword(string $password): void
+    {
+        $len = strlen($password);
+        if ($len < 1 || $len > 128 || str_contains($password, "\n") || str_contains($password, "\r")) {
+            throw new InvalidArgumentException('رمز عبور ocserv نامعتبر است.');
+        }
     }
 
     protected function assertOcservServer(Server $server): void
     {
-        if ($server->type !== ServerType::Ocserv) {
-            throw new InvalidArgumentException('این عملیات فقط برای سرور OpenConnect / ocserv است.');
+        if (! $server->isOcserv()) {
+            throw new InvalidArgumentException('این عملیات فقط برای سرور OpenConnect (ocserv) است.');
         }
     }
 }

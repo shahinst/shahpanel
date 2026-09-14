@@ -138,12 +138,10 @@
                 {{ __('packages.service_type_remnawave') }}
             </option>
         </optgroup>
-        <optgroup label="{{ __('packages.service_type_cisco_anyconnect') }}">
+        <optgroup label="{{ __('packages.service_type_anyconnect_group') }}">
             <option value="{{ \App\Enums\ServiceType::CiscoAnyconnect->value }}" @selected($serviceType === \App\Enums\ServiceType::CiscoAnyconnect->value)>
                 {{ __('packages.service_type_cisco_anyconnect') }}
             </option>
-        </optgroup>
-        <optgroup label="{{ __('packages.service_type_ocserv') }}">
             <option value="{{ \App\Enums\ServiceType::Ocserv->value }}" @selected($serviceType === \App\Enums\ServiceType::Ocserv->value)>
                 {{ __('packages.service_type_ocserv') }}
             </option>
@@ -464,7 +462,7 @@
 
 <div id="package-cisco-anyconnect-fields" class="col-12 mb-3 {{ $isCiscoAnyconnectPackage ? '' : 'd-none' }}">
     <div class="panel-form-section">
-        <h4 class="panel-form-section-title">Cisco AnyConnect</h4>
+        <h4 class="panel-form-section-title">Cisco AnyConnect (ASA)</h4>
         <p class="text-muted small">{{ __('packages.cisco_anyconnect_fields_hint') }}</p>
         <div class="row">
             <div class="col-md-4">
@@ -488,17 +486,17 @@
 
 <div id="package-ocserv-fields" class="col-12 mb-3 {{ $isOcservPackage ? '' : 'd-none' }}">
     <div class="panel-form-section">
-        <h4 class="panel-form-section-title">OpenConnect / ocserv</h4>
+        <h4 class="panel-form-section-title">OpenConnect (ocserv)</h4>
         <p class="text-muted small">{{ __('packages.ocserv_fields_hint') }}</p>
         <div class="row">
-            <div class="col-md-4">
-                <x-form.group :label="__('packages.ocserv_group')">
-                    <input name="ocserv_group" value="{{ old('ocserv_group', $package?->ocserv_group) }}" class="form-control" dir="ltr" placeholder="{{ __('packages.ocserv_inherit_from_server') }}">
-                </x-form.group>
-            </div>
-            <div class="col-md-4">
+            <div class="col-md-6">
                 <x-form.group :label="__('packages.ocserv_max_sessions')">
                     <input name="ocserv_max_sessions" type="number" min="0" max="1000" value="{{ old('ocserv_max_sessions', $package?->ocserv_max_sessions) }}" class="form-control" placeholder="{{ __('packages.ocserv_inherit_from_server') }}">
+                </x-form.group>
+            </div>
+            <div class="col-md-6">
+                <x-form.group :label="__('packages.ocserv_group')">
+                    <input name="ocserv_group" value="{{ old('ocserv_group', $package?->ocserv_group) }}" class="form-control" dir="ltr" placeholder="{{ __('packages.ocserv_inherit_from_server') }}">
                 </x-form.group>
             </div>
         </div>

@@ -17,7 +17,7 @@
                 <tr>
                     <td>{{ $invoice->invoice_number }}</td>
                     <td>{{ $invoice->seller?->full_name }}</td>
-                    <td>{{ format_toman($invoice->total) }}</td>
+                    <td>{{ format_money($invoice->total, $invoice->currency) }}</td>
                     <td>{{ $invoice->status->value }}</td>
                     <td><a href="{{ route('agent.invoices.show', $invoice) }}" class="btn btn-sm btn-primary">{{ __('app.view') }}</a></td>
                 </tr>

@@ -25,7 +25,7 @@ trait ManagesAccountKyc
             'last_name' => ['required', 'string', 'max:100'],
             'national_code' => ['required', 'string', 'max:20'],
             'birth_date' => ['required', 'string', 'max:20'],
-            'mobile' => ['required', 'string', 'max:15', 'regex:/^[\s+\d\x{06F0}-\x{06F9}\x{0660}-\x{0669}]{10,15}$/u'],
+            'mobile' => ['required', 'string', 'max:20'],
             'document' => ['required', 'file', 'max:'.(int) config('kyc.document_max_kb', 5120), 'mimes:'.implode(',', config('kyc.document_mimes', ['jpg', 'jpeg', 'png', 'webp', 'pdf']))],
             'package_id' => ['required', 'integer', 'exists:packages,id'],
             'owner_seller_id' => ['nullable', 'integer', 'exists:users,id'],

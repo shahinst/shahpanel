@@ -84,10 +84,10 @@ class KycService
             throw ValidationException::withMessages(['national_code' => ['کد ملی نامعتبر است.']]);
         }
         if (! IranIdentityValidator::isValidMobile($mobile)) {
-            throw ValidationException::withMessages(['mobile' => [__('kyc.mobile_invalid')]]);
+            throw ValidationException::withMessages(['mobile' => ['شماره موبایل نامعتبر است. مثال: 09123456789']]);
         }
         if ($birthDate === null) {
-            throw ValidationException::withMessages(['birth_date' => [__('kyc.birth_date_invalid')]]);
+            throw ValidationException::withMessages(['birth_date' => ['تاریخ تولد نامعتبر است. فرمت: 1370/1/1']]);
         }
 
         $path = $this->storeDocument($document);
@@ -102,6 +102,7 @@ class KycService
             'national_code' => $nationalCode,
             'birth_date' => $birthDate,
             'mobile' => $mobile,
+            'card_number' => null,
             'document_disk' => (string) config('kyc.document_disk', 'local'),
             'document_path' => $path,
             'document_original_name' => $document->getClientOriginalName(),
@@ -114,6 +115,7 @@ class KycService
 
         $this->activityLogService->log($actor, 'kyc.draft_submitted', $verification, [
             'national_code_masked' => $verification->maskedNationalCode(),
+            'mobile_masked' => $verification->maskedMobile(),
             'has_document' => true,
         ]);
 
@@ -149,45 +151,37 @@ class KycService
             throw ValidationException::withMessages(['document' => ['آپلود تصویر کارت ملی الزامی است.']]);
         }
 
+        if (! IranIdentityValidator::isValidMobile((string) $verification->mobile)) {
+            throw ValidationException::withMessages(['mobile' => ['شماره موبایل برای احراز ثبت نشده یا نامعتبر است.']]);
+        }
+
+        $verification->verify_attempts = (int) $verification->verify_attempts + 1;
+        $verification->save();
+
         $client = $this->client();
         $results = [];
         $errors = [];
-        $answered = false;
 
         try {
-            $shahkar = $client->shahkarMatch(
+            $shahkar = $client->shahkar(
                 (string) $verification->national_code,
                 (string) $verification->mobile,
             );
-            // api.ir replied (even with success:false) — this is a real, billable round-trip.
-            $answered = true;
-
-            $matched = $this->shahkarMatched($shahkar['data'] ?? null);
-            $providerMessage = is_string($shahkar['message'] ?? null) ? trim($shahkar['message']) : '';
             $results['shahkar'] = [
                 'success' => (bool) ($shahkar['success'] ?? false),
-                'matched' => $matched,
+                'matched' => (bool) ($shahkar['data'] ?? false),
                 'message' => $shahkar['message'] ?? null,
                 'code' => $shahkar['code'] ?? null,
             ];
-
-            if (! ($shahkar['success'] ?? false)) {
-                // Surface the genuine upstream reason (credit, service outage, access level)
-                // instead of a generic sentence; api.ir answers HTTP 200 with success:false.
-                $errors[] = 'استعلام شاهکار انجام نشد: '.($providerMessage !== ''
-                    ? $providerMessage
-                    : 'api.ir دلیلی برنگرداند (کد: '.(string) ($shahkar['code'] ?? '—').').');
-            } elseif (! $matched) {
-                $errors[] = __('kyc.shahkar_mismatch').($providerMessage !== '' ? ' ('.$providerMessage.')' : '');
+            if (! ($shahkar['success'] ?? false) || ! ($shahkar['data'] ?? false)) {
+                $providerMessage = trim((string) ($shahkar['message'] ?? ''));
+                $errors[] = $providerMessage !== ''
+                    ? 'تطبیق موبایل با کد ملی ناموفق بود: '.$providerMessage
+                    : 'تطبیق موبایل با کد ملی ناموفق بود.';
             }
         } catch (ApiIrException $exception) {
-            $errors[] = 'خطا در ارتباط با سامانه شاهکار: '.$exception->getMessage();
+            $errors[] = 'خطا در شاهکار: '.$exception->getMessage();
             $results['shahkar'] = ['error' => $exception->getMessage()];
-        }
-
-        if ($answered) {
-            $verification->verify_attempts = (int) $verification->verify_attempts + 1;
-            $verification->save();
         }
 
         $this->captureCreditFromApiResults($results);
@@ -434,35 +428,6 @@ class KycService
         }
 
         throw new InvalidArgumentException('دسترسی به این پرونده احراز مجاز نیست.');
-    }
-
-    /**
-     * Shahkar answers with a plain boolean on most accounts, but some responses wrap it
-     * in an object. Anything we do not positively recognise counts as "not matched".
-     */
-    protected function shahkarMatched(mixed $data): bool
-    {
-        if (is_bool($data)) {
-            return $data;
-        }
-
-        if (is_int($data)) {
-            return $data === 1;
-        }
-
-        if (is_string($data)) {
-            return in_array(strtolower(trim($data)), ['1', 'true', 'yes'], true);
-        }
-
-        if (is_array($data)) {
-            foreach (['result', 'isMatched', 'matched', 'isValid'] as $key) {
-                if (array_key_exists($key, $data)) {
-                    return $this->shahkarMatched($data[$key]);
-                }
-            }
-        }
-
-        return false;
     }
 
     protected function refreshCreditQuietly(): void

@@ -235,10 +235,11 @@ trait ManagesWireguardAccountActions
             return back()->with('error', $exception->getMessage());
         }
 
+        $currency = $account->package?->moneyCurrency()
+            ?? \App\Enums\MoneyCurrency::default();
+
         return back()->with('success', __('accounts.refund_success', [
-            // The money went back to the wallet of the purchase currency, so the
-            // confirmation has to name that currency and not always Toman.
-            'amount' => format_money($result['owner_refund_amount'], $result['currency'] ?? null),
+            'amount' => format_money($result['owner_refund_amount'], $currency),
             'owner' => $result['owner']->full_name,
         ]));
     }
@@ -255,8 +256,11 @@ trait ManagesWireguardAccountActions
             return back()->with('error', $exception->getMessage());
         }
 
+        $currency = $account->package?->moneyCurrency()
+            ?? \App\Enums\MoneyCurrency::default();
+
         return back()->with('success', __('accounts.reactivate_success', [
-            'amount' => format_money($result['owner_refund_amount'], $result['currency'] ?? null),
+            'amount' => format_money($result['owner_refund_amount'], $currency),
             'owner' => $result['owner']->full_name,
         ]));
     }

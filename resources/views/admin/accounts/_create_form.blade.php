@@ -103,27 +103,18 @@
 
 <x-form.group label="{{ __('accounts.admin_custom_charge') }}" hint="{{ __('accounts.admin_custom_charge_hint') }}">
     <input
-        type="number"
+        type="text"
         name="admin_custom_charge"
         id="admin-custom-charge"
         class="form-control"
-        min="0"
-        step="1"
+        inputmode="decimal"
+        autocomplete="off"
         value="{{ old('admin_custom_charge') }}"
         placeholder="{{ __('accounts.admin_custom_charge_placeholder') }}"
     >
     <div class="form-check mt-2">
-        <input type="hidden" name="admin_free_account" value="0">
-        <input
-            type="checkbox"
-            name="admin_free_account"
-            id="admin-free-account"
-            class="form-check-input"
-            value="1"
-            @checked(old('admin_free_account'))
-        >
+        <input type="checkbox" class="form-check-input" name="admin_free_account" id="admin-free-account" value="1" @checked(old('admin_free_account'))>
         <label class="form-check-label" for="admin-free-account">{{ __('accounts.admin_free_account') }}</label>
-        <small class="text-muted d-block">{{ __('accounts.admin_free_account_hint') }}</small>
     </div>
 </x-form.group>
 
@@ -168,6 +159,7 @@
     const gbInput = document.getElementById('admin-data-gb');
     const gbHint = document.getElementById('admin-data-gb-hint');
     const customChargeInput = document.getElementById('admin-custom-charge');
+    const freeAccountInput = document.getElementById('admin-free-account');
     const pricingBox = document.getElementById('admin-purchase-pricing');
     const pricingWholesale = document.getElementById('admin-pricing-wholesale');
     const pricingCharge = document.getElementById('admin-pricing-charge');
@@ -185,26 +177,34 @@
     let previewRequestId = 0;
     let clientRequestId = 0;
 
-    // Prices are formatted client-side, so the currency has to come from the package
-    // (or the preview payload) rather than being assumed to be Toman.
-    function currentPackageMeta() {
-        return optionsById[String(packageSelect.value)] || {};
-    }
-
-    function formatMoney(value, meta) {
-        meta = meta || {};
-        const decimals = Number.isFinite(meta.currency_decimals) ? meta.currency_decimals : 0;
-        const suffix = meta.currency_symbol || meta.currency_label || 'تومان';
-
-        return Number(value).toLocaleString('fa-IR', {
+    function formatMoney(value, currencyMeta) {
+        const meta = currencyMeta || {};
+        const decimals = Number.isFinite(Number(meta.decimals)) ? Number(meta.decimals) : 0;
+        const symbol = meta.symbol || meta.label || 'تومان';
+        const amount = Number(value);
+        if (!Number.isFinite(amount)) {
+            return '—';
+        }
+        return amount.toLocaleString('fa-IR', {
             minimumFractionDigits: decimals,
             maximumFractionDigits: decimals,
-        }) + ' ' + suffix;
+        }) + ' ' + symbol;
     }
 
-    // Kept so every existing call site becomes currency-aware without being touched.
+    function packageCurrencyMeta(pkg) {
+        if (!pkg) {
+            return { symbol: 'تومان', label: 'تومان', decimals: 0 };
+        }
+        return {
+            code: pkg.currency || 'IRT',
+            symbol: pkg.currency_symbol || pkg.currency_label || 'تومان',
+            label: pkg.currency_label || pkg.currency_symbol || 'تومان',
+            decimals: Number.isFinite(Number(pkg.currency_decimals)) ? Number(pkg.currency_decimals) : 0,
+        };
+    }
+
     function formatToman(value) {
-        return formatMoney(value, currentPackageMeta());
+        return formatMoney(value, { symbol: 'تومان', decimals: 0 });
     }
 
     function toggleClientMode() {
@@ -292,14 +292,10 @@
             const minGb = pkg.min_gb || 1;
             params.set('data_gb', gbInput.value && Number(gbInput.value) > 0 ? gbInput.value : String(minGb));
         }
-        if (customChargeInput && customChargeInput.value !== '') {
-            params.set('admin_custom_charge', customChargeInput.value);
-        }
-        // The preview must see the free checkbox too, otherwise it quotes the wholesale
-        // price while the submitted form creates a free account (or the reverse).
-        const freeAccountInput = document.getElementById('admin-free-account');
         if (freeAccountInput && freeAccountInput.checked) {
             params.set('admin_free_account', '1');
+        } else if (customChargeInput && customChargeInput.value.trim() !== '') {
+            params.set('admin_custom_charge', customChargeInput.value.trim());
         }
 
         const requestId = ++previewRequestId;
@@ -319,10 +315,16 @@
                 }
                 pricingBox.hidden = false;
                 pricingError.hidden = true;
-                pricingWholesale.textContent = formatMoney(result.payload.wholesale_price, result.payload);
-                pricingCharge.textContent = formatMoney(result.payload.final_charge, result.payload);
+                const currencyMeta = {
+                    code: result.payload.currency,
+                    symbol: result.payload.currency_symbol || result.payload.currency_label,
+                    label: result.payload.currency_label || result.payload.currency_symbol,
+                    decimals: result.payload.currency_decimals,
+                };
+                pricingWholesale.textContent = formatMoney(result.payload.wholesale_price, currencyMeta);
+                pricingCharge.textContent = formatMoney(result.payload.final_charge, currencyMeta);
                 pricingMargin.textContent = Number(result.payload.agent_margin) > 0
-                    ? formatMoney(result.payload.agent_margin, result.payload)
+                    ? formatMoney(result.payload.agent_margin, currencyMeta)
                     : '—';
             })
             .catch(function () { hidePricing(); });
@@ -390,6 +392,20 @@
     if (durationSelect) durationSelect.addEventListener('change', loadPricingPreview);
     if (gbInput) gbInput.addEventListener('change', loadPricingPreview);
     if (customChargeInput) customChargeInput.addEventListener('input', loadPricingPreview);
+    if (freeAccountInput) {
+        freeAccountInput.addEventListener('change', function () {
+            if (freeAccountInput.checked && customChargeInput) {
+                customChargeInput.value = '';
+                customChargeInput.disabled = true;
+            } else if (customChargeInput) {
+                customChargeInput.disabled = false;
+            }
+            loadPricingPreview();
+        });
+        if (freeAccountInput.checked && customChargeInput) {
+            customChargeInput.disabled = true;
+        }
+    }
 
     toggleClientMode();
     loadClients();

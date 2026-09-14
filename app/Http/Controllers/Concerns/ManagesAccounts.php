@@ -241,15 +241,13 @@ trait ManagesAccounts
             );
         }
 
-        $currency = $package?->moneyCurrency() ?? \App\Enums\MoneyCurrency::default();
-
         return response()->json([
-            'currency' => $currency->value,
-            'currency_symbol' => $currency->symbol(),
-            'currency_label' => $currency->label(),
-            'currency_decimals' => $currency->displayDecimals(),
             'catalog_price' => number_format((float) $duration->price, 2, '.', ''),
             'is_elastic' => $package !== null && $package->isElastic(),
+            'currency' => $package?->moneyCurrency()->value ?? \App\Enums\MoneyCurrency::default()->value,
+            'currency_symbol' => $package?->moneyCurrency()->symbol() ?? \App\Enums\MoneyCurrency::default()->symbol(),
+            'currency_label' => $package?->moneyCurrency()->label() ?? \App\Enums\MoneyCurrency::default()->label(),
+            'currency_decimals' => $package?->moneyCurrency()->displayDecimals() ?? \App\Enums\MoneyCurrency::default()->displayDecimals(),
             'unit_price' => $unitPrice,
             'units' => $units,
             'pricing_model' => $isPerGb ? 'per_gb' : 'fixed',

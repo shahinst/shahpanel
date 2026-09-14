@@ -118,13 +118,7 @@ class AccountRenewalPricingService
             scaleCommissionsToCharge: $override !== null,
         );
 
-        $currency = $package->moneyCurrency();
-
         return [
-            'currency' => $currency->value,
-            'currency_symbol' => $currency->symbol(),
-            'currency_label' => $currency->label(),
-            'currency_decimals' => $currency->displayDecimals(),
             'is_per_gb' => $isPerGb,
             'is_elastic' => $isPerGb,
             'data_gb' => $gb !== null ? number_format($gb, 2, '.', '') : null,
@@ -142,6 +136,10 @@ class AccountRenewalPricingService
             'plan_slices' => $chargeBreakdown['slices'],
             'agent_margin' => $economics['agent_margin'],
             'agent_wholesale' => $economics['agent_wholesale'],
+            'currency' => $package->moneyCurrency()->value,
+            'currency_symbol' => $package->moneyCurrency()->symbol(),
+            'currency_label' => $package->moneyCurrency()->label(),
+            'currency_decimals' => $package->moneyCurrency()->displayDecimals(),
         ];
     }
 
