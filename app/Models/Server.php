@@ -36,6 +36,11 @@ class Server extends Model
         'cisco_verify_ssl',
         'cisco_write_memory',
         'cisco_simultaneous_logins',
+        'ocserv_api_port',
+        'ocserv_vpn_hostname',
+        'ocserv_group',
+        'ocserv_max_sessions',
+        'ocserv_verify_ssl',
         'port',
         'ssh_port',
         'web_base_path',
@@ -99,6 +104,9 @@ class Server extends Model
             'sanaei_verify_ssl' => 'boolean',
             'cisco_write_memory' => 'boolean',
             'cisco_simultaneous_logins' => 'integer',
+            'ocserv_verify_ssl' => 'boolean',
+            'ocserv_api_port' => 'integer',
+            'ocserv_max_sessions' => 'integer',
             'show_in_account_filters' => 'boolean',
             'show_on_dashboard' => 'boolean',
             'last_health_check_at' => 'datetime',
@@ -373,6 +381,11 @@ class Server extends Model
         return $this->type === ServerType::CiscoAnyconnect;
     }
 
+    public function isOcserv(): bool
+    {
+        return $this->type === ServerType::Ocserv;
+    }
+
     public function hasStoredRemnawaveApiToken(): bool
     {
         return $this->isRemnawave() && trim((string) ($this->api_token_enc ?? '')) !== '';
@@ -440,6 +453,10 @@ class Server extends Model
             return $this->type === ServerType::CiscoAnyconnect;
         }
 
+        if ($serviceType->isOcserv()) {
+            return $this->type === ServerType::Ocserv;
+        }
+
         if ($serviceType->isPasarguard()) {
             return $this->type === ServerType::Pasarguard;
         }
@@ -459,6 +476,10 @@ class Server extends Model
 
         if ($serviceType->isCiscoAnyconnect()) {
             return $query->where('type', ServerType::CiscoAnyconnect);
+        }
+
+        if ($serviceType->isOcserv()) {
+            return $query->where('type', ServerType::Ocserv);
         }
 
         if ($serviceType->isPasarguard()) {

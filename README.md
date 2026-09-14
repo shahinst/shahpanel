@@ -478,6 +478,7 @@ curl https://YOUR-PANEL/api/v1/accounts \
 
 مستندات کامل: [`docs/API.md`](docs/API.md) — نمونه‌ی آماده‌ی PHP و پایتون: [`docs/bot-client/`](docs/bot-client/)
 برای Cisco AnyConnect: [`docs/CISCO_ANYCONNECT_API.md`](docs/CISCO_ANYCONNECT_API.md)
+برای OpenConnect / ocserv: [`docs/OCSERV_API.md`](docs/OCSERV_API.md)
 
 ---
 

@@ -42,6 +42,7 @@ class Account extends Model
         'remnawave_uuid',
         'remnawave_subscription_url',
         'cisco_asa_username',
+        'ocserv_username',
         'client_email',
         'client_panel_password_hash',
         'client_portal_password_enc',

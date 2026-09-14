@@ -241,7 +241,13 @@ trait ManagesAccounts
             );
         }
 
+        $currency = $package?->moneyCurrency() ?? \App\Enums\MoneyCurrency::default();
+
         return response()->json([
+            'currency' => $currency->value,
+            'currency_symbol' => $currency->symbol(),
+            'currency_label' => $currency->label(),
+            'currency_decimals' => $currency->displayDecimals(),
             'catalog_price' => number_format((float) $duration->price, 2, '.', ''),
             'is_elastic' => $package !== null && $package->isElastic(),
             'unit_price' => $unitPrice,

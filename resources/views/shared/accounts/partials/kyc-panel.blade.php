@@ -3,6 +3,11 @@
     $kycSubmitUrl = $kycSubmitUrl ?? null;
     $kycVerifyUrlTemplate = $kycVerifyUrlTemplate ?? null;
     $kycResetUrlTemplate = $kycResetUrlTemplate ?? null;
+    $kycJalaliYear = (int) western_digits(jalali_now('Y'));
+    $kycJalaliMonths = [
+        'فروردین', 'اردیبهشت', 'خرداد', 'تیر', 'مرداد', 'شهریور',
+        'مهر', 'آبان', 'آذر', 'دی', 'بهمن', 'اسفند',
+    ];
 @endphp
 
 <div id="{{ $kycIdPrefix }}-kyc-panel" class="border rounded p-3 mb-3 bg-light" hidden>
@@ -30,13 +35,37 @@
             <input type="text" id="{{ $kycIdPrefix }}-kyc-national-code" class="form-control" dir="ltr" maxlength="12" inputmode="numeric" autocomplete="off">
         </div>
         <div class="col-md-6">
-            <label class="form-label" for="{{ $kycIdPrefix }}-kyc-birth-date">{{ __('kyc.birth_date') }}</label>
-            <input type="text" id="{{ $kycIdPrefix }}-kyc-birth-date" class="form-control" dir="ltr" placeholder="1370/1/1" maxlength="20" autocomplete="off">
+            <label class="form-label" for="{{ $kycIdPrefix }}-kyc-birth-year">{{ __('kyc.birth_date') }}</label>
+            <div class="row g-1">
+                <div class="col-4">
+                    <select id="{{ $kycIdPrefix }}-kyc-birth-year" class="form-select" dir="ltr" aria-label="{{ __('kyc.birth_year') }}">
+                        <option value="">{{ __('kyc.birth_year') }}</option>
+                        @for ($kycYear = $kycJalaliYear; $kycYear >= 1300; $kycYear--)
+                            <option value="{{ $kycYear }}">{{ $kycYear }}</option>
+                        @endfor
+                    </select>
+                </div>
+                <div class="col-4">
+                    <select id="{{ $kycIdPrefix }}-kyc-birth-month" class="form-select" aria-label="{{ __('kyc.birth_month') }}">
+                        <option value="">{{ __('kyc.birth_month') }}</option>
+                        @foreach ($kycJalaliMonths as $kycMonthIndex => $kycMonthName)
+                            <option value="{{ $kycMonthIndex + 1 }}">{{ $kycMonthName }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-4">
+                    <select id="{{ $kycIdPrefix }}-kyc-birth-day" class="form-select" dir="ltr" aria-label="{{ __('kyc.birth_day') }}">
+                        <option value="">{{ __('kyc.birth_day') }}</option>
+                    </select>
+                </div>
+            </div>
+            <input type="hidden" name="birth_date" id="{{ $kycIdPrefix }}-kyc-birth-date" value="">
             <p class="form-text text-muted mb-0">{{ __('kyc.birth_date_hint') }}</p>
         </div>
         <div class="col-md-6">
-            <label class="form-label" for="{{ $kycIdPrefix }}-kyc-card-number">{{ __('kyc.card_number') }}</label>
-            <input type="text" id="{{ $kycIdPrefix }}-kyc-card-number" class="form-control" dir="ltr" maxlength="19" inputmode="numeric" autocomplete="off">
+            <label class="form-label" for="{{ $kycIdPrefix }}-kyc-mobile">{{ __('kyc.mobile') }}</label>
+            <input type="text" id="{{ $kycIdPrefix }}-kyc-mobile" class="form-control" dir="ltr" placeholder="09121234567" maxlength="15" inputmode="numeric" autocomplete="off">
+            <p class="form-text text-muted mb-0">{{ __('kyc.mobile_hint') }}</p>
         </div>
         <div class="col-md-6">
             <label class="form-label" for="{{ $kycIdPrefix }}-kyc-document">{{ __('kyc.document') }}</label>

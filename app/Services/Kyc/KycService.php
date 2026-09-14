@@ -67,7 +67,7 @@ class KycService
      *     last_name: string,
      *     national_code: string,
      *     birth_date: string,
-     *     card_number: string,
+     *     mobile: string,
      *     package_id?: int|null,
      *     owner_seller_id?: int|null
      * }  $data
@@ -77,17 +77,17 @@ class KycService
         $this->assertKycReady();
 
         $nationalCode = IranIdentityValidator::normalizeNationalCode($data['national_code']);
-        $cardNumber = IranIdentityValidator::normalizeCardNumber($data['card_number']);
+        $mobile = IranIdentityValidator::normalizeMobile($data['mobile']);
         $birthDate = IranIdentityValidator::normalizeJalaliBirthDate($data['birth_date']);
 
         if (! IranIdentityValidator::isValidNationalCode($nationalCode)) {
             throw ValidationException::withMessages(['national_code' => ['کد ملی نامعتبر است.']]);
         }
-        if (! IranIdentityValidator::isValidCardNumber($cardNumber)) {
-            throw ValidationException::withMessages(['card_number' => ['شماره کارت بانکی نامعتبر است.']]);
+        if (! IranIdentityValidator::isValidMobile($mobile)) {
+            throw ValidationException::withMessages(['mobile' => [__('kyc.mobile_invalid')]]);
         }
         if ($birthDate === null) {
-            throw ValidationException::withMessages(['birth_date' => ['تاریخ تولد نامعتبر است. فرمت: 1370/1/1']]);
+            throw ValidationException::withMessages(['birth_date' => [__('kyc.birth_date_invalid')]]);
         }
 
         $path = $this->storeDocument($document);
@@ -101,7 +101,7 @@ class KycService
             'last_name' => trim($data['last_name']),
             'national_code' => $nationalCode,
             'birth_date' => $birthDate,
-            'card_number' => $cardNumber,
+            'mobile' => $mobile,
             'document_disk' => (string) config('kyc.document_disk', 'local'),
             'document_path' => $path,
             'document_original_name' => $document->getClientOriginalName(),
@@ -149,85 +149,45 @@ class KycService
             throw ValidationException::withMessages(['document' => ['آپلود تصویر کارت ملی الزامی است.']]);
         }
 
-        $verification->verify_attempts = (int) $verification->verify_attempts + 1;
-        $verification->save();
-
         $client = $this->client();
         $results = [];
         $errors = [];
+        $answered = false;
 
         try {
-            $cardMatch = $client->cardMatch(
+            $shahkar = $client->shahkarMatch(
                 (string) $verification->national_code,
-                (string) $verification->birth_date,
-                (string) $verification->card_number,
+                (string) $verification->mobile,
             );
-            $results['card_match'] = [
-                'success' => (bool) ($cardMatch['success'] ?? false),
-                'matched' => (bool) ($cardMatch['data'] ?? false),
-                'message' => $cardMatch['message'] ?? null,
-                'code' => $cardMatch['code'] ?? null,
+            // api.ir replied (even with success:false) — this is a real, billable round-trip.
+            $answered = true;
+
+            $matched = $this->shahkarMatched($shahkar['data'] ?? null);
+            $providerMessage = is_string($shahkar['message'] ?? null) ? trim($shahkar['message']) : '';
+            $results['shahkar'] = [
+                'success' => (bool) ($shahkar['success'] ?? false),
+                'matched' => $matched,
+                'message' => $shahkar['message'] ?? null,
+                'code' => $shahkar['code'] ?? null,
             ];
-            if (! ($cardMatch['success'] ?? false) || ! ($cardMatch['data'] ?? false)) {
-                $errors[] = 'تطبیق کد ملی با کارت بانکی ناموفق بود.';
+
+            if (! ($shahkar['success'] ?? false)) {
+                // Surface the genuine upstream reason (credit, service outage, access level)
+                // instead of a generic sentence; api.ir answers HTTP 200 with success:false.
+                $errors[] = 'استعلام شاهکار انجام نشد: '.($providerMessage !== ''
+                    ? $providerMessage
+                    : 'api.ir دلیلی برنگرداند (کد: '.(string) ($shahkar['code'] ?? '—').').');
+            } elseif (! $matched) {
+                $errors[] = __('kyc.shahkar_mismatch').($providerMessage !== '' ? ' ('.$providerMessage.')' : '');
             }
         } catch (ApiIrException $exception) {
-            $errors[] = 'خطا در CardMatch: '.$exception->getMessage();
-            $results['card_match'] = ['error' => $exception->getMessage()];
+            $errors[] = 'خطا در ارتباط با سامانه شاهکار: '.$exception->getMessage();
+            $results['shahkar'] = ['error' => $exception->getMessage()];
         }
 
-        try {
-            $person = $client->personInfo(
-                (string) $verification->national_code,
-                (string) $verification->birth_date,
-            );
-            $personData = is_array($person['data'] ?? null) ? $person['data'] : [];
-            $results['person_info'] = [
-                'success' => (bool) ($person['success'] ?? false),
-                'firstName' => $personData['firstName'] ?? null,
-                'lastName' => $personData['lastName'] ?? null,
-                'alive' => $personData['alive'] ?? null,
-                'message' => $person['message'] ?? null,
-            ];
-
-            if (! ($person['success'] ?? false)) {
-                $errors[] = 'استعلام هویتی ناموفق بود.';
-            } elseif (($personData['alive'] ?? true) === false) {
-                $errors[] = 'وضعیت حیات فرد در استعلام معتبر نیست.';
-            } elseif (! IranIdentityValidator::namesMatch(
-                $verification->first_name,
-                $verification->last_name,
-                $personData['firstName'] ?? null,
-                $personData['lastName'] ?? null,
-            )) {
-                $errors[] = 'نام و نام خانوادگی با اطلاعات ثبت‌احوال هم‌خوانی ندارد.';
-            }
-        } catch (ApiIrException $exception) {
-            $errors[] = 'خطا در PersonInfo: '.$exception->getMessage();
-            $results['person_info'] = ['error' => $exception->getMessage()];
-        }
-
-        try {
-            $cardInfo = $client->bankCardInfo((string) $verification->card_number);
-            $cardData = is_array($cardInfo['data'] ?? null) ? $cardInfo['data'] : [];
-            $ownerName = $cardData['name'] ?? null;
-            $results['bank_card_info'] = [
-                'success' => (bool) ($cardInfo['success'] ?? false),
-                'name' => $ownerName,
-                'message' => $cardInfo['message'] ?? null,
-            ];
-            if (($cardInfo['success'] ?? false) && $ownerName
-                && ! IranIdentityValidator::cardOwnerMatches(
-                    $verification->first_name,
-                    $verification->last_name,
-                    is_string($ownerName) ? $ownerName : null,
-                )
-            ) {
-                $errors[] = 'نام واردشده با نام دارنده کارت بانکی هم‌خوانی ندارد.';
-            }
-        } catch (ApiIrException $exception) {
-            // BankCardInfo is supportive; do not hard-fail if provider rejects it after CardMatch passed.
-            $results['bank_card_info'] = ['error' => $exception->getMessage(), 'soft' => true];
+        if ($answered) {
+            $verification->verify_attempts = (int) $verification->verify_attempts + 1;
+            $verification->save();
         }
 
         $this->captureCreditFromApiResults($results);
@@ -384,7 +344,7 @@ class KycService
             'last_name' => $verification->last_name,
             'national_code_masked' => $verification->maskedNationalCode(),
             'birth_date' => $verification->birth_date,
-            'card_last4' => $verification->card_number_last4,
+            'mobile_masked' => $verification->maskedMobile(),
             'has_document' => (bool) $verification->has_document,
             'verify_attempts' => (int) $verification->verify_attempts,
             'remaining_attempts' => $verification->remainingAttempts(),
@@ -398,7 +358,7 @@ class KycService
 
         if ($isAdmin) {
             $payload['national_code'] = $verification->national_code;
-            $payload['card_number'] = $verification->card_number;
+            $payload['mobile'] = $verification->mobile;
             $payload['document_original_name'] = $verification->document_original_name;
         }
 
@@ -474,6 +434,35 @@ class KycService
         }
 
         throw new InvalidArgumentException('دسترسی به این پرونده احراز مجاز نیست.');
+    }
+
+    /**
+     * Shahkar answers with a plain boolean on most accounts, but some responses wrap it
+     * in an object. Anything we do not positively recognise counts as "not matched".
+     */
+    protected function shahkarMatched(mixed $data): bool
+    {
+        if (is_bool($data)) {
+            return $data;
+        }
+
+        if (is_int($data)) {
+            return $data === 1;
+        }
+
+        if (is_string($data)) {
+            return in_array(strtolower(trim($data)), ['1', 'true', 'yes'], true);
+        }
+
+        if (is_array($data)) {
+            foreach (['result', 'isMatched', 'matched', 'isValid'] as $key) {
+                if (array_key_exists($key, $data)) {
+                    return $this->shahkarMatched($data[$key]);
+                }
+            }
+        }
+
+        return false;
     }
 
     protected function refreshCreditQuietly(): void

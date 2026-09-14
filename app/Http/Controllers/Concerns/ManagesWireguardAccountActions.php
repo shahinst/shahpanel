@@ -236,7 +236,9 @@ trait ManagesWireguardAccountActions
         }
 
         return back()->with('success', __('accounts.refund_success', [
-            'amount' => format_toman($result['owner_refund_amount']),
+            // The money went back to the wallet of the purchase currency, so the
+            // confirmation has to name that currency and not always Toman.
+            'amount' => format_money($result['owner_refund_amount'], $result['currency'] ?? null),
             'owner' => $result['owner']->full_name,
         ]));
     }
@@ -254,7 +256,7 @@ trait ManagesWireguardAccountActions
         }
 
         return back()->with('success', __('accounts.reactivate_success', [
-            'amount' => format_toman($result['owner_refund_amount']),
+            'amount' => format_money($result['owner_refund_amount'], $result['currency'] ?? null),
             'owner' => $result['owner']->full_name,
         ]));
     }

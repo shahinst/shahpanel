@@ -112,6 +112,19 @@
         value="{{ old('admin_custom_charge') }}"
         placeholder="{{ __('accounts.admin_custom_charge_placeholder') }}"
     >
+    <div class="form-check mt-2">
+        <input type="hidden" name="admin_free_account" value="0">
+        <input
+            type="checkbox"
+            name="admin_free_account"
+            id="admin-free-account"
+            class="form-check-input"
+            value="1"
+            @checked(old('admin_free_account'))
+        >
+        <label class="form-check-label" for="admin-free-account">{{ __('accounts.admin_free_account') }}</label>
+        <small class="text-muted d-block">{{ __('accounts.admin_free_account_hint') }}</small>
+    </div>
 </x-form.group>
 
 <div id="admin-purchase-pricing" class="col-12 mb-3" hidden>
@@ -172,8 +185,26 @@
     let previewRequestId = 0;
     let clientRequestId = 0;
 
+    // Prices are formatted client-side, so the currency has to come from the package
+    // (or the preview payload) rather than being assumed to be Toman.
+    function currentPackageMeta() {
+        return optionsById[String(packageSelect.value)] || {};
+    }
+
+    function formatMoney(value, meta) {
+        meta = meta || {};
+        const decimals = Number.isFinite(meta.currency_decimals) ? meta.currency_decimals : 0;
+        const suffix = meta.currency_symbol || meta.currency_label || 'تومان';
+
+        return Number(value).toLocaleString('fa-IR', {
+            minimumFractionDigits: decimals,
+            maximumFractionDigits: decimals,
+        }) + ' ' + suffix;
+    }
+
+    // Kept so every existing call site becomes currency-aware without being touched.
     function formatToman(value) {
-        return Number(value).toLocaleString('fa-IR') + ' تومان';
+        return formatMoney(value, currentPackageMeta());
     }
 
     function toggleClientMode() {
@@ -264,6 +295,12 @@
         if (customChargeInput && customChargeInput.value !== '') {
             params.set('admin_custom_charge', customChargeInput.value);
         }
+        // The preview must see the free checkbox too, otherwise it quotes the wholesale
+        // price while the submitted form creates a free account (or the reverse).
+        const freeAccountInput = document.getElementById('admin-free-account');
+        if (freeAccountInput && freeAccountInput.checked) {
+            params.set('admin_free_account', '1');
+        }
 
         const requestId = ++previewRequestId;
         fetch(purchasePreviewUrl + '?' + params.toString(), { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } })
@@ -282,10 +319,10 @@
                 }
                 pricingBox.hidden = false;
                 pricingError.hidden = true;
-                pricingWholesale.textContent = formatToman(result.payload.wholesale_price);
-                pricingCharge.textContent = formatToman(result.payload.final_charge);
+                pricingWholesale.textContent = formatMoney(result.payload.wholesale_price, result.payload);
+                pricingCharge.textContent = formatMoney(result.payload.final_charge, result.payload);
                 pricingMargin.textContent = Number(result.payload.agent_margin) > 0
-                    ? formatToman(result.payload.agent_margin)
+                    ? formatMoney(result.payload.agent_margin, result.payload)
                     : '—';
             })
             .catch(function () { hidePricing(); });

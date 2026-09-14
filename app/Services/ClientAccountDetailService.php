@@ -122,7 +122,7 @@ class ClientAccountDetailService
             'isPanelV2ray' => $account->service_type->isPanelV2ray(),
             'isPpp' => $account->service_type->accountCategory() === AccountCategory::Ppp,
             'ppp' => $this->pppConnectionDetails($account),
-            'isAnyconnect' => $account->service_type->isCiscoAnyconnect(),
+            'isAnyconnect' => $account->service_type->isCiscoAnyconnect() || $account->service_type->isOcserv(),
             'anyconnect' => $this->anyconnectConnectionDetails($account),
         ];
     }
@@ -313,6 +313,10 @@ class ClientAccountDetailService
      */
     protected function anyconnectConnectionDetails(Account $account): array
     {
+        if ($account->service_type->isOcserv()) {
+            return app(OcservService::class)->connectionDetails($account);
+        }
+
         if (! $account->service_type->isCiscoAnyconnect()) {
             return [];
         }

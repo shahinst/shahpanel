@@ -154,8 +154,26 @@
         pricingDebounceTimer = setTimeout(loadPricingPreview, 200);
     }
 
+    // Prices come from packages that may be priced in TRY/USD/EUR, so the suffix has to
+    // follow the package currency instead of being hard-coded to Toman.
+    function currentPackageMeta() {
+        return optionsById[String(packageSelect.value)] || {};
+    }
+
+    function formatMoney(value, meta) {
+        meta = meta || {};
+        const decimals = Number.isFinite(meta.currency_decimals) ? meta.currency_decimals : 0;
+        const suffix = meta.currency_symbol || meta.currency_label || 'تومان';
+
+        return Number(value).toLocaleString('fa-IR', {
+            minimumFractionDigits: decimals,
+            maximumFractionDigits: decimals,
+        }) + ' ' + suffix;
+    }
+
+    // Kept so every existing call site becomes currency-aware without being touched.
     function formatToman(value) {
-        return Number(value).toLocaleString('fa-IR') + ' تومان';
+        return formatMoney(value, currentPackageMeta());
     }
 
     function openModal() {
@@ -293,8 +311,8 @@
                 }
                 pricingBox.hidden = false;
                 pricingError.hidden = true;
-                pricingWholesale.textContent = formatToman(result.payload.wholesale_price);
-                pricingCharge.textContent = formatToman(result.payload.final_charge);
+                pricingWholesale.textContent = formatMoney(result.payload.wholesale_price, result.payload);
+                pricingCharge.textContent = formatMoney(result.payload.final_charge, result.payload);
             })
             .catch(function () { hidePricing(); });
     }

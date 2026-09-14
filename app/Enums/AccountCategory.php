@@ -48,7 +48,7 @@ enum AccountCategory: string
         return match ($this) {
             self::Wireguard, self::Ppp => [ServerType::Mikrotik],
             self::V2ray => [ServerType::Sanaei, ServerType::Pasarguard, ServerType::Remnawave],
-            self::Anyconnect => [ServerType::CiscoAnyconnect],
+            self::Anyconnect => [ServerType::CiscoAnyconnect, ServerType::Ocserv],
         };
     }
 

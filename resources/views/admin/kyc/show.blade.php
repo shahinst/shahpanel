@@ -19,7 +19,7 @@
                     <dt class="col-sm-4">{{ __('kyc.last_name') }}</dt><dd class="col-sm-8">{{ $item->last_name }}</dd>
                     <dt class="col-sm-4">{{ __('kyc.national_code') }}</dt><dd class="col-sm-8" dir="ltr">{{ $item->national_code }}</dd>
                     <dt class="col-sm-4">{{ __('kyc.birth_date') }}</dt><dd class="col-sm-8" dir="ltr">{{ $item->birth_date }}</dd>
-                    <dt class="col-sm-4">{{ __('kyc.card_number') }}</dt><dd class="col-sm-8" dir="ltr">{{ $item->card_number }}</dd>
+                    <dt class="col-sm-4">{{ __('kyc.mobile') }}</dt><dd class="col-sm-8" dir="ltr">{{ $item->mobile ?? '—' }}</dd>
                     <dt class="col-sm-4">وضعیت</dt><dd class="col-sm-8">{{ $item->status->label() }}</dd>
                     <dt class="col-sm-4">تلاش</dt><dd class="col-sm-8">{{ $item->verify_attempts }}/{{ $item->max_verify_attempts }}</dd>
                     <dt class="col-sm-4">ثبت‌کننده</dt><dd class="col-sm-8">{{ $item->initiatedBy?->full_name }}</dd>

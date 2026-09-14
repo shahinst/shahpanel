@@ -173,8 +173,22 @@
         return checked ? checked.value : 'same';
     }
 
+    // The renew quote carries the package currency; fall back to Toman only if a very
+    // old cached response has no currency in it.
+    function formatMoney(value, meta) {
+        meta = meta || lastQuote || {};
+        const decimals = Number.isFinite(meta.currency_decimals) ? meta.currency_decimals : 0;
+        const suffix = meta.currency_symbol || meta.currency_label || 'تومان';
+
+        return Number(value).toLocaleString('fa-IR', {
+            minimumFractionDigits: decimals,
+            maximumFractionDigits: decimals,
+        }) + ' ' + suffix;
+    }
+
+    // Kept so every existing call site becomes currency-aware without being touched.
     function formatToman(value) {
-        return Number(value).toLocaleString('fa-IR') + ' تومان';
+        return formatMoney(value, lastQuote);
     }
 
     function toggleUpgradeGb() {
@@ -213,16 +227,17 @@
         const durationId = selectedDurationId();
         const priceEl = form.querySelector('.renew-duration-price[data-duration-id="' + durationId + '"]');
         const formulaEl = form.querySelector('.renew-duration-formula[data-duration-id="' + durationId + '"]');
+        const currencySymbol = data.currency_symbol || 'تومان';
         if (priceEl) {
-            priceEl.textContent = formatToman(data.charged_total);
+            priceEl.textContent = formatMoney(data.charged_total, data);
         }
         if (formulaEl && data.is_per_gb && data.data_gb && data.unit_price) {
             formulaEl.textContent = '(' + priceFormulaTpl
-                .replace(':unit', Number(data.unit_price).toLocaleString('fa-IR') + ' تومان')
+                .replace(':unit', Number(data.unit_price).toLocaleString('fa-IR') + ' ' + currencySymbol)
                 .replace(':gb', Number(data.data_gb).toLocaleString('fa-IR')) + ')';
         } else if (formulaEl && data.unit_price) {
             formulaEl.textContent = '(' + fixedOnceTpl
-                .replace(':unit', Number(data.unit_price).toLocaleString('fa-IR') + ' تومان') + ')';
+                .replace(':unit', Number(data.unit_price).toLocaleString('fa-IR') + ' ' + currencySymbol) + ')';
         }
     }
 
@@ -232,14 +247,15 @@
         pricingBox.hidden = false;
         if (pricingError) pricingError.hidden = true;
 
-        let wholesaleText = formatToman(data.wholesale_total);
+        let wholesaleText = formatMoney(data.wholesale_total, data);
         if (data.is_per_gb && data.data_gb && data.unit_price) {
             wholesaleText = Number(data.data_gb).toLocaleString('fa-IR') + ' ' + gbUnit + ' × '
-                + Number(data.unit_price).toLocaleString('fa-IR') + ' ' + tomanPerGb + ' = '
+                + Number(data.unit_price).toLocaleString('fa-IR') + ' '
+                + (data.currency_symbol || 'تومان') + ' / ' + gbUnit + ' = '
                 + wholesaleText;
         }
         if (pricingWholesale) pricingWholesale.textContent = wholesaleText;
-        if (pricingFinal) pricingFinal.textContent = formatToman(data.charged_total);
+        if (pricingFinal) pricingFinal.textContent = formatMoney(data.charged_total, data);
 
         if (pricingDiscount) {
             pricingDiscount.hidden = true;

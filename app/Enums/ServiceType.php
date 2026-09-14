@@ -17,6 +17,8 @@ enum ServiceType: string
     case Remnawave = 'remnawave';
     /** پکیج/اکانت اختصاصی Cisco AnyConnect روی ASA */
     case CiscoAnyconnect = 'cisco_anyconnect';
+    /** پکیج/اکانت OpenConnect روی ocserv با API مدیریتی JSON */
+    case Ocserv = 'ocserv';
 
     public function isMikrotik(): bool
     {
@@ -52,6 +54,11 @@ enum ServiceType: string
         return $this === self::CiscoAnyconnect;
     }
 
+    public function isOcserv(): bool
+    {
+        return $this === self::Ocserv;
+    }
+
     /** V2ray-style panel account (Sanaei, PasarGuard or Remnawave). */
     public function isPanelV2ray(): bool
     {
@@ -63,7 +70,7 @@ enum ServiceType: string
         return match ($this) {
             self::Wireguard => AccountCategory::Wireguard,
             self::SanaeiVmess, self::SanaeiVless, self::SanaeiTrojan, self::Pasarguard, self::Remnawave => AccountCategory::V2ray,
-            self::CiscoAnyconnect => AccountCategory::Anyconnect,
+            self::CiscoAnyconnect, self::Ocserv => AccountCategory::Anyconnect,
             default => AccountCategory::Ppp,
         };
     }
@@ -81,6 +88,7 @@ enum ServiceType: string
             self::Pasarguard => __('packages.service_type_pasarguard'),
             self::Remnawave => __('packages.service_type_remnawave'),
             self::CiscoAnyconnect => __('packages.service_type_cisco_anyconnect'),
+            self::Ocserv => __('packages.service_type_ocserv'),
         };
     }
 
@@ -97,6 +105,8 @@ enum ServiceType: string
             self::Pasarguard => 'pg-',
             self::Remnawave => 'rw-',
             self::CiscoAnyconnect => 'ac-',
+            // Readable credentials handed to end users by phone/chat: VPL847291.
+            self::Ocserv => (string) config('vpnpanel.ocserv.username_prefix', 'VPL'),
         };
     }
 }
