@@ -26,7 +26,7 @@ return [
     'crontab_empty' => '(crontab خالی یا قابل خواندن نیست)',
     'temp_file_failed' => 'ساخت فایل موقت ناموفق بود.',
     'temp_write_failed' => 'نوشتن فایل موقت ناموفق بود.',
-    'crontab_rejected' => 'سرور crontab را پذیرفت نکرد.',
+    'crontab_rejected' => 'سرور crontab را نپذیرفت.',
     'crontab_line' => 'خط crontab',
     'copy' => 'کپی',
     'copied' => 'کپی شد',

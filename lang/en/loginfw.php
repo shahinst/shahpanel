@@ -3,6 +3,7 @@
 return [
     'title' => 'Security and firewall',
     'menu' => 'Security and firewall',
+    'section' => 'Login firewall',
 
     'ip_blocked' => 'Too many failed attempts. The login page is closed to you for another :minutes minute(s).',
 
