@@ -1,0 +1,27 @@
+<?php
+
+return [
+    'login' => '登录',
+    'logout' => '退出登录',
+    'username' => '用户名',
+    'email' => '邮箱',
+    'password' => '密码',
+    'remember_me' => '记住我',
+    'forgot_password' => '忘记密码？',
+    'failed' => '该登录信息与我们的记录不符。',
+    'throttle' => '登录尝试次数过多，请在 :seconds 秒后重试。',
+    'unauthorized' => '拒绝访问。',
+    'wrong_portal' => '已将您跳转至与您角色对应的面板。',
+    'suspended' => '您的账号已停用。',
+    'login_subtitle' => '管理员、代理商、销售商或客户 —— 请使用用户名登录。',
+    'login_error' => '登录出错 —— 请重试或联系客服。',
+    'captcha_label' => '验证码',
+    'captcha_placeholder' => '请输入图中显示的验证码',
+    'captcha_hint' => '4–6 个字符（仅限英文小写字母和数字）。',
+    'captcha_refresh' => '换一张',
+    'captcha_loading' => '验证码加载中…',
+    'captcha_load_failed' => '验证码加载失败 —— 请点击「换一张」',
+    'captcha_invalid' => '验证码无效或已过期。',
+    'captcha_throttle' => '验证码尝试次数过多，请等待 :seconds 秒。',
+    'captcha_aria' => '登录验证码',
+];
