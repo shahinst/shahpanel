@@ -33,7 +33,7 @@ class PortalPaths
 
     public static function slug(string $role): string
     {
-        return self::all()[$role] ?? (string) config("vpnpanel.portal_paths.{$role}", $role);
+        return self::all()[$role] ?? (string) config("shahpanel.portal_paths.{$role}", $role);
     }
 
     public static function slugForRole(UserRole $role): string
@@ -55,14 +55,14 @@ class PortalPaths
             return self::$resolved;
         }
 
-        $defaults = (array) config('vpnpanel.portal_paths', []);
+        $defaults = (array) config('shahpanel.portal_paths', []);
         $resolved = [
             'admin' => self::sanitizeSlug($defaults['admin'] ?? 'admin', 'admin'),
             'agent' => self::sanitizeSlug($defaults['agent'] ?? 'agent', 'agent'),
             'seller' => self::sanitizeSlug($defaults['seller'] ?? 'seller', 'seller'),
         ];
 
-        if (function_exists('vpnpanel_installed') && vpnpanel_installed()) {
+        if (function_exists('shahpanel_installed') && shahpanel_installed()) {
             try {
                 if (Schema::hasTable('settings')) {
                     foreach (array_keys($resolved) as $role) {
@@ -112,7 +112,7 @@ class PortalPaths
 
     public static function shouldBlockLegacyPaths(): bool
     {
-        if (! function_exists('vpnpanel_installed') || ! vpnpanel_installed()) {
+        if (! function_exists('shahpanel_installed') || ! shahpanel_installed()) {
             return false;
         }
 
@@ -165,7 +165,7 @@ class PortalPaths
 
     public static function validateSlug(string $value, string $role): ?string
     {
-        $fallback = (string) config("vpnpanel.portal_paths.{$role}", $role);
+        $fallback = (string) config("shahpanel.portal_paths.{$role}", $role);
         $slug = self::sanitizeSlug($value, '');
 
         if ($slug === '') {

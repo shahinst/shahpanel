@@ -42,7 +42,7 @@ enum MoneyCurrency: string
 
     public static function default(): self
     {
-        return self::tryFrom((string) config('vpnpanel.currency', 'IRT')) ?? self::IRT;
+        return self::tryFrom((string) config('shahpanel.currency', 'IRT')) ?? self::IRT;
     }
 
     /**

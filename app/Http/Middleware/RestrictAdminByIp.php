@@ -34,7 +34,7 @@ class RestrictAdminByIp
     {
         $fromEnv = config('security.admin_ip_whitelist', []);
 
-        if (function_exists('vpnpanel_installed') && vpnpanel_installed()) {
+        if (function_exists('shahpanel_installed') && shahpanel_installed()) {
             try {
                 if (Schema::hasTable('settings')) {
                     $stored = Setting::getValue('admin_ip_whitelist');

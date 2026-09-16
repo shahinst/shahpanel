@@ -10,7 +10,7 @@ class EnsureInstalled
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (! vpnpanel_installed()) {
+        if (! shahpanel_installed()) {
             // There is no web installer any more — installing is install.sh or
             // `php artisan install:finalize`. This page is deliberately built
             // from a plain string rather than a view, because a half-deployed

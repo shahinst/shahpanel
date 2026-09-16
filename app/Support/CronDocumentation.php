@@ -29,7 +29,7 @@ class CronDocumentation
                 'cron' => '* * * * *',
                 'internal' => 'php artisan schedule:run',
                 'description' => 'الزامی — هر دقیقه یک‌بار؛ همه jobهای زیر از این دستور اجرا می‌شوند.',
-                'crontab' => "* * * * * cd {$path} && php artisan schedule:run >> {$path}/storage/logs/scheduler.log 2>&1 # vpnpanel-schedule",
+                'crontab' => "* * * * * cd {$path} && php artisan schedule:run >> {$path}/storage/logs/scheduler.log 2>&1 # shahpanel-schedule",
             ],
             [
                 'required' => true,
@@ -37,7 +37,7 @@ class CronDocumentation
                 'cron' => '* * * * *',
                 'internal' => 'php artisan queue:work --stop-when-empty --max-time=55',
                 'description' => 'الزامی برای سیستم تونلینگ جدید — هر دقیقه صف database را پردازش می‌کند (apply / reconcile / متریک‌ها) و بعد از ۵۵ ثانیه یا خالی‌شدن صف خارج می‌شود.',
-                'crontab' => "* * * * * cd {$path} && php artisan queue:work --queue=tunneling,default --stop-when-empty --max-time=55 >> {$path}/storage/logs/queue.log 2>&1 # vpnpanel-queue",
+                'crontab' => "* * * * * cd {$path} && php artisan queue:work --queue=tunneling,default --stop-when-empty --max-time=55 >> {$path}/storage/logs/queue.log 2>&1 # shahpanel-queue",
             ],
             [
                 'required' => false,

@@ -177,7 +177,7 @@ class MikrotikQueueService
 
     public function parentQueueLimit(): string
     {
-        $limit = trim((string) config('vpnpanel.wireguard.parent_queue_limit', '500M/500M'));
+        $limit = trim((string) config('shahpanel.wireguard.parent_queue_limit', '500M/500M'));
 
         return $limit !== '' ? $limit : '500M/500M';
     }

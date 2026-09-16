@@ -6,9 +6,9 @@ use App\Support\PortalPaths;
 
 class HtaccessBasicAuthService
 {
-    protected const MARKER_BEGIN = '# VPNPANEL-BASIC-AUTH-BEGIN:';
+    protected const MARKER_BEGIN = '# SHAHPANEL-BASIC-AUTH-BEGIN:';
 
-    protected const MARKER_END = '# VPNPANEL-BASIC-AUTH-END:';
+    protected const MARKER_END = '# SHAHPANEL-BASIC-AUTH-END:';
 
     public function htaccessPath(): string
     {

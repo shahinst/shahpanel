@@ -7,7 +7,7 @@ use App\Models\PackageDuration;
 use Illuminate\Support\Carbon;
 
 /**
- * Maps vpnpanel package/duration/account fields to Remnawave UserCreate/UserModify payloads.
+ * Maps shahpanel package/duration/account fields to Remnawave UserCreate/UserModify payloads.
  *
  * Compatible with Remnawave API v2.x (uuid) and v3.x (numeric id / username).
  */
@@ -29,7 +29,7 @@ final class RemnawaveUserPayloadBuilder
             'expireAt' => $this->resolveExpireAt($duration, $expiryAt),
             'trafficLimitBytes' => $dataLimitBytes !== null ? max(0, $dataLimitBytes) : 0,
             'trafficLimitStrategy' => $package->remnawaveTrafficStrategy(),
-            'description' => 'vpnpanel',
+            'description' => 'shahpanel',
         ];
 
         $squads = $package->remnawaveSquadUuids();

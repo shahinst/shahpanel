@@ -222,7 +222,7 @@ class PasarguardClientImportService
                 'client_email' => $username,
                 'pasarguard_user_id' => $panelUserId,
                 'pasarguard_subscription_url' => (string) ($remote['subscription_url'] ?? ''),
-                'portal_token' => Str::random((int) config('vpnpanel.portal_token_length', 32)),
+                'portal_token' => Str::random((int) config('shahpanel.portal_token_length', 32)),
                 'data_limit_bytes' => $dataLimitBytes,
                 'data_used_bytes' => (int) ($remote['used_traffic'] ?? 0),
                 'expiry_at' => $expiryAt,

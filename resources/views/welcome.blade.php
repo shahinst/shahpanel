@@ -10,7 +10,7 @@
                 <p class="mt-2 text-sm text-slate-600">{{ __('app.tagline') }}</p>
                                 </div>
 
-            @if (! vpnpanel_installed())
+            @if (! shahpanel_installed())
                 <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                     {{ __('app.install_required') }}
                     <span class="mr-1">نصب از راه SSH انجام می‌شود: <code>php artisan install:finalize</code></span>

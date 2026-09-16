@@ -16,7 +16,7 @@ use InvalidArgumentException;
 use Throwable;
 
 /**
- * انتقال اکانت‌های Sanaei از دیتابیس vpnpanel به سرور Remnawave (بدون خواندن از پنل ثنایی).
+ * انتقال اکانت‌های Sanaei از دیتابیس shahpanel به سرور Remnawave (بدون خواندن از پنل ثنایی).
  */
 class SanaeiToRemnawaveMigrationService
 {

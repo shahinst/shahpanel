@@ -26,7 +26,7 @@ class HandleImpersonationSession
                 return redirect()
                     ->to($result['returnUrl'])
                     ->with('warning', __('security.impersonation_expired', [
-                        'minutes' => (int) config('vpnpanel.impersonation_ttl_minutes', 3),
+                        'minutes' => (int) config('shahpanel.impersonation_ttl_minutes', 3),
                     ]));
             }
 

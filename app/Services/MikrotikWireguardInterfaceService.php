@@ -482,7 +482,7 @@ class MikrotikWireguardInterfaceService
 
     public function maxPeersPerInterface(): int
     {
-        return max(1, (int) config('vpnpanel.wireguard.max_peers_per_interface', 250));
+        return max(1, (int) config('shahpanel.wireguard.max_peers_per_interface', 250));
     }
 
     protected function isInterfaceAtCapacity(Server $server, string $interfaceName, ?ServerInterface $iface = null): bool

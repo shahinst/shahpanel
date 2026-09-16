@@ -8,7 +8,7 @@ use App\Models\PackageDuration;
 use Illuminate\Support\Carbon;
 
 /**
- * Maps vpnpanel package/duration/account fields to PasarGuard UserCreate/UserModify payloads.
+ * Maps shahpanel package/duration/account fields to PasarGuard UserCreate/UserModify payloads.
  */
 final class PasarguardUserPayloadBuilder
 {

@@ -10,7 +10,7 @@ use Illuminate\Support\Collection;
 use Throwable;
 
 /**
- * Re-enable vpnpanel accounts marked Exhausted/Disabled when Pasarguard/Remnawave
+ * Re-enable shahpanel accounts marked Exhausted/Disabled when Pasarguard/Remnawave
  * still reports remaining quota. Does not change volume limits or reset traffic.
  */
 class AccountMisdisabledRepairService
@@ -110,7 +110,7 @@ class AccountMisdisabledRepairService
             $remaining,
             $limit,
             $used,
-            'پنل هنوز '.$remainingLabel.' باقی دارد؛ vpnpanel «'.$statusLabel.'» است.',
+            'پنل هنوز '.$remainingLabel.' باقی دارد؛ shahpanel «'.$statusLabel.'» است.',
         );
     }
 

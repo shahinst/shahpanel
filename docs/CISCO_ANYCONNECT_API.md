@@ -9,7 +9,7 @@
 |------|-----|
 | AnyConnect client | فقط اتصال SSL/DTLS به portal |
 | ASA / Secure Firewall | احراز هویت، Local User DB، Group Policy، Tunnel Group |
-| پنل vpnpanel | CRUD کاربر از طریق REST + CLI روی ASA |
+| پنل shahpanel | CRUD کاربر از طریق REST + CLI روی ASA |
 
 ## پیش‌نیاز روی ASA
 

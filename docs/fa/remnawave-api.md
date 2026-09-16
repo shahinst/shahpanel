@@ -85,7 +85,7 @@ UUIDها در فیلد **`activeInternalSquads`** هنگام ساخت/ویرای
   }
 }
 ```
-(گاهی آرایه مستقیم یا کلید `squads` — کلاینت vpnpanel هر سه حالت را نرمال می‌کند.)
+(گاهی آرایه مستقیم یا کلید `squads` — کلاینت shahpanel هر سه حالت را نرمال می‌کند.)
 
 ---
 
@@ -143,7 +143,7 @@ UUIDها در فیلد **`activeInternalSquads`** هنگام ساخت/ویرای
   "trafficLimitBytes": 53687091200,
   "trafficLimitStrategy": "MONTH",
   "activeInternalSquads": ["b2c1...uuid..."],
-  "description": "ساخته‌شده از vpnpanel"
+  "description": "ساخته‌شده از shahpanel"
 }
 ```
 
@@ -196,12 +196,12 @@ UUIDها در فیلد **`activeInternalSquads`** هنگام ساخت/ویرای
 ## ۶) خطاها
 
 - HTTP غیر 2xx: معمولاً بدنه شامل `message` یا `error`.
-- در vpnpanel با `->throw()` و کانال لاگ `storage/logs/remnawave.log` ثبت می‌شود.
+- در shahpanel با `->throw()` و کانال لاگ `storage/logs/remnawave.log` ثبت می‌شود.
 - timeout / DNS / SSL: پیام‌های فارسی در `RemoteConnectionException`.
 
 ---
 
-## ۷) نگاشت به vpnpanel (پیاده‌سازی فعلی)
+## ۷) نگاشت به shahpanel (پیاده‌سازی فعلی)
 
 | لایه | کلاس / مسیر |
 |------|----------------|
@@ -212,14 +212,14 @@ UUIDها در فیلد **`activeInternalSquads`** هنگام ساخت/ویرای
 | URL | `App\Services\Remnawave\RemnawavePanelUrl` |
 | نوع سرور | `ServerType::Remnawave` |
 | نوع پکیج | `ServiceType::Remnawave` |
-| تنظیمات | `config/vpnpanel.php` → `remnawave.*` |
+| تنظیمات | `config/shahpanel.php` → `remnawave.*` |
 
 فیلدهای دیتابیس:
 - **servers:** `remnawave_squads`, `remnawave_squads_synced_at`, `remnawave_api_key_enc`, `api_token_enc` (توکن Bearer)
 - **packages:** `remnawave_squads` (آرایه UUID), `remnawave_traffic_strategy`
 - **accounts:** `remnawave_uuid`, `remnawave_subscription_url`
 
-راهنمای راه‌اندازی در پنل: [remnawave-vpnpanel.md](./remnawave-vpnpanel.md)
+راهنمای راه‌اندازی در پنل: [remnawave-shahpanel.md](./remnawave-shahpanel.md)
 
 ---
 
@@ -253,7 +253,7 @@ if ($apiKey) {
 $user = $client->post('/users/', $payload)->throw()->json('response');
 ```
 
-در vpnpanel به‌جای این، از `RemnawaveService::createPanelUser()` استفاده کنید تا squadها، حجم و انقضا از پکیج پر شوند.
+در shahpanel به‌جای این، از `RemnawaveService::createPanelUser()` استفاده کنید تا squadها، حجم و انقضا از پکیج پر شوند.
 
 ---
 
@@ -266,5 +266,5 @@ $user = $client->post('/users/', $payload)->throw()->json('response');
 اینباند: GET /config-profiles/inbounds (fallback /inbounds).
 لیست کاربر: GET /users?size=&start= با صفحه‌بندی.
 ویرایش: PATCH /users با uuid در بدنه.
-در vpnpanel این‌ها در RemnawavePanelClient و RemnawaveService پیاده شده‌اند.
+در shahpanel این‌ها در RemnawavePanelClient و RemnawaveService پیاده شده‌اند.
 ```

@@ -208,7 +208,7 @@ class Account extends Model
             return true;
         }
 
-        if (! function_exists('vpnpanel_installed') || ! vpnpanel_installed()) {
+        if (! function_exists('shahpanel_installed') || ! shahpanel_installed()) {
             return false;
         }
 

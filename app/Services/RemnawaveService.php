@@ -314,7 +314,7 @@ class RemnawaveService
      */
     public function listAllUsers(Server $server): array
     {
-        $size = max(50, (int) config('vpnpanel.remnawave.users_page_size', 200));
+        $size = max(50, (int) config('shahpanel.remnawave.users_page_size', 200));
         $start = 0;
         $all = [];
 
@@ -426,7 +426,7 @@ class RemnawaveService
     }
 
     /**
-     * ساخت/به‌روزرسانی کاربر Remnawave فقط از فیلدهای دیتابیس vpnpanel (بدون API ثنایی).
+     * ساخت/به‌روزرسانی کاربر Remnawave فقط از فیلدهای دیتابیس shahpanel (بدون API ثنایی).
      *
      * @return array{action: string, message: string}
      */
@@ -483,7 +483,7 @@ class RemnawaveService
 
             return [
                 'action' => 'created',
-                'message' => "Remnawave «{$username}» از دیتابیس vpnpanel ساخته شد.",
+                'message' => "Remnawave «{$username}» از دیتابیس shahpanel ساخته شد.",
             ];
         }
 
@@ -519,7 +519,7 @@ class RemnawaveService
 
         return [
             'action' => 'updated',
-            'message' => "Remnawave «{$username}» از دیتابیس vpnpanel به‌روزرسانی شد (نام، حجم، انقضا).",
+            'message' => "Remnawave «{$username}» از دیتابیس shahpanel به‌روزرسانی شد (نام، حجم، انقضا).",
         ];
     }
 
@@ -573,7 +573,7 @@ class RemnawaveService
     }
 
     /**
-     * هم‌تراز کردن مصرف ثبت‌شده در vpnpanel با Remnawave (در صورت پشتیبانی API).
+     * هم‌تراز کردن مصرف ثبت‌شده در shahpanel با Remnawave (در صورت پشتیبانی API).
      */
     public function syncPanelUsedTrafficFromAccount(Account $account): void
     {
@@ -612,7 +612,7 @@ class RemnawaveService
                 (string) $account->remote_username,
             );
         } catch (Throwable) {
-            // برخی نسخه‌های Remnawave این فیلد را نمی‌پذیرند — مصرف در vpnpanel حفظ می‌شود.
+            // برخی نسخه‌های Remnawave این فیلد را نمی‌پذیرند — مصرف در shahpanel حفظ می‌شود.
         }
     }
 

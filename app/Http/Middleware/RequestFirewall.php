@@ -118,7 +118,7 @@ class RequestFirewall
             return false;
         }
 
-        if (function_exists('vpnpanel_installed') && vpnpanel_installed()) {
+        if (function_exists('shahpanel_installed') && shahpanel_installed()) {
             try {
                 if (\Illuminate\Support\Facades\Schema::hasTable('settings')) {
                     return \App\Models\Setting::getValue('firewall_enabled', '1') === '1';

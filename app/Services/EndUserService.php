@@ -407,6 +407,6 @@ class EndUserService
     {
         $base = preg_replace('/[^a-z0-9._-]+/i', '', $username) ?: 'client';
 
-        return strtolower($base).'.'.$owner->id.'@client.vpnpanel.local';
+        return strtolower($base).'.'.$owner->id.'@client.shahpanel.local';
     }
 }

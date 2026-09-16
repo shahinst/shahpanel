@@ -145,7 +145,7 @@
                     <li>فایروال L7: اسکن الگوهای SQLi / XSS / Path Traversal</li>
                     <li>هدرهای X-Frame-Options، CSP، X-Content-Type-Options، HSTS (HTTPS)</li>
                     <li>هدایت خودکار از مسیرهای legacy به مسیر جدید</li>
-                    <li>ورود به پنل دیگر (impersonation): حداکثر {{ (int) config('vpnpanel.impersonation_ttl_minutes', 3) }} دقیقه با تمدید در هر فعالیت</li>
+                    <li>ورود به پنل دیگر (impersonation): حداکثر {{ (int) config('shahpanel.impersonation_ttl_minutes', 3) }} دقیقه با تمدید در هر فعالیت</li>
                     @if (! ($htaccessPending ?? true))
                         <li class="text-success">{{ __('security.htaccess_all_applied') }}</li>
                     @endif

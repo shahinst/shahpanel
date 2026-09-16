@@ -156,7 +156,7 @@ class PackageController extends Controller
         $syncMessage = null;
 
         if ($request->boolean('sync', true)) {
-            @set_time_limit(max(120, (int) config('vpnpanel.mikrotik.inline_max_seconds', 600)));
+            @set_time_limit(max(120, (int) config('shahpanel.mikrotik.inline_max_seconds', 600)));
 
             try {
                 $result = $interfaceSyncService->sync($server);

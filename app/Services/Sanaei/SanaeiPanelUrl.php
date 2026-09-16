@@ -19,7 +19,7 @@ final class SanaeiPanelUrl
     {
         $host = trim($server->host);
         $port = (int) $server->port;
-        $defaultPort = (int) config('vpnpanel.sanaei.default_port', 2053);
+        $defaultPort = (int) config('shahpanel.sanaei.default_port', 2053);
         $webBasePath = self::normalizeBasePath((string) ($server->web_base_path ?? ''));
 
         if (preg_match('#^https?://#i', $host)) {
@@ -55,7 +55,7 @@ final class SanaeiPanelUrl
         $basePath = $primary->basePath;
         $override = $primary->apiPrefixOverride;
         $configuredPort = (int) $server->port;
-        $defaultPort = (int) config('vpnpanel.sanaei.default_port', 2053);
+        $defaultPort = (int) config('shahpanel.sanaei.default_port', 2053);
 
         $ports = array_values(array_unique(array_filter([
             $parsed['port'] ?? null,

@@ -27,6 +27,7 @@ set -Eeuo pipefail
 APP_NAME="shahpanel"
 APP_TITLE="ShahPanel"
 APP_REPO_URL="https://github.com/shahinst/shahpanel"
+APP_YOUTUBE_URL="https://www.youtube.com/@shaahinst"
 
 APP_DIR="${APP_DIR:-/var/www/${APP_NAME}}"
 REPO="${REPO:-${APP_REPO_URL}.git}"
@@ -735,7 +736,7 @@ if [[ $WITH_PMA -eq 1 ]]; then
             # The shipped script serves it at the predictable /phpmyadmin/;
             # move it behind a random prefix so it is not trivially findable.
             PMA_PATH="db$(openssl rand -hex 5)"
-            SNIPPET="/etc/nginx/snippets/vpnpanel-phpmyadmin.conf"
+            SNIPPET="/etc/nginx/snippets/shahpanel-phpmyadmin.conf"
             if [[ -f "$SNIPPET" ]]; then
                 sed -i "s#/phpmyadmin/#/${PMA_PATH}/#g" "$SNIPPET"
                 nginx -t && systemctl reload nginx
@@ -785,7 +786,7 @@ sudo -u www-data \
 
 unset VPN_ADMIN_PASSWORD
 
-# The lock file is what EnsureInstalled checks. config/vpnpanel.php defines it
+# The lock file is what EnsureInstalled checks. config/shahpanel.php defines it
 # as base_path('.installed.lock'); tinker is a dev dependency and is absent from
 # a --no-dev install, so the path is resolved here instead of through artisan.
 LOCK_FILE="$APP_DIR/.installed.lock"
@@ -871,7 +872,8 @@ secret "  The admin URL is random on purpose — bookmark it."
 secret "  First thing to do: log in and change the password."
 secret ""
 secret "  Install log (no passwords): ${LOG}"
-secret "  Docs and issues: ${APP_REPO_URL}"
+secret "  GitHub  : ${APP_REPO_URL}"
+secret "  YouTube : ${APP_YOUTUBE_URL}"
 secret "════════════════════════════════════════════════════════════"
 secret ""
 

@@ -14,7 +14,7 @@ final class ApiIrClient
     /**
      * @return array{success: bool, code: int|string|null, message: ?string, data: mixed}
      */
-    public function echo(string $name = 'VPNPanel'): array
+    public function echo(string $name = 'ShahPanel'): array
     {
         return $this->post('api/Sandbox/Echo', ['name' => $name]);
     }

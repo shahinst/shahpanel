@@ -11,7 +11,7 @@ use Throwable;
 
 /**
  * Detects and repairs panel quota mismatches after renewals on inactive packages
- * (Pasarguard/Remnawave used_traffic not reset while vpnpanel DB was renewed).
+ * (Pasarguard/Remnawave used_traffic not reset while shahpanel DB was renewed).
  */
 class AccountRenewalRepairService
 {
@@ -116,9 +116,9 @@ class AccountRenewalRepairService
             'remote_remaining_bytes' => $remoteRemaining,
             'detail' => $mismatch
                 ? ($limitMismatch
-                    ? 'سقف پنل ('.format_data_size($remoteLimit).') با vpnpanel ('.format_data_size($localLimit).') فرق دارد.'
-                    : 'پنل «اتمام حجم» یا نزدیک صفر است؛ در vpnpanel هنوز '.format_data_size($localRemaining).' باقی مانده.')
-                : 'حجم پنل و vpnpanel هم‌خوان به نظر می‌رسد.',
+                    ? 'سقف پنل ('.format_data_size($remoteLimit).') با shahpanel ('.format_data_size($localLimit).') فرق دارد.'
+                    : 'پنل «اتمام حجم» یا نزدیک صفر است؛ در shahpanel هنوز '.format_data_size($localRemaining).' باقی مانده.')
+                : 'حجم پنل و shahpanel هم‌خوان به نظر می‌رسد.',
         ];
     }
 
@@ -165,7 +165,7 @@ class AccountRenewalRepairService
 
         return [
             'ok' => true,
-            'message' => 'حجم پنل با vpnpanel هم‌تراز شد (سقف/ترافیک از دیتابیس).',
+            'message' => 'حجم پنل با shahpanel هم‌تراز شد (سقف/ترافیک از دیتابیس).',
         ];
     }
 

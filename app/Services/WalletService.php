@@ -301,7 +301,7 @@ class WalletService
     protected function hasInfiniteWallet(User $user): bool
     {
         return $user->role === UserRole::Admin
-            && (bool) config('vpnpanel.admin_wallet_infinite', true);
+            && (bool) config('shahpanel.admin_wallet_infinite', true);
     }
 
     protected function formatMoney(string $amount): string

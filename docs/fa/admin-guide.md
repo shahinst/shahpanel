@@ -29,7 +29,7 @@
 
 ## پنل Remnawave
 
-راه‌اندازی سرور و پکیج: [remnawave-vpnpanel.md](./remnawave-vpnpanel.md) — مستندات API: [remnawave-api.md](./remnawave-api.md).
+راه‌اندازی سرور و پکیج: [remnawave-shahpanel.md](./remnawave-shahpanel.md) — مستندات API: [remnawave-api.md](./remnawave-api.md).
 
 ## امنیت
 

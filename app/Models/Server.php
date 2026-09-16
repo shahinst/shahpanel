@@ -217,7 +217,7 @@ class Server extends Model
             return (int) $seconds;
         }
 
-        return (int) config('vpnpanel.wireguard.persistent_keepalive', 10);
+        return (int) config('shahpanel.wireguard.persistent_keepalive', 10);
     }
 
     /**
@@ -230,7 +230,7 @@ class Server extends Model
     }
 
     /**
-     * Host used to reach the router/panel API from vpnpanel.
+     * Host used to reach the router/panel API from shahpanel.
      * When host is a domain, optional public_ip (IPv4) is preferred for API stability.
      */
     public function apiConnectionHost(): string

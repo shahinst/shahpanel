@@ -322,7 +322,7 @@ class SyncService
         $panelUsed = (int) ($meta['normalized']['used_bytes'] ?? $localUsed);
         $tolerance = 1024 * 1024;
 
-        // vpnpanel limit is authoritative — if the panel still shows headroom vs our limit, do not disable.
+        // shahpanel limit is authoritative — if the panel still shows headroom vs our limit, do not disable.
         if ($panelUsed < $localLimit - $tolerance) {
             return false;
         }

@@ -9,12 +9,12 @@ trait RetriesApiCalls
 {
     protected function retryAttempts(): int
     {
-        return max(1, (int) config('vpnpanel.sync_api_retry_attempts', 3));
+        return max(1, (int) config('shahpanel.sync_api_retry_attempts', 3));
     }
 
     protected function apiTimeoutSeconds(): int
     {
-        return max(1, (int) config('vpnpanel.sync_api_timeout_seconds', 15));
+        return max(1, (int) config('shahpanel.sync_api_timeout_seconds', 15));
     }
 
     /**

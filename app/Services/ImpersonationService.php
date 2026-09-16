@@ -141,7 +141,7 @@ class ImpersonationService
 
     protected function expiryTimestamp(): int
     {
-        $minutes = max(1, (int) config('vpnpanel.impersonation_ttl_minutes', 3));
+        $minutes = max(1, (int) config('shahpanel.impersonation_ttl_minutes', 3));
 
         return now()->addMinutes($minutes)->timestamp;
     }

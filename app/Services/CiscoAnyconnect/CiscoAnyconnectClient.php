@@ -271,7 +271,7 @@ final class CiscoAnyconnectClient
     {
         $this->runCli(
             ['write memory'],
-            max(60, (int) config('vpnpanel.cisco_anyconnect.write_memory_timeout_seconds', 180))
+            max(60, (int) config('shahpanel.cisco_anyconnect.write_memory_timeout_seconds', 180))
         );
     }
 
@@ -339,8 +339,8 @@ final class CiscoAnyconnectClient
 
     protected function rawHttp(?int $timeoutSeconds = null): PendingRequest
     {
-        $timeout = max(15, $timeoutSeconds ?? (int) config('vpnpanel.cisco_anyconnect.timeout_seconds', 45));
-        $verify = (bool) ($this->server->cisco_verify_ssl ?? config('vpnpanel.cisco_anyconnect.verify_ssl', true));
+        $timeout = max(15, $timeoutSeconds ?? (int) config('shahpanel.cisco_anyconnect.timeout_seconds', 45));
+        $verify = (bool) ($this->server->cisco_verify_ssl ?? config('shahpanel.cisco_anyconnect.verify_ssl', true));
 
         return Http::timeout($timeout)
             ->connectTimeout(min(20, $timeout))
