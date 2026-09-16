@@ -84,6 +84,21 @@ if (class_exists(\App\Http\Middleware\RestrictAdminByIp::class)) {
     $adminMiddleware[] = 'admin.ip';
 }
 
+// Language switch. Public on purpose: the login page needs it too, and a
+// signed-in user also gets the choice saved to their account.
+Route::get('/locale/{locale}', function (string $locale, \Illuminate\Http\Request $request) {
+    abort_unless(array_key_exists($locale, (array) config('locales.supported', [])), 404);
+
+    $request->session()->put((string) config('locales.session_key', 'app_locale'), $locale);
+
+    $user = $request->user();
+    if ($user !== null && \Illuminate\Support\Facades\Schema::hasColumn('users', 'locale')) {
+        $user->forceFill(['locale' => $locale])->saveQuietly();
+    }
+
+    return back();
+})->name('locale.switch');
+
 Route::get('/', [AuthController::class, 'showHome'])->name('home');
 Route::get('/login', [AuthController::class, 'showHome'])->middleware('ip.guard')->name('login');
 Route::get('/login/captcha', [LoginCaptchaController::class, 'refresh'])

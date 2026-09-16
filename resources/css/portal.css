@@ -29,7 +29,7 @@ body.portal-body {
     background: var(--portal-bg);
     color: var(--portal-text);
     line-height: 1.5;
-    direction: rtl;
+    direction: inherit;
     text-align: right;
 }
 
