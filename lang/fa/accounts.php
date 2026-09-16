@@ -202,7 +202,7 @@ return [
     'client_portal_password_unavailable' => 'رمز ورود ذخیره نشده — از «ارسال اطلاعات» یا بازیابی رمز استفاده کنید.',
     'service_password' => 'رمز سرویس',
     'ipsec_secret' => 'رمز IPsec (L2TP)',
-    'ipsec_without_secret' => 'بدونه Secret',
+    'ipsec_without_secret' => 'بدون Secret',
     'l2tp_account' => 'اکانت L2TP',
     'copy_l2tp_vpn_config' => 'کپی فایل کانفیگ',
     'copy_l2tp_vpn_config_copied' => 'متن راهنمای L2TP در کلیپبورد کپی شد.',

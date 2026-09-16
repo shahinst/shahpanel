@@ -17,5 +17,13 @@ return [
     'created_at' => 'Created at',
     'updated_at' => 'Updated at',
     'no_results' => 'No results found.',
+    'create' => 'Create',
+    'saved' => 'Saved successfully.',
+    'renewed' => 'Account renewed successfully.',
+    'deleted' => 'Deleted successfully.',
+    'error' => 'Something went wrong.',
+    'view' => 'View',
+    'active' => 'Active',
+    'inactive' => 'Disabled',
     'install_required' => 'Please run the installer first.',
 ];
