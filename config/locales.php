@@ -17,28 +17,24 @@ return [
             'english_name' => 'Persian',
             'dir' => 'rtl',
             'digits' => 'fa',
-            'flag' => '🇮🇷',
         ],
         'en' => [
             'name' => 'English',
             'english_name' => 'English',
             'dir' => 'ltr',
             'digits' => 'latn',
-            'flag' => '🇬🇧',
         ],
         'ru' => [
             'name' => 'Русский',
             'english_name' => 'Russian',
             'dir' => 'ltr',
             'digits' => 'latn',
-            'flag' => '🇷🇺',
         ],
         'zh' => [
             'name' => '中文',
             'english_name' => 'Chinese',
             'dir' => 'ltr',
             'digits' => 'latn',
-            'flag' => '🇨🇳',
         ],
     ],
 
