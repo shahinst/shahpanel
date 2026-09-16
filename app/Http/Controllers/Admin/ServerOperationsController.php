@@ -61,7 +61,7 @@ class ServerOperationsController extends Controller
             return $this->runInterfacePull($server, $interfaceSyncService);
         }
 
-        @set_time_limit(max(120, (int) config('vpnpanel.mikrotik.inline_max_seconds', 600)));
+        @set_time_limit(max(120, (int) config('shahpanel.mikrotik.inline_max_seconds', 600)));
 
         try {
             $pushResult = $profilePushService->push($server);
@@ -109,7 +109,7 @@ class ServerOperationsController extends Controller
                 ->with('error', __('servers.operation_not_supported_anyconnect'));
         }
 
-        @set_time_limit(max(120, (int) config('vpnpanel.mikrotik.inline_max_seconds', 600)));
+        @set_time_limit(max(120, (int) config('shahpanel.mikrotik.inline_max_seconds', 600)));
 
         try {
             $result = $interfaceSyncService->sync($server);
@@ -175,7 +175,7 @@ class ServerOperationsController extends Controller
 
         $from = Server::query()->findOrFail((int) $validated['from_server_id']);
 
-        @set_time_limit(max(120, (int) config('vpnpanel.mikrotik.inline_max_seconds', 600)));
+        @set_time_limit(max(120, (int) config('shahpanel.mikrotik.inline_max_seconds', 600)));
 
         try {
             $result = $migration->migrateFromServer(
@@ -209,7 +209,7 @@ class ServerOperationsController extends Controller
     ): RedirectResponse {
         $this->authorize('update', $server);
 
-        @set_time_limit(max(120, (int) config('vpnpanel.mikrotik.inline_max_seconds', 600)));
+        @set_time_limit(max(120, (int) config('shahpanel.mikrotik.inline_max_seconds', 600)));
 
         $onlyMissing = $request->boolean('only_missing', false);
 
@@ -240,7 +240,7 @@ class ServerOperationsController extends Controller
     ): RedirectResponse {
         $this->authorize('update', $server);
 
-        @set_time_limit(max(120, (int) config('vpnpanel.mikrotik.inline_max_seconds', 600)));
+        @set_time_limit(max(120, (int) config('shahpanel.mikrotik.inline_max_seconds', 600)));
 
         try {
             $log = $syncService->syncServer($server);
@@ -444,7 +444,7 @@ class ServerOperationsController extends Controller
             'is_enabled' => ['required', 'boolean'],
         ]);
 
-        @set_time_limit(max(120, (int) config('vpnpanel.mikrotik.inline_max_seconds', 600)));
+        @set_time_limit(max(120, (int) config('shahpanel.mikrotik.inline_max_seconds', 600)));
 
         try {
             $result = $wireguardInterfaces->updateManaged(

@@ -33,7 +33,7 @@ class MikrotikNativeBackupService
             $this->mikrotik->sendCommandWithSocketTimeout($server, '/system/backup/save', [
                 'name' => $remoteBase,
                 'dont-encrypt' => 'yes',
-            ], (int) config('vpnpanel.mikrotik.backup_save_timeout', 180));
+            ], (int) config('shahpanel.mikrotik.backup_save_timeout', 180));
 
             $this->waitForRouterFile($server, $remoteFilename);
 
@@ -62,7 +62,7 @@ class MikrotikNativeBackupService
 
     protected function remoteBackupBaseName(Server $server): string
     {
-        return 'vpnpanel-'.$server->id.'-'.now()->format('YmdHis');
+        return 'shahpanel-'.$server->id.'-'.now()->format('YmdHis');
     }
 
     protected function waitForRouterFile(Server $server, string $remoteFilename, int $maxAttempts = 15): void
@@ -136,7 +136,7 @@ class MikrotikNativeBackupService
             throw new RemoteProvisionException(__('server_backups.mikrotik_ssh_port_required'));
         }
 
-        $timeout = (int) config('vpnpanel.mikrotik.backup_scp_timeout', 180);
+        $timeout = (int) config('shahpanel.mikrotik.backup_scp_timeout', 180);
 
         $sftpClass = PhpSecLibLoader::sftpClass();
         $sftp = new $sftpClass($host, $sshPort, $timeout);

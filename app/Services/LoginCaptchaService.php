@@ -199,22 +199,22 @@ final class LoginCaptchaService
 
     protected function minLength(): int
     {
-        return max(4, (int) config('vpnpanel.login_captcha.min_length', 4));
+        return max(4, (int) config('shahpanel.login_captcha.min_length', 4));
     }
 
     protected function maxLength(): int
     {
-        return min(6, max($this->minLength(), (int) config('vpnpanel.login_captcha.max_length', 6)));
+        return min(6, max($this->minLength(), (int) config('shahpanel.login_captcha.max_length', 6)));
     }
 
     protected function ttlMinutes(): int
     {
-        return max(3, (int) config('vpnpanel.login_captcha.ttl_minutes', 10));
+        return max(3, (int) config('shahpanel.login_captcha.ttl_minutes', 10));
     }
 
     protected function failDecaySeconds(): int
     {
-        return max(60, (int) config('vpnpanel.login_captcha.fail_decay_seconds', 900));
+        return max(60, (int) config('shahpanel.login_captcha.fail_decay_seconds', 900));
     }
 
     protected function failLimiterKey(Request $request): string
@@ -228,7 +228,7 @@ final class LoginCaptchaService
     protected function assertNotRateLimited(Request $request): void
     {
         $key = $this->failLimiterKey($request);
-        $max = max(5, (int) config('vpnpanel.login_captcha.max_failures', 15));
+        $max = max(5, (int) config('shahpanel.login_captcha.max_failures', 15));
 
         if (RateLimiter::tooManyAttempts($key, $max)) {
             $seconds = RateLimiter::availableIn($key);

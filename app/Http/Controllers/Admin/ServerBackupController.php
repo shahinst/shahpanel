@@ -73,7 +73,7 @@ class ServerBackupController extends Controller
                 ->with('error', __('server_backups.unsupported_server_type'));
         }
 
-        @set_time_limit(max(120, (int) config('vpnpanel.server_backup.timeout_seconds', 300)));
+        @set_time_limit(max(120, (int) config('shahpanel.server_backup.timeout_seconds', 300)));
 
         try {
             $backup = $backupService->run($server, $request->user());

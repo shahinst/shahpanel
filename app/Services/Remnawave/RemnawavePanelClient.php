@@ -62,8 +62,8 @@ final class RemnawavePanelClient
     {
         $this->debugLog = [];
         $tried = [];
-        $testTimeout = max(15, (int) config('vpnpanel.remnawave.test_timeout_seconds', 60));
-        $testConnect = max(10, (int) config('vpnpanel.remnawave.test_connect_timeout_seconds', 30));
+        $testTimeout = max(15, (int) config('shahpanel.remnawave.test_timeout_seconds', 60));
+        $testConnect = max(10, (int) config('shahpanel.remnawave.test_connect_timeout_seconds', 30));
 
         try {
             $this->resolveReachableUrl($tried);
@@ -559,7 +559,7 @@ final class RemnawavePanelClient
         foreach (RemnawavePanelUrl::candidatesFromServer($this->server) as $candidate) {
             $tried[] = $candidate->apiBaseUrl();
             $probeUrl = $candidate->api('auth/status');
-            $probeConnect = max(10, (int) config('vpnpanel.remnawave.test_connect_timeout_seconds', 30));
+            $probeConnect = max(10, (int) config('shahpanel.remnawave.test_connect_timeout_seconds', 30));
 
             try {
                 $response = $this->http($probeConnect, $probeConnect)->get($probeUrl);
@@ -633,8 +633,8 @@ final class RemnawavePanelClient
 
     protected function http(?int $timeoutSeconds = null, ?int $connectTimeoutSeconds = null): PendingRequest
     {
-        $timeout = $timeoutSeconds ?? (int) config('vpnpanel.remnawave.timeout_seconds', 45);
-        $connect = $connectTimeoutSeconds ?? (int) config('vpnpanel.remnawave.connect_timeout_seconds', 25);
+        $timeout = $timeoutSeconds ?? (int) config('shahpanel.remnawave.timeout_seconds', 45);
+        $connect = $connectTimeoutSeconds ?? (int) config('shahpanel.remnawave.connect_timeout_seconds', 25);
 
         $headers = ['Accept' => 'application/json'];
         $caddyKey = trim((string) ($this->server->remnawave_api_key_enc ?? ''));
@@ -655,7 +655,7 @@ final class RemnawavePanelClient
     protected function httpCurlOptions(): array
     {
         return [
-            'verify' => config('vpnpanel.remnawave.verify_ssl', true),
+            'verify' => config('shahpanel.remnawave.verify_ssl', true),
             'curl' => [
                 CURLOPT_TCP_KEEPALIVE => 1,
                 CURLOPT_TCP_KEEPIDLE => 60,
@@ -733,7 +733,7 @@ final class RemnawavePanelClient
     protected function missingApiTokenMessage(): string
     {
         if (trim((string) ($this->server->api_token_enc ?? '')) === '') {
-            return 'توکن API در vpnpanel ذخیره نشده است. ویرایش سرور → فیلد «توکن API» → توکن از Remnawave Settings → API Tokens را بچسبانید → ذخیره. (نام کاربری/رمز برای ساخت کاربر کافی نیست.)';
+            return 'توکن API در shahpanel ذخیره نشده است. ویرایش سرور → فیلد «توکن API» → توکن از Remnawave Settings → API Tokens را بچسبانید → ذخیره. (نام کاربری/رمز برای ساخت کاربر کافی نیست.)';
         }
 
         return 'توکن API ذخیره‌شده معتبر نیست یا منقضی شده — در پنل Remnawave توکن جدید بسازید و دوباره در فیلد «توکن API» ذخیره کنید.';

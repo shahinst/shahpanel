@@ -37,13 +37,13 @@ if ! dpkg -l phpmyadmin >/dev/null 2>&1; then
 fi
 
 log "تنظیم آدرس phpMyAdmin..."
-cat >/etc/phpmyadmin/conf.d/vpnpanel-uri.php <<PHP
+cat >/etc/phpmyadmin/conf.d/shahpanel-uri.php <<PHP
 <?php
 \$cfg['PmaAbsoluteUri'] = '${SCHEME}://${DOMAIN}/phpmyadmin/';
 PHP
 
 log "ساخت snippet Nginx..."
-cat >/etc/nginx/snippets/vpnpanel-phpmyadmin.conf <<NGINX
+cat >/etc/nginx/snippets/shahpanel-phpmyadmin.conf <<NGINX
 # phpMyAdmin — ${DOMAIN}/phpmyadmin/
 location ^~ /phpmyadmin/ {
     root /usr/share/;
@@ -62,10 +62,10 @@ NGINX_SITE="/etc/nginx/sites-available/${DOMAIN}.conf"
 [[ -f "$NGINX_SITE" ]] || NGINX_SITE="/etc/nginx/sites-enabled/${DOMAIN}.conf"
 [[ -f "$NGINX_SITE" ]] || die "فایل Nginx یافت نشد: /etc/nginx/sites-available/${DOMAIN}.conf"
 
-if ! grep -q 'vpnpanel-phpmyadmin.conf' "$NGINX_SITE"; then
+if ! grep -q 'shahpanel-phpmyadmin.conf' "$NGINX_SITE"; then
     log "افزودن include به ${NGINX_SITE}..."
-    sed -i '/client_max_body_size/i \    include snippets/vpnpanel-phpmyadmin.conf;' "$NGINX_SITE" || \
-        sed -i '/root .*public;/a \    include snippets/vpnpanel-phpmyadmin.conf;' "$NGINX_SITE"
+    sed -i '/client_max_body_size/i \    include snippets/shahpanel-phpmyadmin.conf;' "$NGINX_SITE" || \
+        sed -i '/root .*public;/a \    include snippets/shahpanel-phpmyadmin.conf;' "$NGINX_SITE"
 fi
 
 # حذف subdomain قدیمی pma.*

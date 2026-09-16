@@ -111,7 +111,7 @@ class SanaeiService
      */
     public function getServerStatusForMonitor(Server $server): array
     {
-        $timeout = max(1, (int) config('vpnpanel.server_monitor.sanaei_timeout_seconds', 5));
+        $timeout = max(1, (int) config('shahpanel.server_monitor.sanaei_timeout_seconds', 5));
         $client = $this->client($server);
         $prefix = $client->resolveApiPrefix();
         $paths = ['/server/status', '/server/getStatus'];

@@ -15,7 +15,7 @@ class SyncPanelQuotaCommand extends Command
                             {--apply : اعمال روی Pasarguard/Remnawave}
                             {--reset-traffic : در صورت نیاز ترافیک پنل هم ریست شود}';
 
-    protected $description = 'هم‌تراز کردن سقف حجم vpnpanel با Pasarguard/Remnawave';
+    protected $description = 'هم‌تراز کردن سقف حجم shahpanel با Pasarguard/Remnawave';
 
     public function handle(
         AccountRenewalRepairService $repairService,

@@ -112,7 +112,7 @@ class PasarguardService
      */
     public function getSystemForMonitor(Server $server): array
     {
-        $timeout = max(1, (int) config('vpnpanel.server_monitor.pasarguard_timeout_seconds', 5));
+        $timeout = max(1, (int) config('shahpanel.server_monitor.pasarguard_timeout_seconds', 5));
 
         return $this->client($server)->getSystem($timeout);
     }
@@ -241,7 +241,7 @@ class PasarguardService
      */
     public function listAllUsers(Server $server): array
     {
-        $limit = max(50, (int) config('vpnpanel.pasarguard.users_page_size', 200));
+        $limit = max(50, (int) config('shahpanel.pasarguard.users_page_size', 200));
         $offset = 0;
         $all = [];
 

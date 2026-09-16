@@ -11,7 +11,11 @@
 
 <aside class="vp-sidebar" id="vp-sidebar">
     <a href="{{ route("{$panel}.dashboard") }}" class="vp-sidebar__brand">
-        <span class="vp-sidebar__brand-logo"><i class="bx bx-shield-quarter"></i></span>
+        {{-- Inline styles on purpose: public/build ships pre-compiled, so edits to resources/css would not reach a customer install until someone runs npm run build. --}}
+        <span class="vp-sidebar__brand-logo" style="background:none;box-shadow:none;">
+            <img src="{{ asset('images/shahpanel-logo.png') }}" alt="{{ $brandName }}"
+                 style="width:100%;height:100%;object-fit:contain;border-radius:11px;">
+        </span>
         <span class="vp-sidebar__brand-text">
             {{ $brandName }}
             <small>{{ $panelLabel }}</small>

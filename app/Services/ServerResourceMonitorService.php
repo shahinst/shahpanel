@@ -182,12 +182,12 @@ class ServerResourceMonitorService
 
     protected function cacheTtlSeconds(): int
     {
-        return max(15, (int) config('vpnpanel.server_monitor.cache_ttl_seconds', 60));
+        return max(15, (int) config('shahpanel.server_monitor.cache_ttl_seconds', 60));
     }
 
     protected function refreshPerRequest(): int
     {
-        return max(0, (int) config('vpnpanel.server_monitor.refresh_per_request', 2));
+        return max(0, (int) config('shahpanel.server_monitor.refresh_per_request', 2));
     }
 
     /**

@@ -41,7 +41,7 @@ class KycService
     {
         try {
             $client = $this->client();
-            $echo = $client->echo('VPNPanel-KYC');
+            $echo = $client->echo('ShahPanel-KYC');
             $ok = (bool) ($echo['success'] ?? false);
             KycSettings::markTestResult($ok);
 

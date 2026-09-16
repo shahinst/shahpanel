@@ -42,7 +42,7 @@ class RouterScriptService
         $interval = max(5, (int) config('tunneling.metrics.probe_interval', 10));
 
         $lines = [
-            '# vpnl-probe — auto-generated, do not edit (managed by vpnpanel)',
+            '# vpnl-probe — auto-generated, do not edit (managed by shahpanel)',
             ':local out ""',
         ];
 

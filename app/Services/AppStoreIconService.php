@@ -182,7 +182,7 @@ class AppStoreIconService
             || str_contains($host, 'itunes.apple.com')) {
             try {
                 $html = Http::timeout(8)
-                    ->withHeaders(['User-Agent' => 'Mozilla/5.0 (compatible; VPNPanel/1.0)'])
+                    ->withHeaders(['User-Agent' => 'Mozilla/5.0 (compatible; ShahPanel/1.0)'])
                     ->get($appUrl)
                     ->body();
 

@@ -7,13 +7,13 @@ return [
     'css' => [
         'css/bootstrap.min.css',
         'css/app.min.rtl.css',
-        'css/vpnpanel.css',
+        'css/shahpanel.css',
     ],
 
     'css_auth' => [
         'css/bootstrap.min.css',
         'css/app.min.rtl.css',
-        'css/vpnpanel.css',
+        'css/shahpanel.css',
     ],
 
     'js' => [

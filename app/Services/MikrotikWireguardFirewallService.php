@@ -11,7 +11,7 @@ use Throwable;
 /**
  * Panel-managed NAT + mangle rules for WireGuard client subnets.
  *
- * Idempotent: only adds rules tagged with vpnpanel:wg:* comments.
+ * Idempotent: only adds rules tagged with shahpanel:wg:* comments.
  * Does not modify routing tables or any router objects without our comment.
  */
 class MikrotikWireguardFirewallService
@@ -25,7 +25,7 @@ class MikrotikWireguardFirewallService
      */
     public function ensureClientRules(Server $server, string $interfaceName, string $subnetCidr): array
     {
-        if (! config('vpnpanel.wireguard.auto_firewall_rules', true)) {
+        if (! config('shahpanel.wireguard.auto_firewall_rules', true)) {
             return ['created' => [], 'skipped' => ['disabled'], 'warnings' => []];
         }
 
@@ -72,7 +72,7 @@ class MikrotikWireguardFirewallService
             return compact('created', 'skipped', 'warnings');
         }
 
-        $marks = config('vpnpanel.wireguard.mangle_routing_marks', []);
+        $marks = config('shahpanel.wireguard.mangle_routing_marks', []);
         $lowMark = (string) ($marks['low'] ?? 'FILTER-2>128');
         $highMark = (string) ($marks['high'] ?? 'FILTER-129>254');
 
@@ -170,12 +170,12 @@ class MikrotikWireguardFirewallService
 
     protected function natComment(string $interfaceName): string
     {
-        return 'vpnpanel:wg:'.$interfaceName.':nat';
+        return 'shahpanel:wg:'.$interfaceName.':nat';
     }
 
     protected function mangleComment(string $interfaceName, string $suffix): string
     {
-        return 'vpnpanel:wg:'.$interfaceName.':'.$suffix;
+        return 'shahpanel:wg:'.$interfaceName.':'.$suffix;
     }
 
     protected function routingMarkExists(Server $server, string $routingMark): bool

@@ -633,8 +633,8 @@ class MikrotikService
      */
     public function getSystemResourceForMonitor(Server $server): array
     {
-        $connectTimeout = max(1, (int) config('vpnpanel.server_monitor.mikrotik_connect_timeout', 3));
-        $socketTimeout = max(1, (int) config('vpnpanel.server_monitor.mikrotik_socket_timeout', 5));
+        $connectTimeout = max(1, (int) config('shahpanel.server_monitor.mikrotik_connect_timeout', 3));
+        $socketTimeout = max(1, (int) config('shahpanel.server_monitor.mikrotik_socket_timeout', 5));
 
         $client = $this->createClient($server, $connectTimeout, $socketTimeout, 1);
         $rows = $client->query('/system/resource/print')->read();
@@ -1376,7 +1376,7 @@ class MikrotikService
             'name' => $name,
             'listen-port' => (string) $port,
             'private-key' => $keys['private_key'],
-            'mtu' => (string) config('vpnpanel.wireguard.mtu', 1380),
+            'mtu' => (string) config('shahpanel.wireguard.mtu', 1380),
         ], fn ($value) => $value !== null && $value !== ''));
 
         if (! $this->wireguardInterfaceExists($server, $name)) {
@@ -1407,7 +1407,7 @@ class MikrotikService
             }
         }
 
-        $port = (int) config('vpnpanel.wireguard.default_listen_port', 51820);
+        $port = (int) config('shahpanel.wireguard.default_listen_port', 51820);
 
         while (in_array($port, $used, true)) {
             $port++;
@@ -1734,10 +1734,10 @@ class MikrotikService
         array $options = []
     ): string {
         $endpoint = $options['endpoint'] ?? $server->vpnClientEndpointHost().':'.($options['listen_port'] ?? 51820);
-        $dns = $options['dns'] ?? config('vpnpanel.wireguard.dns', '1.1.1.1');
-        $allowedIps = $options['allowed_ips'] ?? config('vpnpanel.wireguard.allowed_ips', '0.0.0.0/0, ::/0');
+        $dns = $options['dns'] ?? config('shahpanel.wireguard.dns', '1.1.1.1');
+        $allowedIps = $options['allowed_ips'] ?? config('shahpanel.wireguard.allowed_ips', '0.0.0.0/0, ::/0');
         $keepalive = (int) ($options['persistent_keepalive'] ?? $server->wireguardPersistentKeepalive());
-        $mtu = (int) ($options['mtu'] ?? config('vpnpanel.wireguard.mtu', 1380));
+        $mtu = (int) ($options['mtu'] ?? config('shahpanel.wireguard.mtu', 1380));
 
         return implode("\n", [
             '[Interface]',
@@ -1878,8 +1878,8 @@ class MikrotikService
             throw new RemoteConnectionException('MikroTik credentials are not configured for server #'.$server->id);
         }
 
-        $port = $server->port ?: config('vpnpanel.mikrotik.default_port', 8728);
-        $sslPort = config('vpnpanel.mikrotik.ssl_port', 8729);
+        $port = $server->port ?: config('shahpanel.mikrotik.default_port', 8728);
+        $sslPort = config('shahpanel.mikrotik.ssl_port', 8729);
         $useSsl = (int) $port === (int) $sslPort;
 
         try {
@@ -1889,9 +1889,9 @@ class MikrotikService
                 'pass' => $password,
                 'port' => (int) $port,
                 'ssl' => $useSsl,
-                'timeout' => max(1, $connectTimeout ?? (int) config('vpnpanel.mikrotik.connect_timeout', 15)),
-                'socket_timeout' => max(1, $socketTimeout ?? (int) config('vpnpanel.mikrotik.op_timeout', 60)),
-                'throw_timeout_exception' => (bool) config('vpnpanel.mikrotik.throw_timeout_exception', PHP_VERSION_ID < 80400),
+                'timeout' => max(1, $connectTimeout ?? (int) config('shahpanel.mikrotik.connect_timeout', 15)),
+                'socket_timeout' => max(1, $socketTimeout ?? (int) config('shahpanel.mikrotik.op_timeout', 60)),
+                'throw_timeout_exception' => (bool) config('shahpanel.mikrotik.throw_timeout_exception', PHP_VERSION_ID < 80400),
                 'attempts' => max(1, $attempts ?? $this->retryAttempts()),
                 'delay' => 1,
             ]));

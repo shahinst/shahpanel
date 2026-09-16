@@ -306,7 +306,7 @@ final class OcservClient
             );
         }
 
-        $timeout = max(10, (int) config('vpnpanel.ocserv.timeout_seconds', 15));
+        $timeout = max(10, (int) config('shahpanel.ocserv.timeout_seconds', 15));
         $verify = (bool) ($this->server->ocserv_verify_ssl ?? true);
 
         return Http::timeout($timeout)

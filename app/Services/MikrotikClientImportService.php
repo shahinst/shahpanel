@@ -173,7 +173,7 @@ class MikrotikClientImportService
                     'data_used_bytes' => $client['data_used_bytes'] ?? 0,
                     'status' => ($client['disabled'] ?? false) ? AccountStatus::Disabled : AccountStatus::Active,
                     'client_email' => $client['username'].'@imported.local',
-                    'portal_token' => Str::random((int) config('vpnpanel.portal_token_length', 32)),
+                    'portal_token' => Str::random((int) config('shahpanel.portal_token_length', 32)),
                     'last_sync_at' => now(),
                 ];
 

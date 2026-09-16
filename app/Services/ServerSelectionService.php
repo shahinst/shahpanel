@@ -91,7 +91,7 @@ class ServerSelectionService
         }
 
         $cacheKey = 'server.reachable.mikrotik.'.$server->id;
-        $ttl = max(30, (int) config('vpnpanel.mikrotik.reachability_cache_seconds', 90));
+        $ttl = max(30, (int) config('shahpanel.mikrotik.reachability_cache_seconds', 90));
 
         return (bool) Cache::remember($cacheKey, $ttl, function () use ($server): bool {
             $ok = $this->mikrotikService->probeConnection($server, timeoutSeconds: 3);

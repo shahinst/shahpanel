@@ -9,7 +9,7 @@ class PortalLinkService
 {
     public function ttlMinutes(): int
     {
-        return max(1, (int) config('vpnpanel.portal_link_ttl_minutes', 5));
+        return max(1, (int) config('shahpanel.portal_link_ttl_minutes', 5));
     }
 
     public function isActive(Account $account): bool
@@ -31,7 +31,7 @@ class PortalLinkService
     public function issue(Account $account): string
     {
         $account->update([
-            'portal_token' => Str::random((int) config('vpnpanel.portal_token_length', 32)),
+            'portal_token' => Str::random((int) config('shahpanel.portal_token_length', 32)),
             'portal_token_expires_at' => now()->addMinutes($this->ttlMinutes()),
         ]);
 

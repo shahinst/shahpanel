@@ -12,7 +12,7 @@ use Throwable;
  */
 class CronManagerService
 {
-    public const MARKER = 'vpnpanel-schedule';
+    public const MARKER = 'shahpanel-schedule';
 
     /**
      * @return array{key: string, label: string, detail: string}
@@ -169,7 +169,7 @@ class CronManagerService
      */
     protected function writeCrontab(string $content): array
     {
-        $tmp = tempnam(sys_get_temp_dir(), 'vpnpanel-cron-');
+        $tmp = tempnam(sys_get_temp_dir(), 'shahpanel-cron-');
 
         if ($tmp === false) {
             return ['ok' => false, 'error' => __('automation.temp_file_failed')];

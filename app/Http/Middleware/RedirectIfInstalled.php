@@ -10,7 +10,7 @@ class RedirectIfInstalled
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (vpnpanel_installed()) {
+        if (shahpanel_installed()) {
             return redirect()->route('login');
         }
 

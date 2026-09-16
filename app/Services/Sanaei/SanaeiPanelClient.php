@@ -262,8 +262,8 @@ final class SanaeiPanelClient
             unset(self::$resolvedPostRouteByServer[$cacheKey]);
         }
 
-        $deadline = microtime(true) + max(5, (int) config('vpnpanel.sanaei.operation_deadline_seconds', 45));
-        $maxAttempts = max(1, (int) config('vpnpanel.sanaei.max_post_attempts', 12));
+        $deadline = microtime(true) + max(5, (int) config('shahpanel.sanaei.operation_deadline_seconds', 45));
+        $maxAttempts = max(1, (int) config('shahpanel.sanaei.max_post_attempts', 12));
         $attempts = 0;
 
         $urls = [];
@@ -374,7 +374,7 @@ final class SanaeiPanelClient
 
         $relative = ltrim($apiPath, '/');
 
-        foreach ((array) config('vpnpanel.sanaei.api_prefixes', ['/panel/api', '/xui/API', '/xui/api']) as $prefix) {
+        foreach ((array) config('shahpanel.sanaei.api_prefixes', ['/panel/api', '/xui/API', '/xui/api']) as $prefix) {
             $prefix = trim((string) $prefix, '/');
             if ($prefix !== '') {
                 $urls[] = $this->url()->route('/'.$prefix.'/'.$relative);
@@ -727,9 +727,9 @@ final class SanaeiPanelClient
      */
     protected function apiPrefixCandidates(): array
     {
-        $configured = trim((string) config('vpnpanel.sanaei.api_prefix', '/panel/api'), '/');
+        $configured = trim((string) config('shahpanel.sanaei.api_prefix', '/panel/api'), '/');
         $fromUrl = trim($this->url()->apiPrefixOverride ?? '', '/');
-        $defaults = config('vpnpanel.sanaei.api_prefixes', ['/panel/api', '/xui/API', '/xui/api']);
+        $defaults = config('shahpanel.sanaei.api_prefixes', ['/panel/api', '/xui/API', '/xui/api']);
 
         $candidates = [];
         if ($fromUrl !== '') {
@@ -874,12 +874,12 @@ final class SanaeiPanelClient
         $timeout = max(1, $timeoutSeconds ?? $this->timeoutSeconds());
 
         // A dead host must not burn the whole request budget on the handshake.
-        $connectTimeout = max(1, min($timeout, (int) config('vpnpanel.sanaei.connect_timeout_seconds', 5)));
+        $connectTimeout = max(1, min($timeout, (int) config('shahpanel.sanaei.connect_timeout_seconds', 5)));
 
         // The panel admin username/password are POSTed on every login, so the
         // certificate is verified by default. Opt out per server, or globally
         // with SANAEI_VERIFY_SSL=false, for a self-signed panel certificate.
-        $verify = (bool) ($this->server->sanaei_verify_ssl ?? config('vpnpanel.sanaei.verify_ssl', true));
+        $verify = (bool) ($this->server->sanaei_verify_ssl ?? config('shahpanel.sanaei.verify_ssl', true));
 
         return Http::timeout($timeout)
             ->connectTimeout($connectTimeout)
@@ -893,7 +893,7 @@ final class SanaeiPanelClient
 
     protected function timeoutSeconds(): int
     {
-        return (int) config('vpnpanel.sync_api_timeout_seconds', 15);
+        return (int) config('shahpanel.sync_api_timeout_seconds', 15);
     }
 
     /**

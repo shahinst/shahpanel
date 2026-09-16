@@ -25,7 +25,7 @@ class DashboardController extends Controller
 
     public function serverStats(ServerResourceMonitorService $monitor): JsonResponse
     {
-        $budget = max(15, (int) config('vpnpanel.server_monitor.fetch_timeout_seconds', 12) + 5);
+        $budget = max(15, (int) config('shahpanel.server_monitor.fetch_timeout_seconds', 12) + 5);
         set_time_limit($budget);
 
         return response()->json($monitor->dashboardPayload());

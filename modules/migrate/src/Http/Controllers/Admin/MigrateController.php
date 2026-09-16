@@ -114,7 +114,7 @@ class MigrateController extends Controller
                 ->with('error', __('migrate.select_accounts_required'));
         }
 
-        @set_time_limit(max(300, (int) config('vpnpanel.mikrotik.inline_max_seconds', 600)));
+        @set_time_limit(max(300, (int) config('shahpanel.mikrotik.inline_max_seconds', 600)));
 
         try {
             $migration = $migrationService->run(

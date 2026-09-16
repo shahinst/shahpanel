@@ -22,7 +22,7 @@ final class RemnawavePanelUrl
     {
         $host = trim((string) $server->host);
         $port = (int) $server->port;
-        $defaultPort = (int) config('vpnpanel.remnawave.default_port', 443);
+        $defaultPort = (int) config('shahpanel.remnawave.default_port', 443);
         $basePath = self::normalizeBasePath((string) ($server->web_base_path ?? ''));
 
         if (preg_match('#^https?://#i', $host)) {
@@ -73,7 +73,7 @@ final class RemnawavePanelUrl
 
         $hostname = $parsed['host'];
         $configuredPort = (int) $server->port;
-        $defaultPort = (int) config('vpnpanel.remnawave.default_port', 443);
+        $defaultPort = (int) config('shahpanel.remnawave.default_port', 443);
 
         $ports = array_values(array_unique(array_filter([
             $parsed['port'] ?? null,

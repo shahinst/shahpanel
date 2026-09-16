@@ -706,7 +706,7 @@ class AccountService
         }
 
         if (($serviceType?->isSanaei() ?? false) && filled($snapshot->sanaeiClientUuid)) {
-            $email = $snapshot->clientEmail ?? $snapshot->remoteUsername.'@vpnpanel.local';
+            $email = $snapshot->clientEmail ?? $snapshot->remoteUsername.'@shahpanel.local';
             $this->sanaeiService->deleteClient(
                 $server,
                 $email,
@@ -858,7 +858,7 @@ class AccountService
     protected function pushSanaeiAccount(Account $account, bool $onlyMissing): array
     {
         $server = $account->server;
-        $email = $account->client_email ?? $account->remote_username.'@vpnpanel.local';
+        $email = $account->client_email ?? $account->remote_username.'@shahpanel.local';
         $uuid = $account->sanaei_client_uuid;
         $legacyInboundId = (int) ($account->sanaei_inbound_id ?? 0) ?: null;
         $totalGB = $account->isUnlimited() ? null : $account->data_limit_bytes / (1024 ** 3);
@@ -1475,8 +1475,8 @@ class AccountService
     /** OpenConnect: VPL + 6 digits, e.g. VPL847291 */
     protected function generateOcservUsername(): string
     {
-        $prefix = (string) config('vpnpanel.ocserv.username_prefix', 'VPL');
-        $digits = max(4, min(10, (int) config('vpnpanel.ocserv.username_digits', 6)));
+        $prefix = (string) config('shahpanel.ocserv.username_prefix', 'VPL');
+        $digits = max(4, min(10, (int) config('shahpanel.ocserv.username_digits', 6)));
         $max = (10 ** $digits) - 1;
 
         for ($attempt = 0; $attempt < 50; $attempt++) {
@@ -1493,8 +1493,8 @@ class AccountService
     /** OpenConnect: digits + 2 letters, e.g. 847291ab */
     protected function generateOcservPassword(): string
     {
-        $digits = max(4, min(10, (int) config('vpnpanel.ocserv.password_digits', 6)));
-        $letterCount = max(2, min(4, (int) config('vpnpanel.ocserv.password_letters', 2)));
+        $digits = max(4, min(10, (int) config('shahpanel.ocserv.password_digits', 6)));
+        $letterCount = max(2, min(4, (int) config('shahpanel.ocserv.password_letters', 2)));
         $max = (10 ** $digits) - 1;
         $alphabet = 'abcdefghjkmnpqrstuvwxyz'; // skip i/l/o for readability
 
@@ -2043,7 +2043,7 @@ class AccountService
         }
 
         throw new RemoteProvisionException(sprintf(
-            'سقف حجم روی پنل (%s) با vpnpanel (%s) هم‌خوان نیست — به‌روزرسانی Pasarguard/Remnawave ناموفق بود.',
+            'سقف حجم روی پنل (%s) با shahpanel (%s) هم‌خوان نیست — به‌روزرسانی Pasarguard/Remnawave ناموفق بود.',
             format_data_size($remoteAfterPush ?? $remoteLimit),
             format_data_size($localLimit),
         ));
@@ -2164,7 +2164,7 @@ class AccountService
     }
 
     /**
-     * Read panel used traffic into vpnpanel (does not change limits or reset panel traffic).
+     * Read panel used traffic into shahpanel (does not change limits or reset panel traffic).
      */
     public function syncUsedBytesFromRemotePanel(Account $account): Account
     {
@@ -2336,7 +2336,7 @@ class AccountService
             [$username, $password] = $this->resolveMikrotikPppCredentials($package->service_type, $clientData);
             $email = ! empty($clientData['client_email'])
                 ? (string) $clientData['client_email']
-                : $username.'@vpnpanel.local';
+                : $username.'@shahpanel.local';
         } else {
             $username = ! empty($clientData['remote_username'])
                 ? AccountNameValidator::assertValid((string) $clientData['remote_username'])
@@ -2345,7 +2345,7 @@ class AccountService
                 ? (string) $clientData['client_email']
                 : ($package->service_type->isPanelV2ray()
                     ? $username
-                    : $username.'@vpnpanel.local');
+                    : $username.'@shahpanel.local');
             $password = (string) ($clientData['remote_password'] ?? $this->generateRemotePassword($package->service_type));
         }
 
@@ -2405,7 +2405,7 @@ class AccountService
             'cisco_asa_username' => $remoteMeta['cisco_asa_username'] ?? null,
             'client_email' => $email,
             'client_panel_password_hash' => $portalPassword,
-            'portal_token' => Str::random((int) config('vpnpanel.portal_token_length', 32)),
+            'portal_token' => Str::random((int) config('shahpanel.portal_token_length', 32)),
             'data_limit_bytes' => $dataLimitBytes,
             'purchased_data_gb' => $purchasedGb,
             'data_used_bytes' => 0,
@@ -2574,7 +2574,7 @@ class AccountService
             $subnet = $clientData['wireguard_subnet'] ?? null;
             if (! is_string($subnet) || $subnet === '') {
                 $subnet = $wgInterfaces->resolveSubnet($server, $interface)
-                    ?? (string) config('vpnpanel.wireguard.default_subnet', '10.10.0.0/24');
+                    ?? (string) config('shahpanel.wireguard.default_subnet', '10.10.0.0/24');
             }
 
             try {
@@ -2631,7 +2631,7 @@ class AccountService
             : $wgInterfaces->resolveInterfaceName($newServer, null, null);
 
         $subnet = $wgInterfaces->resolveSubnet($newServer, $interface)
-            ?? (string) config('vpnpanel.wireguard.default_subnet', '10.10.0.0/24');
+            ?? (string) config('shahpanel.wireguard.default_subnet', '10.10.0.0/24');
 
         try {
             $subnet = $wgInterfaces->normalizeSubnetCidr($subnet);
@@ -2822,7 +2822,7 @@ class AccountService
         }
 
         if ($account->service_type->isSanaei() && $account->sanaei_client_uuid) {
-            $email = $account->client_email ?? $account->remote_username.'@vpnpanel.local';
+            $email = $account->client_email ?? $account->remote_username.'@shahpanel.local';
             $this->sanaeiService->updateClient($server, $email, $account->sanaei_client_uuid, [
                 'totalGB' => $totalGB,
                 'expiryTime' => $expiryMs,
@@ -2881,7 +2881,7 @@ class AccountService
         }
 
         if ($account->service_type->isSanaei() && $account->sanaei_client_uuid) {
-            $email = $account->client_email ?? $account->remote_username.'@vpnpanel.local';
+            $email = $account->client_email ?? $account->remote_username.'@shahpanel.local';
             $this->sanaeiService->disableClient($server, $email, $account->sanaei_client_uuid, $account->sanaei_inbound_id ?: null);
 
             return;
@@ -2933,7 +2933,7 @@ class AccountService
         }
 
         if ($account->service_type->isSanaei() && $account->sanaei_client_uuid) {
-            $email = $account->client_email ?? $account->remote_username.'@vpnpanel.local';
+            $email = $account->client_email ?? $account->remote_username.'@shahpanel.local';
             $this->sanaeiService->enableClient($server, $email, $account->sanaei_client_uuid, $account->sanaei_inbound_id ?: null);
 
             return;
@@ -3002,7 +3002,7 @@ class AccountService
         }
 
         if (($serviceType?->isSanaei() ?? false) && $account->sanaei_client_uuid) {
-            $email = $account->client_email ?? $account->remote_username.'@vpnpanel.local';
+            $email = $account->client_email ?? $account->remote_username.'@shahpanel.local';
             $this->sanaeiService->deleteClient($server, $email, $account->sanaei_client_uuid, $account->sanaei_inbound_id ?: null);
 
             return;

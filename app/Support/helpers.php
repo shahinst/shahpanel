@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 use Morilog\Jalali\Jalalian;
 
-if (! function_exists('vpnpanel_installed')) {
-    function vpnpanel_installed(): bool
+if (! function_exists('shahpanel_installed')) {
+    function shahpanel_installed(): bool
     {
-        return file_exists(config('vpnpanel.installed_lock'));
+        return file_exists(config('shahpanel.installed_lock'));
     }
 }
 
@@ -436,7 +436,7 @@ if (! function_exists('app_display_name')) {
             $name = $default;
         }
 
-        if (! function_exists('vpnpanel_installed') || ! vpnpanel_installed()) {
+        if (! function_exists('shahpanel_installed') || ! shahpanel_installed()) {
             return $name;
         }
 
@@ -512,7 +512,7 @@ if (! function_exists('panel_wallet_info')) {
             return [
                 'balance' => $primary['balance'],
                 'infinite' => $user->role === \App\Enums\UserRole::Admin
-                    && (bool) config('vpnpanel.admin_wallet_infinite', true),
+                    && (bool) config('shahpanel.admin_wallet_infinite', true),
                 'currency' => $primary['currency'],
                 'wallets' => $wallets,
             ];

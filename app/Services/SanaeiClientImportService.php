@@ -221,7 +221,7 @@ class SanaeiClientImportService
                 'sanaei_inbound_id' => $inboundId,
                 'sanaei_client_uuid' => $uuid,
                 'client_email' => $remote['email'],
-                'portal_token' => Str::random((int) config('vpnpanel.portal_token_length', 32)),
+                'portal_token' => Str::random((int) config('shahpanel.portal_token_length', 32)),
                 'data_limit_bytes' => $remote['data_limit_bytes'],
                 'data_used_bytes' => $remote['data_used_bytes'],
                 'expiry_at' => $remote['expiry_at'],

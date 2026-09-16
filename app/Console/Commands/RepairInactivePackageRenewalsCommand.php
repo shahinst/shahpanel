@@ -12,7 +12,7 @@ class RepairInactivePackageRenewalsCommand extends Command
                             {--apply : اعمال اصلاح روی پنل (پیش‌فرض فقط گزارش)}
                             {--account= : فقط یک اکانت (شناسه)}';
 
-    protected $description = 'اکانت‌های تمدیدشده روی پکیج غیرفعال که حجم پنل با vpnpanel ناسازگار است را پیدا و اصلاح می‌کند';
+    protected $description = 'اکانت‌های تمدیدشده روی پکیج غیرفعال که حجم پنل با shahpanel ناسازگار است را پیدا و اصلاح می‌کند';
 
     public function handle(AccountRenewalRepairService $repairService): int
     {

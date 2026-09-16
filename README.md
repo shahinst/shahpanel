@@ -12,7 +12,6 @@
 [![PHP](https://img.shields.io/badge/PHP-8.2%2B-777bb4?style=flat-square&logo=php&logoColor=white)](https://php.net)
 [![Laravel](https://img.shields.io/badge/Laravel-11-ff2d20?style=flat-square&logo=laravel&logoColor=white)](https://laravel.com)
 [![MySQL](https://img.shields.io/badge/MySQL-8%2B-4479a1?style=flat-square&logo=mysql&logoColor=white)](https://mysql.com)
-[![Tests](https://img.shields.io/badge/tests-97-0ca30c?style=flat-square)](#-تست)
 
 [![Release](https://img.shields.io/github/v/release/shahinst/shahpanel?style=flat-square&logo=github&color=1668dc&label=نسخه)](https://github.com/shahinst/shahpanel/releases/latest)
 [![Stars](https://img.shields.io/github/stars/shahinst/shahpanel?style=flat-square&logo=github&color=1668dc)](https://github.com/shahinst/shahpanel/stargazers)
@@ -53,6 +52,7 @@
 | 🛡 **Pasarguard** | همه‌ی inboundها |
 | 🌊 **Remnawave** | Internal Squads — سازگار با API نسخه ۳.x |
 | 🔒 **Cisco AnyConnect (ASA)** | کاربران VPN از طریق REST API دستگاه |
+| 🔓 **OpenConnect / ocserv** | کاربران VPN از طریق API مدیریتی JSON |
 
 ---
 
@@ -152,7 +152,7 @@
 |:--|:--|
 | **سرور** | اوبونتو ۲۲.۰۴ یا ۲۴.۰۴ (تازه و خالی، حداقل ۱ گیگ رم) |
 | **دسترسی** | کاربر `root` یا `sudo` |
-| **دامنه** | **اختیاری.** اگر دارید، رکورد `A` آن را به IP سرور بدهید تا گواهی معتبر گرفته شود. اگر ندارید، نصب روی IP انجام می‌شود. |
+| **دامنه** | **اختیاری.** در هر دو حالت گواهی معتبر گرفته می‌شود — با دامنه از Let's Encrypt، و بدون دامنه مستقیماً برای همان IP. |
 
 نیازی به نصب دستی PHP، MySQL، Nginx یا Composer **نیست** — اسکریپت همه را خودش نصب می‌کند.
 
@@ -195,7 +195,7 @@ sudo bash install.sh
 اسکریپت خوش‌آمد می‌گوید و **یک سؤال می‌پرسد: دامنه دارید یا نه؟**
 
 - **دامنه دارم** → دامنه را وارد کنید. نصاب بررسی می‌کند که رکورد `A` واقعاً به همین سرور اشاره کند، و اگر درست بود گواهی رایگان **Let's Encrypt** می‌گیرد. مرورگر هیچ هشداری نمی‌دهد.
-- **دامنه ندارم** → Enter بزنید. پنل روی **IP سرور** با یک گواهی **self-signed** بالا می‌آید. HTTPS کار می‌کند، ولی مرورگر بار اول هشدار می‌دهد (روی «Advanced» بزنید و ادامه بدهید). هر وقت دامنه گرفتید می‌توانید گواهی معتبر را اضافه کنید.
+- **دامنه ندارم** → Enter بزنید. نصاب برای **خود IP سرور** یک گواهی معتبر Let's Encrypt می‌گیرد و مرورگر هیچ هشداری نمی‌دهد. این گواهی‌ها کوتاه‌عمرند (حدود ۶ روز) و `acme.sh` روزی چهار بار خودکار تمدیدشان می‌کند. اگر صدور به هر دلیلی شکست بخورد، پنل با گواهی self-signed بالا می‌آید و دستور تلاش دوباره چاپ می‌شود.
 
 اگر دامنه را از قبل می‌دانید یا نصب باید بدون تعامل انجام شود:
 
@@ -208,7 +208,7 @@ sudo bash install.sh --ip --yes            # مستقیم روی IP، بدون �
 
 | گزینه | کار |
 |:--|:--|
-| `--ip` | بدون دامنه؛ نصب روی IP سرور با گواهی self-signed |
+| `--ip` | بدون دامنه؛ نصب روی IP سرور با گواهی معتبر برای همان IP |
 | `--yes` | هیچ سؤالی نپرس و پیش‌فرض‌ها را بردار |
 | `--with-phpmyadmin` | نصب phpMyAdmin روی یک مسیر تصادفی |
 | `--with-security` | نصب سپر امنیتی (CrowdSec + fail2ban + ClamAV) |
@@ -228,7 +228,7 @@ sudo bash install.sh --ip --yes            # مستقیم روی IP، بدون �
 [7/13]  تنظیم .env و کلید رمزنگاری
 [8/13]  دسترسی فایل‌ها و ساخت جدول‌های دیتابیس
 [9/13]  نصب هلپر فایروال و دانلود رنج‌های کشور
-[10/13] پیکربندی Nginx        (+ ساخت گواهی self-signed در حالت IP)
+[10/13] پیکربندی Nginx        (+ گواهی موقت self-signed در حالت IP)
 [11/13] فعال‌سازی TLS
 [12/13] نصب کران زمان‌بند     (+ phpMyAdmin و سپر امنیتی، در صورت انتخاب)
 [13/13] ساخت کاربر مدیر
@@ -267,7 +267,7 @@ https://panel.example.com/p7f3a9c2e51     ← نصب با دامنه
 https://203.0.113.45/p7f3a9c2e51          ← نصب روی IP
 ```
 
-اگر روی IP نصب کرده‌اید، مرورگر بار اول هشدار گواهی می‌دهد؛ این طبیعی است — روی «Advanced» و سپس ادامه بزنید.
+در هر دو حالت (دامنه یا IP) گواهی معتبر است و مرورگر هشدار نمی‌دهد.
 
 > ⚠️ **مسیر ورود مدیر تصادفی است، نه `/admin`.** اولین چیزی که هر اسکنر خودکار می‌زند `/admin` است، پس عمداً از آن استفاده نمی‌شود. اگر این آدرس را گم کنید، از فایل بالا دوباره بخوانیدش.
 
@@ -306,7 +306,7 @@ https://203.0.113.45/p7f3a9c2e51          ← نصب روی IP
 
 ```bash
 apt-get remove --purge phpmyadmin
-rm -f /etc/nginx/snippets/vpnpanel-phpmyadmin.conf
+rm -f /etc/nginx/snippets/shahpanel-phpmyadmin.conf
 systemctl reload nginx
 ```
 
@@ -778,14 +778,6 @@ npm ci && npm run build     # فقط اگر UI را تغییر دادید
 php artisan serve
 ```
 
-### 🧪 تست
-
-```bash
-./vendor/bin/phpunit
-```
-
-۹۷ تست در ۱۶ فایل. سوئیت روی SQLite در حافظه اجرا می‌شود و به `.env` نیاز ندارد. افزونه‌ی `bcmath` باید نصب باشد — کد مالی به آن وابسته است و `composer.json` اعلامش می‌کند.
-
 ### ساختار پروژه
 
 ```
@@ -796,7 +788,6 @@ app/Http/Controllers/   کنترلرها، به تفکیک نقش
 resources/views/        رابط کاربری (Blade + Tailwind + Chart.js)
 database/migrations/    ۸۹ migration
 modules/                ماژول‌ها (تانلینگ، پرداخت، انتقال)
-tests/                  سوئیت تست (Unit + Feature)
 scripts/panel-firewall  هلپر ریشه‌ای فایروال (ipset/iptables)
 scripts/db-migrate.sh   بک‌آپ و انتقال دیتابیس به سرور جدید
 ops/security-shield/    نصب CrowdSec + fail2ban + ClamAV
@@ -821,15 +812,11 @@ tools/maintain-core.php صفحه‌ی تشخیص مستقل از Laravel (پشت
 
 ## 💚 حمایت از پروژه
 
-اگر این پنل برایتان مفید بوده و دوست دارید در توسعه‌اش سهیم باشید، می‌توانید از این آدرس حمایت کنید:
+اگر این پنل برایتان مفید بوده و دوست دارید در توسعه‌اش سهیم باشید:
 
-**تتر (USDT) — شبکه TRC20**
-
-```
-TB3aXqkMioddzcgtqPfeBFthYUY9tj9kbs
-```
-
-> ⚠️ فقط **USDT روی شبکه‌ی TRC20** بفرستید. ارسال هر ارز دیگر یا روی شبکه‌ی دیگر باعث از دست رفتن دارایی می‌شود.
+<a href="https://nowpayments.io/donation?api_key=1b2c76da-3f32-4887-a5e3-4e3340417001" target="_blank" rel="noreferrer noopener">
+   <img src="https://nowpayments.io/images/embeds/donation-button-black.svg" alt="Crypto donation button by NOWPayments">
+</a>
 
 هر حمایتی صرف توسعه‌ی امکانات جدید، رفع اشکال و پشتیبانی از پنل‌های بیشتر می‌شود. 🙏
 

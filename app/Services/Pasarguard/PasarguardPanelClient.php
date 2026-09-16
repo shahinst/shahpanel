@@ -52,8 +52,8 @@ final class PasarguardPanelClient
     {
         $this->debugLog = [];
         $tried = [];
-        $testTimeout = max(15, (int) config('vpnpanel.pasarguard.test_timeout_seconds', 60));
-        $testConnect = max(10, (int) config('vpnpanel.pasarguard.test_connect_timeout_seconds', 30));
+        $testTimeout = max(15, (int) config('shahpanel.pasarguard.test_timeout_seconds', 60));
+        $testConnect = max(10, (int) config('shahpanel.pasarguard.test_connect_timeout_seconds', 30));
 
         try {
             $this->resolveReachableUrl($tried);
@@ -561,7 +561,7 @@ final class PasarguardPanelClient
         foreach (PasarguardPanelUrl::candidatesFromServer($this->server) as $candidate) {
             $tried[] = $candidate->apiBaseUrl();
             $probeUrl = $candidate->api('admin/token');
-            $probeConnect = max(10, (int) config('vpnpanel.pasarguard.test_connect_timeout_seconds', 30));
+            $probeConnect = max(10, (int) config('shahpanel.pasarguard.test_connect_timeout_seconds', 30));
 
             try {
                 $response = Http::timeout($probeConnect)
@@ -631,8 +631,8 @@ final class PasarguardPanelClient
 
     protected function http(?int $timeoutSeconds = null, ?int $connectTimeoutSeconds = null): \Illuminate\Http\Client\PendingRequest
     {
-        $timeout = $timeoutSeconds ?? (int) config('vpnpanel.pasarguard.timeout_seconds', 45);
-        $connect = $connectTimeoutSeconds ?? (int) config('vpnpanel.pasarguard.connect_timeout_seconds', 25);
+        $timeout = $timeoutSeconds ?? (int) config('shahpanel.pasarguard.timeout_seconds', 45);
+        $connect = $connectTimeoutSeconds ?? (int) config('shahpanel.pasarguard.connect_timeout_seconds', 25);
 
         return Http::timeout($timeout)
             ->connectTimeout($connect)
@@ -646,7 +646,7 @@ final class PasarguardPanelClient
     protected function httpCurlOptions(): array
     {
         return [
-            'verify' => config('vpnpanel.pasarguard.verify_ssl', true),
+            'verify' => config('shahpanel.pasarguard.verify_ssl', true),
             'curl' => [
                 CURLOPT_TCP_KEEPALIVE => 1,
                 CURLOPT_TCP_KEEPIDLE => 60,

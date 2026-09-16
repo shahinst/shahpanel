@@ -62,7 +62,7 @@ trait ManagesStorefrontSettings
             [
                 'brand_name' => $request->user()->full_name,
                 'slug' => $this->uniqueSlugForUser($request->user()->username),
-                'primary_color' => config('vpnpanel.accent_color', '#6366f1'),
+                'primary_color' => config('shahpanel.accent_color', '#6366f1'),
                 'is_published' => false,
             ]
         );

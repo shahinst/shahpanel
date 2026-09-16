@@ -157,8 +157,8 @@
         if (!grid) return;
 
         var endpoint = @json(route('admin.dashboard.server-stats'));
-        var pollIntervalMs = @json(max(10, (int) config('vpnpanel.server_monitor.poll_interval_seconds', 30)) * 1000);
-        var fetchTimeoutMs = @json(max(5, (int) config('vpnpanel.server_monitor.fetch_timeout_seconds', 12)) * 1000);
+        var pollIntervalMs = @json(max(10, (int) config('shahpanel.server_monitor.poll_interval_seconds', 30)) * 1000);
+        var fetchTimeoutMs = @json(max(5, (int) config('shahpanel.server_monitor.fetch_timeout_seconds', 12)) * 1000);
         var pollInFlight = false;
         var pollAbort = null;
         var labels = {

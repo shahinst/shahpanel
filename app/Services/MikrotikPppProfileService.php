@@ -215,7 +215,7 @@ class MikrotikPppProfileService
 
     public function maxAccountsPerProfile(): int
     {
-        return max(1, (int) config('vpnpanel.wireguard.max_peers_per_interface', 250));
+        return max(1, (int) config('shahpanel.wireguard.max_peers_per_interface', 250));
     }
 
     protected function isProfileAtCapacity(Server $server, ServerInterface $profile): bool

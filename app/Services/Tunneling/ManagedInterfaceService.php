@@ -181,7 +181,7 @@ class ManagedInterfaceService
                     'name' => $interface->name,
                     'listen-port' => (string) $interface->listen_port,
                     'private-key' => $interface->wireguardPrivateKey(),
-                    'mtu' => (string) config('vpnpanel.wireguard.mtu', 1380),
+                    'mtu' => (string) config('shahpanel.wireguard.mtu', 1380),
                 ],
             ],
             [
