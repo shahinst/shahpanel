@@ -406,14 +406,33 @@ if (! function_exists('jalali_date')) {
             $date = new DateTimeImmutable($date);
         }
 
+        // تقویم جلالی فقط برای خوانندهٔ فارسی معنا دارد. برای انگلیسی، روسی و چینی
+        // تاریخ میلادی برگردانده می‌شود، وگرنه «۱۴۰۵/۰۶/۲۵» برای آنها یک عدد بی‌معناست.
+        if (locale_digits() !== 'fa') {
+            return $date->format($format);
+        }
+
         return persian_digits(Jalalian::fromDateTime($date)->format($format));
     }
 }
 
 if (! function_exists('jalali_date_input')) {
+    /**
+     * مقدار فیلدهای ورودی تاریخ — همیشه جلالی، مستقل از زبان.
+     * parse_jalali_date() ورودی را جلالی می‌خواند، پس اگر اینجا میلادی بدهیم
+     * تاریخ اشتباه ذخیره می‌شود.
+     */
     function jalali_date_input(DateTimeInterface|string|null $date): string
     {
-        return jalali_date($date, 'Y/m/d');
+        if ($date === null || $date === '') {
+            return '';
+        }
+
+        if (is_string($date)) {
+            $date = new DateTimeImmutable($date);
+        }
+
+        return persian_digits(Jalalian::fromDateTime($date)->format('Y/m/d'));
     }
 }
 
@@ -444,6 +463,10 @@ if (! function_exists('parse_jalali_date')) {
 if (! function_exists('jalali_now')) {
     function jalali_now(string $format = 'Y/m/d H:i'): string
     {
+        if (locale_digits() !== 'fa') {
+            return now()->format($format);
+        }
+
         return persian_digits(Jalalian::now()->format($format));
     }
 }
