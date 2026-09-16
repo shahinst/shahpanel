@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\MoneyCurrency;
 use App\Enums\TransactionType;
 use App\Traits\BelongsToHierarchy;
 use Illuminate\Database\Eloquent\Model;
@@ -43,6 +44,12 @@ class Transaction extends Model
             'balance_after' => 'decimal:2',
             'created_at' => 'datetime',
         ];
+    }
+
+    // ارز تراکنش را به‌صورت enum برمی‌گرداند تا نمایش مبالغ با واحد درست انجام شود.
+    public function moneyCurrency(): MoneyCurrency
+    {
+        return MoneyCurrency::normalize($this->currency);
     }
 
     public function wallet(): BelongsTo

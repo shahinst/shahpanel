@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\InvoiceStatus;
 use App\Enums\InvoiceType;
+use App\Enums\MoneyCurrency;
 use App\Enums\UserRole;
 use App\Traits\BelongsToHierarchy;
 use Illuminate\Database\Eloquent\Model;
@@ -44,6 +45,12 @@ class Invoice extends Model
             'issued_at' => 'datetime',
             'created_at' => 'datetime',
         ];
+    }
+
+    // ارز فاکتور را به‌صورت enum برمی‌گرداند تا نمایش مبالغ با واحد درست انجام شود.
+    public function moneyCurrency(): MoneyCurrency
+    {
+        return MoneyCurrency::normalize($this->currency);
     }
 
     public function buyer(): BelongsTo

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Concerns;
 
 use App\Enums\AccountStatus;
 use App\Enums\InvoiceType;
+use App\Enums\MoneyCurrency;
 use App\Enums\TransactionType;
 use App\Enums\UserRole;
 use App\Models\Account;
@@ -14,6 +15,7 @@ use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Wallet;
 use App\Support\ExpiringAccountThresholds;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -71,28 +73,29 @@ trait BuildsReportData
         }
 
         // ==================== PERIOD (revenue from invoices.issued_at) ====================
-        $revTotal = (string) $invoices()->whereBetween('issued_at', [$from, $to])->sum('total');
-        $revNew = (string) $invoices()->whereBetween('issued_at', [$from, $to])->where('type', InvoiceType::NewAccount)->sum('total');
-        $revRenew = (string) $invoices()->whereBetween('issued_at', [$from, $to])->where('type', InvoiceType::Renewal)->sum('total');
+        // مبالغ بر اساس ارز فاکتور تفکیک می‌شوند؛ جمع‌زدن ارزهای مختلف در یک عدد بی‌معنی است.
+        $revTotal = $this->reportSumByCurrency($invoices()->whereBetween('issued_at', [$from, $to]), 'total');
+        $revNew = $this->reportSumByCurrency($invoices()->whereBetween('issued_at', [$from, $to])->where('type', InvoiceType::NewAccount), 'total');
+        $revRenew = $this->reportSumByCurrency($invoices()->whereBetween('issued_at', [$from, $to])->where('type', InvoiceType::Renewal), 'total');
         $cntRenew = $invoices()->whereBetween('issued_at', [$from, $to])->where('type', InvoiceType::Renewal)->count();
         $newAccounts = $accounts()->whereBetween('created_at', [$from, $to])->count();
         $refundsCount = $accounts()->whereBetween('refunded_at', [$from, $to])->count();
 
         // margin/commission earned by an agent in the period
-        $agentEarned = '0';
+        $agentEarned = [];
         if ($isAgent) {
-            $agentEarned = (string) Transaction::query()
+            $agentEarned = $this->reportSumByCurrency(Transaction::query()
                 ->where('user_id', $viewer->id)
                 ->whereIn('type', [TransactionType::Margin, TransactionType::Commission])
-                ->whereBetween('created_at', [$from, $to])->sum('amount');
+                ->whereBetween('created_at', [$from, $to]), 'amount');
         }
-        $adminRevenue = '0';
-        $agentMarginAll = '0';
+        $adminRevenue = [];
+        $agentMarginAll = [];
         if ($isAdmin) {
-            $adminRevenue = (string) Transaction::query()->where('type', TransactionType::Revenue)
-                ->whereBetween('created_at', [$from, $to])->sum('amount');
-            $agentMarginAll = (string) Transaction::query()->whereIn('type', [TransactionType::Margin, TransactionType::Commission])
-                ->whereBetween('created_at', [$from, $to])->sum('amount');
+            $adminRevenue = $this->reportSumByCurrency(Transaction::query()->where('type', TransactionType::Revenue)
+                ->whereBetween('created_at', [$from, $to]), 'amount');
+            $agentMarginAll = $this->reportSumByCurrency(Transaction::query()->whereIn('type', [TransactionType::Margin, TransactionType::Commission])
+                ->whereBetween('created_at', [$from, $to]), 'amount');
         }
 
         // new sub-users in the period
@@ -114,31 +117,32 @@ trait BuildsReportData
         })();
         $newAgents = $isAdmin ? User::query()->role(UserRole::Agent)->whereBetween('created_at', [$from, $to])->count() : 0;
 
-        $myWallet = (string) (Wallet::query()->where('user_id', $viewer->id)->value('balance') ?? '0');
+        // هر کاربر می‌تواند برای هر ارز یک کیف‌پول جدا داشته باشد؛ پس موجودی هم به تفکیک ارز خوانده می‌شود.
+        $myWallet = $this->reportSumByCurrency(Wallet::query()->where('user_id', $viewer->id), 'balance');
 
         // ---- role-aware KPI cards ----
         $revLabel = $isAdmin ? 'درآمد کل (فاکتورها)' : ($isAgent ? 'گردش مالی مجموعه' : 'مجموع خرید شما');
         $kpis = [
-            ['title' => $revLabel, 'value' => format_toman($revTotal), 'icon' => 'bx-wallet', 'color' => 'success',
-                'hint' => 'جدید: '.format_toman($revNew).' | تمدید: '.format_toman($revRenew)],
+            ['title' => $revLabel, 'value' => $this->formatReportMoney($revTotal), 'icon' => 'bx-wallet', 'color' => 'success',
+                'hint' => 'جدید: '.$this->formatReportMoney($revNew).' | تمدید: '.$this->formatReportMoney($revRenew)],
             ['title' => 'اکانت‌های جدید', 'value' => persian_digits($newAccounts), 'icon' => 'bx-plus-circle', 'color' => 'primary',
                 'hint' => persian_digits($cntRenew).' تمدید در این بازه'],
             ['title' => 'برگشت از خرید', 'value' => persian_digits($refundsCount), 'icon' => 'bx-undo', 'color' => 'danger', 'hint' => null],
         ];
         if ($isAdmin) {
-            $kpis[] = ['title' => 'درآمد ادمین', 'value' => format_toman($adminRevenue), 'icon' => 'bx-trending-up', 'color' => 'success',
-                'hint' => 'سود نماینده‌ها: '.format_toman($agentMarginAll)];
+            $kpis[] = ['title' => 'درآمد ادمین', 'value' => $this->formatReportMoney($adminRevenue), 'icon' => 'bx-trending-up', 'color' => 'success',
+                'hint' => 'سود نماینده‌ها: '.$this->formatReportMoney($agentMarginAll)];
             $kpis[] = ['title' => 'نمایندگان جدید', 'value' => persian_digits($newAgents), 'icon' => 'bx-user-pin', 'color' => 'primary', 'hint' => null];
             $kpis[] = ['title' => 'فروشندگان جدید', 'value' => persian_digits($newSellers), 'icon' => 'bx-user', 'color' => 'primary', 'hint' => null];
             $kpis[] = ['title' => 'مشتریان جدید', 'value' => persian_digits($newClients), 'icon' => 'bx-group', 'color' => 'primary', 'hint' => null];
         } elseif ($isAgent) {
-            $kpis[] = ['title' => 'سود شما (بازه)', 'value' => format_toman($agentEarned), 'icon' => 'bx-trending-up', 'color' => 'success', 'hint' => null];
+            $kpis[] = ['title' => 'سود شما (بازه)', 'value' => $this->formatReportMoney($agentEarned), 'icon' => 'bx-trending-up', 'color' => 'success', 'hint' => null];
             $kpis[] = ['title' => 'فروشندگان جدید', 'value' => persian_digits($newSellers), 'icon' => 'bx-user', 'color' => 'primary', 'hint' => null];
             $kpis[] = ['title' => 'مشتریان جدید', 'value' => persian_digits($newClients), 'icon' => 'bx-group', 'color' => 'primary', 'hint' => null];
-            $kpis[] = ['title' => 'موجودی کیف‌پول شما', 'value' => format_toman($myWallet), 'icon' => 'bx-credit-card', 'color' => 'warning', 'hint' => null];
+            $kpis[] = ['title' => 'موجودی کیف‌پول شما', 'value' => $this->formatReportMoney($myWallet), 'icon' => 'bx-credit-card', 'color' => 'warning', 'hint' => null];
         } else { // seller
             $kpis[] = ['title' => 'مشتریان جدید', 'value' => persian_digits($newClients), 'icon' => 'bx-group', 'color' => 'primary', 'hint' => null];
-            $kpis[] = ['title' => 'موجودی کیف‌پول شما', 'value' => format_toman($myWallet), 'icon' => 'bx-credit-card', 'color' => 'warning', 'hint' => null];
+            $kpis[] = ['title' => 'موجودی کیف‌پول شما', 'value' => $this->formatReportMoney($myWallet), 'icon' => 'bx-credit-card', 'color' => 'warning', 'hint' => null];
         }
 
         // ==================== CURRENT STATE (scoped) ====================
@@ -174,20 +178,39 @@ trait BuildsReportData
         $topSellers = collect();
         $topSellersRevenue = collect();
         $sellersCount = 0;
-        $walletSellers = '0';
+        $walletSellers = [];
         if ($showResellers) {
             $sellersCount = $isAdmin ? User::query()->role(UserRole::Seller)->count() : $sellerIds->count();
-            $walletSellers = (string) Wallet::query()->whereIn('user_id', $sellerIds->all() ?: [0])->sum('balance');
+            $walletSellers = $this->reportSumByCurrency(Wallet::query()->whereIn('user_id', $sellerIds->all() ?: [0]), 'balance');
 
             $topSellers = $accounts()->whereNotNull('owner_seller_id')
                 ->select('owner_seller_id', DB::raw('COUNT(*) c'), DB::raw("SUM(status='active') a"))
                 ->groupBy('owner_seller_id')->orderByDesc('c')->limit(10)->get()
                 ->map(fn ($r) => ['name' => $userNames[$r->owner_seller_id] ?? ('#'.$r->owner_seller_id), 'total' => (int) $r->c, 'active' => (int) $r->a]);
 
+            // گردش هر فروشنده به تفکیک ارز نگه داشته می‌شود؛ مرتب‌سازی فقط برای انتخاب ۱۰ فروشنده‌ی برتر است.
             $topSellersRevenue = $invoices()->whereBetween('issued_at', [$from, $to])->whereNotNull('seller_user_id')
-                ->select('seller_user_id', DB::raw('SUM(total) s'), DB::raw('COUNT(*) c'))
-                ->groupBy('seller_user_id')->orderByDesc('s')->limit(10)->get()
-                ->map(fn ($r) => ['name' => $userNames[$r->seller_user_id] ?? ('#'.$r->seller_user_id), 'revenue' => (string) $r->s, 'count' => (int) $r->c]);
+                ->select('seller_user_id', 'currency', DB::raw('SUM(total) s'), DB::raw('COUNT(*) c'))
+                ->groupBy('seller_user_id', 'currency')->get()
+                ->groupBy('seller_user_id')
+                ->map(function ($rows, $sellerId) use ($userNames): array {
+                    $revenue = [];
+                    $count = 0;
+                    foreach ($rows as $r) {
+                        $code = MoneyCurrency::normalize($r->currency)->value;
+                        $revenue[$code] = bcadd($revenue[$code] ?? '0', (string) $r->s, 2);
+                        $count += (int) $r->c;
+                    }
+
+                    return [
+                        'name' => $userNames[$sellerId] ?? ('#'.$sellerId),
+                        'revenue' => $revenue,
+                        'count' => $count,
+                    ];
+                })
+                ->sortByDesc(fn (array $row): float => array_sum(array_map('floatval', $row['revenue'])))
+                ->take(10)
+                ->values();
         }
 
         // ==================== TRENDS ====================
@@ -196,19 +219,30 @@ trait BuildsReportData
         $fmt = $useMonthly ? '%Y-%m' : '%Y-%m-%d';
         $accSeriesRaw = $accounts()->whereBetween('created_at', [$from, $to])
             ->select(DB::raw("DATE_FORMAT(created_at, '{$fmt}') k"), DB::raw('COUNT(*) c'))->groupBy('k')->pluck('c', 'k');
-        $revSeriesRaw = $invoices()->whereBetween('issued_at', [$from, $to])
-            ->select(DB::raw("DATE_FORMAT(issued_at, '{$fmt}') k"), DB::raw('SUM(total) s'))->groupBy('k')->pluck('s', 'k');
+        // نمودار درآمد برای هر ارز جداگانه ساخته می‌شود؛ ریختن همه‌ی ارزها در یک سری، عدد بی‌معنی می‌سازد.
+        $revRows = $invoices()->whereBetween('issued_at', [$from, $to])
+            ->select(DB::raw("DATE_FORMAT(issued_at, '{$fmt}') k"), 'currency', DB::raw('SUM(total) s'))
+            ->groupBy('k', 'currency')->get();
+        $revByCurrency = [];
+        foreach ($revRows as $revRow) {
+            $revByCurrency[MoneyCurrency::normalize($revRow->currency)->value][$revRow->k] = (float) $revRow->s;
+        }
+        if ($revByCurrency === []) {
+            $revByCurrency[MoneyCurrency::default()->value] = [];
+        }
 
         $labels = [];
         $accSeries = [];
-        $revSeries = [];
+        $revSeries = array_fill_keys(array_keys($revByCurrency), []);
         $cursor = $from->copy();
         $guard = 0;
         while ($cursor->lte($to) && $guard++ < 400) {
             $key = $useMonthly ? $cursor->format('Y-m') : $cursor->format('Y-m-d');
             $labels[] = $useMonthly ? jalali_date($cursor, 'Y/m') : jalali_date($cursor, 'm/d');
             $accSeries[] = (int) ($accSeriesRaw[$key] ?? 0);
-            $revSeries[] = (float) ($revSeriesRaw[$key] ?? 0);
+            foreach ($revByCurrency as $revCode => $revPoints) {
+                $revSeries[$revCode][] = (float) ($revPoints[$key] ?? 0);
+            }
             $cursor = $useMonthly ? $cursor->addMonth()->startOfMonth() : $cursor->addDay();
         }
 
@@ -246,9 +280,50 @@ trait BuildsReportData
             'trend' => [
                 'labels' => $labels,
                 'accounts' => $accSeries,
-                'revenue' => $revSeries,
+                'revenue' => collect($revSeries)
+                    ->map(fn (array $values, string $code): array => ['currency' => $code, 'values' => $values])
+                    ->values()
+                    ->all(),
                 'granularity' => $useMonthly ? 'monthly' : 'daily',
             ],
         ];
+    }
+
+    /**
+     * مجموع یک ستون مبلغ را بر اساس ستون currency گروه‌بندی می‌کند.
+     *
+     * @return array<string, string> نگاشت کد ارز به مبلغ
+     */
+    protected function reportSumByCurrency(Builder $query, string $column): array
+    {
+        $sums = [];
+
+        $rows = $query->select('currency', DB::raw("SUM({$column}) as total_amount"))
+            ->groupBy('currency')
+            ->get();
+
+        foreach ($rows as $row) {
+            $code = MoneyCurrency::normalize($row->currency)->value;
+            $sums[$code] = bcadd($sums[$code] ?? '0', (string) ($row->total_amount ?? '0'), 2);
+        }
+
+        return $sums;
+    }
+
+    /**
+     * مبالغ تفکیک‌شده را برای نمایش در یک کارت کنار هم می‌چیند.
+     *
+     * @param  array<string, string>  $sums
+     */
+    protected function formatReportMoney(array $sums): string
+    {
+        if ($sums === []) {
+            // وقتی رکوردی وجود ندارد، صفر با ارز پیش‌فرض پنل نمایش داده می‌شود.
+            return format_money('0', MoneyCurrency::default());
+        }
+
+        return collect($sums)
+            ->map(fn (string $amount, string $code): string => format_money($amount, $code))
+            ->implode(' + ');
     }
 }

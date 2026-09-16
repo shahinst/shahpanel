@@ -100,13 +100,14 @@
                 <tr>
                     <td>{{ $item->description }}</td>
                     <td>{{ persian_digits($item->quantity) }}</td>
-                    <td>{{ format_toman($item->unit_price) }}</td>
-                    <td>{{ format_toman($item->total) }}</td>
+                    {{-- ردیف فاکتور ستون currency ندارد؛ ارز از فاکتور والد خوانده می‌شود. --}}
+                    <td>{{ format_money($item->unit_price, $invoice->currency) }}</td>
+                    <td>{{ format_money($item->total, $invoice->currency) }}</td>
                 </tr>
             @endforeach
             <tr class="total-row">
                 <td colspan="3">جمع کل</td>
-                <td>{{ format_toman($invoice->total) }}</td>
+                <td>{{ format_money($invoice->total, $invoice->currency) }}</td>
             </tr>
         </tbody>
     </table>

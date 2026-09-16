@@ -18,7 +18,7 @@
 
 <div class="panel-kpi-mini mb-3">
     <div class="label">{{ __('accounting_corrections.total_clawback') }}</div>
-    <p class="value">{{ format_toman($totalClawback) }}</p>
+    <p class="value">{{ collect($totalClawback)->map(fn (string $amount, string $code): string => format_money($amount, $code))->implode(' + ') ?: format_money('0', \App\Enums\MoneyCurrency::default()) }}</p>
 </div>
 
 <div class="panel-modern-card">
@@ -40,13 +40,17 @@
                     </thead>
                     <tbody>
                         @foreach ($corrections as $row)
+                            @php
+                                // ردیف تصحیح ارز ندارد؛ ارز از بسته‌ی اکانت و در نبود آن از ارز پیش‌فرض پنل گرفته می‌شود.
+                                $rowCurrency = $row->account?->package?->moneyCurrency() ?? \App\Enums\MoneyCurrency::default();
+                            @endphp
                             <tr>
                                 <td>{{ jalali_date($row->created_at) }}</td>
                                 <td><code>{{ $row->account?->remote_username ?? '—' }}</code></td>
                                 <td>{{ $row->account?->package?->name ?? '—' }}</td>
-                                <td>{{ format_toman($row->actual_margin) }}</td>
-                                <td>{{ format_toman($row->expected_margin) }}</td>
-                                <td><strong class="text-danger">{{ format_toman($row->clawback_amount) }}</strong></td>
+                                <td>{{ format_money($row->actual_margin, $rowCurrency) }}</td>
+                                <td>{{ format_money($row->expected_margin, $rowCurrency) }}</td>
+                                <td><strong class="text-danger">{{ format_money($row->clawback_amount, $rowCurrency) }}</strong></td>
                             </tr>
                             @if ($row->reason)
                                 <tr>

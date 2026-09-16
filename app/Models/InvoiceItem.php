@@ -27,6 +27,12 @@ class InvoiceItem extends Model
         ];
     }
 
+    // ردیف فاکتور ستون currency ندارد؛ ارز از فاکتور والد گرفته می‌شود.
+    public function moneyCurrency(): \App\Enums\MoneyCurrency
+    {
+        return \App\Enums\MoneyCurrency::normalize($this->invoice?->currency);
+    }
+
     public function invoice(): BelongsTo
     {
         return $this->belongsTo(Invoice::class);

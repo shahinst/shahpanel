@@ -3,6 +3,10 @@
 @section('page_title', __('financial_plans.page_title_templates'))
 
 @section('panel_content')
+@php
+    // قالب‌های طرح مالی ستون ارز ندارند؛ مبالغ با ارز پیش‌فرض پنل نمایش داده می‌شوند.
+    $planCurrency = \App\Enums\MoneyCurrency::default();
+@endphp
 @include('partials.panel-page-hero', [
     'title' => __('financial_plans.page_title_templates'),
     'subtitle' => __('financial_plans.templates_hint'),
@@ -32,8 +36,8 @@
                             <div class="small text-muted">{{ $template->description }}</div>
                         @endif
                     </td>
-                    <td>{{ format_toman($template->credit_amount) }}</td>
-                    <td>{{ format_toman($template->purchase_price) }}</td>
+                    <td>{{ format_money($template->credit_amount, $planCurrency) }}</td>
+                    <td>{{ format_money($template->purchase_price, $planCurrency) }}</td>
                     <td>{{ persian_digits(number_format((float) $template->discount_percent, 2)) }}٪</td>
                     <td>
                         @if ($template->is_active)

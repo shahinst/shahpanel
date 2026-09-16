@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\MoneyCurrency;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\GiftRewardService;
@@ -122,7 +123,8 @@ class GiftRewardController extends Controller
         $message = __('gifts.wallet_summary', [
             'credited' => persian_digits((string) $result['credited']),
             'recipients' => persian_digits((string) $result['recipients']),
-            'amount' => format_toman(money_string((string) $validated['amount'])),
+            // creditWallets بدون ارز صدا زده می‌شود، پس شارژ هدیه همیشه روی کیف‌پول ارز پیش‌فرض پنل می‌نشیند.
+            'amount' => format_money(money_string((string) $validated['amount']), MoneyCurrency::default()),
             'failed' => persian_digits((string) count($result['failed'])),
         ]);
 

@@ -18,7 +18,7 @@
             <tbody>
                 @forelse ($paymentRequests as $item)
                     <tr>
-                        <td>{{ format_toman($item->amount) }}</td>
+                        <td>{{ format_money($item->amount, $item->moneyCurrency()) }}</td>
                         <td>{{ $item->tracking_number }}</td>
                         <td>{{ $item->status->value }}</td>
                         <td>{{ jalali_date($item->created_at) }}</td>

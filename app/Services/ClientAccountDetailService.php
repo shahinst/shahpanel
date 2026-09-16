@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\AccountCategory;
 use App\Enums\InvoiceType;
+use App\Enums\MoneyCurrency;
 use App\Enums\ServiceType;
 use App\Models\Account;
 use App\Models\Invoice;
@@ -71,6 +72,8 @@ class ClientAccountDetailService
             ->values();
 
         $renewalPrice = null;
+        // ارز تمدید از بسته سرویس گرفته می‌شود؛ اگر بسته حذف شده باشد ارز پیش‌فرض پنل استفاده می‌شود.
+        $renewalCurrency = $account->package?->moneyCurrency() ?? MoneyCurrency::default();
         $canRenew = $account->package !== null
             && app(PackageCategoryService::class)->isPackageAvailableForRenewal($account->package)
             && ! $account->isRefunded();
@@ -111,6 +114,7 @@ class ClientAccountDetailService
             'renewalInvoices' => $renewalInvoices,
             'recentTransactions' => $account->transactions,
             'renewalPrice' => $renewalPrice,
+            'renewalCurrency' => $renewalCurrency,
             'canRenew' => $canRenew,
             'usage' => [
                 'used_bytes' => $usedBytes,

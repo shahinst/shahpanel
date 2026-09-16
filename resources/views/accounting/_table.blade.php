@@ -5,6 +5,8 @@
     // Sellers never earn sales profit, so the credited/profit column is hidden for them.
     $showCredited = ($totals['role'] ?? null) !== \App\Enums\UserRole::Seller;
     $showMarginPercent = $showMarginPercent ?? false;
+    // جمع‌های حسابداری به تفکیک ارز محاسبه می‌شوند تا مبالغ ارزهای مختلف با هم جمع نشوند.
+    $totalsByCurrency = $totals['by_currency'];
 @endphp
 
 @include('partials.panel-page-hero', [
@@ -35,14 +37,22 @@
     <div class="{{ $showCredited ? 'col-md-6' : 'col-md-12' }}">
         <div class="panel-kpi-mini">
             <div class="label">{{ __('accounting.total_debited') }}</div>
-            <p class="value">{{ format_toman($totals['debited'] ?? 0) }}</p>
+            <p class="value">
+                @foreach ($totalsByCurrency as $totalsCurrency => $totalsBucket)
+                    <span class="d-block">{{ format_money($totalsBucket['debited'], $totalsCurrency) }}</span>
+                @endforeach
+            </p>
         </div>
     </div>
     @if ($showCredited)
         <div class="col-md-6">
             <div class="panel-kpi-mini">
                 <div class="label">{{ __('accounting.total_credited') }}</div>
-                <p class="value">{{ format_toman($totals['credited'] ?? 0) }}</p>
+                <p class="value">
+                    @foreach ($totalsByCurrency as $totalsCurrency => $totalsBucket)
+                        <span class="d-block">{{ format_money($totalsBucket['credited'], $totalsCurrency) }}</span>
+                    @endforeach
+                </p>
             </div>
         </div>
     @endif
@@ -118,7 +128,7 @@
             @forelse ($entries as $invoice)
                 @php
                     $account = $invoice->account;
-                    $row = $summary[$invoice->id] ?? ['debited' => '0', 'credited' => '0'];
+                    $row = $summary[$invoice->id] ?? ['debited' => '0', 'credited' => '0', 'currency' => $invoice->currency];
                     $eventLabel = $eventLabels[$invoice->id] ?? '—';
                 @endphp
                 @continue($account === null)
@@ -144,7 +154,7 @@
                     <td>{{ $account->expiry_at ? jalali_date($account->expiry_at, 'Y/m/d') : '—' }}</td>
                     <td>{{ $account->package?->name ?? '—' }}</td>
                     @if ($showCredited)
-                        <td>{{ format_toman($row['credited']) }}</td>
+                        <td>{{ format_money($row['credited'], $row['currency'] ?? \App\Enums\MoneyCurrency::default()) }}</td>
                     @endif
                     @if ($showMarginPercent)
                         <td>
@@ -155,7 +165,7 @@
                             @endif
                         </td>
                     @endif
-                    <td>{{ format_toman($row['debited']) }}</td>
+                    <td>{{ format_money($row['debited'], $row['currency'] ?? \App\Enums\MoneyCurrency::default()) }}</td>
                 </tr>
             @empty
                 <tr><td colspan="{{ 8 + ($showCredited ? 1 : 0) + ($showMarginPercent ? 1 : 0) }}" class="text-center text-muted py-4">{{ __('app.no_results') }}</td></tr>

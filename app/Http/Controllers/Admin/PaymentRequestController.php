@@ -45,7 +45,7 @@ class PaymentRequestController extends Controller
 
         $adjustments = Schema::hasTable('wallet_adjustments')
             ? WalletAdjustment::query()
-                ->with(['user', 'admin'])
+                ->with(['user', 'admin', 'transaction'])
                 ->orderByDesc('created_at')
                 ->orderByDesc('id')
                 ->paginate(15, ['*'], 'adjustments_page')

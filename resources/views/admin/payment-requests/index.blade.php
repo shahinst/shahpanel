@@ -29,7 +29,8 @@
                         <tr class="{{ (int) $highlightAdjustmentId === (int) $adjustment->id ? 'table-success' : '' }}">
                             <td>{{ $adjustment->user->full_name }}</td>
                             <td>{{ $adjustment->isCredit() ? __('wallet.credit') : __('wallet.debit') }}</td>
-                            <td>{{ format_toman($adjustment->amount) }}</td>
+                            {{-- جدول wallet_adjustments ستون currency ندارد؛ ارز از تراکنش متصل خوانده می‌شود و در نبود آن ارز پیش‌فرض پنل. --}}
+                            <td>{{ format_money($adjustment->amount, $adjustment->transaction?->currency ?? \App\Enums\MoneyCurrency::default()) }}</td>
                             <td>{{ $adjustment->admin->full_name }}</td>
                             <td>{{ jalali_date($adjustment->created_at) }}</td>
                             <td><small class="text-muted">{{ $adjustment->note ?: '—' }}</small></td>
@@ -71,7 +72,7 @@
                             <td>{{ $requester?->role?->label() ?? '—' }}</td>
                             <td>{{ $flow }}</td>
                             <td>{{ $approver?->full_name ?? '—' }}</td>
-                            <td>{{ format_toman($paymentRequest->amount) }}</td>
+                            <td>{{ format_money($paymentRequest->amount, $paymentRequest->moneyCurrency()) }}</td>
                             <td>{{ $paymentRequest->status->label() }}</td>
                             <td>{{ jalali_date($paymentRequest->created_at) }}</td>
                             <td><a href="{{ route('admin.payment-requests.show', $paymentRequest) }}" class="btn btn-sm btn-light">{{ __('app.view') }}</a></td>

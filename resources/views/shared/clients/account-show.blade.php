@@ -334,7 +334,7 @@
             <div class="panel-modern-card mb-3">
                 <div class="card-head"><h3><i class="bx bx-revision"></i> {{ __('clients.renew_account') }}</h3></div>
                 <div class="card-body">
-                    <p>{{ __('clients.renew_price') }}: <strong>{{ format_toman($renewalPrice) }}</strong></p>
+                    <p>{{ __('clients.renew_price') }}: <strong>{{ format_money($renewalPrice, $renewalCurrency) }}</strong></p>
                     <form method="POST" action="{{ route('client.accounts.renew', $account) }}">
                         @csrf
                         <button type="submit" class="btn btn-primary w-100">{{ __('menu.renew') }}</button>

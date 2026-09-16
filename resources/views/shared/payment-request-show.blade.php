@@ -4,10 +4,10 @@
             <div class="card-body">
                 <dl class="dl-horizontal">
                     <dt>{{ __('menu.amount') }}</dt>
-                    <dd>{{ format_toman($paymentRequest->amount) }}</dd>
+                    <dd>{{ format_money($paymentRequest->amount, $paymentRequest->moneyCurrency()) }}</dd>
                     @if (isset($requesterBalance))
                         <dt>{{ __('wallet.requester_balance') }}</dt>
-                        <dd><strong>{{ format_toman($requesterBalance) }}</strong></dd>
+                        <dd><strong>{{ format_money($requesterBalance, $paymentRequest->moneyCurrency()) }}</strong></dd>
                     @endif
                     <dt>{{ __('menu.tracking_number') }}</dt>
                     <dd>{{ $paymentRequest->tracking_number }}</dd>

@@ -41,23 +41,29 @@
                         </thead>
                         <tbody>
                             @foreach ($rows as $r)
-                                @php $pid = $r['package']->id; @endphp
+                                @php
+                                    $pid = $r['package']->id;
+                                    // همه‌ی مبالغ این ردیف از همان پکیج می‌آیند، پس ارز پکیج ملاک است.
+                                    $rowCurrency = $r['package']->moneyCurrency();
+                                @endphp
                                 <tr>
                                     <td>{{ $r['package']->name }}</td>
-                                    <td class="text-muted">{{ format_toman($r['retail']) }}</td>
-                                    <td class="text-muted">{{ format_toman($r['agent_price']) }}</td>
+                                    <td class="text-muted">{{ format_money($r['retail'], $rowCurrency) }}</td>
+                                    <td class="text-muted">{{ format_money($r['agent_price'], $rowCurrency) }}</td>
                                     @if ($canEdit)
                                         <td>
                                             <input type="number" step="0.01" min="0" max="{{ $range }}" dir="ltr"
                                                    class="form-control form-control-sm rmk-input"
                                                    data-pid="{{ $pid }}" data-agent="{{ $r['agent_price'] }}"
                                                    data-retail="{{ $r['retail'] }}" data-range="{{ $range }}"
+                                                   data-currency-symbol="{{ $rowCurrency->symbol() }}"
+                                                   data-currency-decimals="{{ $rowCurrency->displayDecimals() }}"
                                                    name="markups[{{ $pid }}]"
                                                    value="{{ old('markups.'.$pid, rtrim(rtrim(number_format($r['markup'], 2), '0'), '.')) }}">
                                         </td>
                                     @endif
-                                    <td><strong class="rmk-price" data-pid="{{ $pid }}">{{ format_toman($r['seller_price']) }}</strong></td>
-                                    <td><span class="text-success rmk-profit" data-pid="{{ $pid }}">{{ format_toman($r['profit']) }}</span></td>
+                                    <td><strong class="rmk-price" data-pid="{{ $pid }}">{{ format_money($r['seller_price'], $rowCurrency) }}</strong></td>
+                                    <td><span class="text-success rmk-profit" data-pid="{{ $pid }}">{{ format_money($r['profit'], $rowCurrency) }}</span></td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -76,7 +82,15 @@
 @push('scripts')
 <script>
 (function () {
-    function toman(n) { try { return new Intl.NumberFormat('fa-IR').format(Math.round(n)) + ' تومان'; } catch (e) { return Math.round(n) + ''; } }
+    // واحد پول از data-attribute های همان ردیف خوانده می‌شود تا هر پکیج با ارز خودش نمایش داده شود.
+    function formatMoney(n, meta) {
+        var decimals = parseInt((meta && meta.currency_decimals) || '0', 10);
+        if (isNaN(decimals)) decimals = 0;
+        var symbol = (meta && meta.currency_symbol) || '';
+        var value = decimals > 0 ? n : Math.round(n);
+        try { return new Intl.NumberFormat('fa-IR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(value) + ' ' + symbol; }
+        catch (e) { return value.toFixed(decimals) + ' ' + symbol; }
+    }
     function roundNice(a) { if (a <= 0) return 0; var s = a >= 10000 ? 1000 : (a >= 1000 ? 100 : 50); return Math.round(a / s) * s; }
     document.querySelectorAll('.rmk-input').forEach(function (el) {
         el.addEventListener('input', function () {
@@ -87,8 +101,9 @@
             if (price > retail) price = retail;
             var pe = document.querySelector('.rmk-price[data-pid="' + pid + '"]');
             var pr = document.querySelector('.rmk-profit[data-pid="' + pid + '"]');
-            if (pe) pe.textContent = toman(price);
-            if (pr) pr.textContent = toman(price - agent);
+            var meta = { currency_symbol: el.dataset.currencySymbol, currency_decimals: el.dataset.currencyDecimals };
+            if (pe) pe.textContent = formatMoney(price, meta);
+            if (pr) pr.textContent = formatMoney(price - agent, meta);
         });
     });
 })();

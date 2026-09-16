@@ -21,22 +21,23 @@
     // Each chart adds full-height transparent "hit columns" carrying data-tip so the
     // value shows whenever the cursor is anywhere over that day's column.
     $W = 600; $H = 170; $pad = 22;
-    $mkTip = fn ($label, $v, $money) => $label.' — '.($money ? number_format((float) $v).' تومان' : persian_digits((int) $v));
+    // اگر ارز داده شود مقدار پولی است و با واحد همان ارز نمایش داده می‌شود؛ در غیر این صورت یک شمارش ساده است.
+    $mkTip = fn ($label, $v, $currency) => $label.' — '.($currency ? format_money($v, $currency) : persian_digits((int) $v));
     $grid = function ($ih) use ($W, $pad) {
         $g = '';
         foreach ([0, .5, 1] as $f) { $gy = round($pad + $ih * $f, 1); $g .= '<line x1="'.$pad.'" y1="'.$gy.'" x2="'.($W - $pad).'" y2="'.$gy.'" stroke="currentColor" stroke-opacity=".08"/>'; }
         return $g;
     };
-    $hitCols = function (array $labels, array $vals, bool $money, float $iw, float $ih) use ($W, $pad, $mkTip) {
+    $hitCols = function (array $labels, array $vals, ?string $currency, float $iw, float $ih) use ($W, $pad, $mkTip) {
         $n = count($vals); $slot = $iw / max(1, $n); $h = '';
         foreach ($vals as $i => $v) {
             $cx = $pad + ($n > 1 ? $i / ($n - 1) * $iw : $iw / 2);
             $hx = round(min($W - $pad - $slot, max($pad, $cx - $slot / 2)), 1);
-            $h .= '<rect class="rep-hit" x="'.$hx.'" y="'.$pad.'" width="'.round($slot, 1).'" height="'.round($ih, 1).'" fill="transparent" data-tip="'.e($mkTip($labels[$i] ?? '', $v, $money)).'"></rect>';
+            $h .= '<rect class="rep-hit" x="'.$hx.'" y="'.$pad.'" width="'.round($slot, 1).'" height="'.round($ih, 1).'" fill="transparent" data-tip="'.e($mkTip($labels[$i] ?? '', $v, $currency)).'"></rect>';
         }
         return $h;
     };
-    $svgArea = function (array $labels, array $vals, string $color, bool $money = false) use ($W, $H, $pad, $grid, $hitCols) {
+    $svgArea = function (array $labels, array $vals, string $color, ?string $currency = null) use ($W, $H, $pad, $grid, $hitCols) {
         $n = count($vals);
         if ($n === 0 || array_sum($vals) == 0) {
             return '<div class="text-muted small text-center py-5">داده‌ای در این بازه نیست</div>';
@@ -54,17 +55,17 @@
         $line = implode(' ', $pts);
         $baseY = $pad + $ih;
         $area = $pad.','.$baseY.' '.$line.' '.round($x($n - 1), 1).','.$baseY;
-        $maxLbl = $money ? number_format($max) : persian_digits((int) $max);
+        $maxLbl = $currency ? format_money($max, $currency) : persian_digits((int) $max);
         return '<svg viewBox="0 0 '.$W.' '.$H.'" width="100%" preserveAspectRatio="none" style="color:#889;overflow:visible;">'
             .$grid($ih)
             .'<polygon points="'.$area.'" fill="'.$color.'" fill-opacity=".12"/>'
             .'<polyline points="'.$line.'" fill="none" stroke="'.$color.'" stroke-width="2"/>'
             .$dots
             .'<text x="'.$pad.'" y="'.($pad - 6).'" font-size="9" fill="currentColor" fill-opacity=".6">حداکثر: '.$maxLbl.'</text>'
-            .$hitCols($labels, $vals, $money, $iw, $ih)
+            .$hitCols($labels, $vals, $currency, $iw, $ih)
             .'</svg>';
     };
-    $svgBars = function (array $labels, array $vals, string $color, bool $money = true) use ($W, $H, $pad, $grid, $hitCols, $mkTip) {
+    $svgBars = function (array $labels, array $vals, string $color, string $currency) use ($W, $H, $pad, $grid, $hitCols, $mkTip) {
         $n = count($vals);
         if ($n === 0 || array_sum($vals) == 0) {
             return '<div class="text-muted small text-center py-5">داده‌ای در این بازه نیست</div>';
@@ -81,8 +82,8 @@
         }
         return '<svg viewBox="0 0 '.$W.' '.$H.'" width="100%" preserveAspectRatio="none" style="color:#889;overflow:visible;">'
             .$grid($ih).$bars
-            .'<text x="'.$pad.'" y="'.($pad - 6).'" font-size="9" fill="currentColor" fill-opacity=".6">حداکثر: '.number_format($max).' تومان</text>'
-            .$hitCols($labels, $vals, $money, $iw, $ih)
+            .'<text x="'.$pad.'" y="'.($pad - 6).'" font-size="9" fill="currentColor" fill-opacity=".6">حداکثر: '.format_money($max, $currency).'</text>'
+            .$hitCols($labels, $vals, $currency, $iw, $ih)
             .'</svg>';
     };
 @endphp
@@ -132,13 +133,22 @@
     <div class="col-lg-6">
         <div class="card">
             <div class="card-header"><h6 class="mb-0"><i class="bx bx-line-chart"></i> اکانت‌های ساخته‌شده ({{ $trend['granularity']==='monthly'?'ماهانه':'روزانه' }})</h6></div>
-            <div class="card-body">{!! $svgArea($trend['labels'], $trend['accounts'], '#556ee6', false) !!}</div>
+            <div class="card-body">{!! $svgArea($trend['labels'], $trend['accounts'], '#556ee6', null) !!}</div>
         </div>
     </div>
     <div class="col-lg-6">
         <div class="card">
             <div class="card-header"><h6 class="mb-0"><i class="bx bx-bar-chart-alt-2"></i> {{ $scope==='seller'?'خرید':'درآمد' }} ({{ $trend['granularity']==='monthly'?'ماهانه':'روزانه' }})</h6></div>
-            <div class="card-body">{!! $svgBars($trend['labels'], $trend['revenue'], '#34c38f', true) !!}</div>
+            <div class="card-body">
+                {{-- برای هر ارز یک نمودار جدا رسم می‌شود تا مبالغ ارزهای مختلف با هم جمع نشوند. --}}
+                @foreach ($trend['revenue'] as $revenueSeries)
+                    @if (! $loop->first)
+                        <hr class="my-3">
+                    @endif
+                    <div class="text-muted small mb-1">{{ \App\Enums\MoneyCurrency::normalize($revenueSeries['currency'])->label() }}</div>
+                    {!! $svgBars($trend['labels'], $revenueSeries['values'], '#34c38f', $revenueSeries['currency']) !!}
+                @endforeach
+            </div>
         </div>
     </div>
 </div>
@@ -223,7 +233,7 @@
 <h5 class="text-muted mb-2 mt-2"><i class="bx bx-user"></i> {{ $scope==='admin'?'فروشندگان':'فروشنده‌های شما' }}</h5>
 <div class="row">
     <x-stat-card title="تعداد فروشندگان" :value="persian_digits($resellers['sellersCount'])" icon="bx-user" color="primary"
-                 :hint="'موجودی کل کیف‌پول‌ها: '.format_toman($resellers['walletSellers'])" />
+                 :hint="'موجودی کل کیف‌پول‌ها: '.(collect($resellers['walletSellers'])->map(fn (string $amount, string $code): string => format_money($amount, $code))->implode(' + ') ?: format_money('0', \App\Enums\MoneyCurrency::default()))" />
 </div>
 <div class="row">
     <div class="col-lg-6">
@@ -254,7 +264,7 @@
                         <thead><tr><th>فروشنده</th><th>گردش</th><th>فاکتور</th></tr></thead>
                         <tbody>
                             @forelse ($resellers['topSellersRevenue'] as $s)
-                                <tr><td>{{ $s['name'] }}</td><td>{{ format_toman($s['revenue']) }}</td><td>{{ persian_digits($s['count']) }}</td></tr>
+                                <tr><td>{{ $s['name'] }}</td><td>{{ collect($s['revenue'])->map(fn (string $amount, string $code): string => format_money($amount, $code))->implode(' + ') }}</td><td>{{ persian_digits($s['count']) }}</td></tr>
                             @empty
                                 <tr><td colspan="3" class="text-muted">در این بازه فاکتوری نیست</td></tr>
                             @endforelse

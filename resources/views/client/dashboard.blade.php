@@ -140,7 +140,7 @@
 </div>
 
 <div class="row">
-    <x-stat-card :title="__('clients.wallet_balance')" :value="format_toman($wallet->balance)" icon="bx-wallet" color="success" />
+    <x-stat-card :title="__('clients.wallet_balance')" :value="format_money($wallet->balance, $wallet->moneyCurrency())" icon="bx-wallet" color="success" />
     <x-stat-card :title="__('clients.my_accounts')" :value="persian_digits($accounts->count())" icon="bx-server" color="primary" />
     <x-stat-card :title="__('clients.active_accounts')" :value="persian_digits($activeAccounts)" icon="bx-check-shield" color="success" />
     <x-stat-card :title="__('clients.pending_charges')" :value="persian_digits($pendingChargeCount)" icon="bx-time-five" color="warning" />
@@ -259,7 +259,7 @@
                 @php [$prColor, $prLabel] = $paymentStatusLabel($paymentRequest->status); @endphp
                 <div class="client-timeline-item">
                     <div>
-                        <div class="fw-semibold">{{ format_toman($paymentRequest->amount) }}</div>
+                        <div class="fw-semibold">{{ format_money($paymentRequest->amount, $paymentRequest->moneyCurrency()) }}</div>
                         <div class="text-muted small">{{ jalali_date($paymentRequest->created_at, 'Y/m/d H:i') }}</div>
                     </div>
                     <span class="badge bg-{{ $prColor }} align-self-start">{{ $prLabel }}</span>
@@ -285,7 +285,7 @@
                         <div class="text-muted small">{{ jalali_date($tx->created_at, 'Y/m/d H:i') }}</div>
                     </div>
                     <div class="fw-semibold @if((float)$tx->amount < 0) text-danger @else text-success @endif">
-                        {{ format_toman($tx->amount) }}
+                        {{ format_money($tx->amount, $tx->moneyCurrency()) }}
                     </div>
                 </div>
             @empty

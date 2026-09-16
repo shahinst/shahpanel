@@ -38,6 +38,8 @@
                 @php
                     $checked = in_array((int) $package->id, $selectedPackageIds, true)
                         || collect(old('package_ids', []))->contains((string) $package->id);
+                    // تمام مبالغ این کارت مربوط به همین پکیج است، پس ارز پکیج ملاک نمایش است.
+                    $packageCurrency = $package->moneyCurrency();
                 @endphp
                 <div class="card mb-3 border">
                     <div class="card-body py-3">
@@ -67,6 +69,8 @@
                                             <label class="form-label small mb-1">تخفیف نماینده (٪)</label>
                                             <input type="number" step="0.01" min="0" max="100" dir="ltr"
                                                    class="form-control form-control-sm rpd-agent" data-pkg="{{ $package->id }}" data-retail="{{ $retailUnit }}"
+                                                   data-currency-symbol="{{ $packageCurrency->symbol() }}"
+                                                   data-currency-decimals="{{ $packageCurrency->displayDecimals() }}"
                                                    name="package_discounts[{{ $package->id }}][agent]" value="{{ $fmt($aVal) }}">
                                         </div>
                                         <div class="col-6 col-md-3">
@@ -77,7 +81,7 @@
                                         </div>
                                         <div class="col-md-6">
                                             <div class="small text-muted">
-                                                خرده‌فروشی: <strong>{{ format_toman($retailUnit) }}</strong> —
+                                                خرده‌فروشی: <strong>{{ format_money($retailUnit, $packageCurrency) }}</strong> —
                                                 نماینده: <strong class="rpd-ap" data-pkg="{{ $package->id }}">—</strong>،
                                                 فروشنده: <strong class="rpd-sp" data-pkg="{{ $package->id }}">—</strong>
                                             </div>
@@ -89,18 +93,20 @@
                                     @if ($sellerPriceRange !== null && $spRow)
                                         <div class="row g-2 align-items-end">
                                             <div class="col-12 col-md-4">
-                                                <label class="form-label small mb-1">قیمت این فروشنده (تومان)</label>
+                                                <label class="form-label small mb-1">قیمت این فروشنده ({{ $packageCurrency->label() }})</label>
                                                 <input type="number" step="1" min="{{ (int) round($spRow['floor']) }}" max="{{ (int) round($spRow['ceil']) }}" dir="ltr"
                                                        class="form-control form-control-sm rsp-input" data-pkg="{{ $package->id }}"
+                                                       data-currency-symbol="{{ $packageCurrency->symbol() }}"
+                                                       data-currency-decimals="{{ $packageCurrency->displayDecimals() }}"
                                                        data-floor="{{ (int) round($spRow['floor']) }}" data-ceil="{{ (int) round($spRow['ceil']) }}"
                                                        name="seller_package_prices[{{ $package->id }}]"
                                                        value="{{ old('seller_package_prices.'.$package->id, (int) round($spRow['current'])) }}">
                                             </div>
                                             <div class="col-12 col-md-8">
                                                 <div class="small text-muted">
-                                                    قیمت شما: <strong>{{ format_toman($spRow['floor']) }}</strong> —
-                                                    سقف مجاز (+{{ persian_digits(rtrim(rtrim(number_format($sellerPriceRange, 2), '0'), '.')) }}٪): <strong>{{ format_toman($spRow['ceil']) }}</strong> —
-                                                    سود شما: <strong class="text-success rsp-profit" data-pkg="{{ $package->id }}">{{ format_toman($spRow['current'] - $spRow['floor']) }}</strong>
+                                                    قیمت شما: <strong>{{ format_money($spRow['floor'], $packageCurrency) }}</strong> —
+                                                    سقف مجاز (+{{ persian_digits(rtrim(rtrim(number_format($sellerPriceRange, 2), '0'), '.')) }}٪): <strong>{{ format_money($spRow['ceil'], $packageCurrency) }}</strong> —
+                                                    سود شما: <strong class="text-success rsp-profit" data-pkg="{{ $package->id }}">{{ format_money($spRow['current'] - $spRow['floor'], $packageCurrency) }}</strong>
                                                 </div>
                                             </div>
                                         </div>
@@ -168,13 +174,13 @@
                                                 <tr>
                                                     <td>{{ $duration->displayLabel() }}</td>
                                                     @if ($isAgentPricing)
-                                                        <td class="text-muted">{{ format_toman($catalog) }}</td>
+                                                        <td class="text-muted">{{ format_money($catalog, $packageCurrency) }}</td>
                                                     @else
-                                                        <td class="text-muted">{{ format_toman($catalog) }}</td>
-                                                        <td class="text-muted">{{ format_toman($parentFloor ?? 0) }}</td>
+                                                        <td class="text-muted">{{ format_money($catalog, $packageCurrency) }}</td>
+                                                        <td class="text-muted">{{ format_money($parentFloor ?? 0, $packageCurrency) }}</td>
                                                         @if ($sellerMarkupApplies)
-                                                            <td class="text-muted">{{ $markupGuide ? format_toman($markupGuide['max_unit']) : '—' }}</td>
-                                                            <td class="text-muted">{{ $markupGuide ? format_toman($markupGuide['max_margin_unit']) : '—' }}</td>
+                                                            <td class="text-muted">{{ $markupGuide ? format_money($markupGuide['max_unit'], $packageCurrency) : '—' }}</td>
+                                                            <td class="text-muted">{{ $markupGuide ? format_money($markupGuide['max_margin_unit'], $packageCurrency) : '—' }}</td>
                                                         @endif
                                                     @endif
                                                     <td style="max-width: 220px;">
@@ -187,13 +193,13 @@
                                                             <div class="form-text small text-muted">
                                                                 @if ($markupGuide !== null)
                                                                     {{ __('packages.seller_price_min_max_hint', [
-                                                                        'min' => format_toman($parentFloor ?? 0),
-                                                                        'max' => format_toman($markupGuide['max_unit']),
+                                                                        'min' => format_money($parentFloor ?? 0, $packageCurrency),
+                                                                        'max' => format_money($markupGuide['max_unit'], $packageCurrency),
                                                                     ]) }}
                                                                 @else
                                                                     {{ __('packages.seller_price_row_hint', [
-                                                                        'base' => format_toman($catalog),
-                                                                        'floor' => format_toman($parentFloor ?? 0),
+                                                                        'base' => format_money($catalog, $packageCurrency),
+                                                                        'floor' => format_money($parentFloor ?? 0, $packageCurrency),
                                                                     ]) }}
                                                                 @endif
                                                             </div>
@@ -227,18 +233,27 @@
 
 // Live "agent/seller pays" preview for the discount grid.
 (function () {
-    function toman(n) { try { return new Intl.NumberFormat('fa-IR').format(Math.round(n)) + ' تومان'; } catch (e) { return Math.round(n) + ''; } }
+    // واحد پول از data-attribute های همان ورودی خوانده می‌شود تا هر پکیج با ارز خودش نمایش داده شود.
+    function formatMoney(n, meta) {
+        var decimals = parseInt((meta && meta.currency_decimals) || '0', 10);
+        if (isNaN(decimals)) decimals = 0;
+        var symbol = (meta && meta.currency_symbol) || '';
+        var value = decimals > 0 ? n : Math.round(n);
+        try { return new Intl.NumberFormat('fa-IR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(value) + ' ' + symbol; }
+        catch (e) { return value.toFixed(decimals) + ' ' + symbol; }
+    }
     function upd(pkg) {
         var a = document.querySelector('.rpd-agent[data-pkg="' + pkg + '"]');
         var s = document.querySelector('.rpd-seller[data-pkg="' + pkg + '"]');
         if (!a) return;
         var retail = parseFloat(a.dataset.retail || '0');
+        var meta = { currency_symbol: a.dataset.currencySymbol, currency_decimals: a.dataset.currencyDecimals };
         var ap = document.querySelector('.rpd-ap[data-pkg="' + pkg + '"]');
         var sp = document.querySelector('.rpd-sp[data-pkg="' + pkg + '"]');
         var ad = parseFloat(a.value);
-        if (ap) ap.textContent = isNaN(ad) ? '—' : toman(retail * (1 - ad / 100));
+        if (ap) ap.textContent = isNaN(ad) ? '—' : formatMoney(retail * (1 - ad / 100), meta);
         var sd = s ? parseFloat(s.value) : NaN;
-        if (sp) sp.textContent = isNaN(sd) ? '—' : toman(retail * (1 - sd / 100));
+        if (sp) sp.textContent = isNaN(sd) ? '—' : formatMoney(retail * (1 - sd / 100), meta);
     }
     document.querySelectorAll('.rpd-agent, .rpd-seller').forEach(function (el) {
         el.addEventListener('input', function () { upd(el.dataset.pkg); });
@@ -248,7 +263,15 @@
 
 // Live "your profit" preview for the per-seller price inputs (markup range).
 (function () {
-    function toman(n) { try { return new Intl.NumberFormat('fa-IR').format(Math.round(n)) + ' تومان'; } catch (e) { return Math.round(n) + ''; } }
+    // واحد پول از data-attribute های همان ورودی خوانده می‌شود تا هر پکیج با ارز خودش نمایش داده شود.
+    function formatMoney(n, meta) {
+        var decimals = parseInt((meta && meta.currency_decimals) || '0', 10);
+        if (isNaN(decimals)) decimals = 0;
+        var symbol = (meta && meta.currency_symbol) || '';
+        var value = decimals > 0 ? n : Math.round(n);
+        try { return new Intl.NumberFormat('fa-IR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(value) + ' ' + symbol; }
+        catch (e) { return value.toFixed(decimals) + ' ' + symbol; }
+    }
     document.querySelectorAll('.rsp-input').forEach(function (el) {
         el.addEventListener('input', function () {
             var floor = parseFloat(el.dataset.floor), ceil = parseFloat(el.dataset.ceil);
@@ -257,7 +280,7 @@
             if (v < floor) v = floor;
             if (v > ceil) v = ceil;
             var p = document.querySelector('.rsp-profit[data-pkg="' + el.dataset.pkg + '"]');
-            if (p) p.textContent = toman(v - floor);
+            if (p) p.textContent = formatMoney(v - floor, { currency_symbol: el.dataset.currencySymbol, currency_decimals: el.dataset.currencyDecimals });
         });
     });
 })();

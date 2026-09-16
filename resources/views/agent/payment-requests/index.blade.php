@@ -25,7 +25,7 @@
                     <td>{{ $typeLabel }}</td>
                     <td>{{ $item->requester->full_name }}</td>
                     <td>{{ $item->approver->full_name }}</td>
-                    <td>{{ format_toman($item->amount) }}</td>
+                    <td>{{ format_money($item->amount, $item->moneyCurrency()) }}</td>
                     <td>{{ $item->status->label() }}</td>
                     <td>{{ jalali_date($item->created_at) }}</td>
                     <td><a href="{{ route('agent.payment-requests.show', $item) }}" class="btn btn-sm btn-primary">{{ __('app.view') }}</a></td>

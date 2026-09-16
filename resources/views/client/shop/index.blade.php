@@ -44,7 +44,9 @@
                         @endif
 
                         @php $isElastic = $package->isElastic(); @endphp
-                        <form method="POST" action="{{ route('client.shop.store') }}" class="mt-auto shop-purchase-form" data-elastic="{{ $isElastic ? '1' : '0' }}">
+                        <form method="POST" action="{{ route('client.shop.store') }}" class="mt-auto shop-purchase-form" data-elastic="{{ $isElastic ? '1' : '0' }}"
+                              data-currency-symbol="{{ $package->moneyCurrency()->symbol() }}"
+                              data-currency-decimals="{{ $package->moneyCurrency()->displayDecimals() }}">
                             @csrf
                             <div class="mb-3">
                                 <label class="form-label small text-muted">{{ __('packages.select_duration') }}</label>
@@ -56,9 +58,9 @@
                                                 @selected(old('package_duration_id') == $row['duration']->id)>
                                             {{ $row['duration']->displayLabel() }} —
                                             @if ($isElastic)
-                                                {{ format_toman($row['display_price']) }} / {{ __('packages.gb_unit') }}
+                                                {{ format_money($row['display_price'], $package->moneyCurrency()) }} / {{ __('packages.gb_unit') }}
                                             @else
-                                                {{ format_toman($row['display_price']) }}
+                                                {{ format_money($row['display_price'], $package->moneyCurrency()) }}
                                             @endif
                                         </option>
                                     @endforeach
@@ -100,7 +102,17 @@ document.querySelectorAll('.shop-purchase-form[data-elastic="1"]').forEach(funct
 
     const totalLabel = @json(__('packages.payable_total'));
     const priceMissingHint = @json(__('packages.elastic_price_missing_hint'));
-    const perGbLabel = @json(__('packages.toman_per_gb'));
+    const gbUnitLabel = @json(__('packages.gb_unit'));
+    // نماد و تعداد اعشار ارز از خود بسته خوانده می‌شود؛ واحد ثابت «تومان» برای بسته‌های ارزی نادرست بود.
+    const currencySymbol = form.dataset.currencySymbol || '';
+    const currencyDecimals = parseInt(form.dataset.currencyDecimals || '0', 10);
+
+    function formatMoney(value) {
+        return Number(value || 0).toLocaleString('fa-IR', {
+            minimumFractionDigits: currencyDecimals,
+            maximumFractionDigits: currencyDecimals,
+        }) + ' ' + currencySymbol;
+    }
 
     function recompute() {
         const opt = durationSelect.options[durationSelect.selectedIndex];
@@ -118,11 +130,11 @@ document.querySelectorAll('.shop-purchase-form[data-elastic="1"]').forEach(funct
             totalBox.textContent = priceMissingHint;
             return;
         }
-        const total = Math.round(unit * gb);
+        const total = unit * gb;
         totalBox.textContent = totalLabel + ': '
-            + total.toLocaleString('fa-IR') + ' تومان'
-            + ' (' + gb.toLocaleString('fa-IR') + ' ' + @json(__('packages.gb_unit')) + ' × '
-            + unit.toLocaleString('fa-IR') + ' ' + perGbLabel + ')';
+            + formatMoney(total)
+            + ' (' + gb.toLocaleString('fa-IR') + ' ' + gbUnitLabel + ' × '
+            + formatMoney(unit) + ' / ' + gbUnitLabel + ')';
     }
 
     durationSelect.addEventListener('change', recompute);

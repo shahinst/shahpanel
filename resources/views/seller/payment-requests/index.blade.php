@@ -18,7 +18,7 @@
         <x-table :headers="[__('menu.amount'), 'وضعیت', 'تاریخ', __('app.actions')]">
             @forelse ($paymentRequests as $item)
                 <tr>
-                    <td>{{ format_toman($item->amount) }}</td>
+                    <td>{{ format_money($item->amount, $item->moneyCurrency()) }}</td>
                     <td>{{ $item->status->label() }}</td>
                     <td>{{ jalali_date($item->created_at) }}</td>
                     <td><a href="{{ route('seller.payment-requests.show', $item) }}" class="btn btn-sm btn-primary">{{ __('app.view') }}</a></td>

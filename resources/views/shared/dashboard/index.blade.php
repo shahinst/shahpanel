@@ -72,21 +72,23 @@
     $kpiCards = collect([
         isset($stats['wallet_balance']) ? [
             'title' => __('wallet.remaining_balance'),
-            'value' => format_toman($stats['wallet_balance']),
+            'value' => format_money($stats['wallet_balance'], $stats['wallet_currency']),
             'hint' => ($stats['wallet_infinite'] ?? false) ? __('wallet.infinite_hint') : null,
             'icon' => 'bx-wallet',
             'tone' => 'emerald',
         ] : null,
-        $panel === 'admin' && isset($stats['total_catalog_sales']) ? [
+        $panel === 'admin' && isset($stats['total_catalog_sales_by_currency']) ? [
             'title' => __('dashboard.total_catalog_revenue'),
-            'value' => format_toman($stats['total_catalog_sales']),
+            // درآمد به تفکیک ارز نمایش داده می‌شود؛ جمع کردن ارزهای متفاوت در یک عدد نادرست است.
+            'value' => collect($stats['total_catalog_sales_by_currency'])->map(fn (string $amount, string $code): string => format_money($amount, $code))->implode(' + '),
             'hint' => __('dashboard.total_catalog_revenue_hint'),
             'icon' => 'bx-purchase-tag-alt',
             'tone' => 'emerald',
         ] : null,
-        $panel === 'admin' && isset($stats['total_agent_margin']) ? [
+        $panel === 'admin' && isset($stats['total_agent_margin_by_currency']) ? [
             'title' => __('dashboard.total_agent_revenue'),
-            'value' => format_toman($stats['total_agent_margin']),
+            // سهم نمایندگان نیز به تفکیک ارز محاسبه و نمایش داده می‌شود.
+            'value' => collect($stats['total_agent_margin_by_currency'])->map(fn (string $amount, string $code): string => format_money($amount, $code))->implode(' + '),
             'hint' => __('dashboard.total_agent_revenue_hint'),
             'icon' => 'bx-trending-up',
             'tone' => 'amber',
@@ -162,7 +164,7 @@
             <div class="col-lg-4">
                 <div class="hero-wallet text-lg-end text-start">
                     <div class="label">{{ __('wallet.remaining_balance') }}</div>
-                    <div class="amount">{{ format_toman($stats['wallet_balance']) }}</div>
+                    <div class="amount">{{ format_money($stats['wallet_balance'], $stats['wallet_currency']) }}</div>
                     @if ($stats['wallet_infinite'] ?? false)
                         <div class="label mt-1">{{ __('wallet.infinite_hint') }}</div>
                     @endif

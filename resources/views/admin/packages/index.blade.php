@@ -164,7 +164,7 @@
                                 <td>{{ $package->service_type->value }}</td>
                                 <td>
                                     @if ($price = $package->lowestEnabledPrice())
-                                        {{ __('packages.from_price', ['price' => format_toman($price)]) }}
+                                        {{ __('packages.from_price', ['price' => format_money($price, $package->moneyCurrency())]) }}
                                     @else
                                         —
                                     @endif

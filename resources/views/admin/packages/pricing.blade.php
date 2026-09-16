@@ -84,8 +84,8 @@
                                                     @php $old = (float) $duration->price; @endphp
                                                     @if ($old > 0)
                                                         <div class="small mb-1"><span class="text-muted">{{ $duration->displayLabel() }}:</span>
-                                                            <span dir="ltr">{{ format_toman($old) }}</span> <i class="bx bx-left-arrow-alt"></i>
-                                                            <strong class="adj-new" data-old="{{ $old }}" dir="ltr">—</strong>
+                                                            <span dir="ltr">{{ format_money($old, $package->moneyCurrency()) }}</span> <i class="bx bx-left-arrow-alt"></i>
+                                                            <strong class="adj-new" data-old="{{ $old }}" data-symbol="{{ $package->moneyCurrency()->symbol() }}" data-decimals="{{ $package->moneyCurrency()->displayDecimals() }}" dir="ltr">—</strong>
                                                         </div>
                                                     @endif
                                                 @endforeach
@@ -174,13 +174,13 @@
                                                 <span class="fw-semibold">{{ $package->name }}</span> <span class="badge bg-{{ $color }} ms-1">{{ $badge }}</span>
                                                 @if ($base <= 0)<div class="text-danger small">قیمت ۱ماهه ندارد</div>@endif
                                             </td>
-                                            <td dir="ltr" class="text-muted">{{ $base > 0 ? format_toman($base) : '—' }}</td>
+                                            <td dir="ltr" class="text-muted">{{ $base > 0 ? format_money($base, $package->moneyCurrency()) : '—' }}</td>
                                             @foreach (['3m','6m','1y'] as $t)
                                                 @php $cur = $tm[$t] ?? null; $curP = $cur ? (float) $cur->price : 0; $curOn = $cur && $cur->is_enabled; @endphp
                                                 <td dir="ltr">
-                                                    <strong class="calc-new" data-base="{{ $base }}" data-tier="{{ $t }}">—</strong>
+                                                    <strong class="calc-new" data-base="{{ $base }}" data-tier="{{ $t }}" data-symbol="{{ $package->moneyCurrency()->symbol() }}" data-decimals="{{ $package->moneyCurrency()->displayDecimals() }}">—</strong>
                                                     @if ($curP > 0 && $curOn)
-                                                        <div class="small text-success">فعلی: {{ format_toman($curP) }}</div>
+                                                        <div class="small text-success">فعلی: {{ format_money($curP, $package->moneyCurrency()) }}</div>
                                                     @elseif ($cur === null)
                                                         <div class="small text-muted">— بدون ردیف —</div>
                                                     @else
@@ -209,7 +209,16 @@
 <script>
 (function () {
     'use strict';
-    function fmt(n) { try { return new Intl.NumberFormat('fa-IR').format(Math.round(n)) + ' تومان'; } catch (e) { return Math.round(n) + ''; } }
+    // واحد پول از خود ردیف خوانده می‌شود چون هر پکیج می‌تواند ارز متفاوتی داشته باشد.
+    function fmt(n, el) {
+        var symbol = (el && el.dataset.symbol) || '';
+        var decimals = parseInt((el && el.dataset.decimals) || '0', 10);
+        try {
+            return new Intl.NumberFormat('fa-IR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(n) + ' ' + symbol;
+        } catch (e) {
+            return n + ' ' + symbol;
+        }
+    }
     function faInt(n) { try { return new Intl.NumberFormat('fa-IR').format(n); } catch (e) { return '' + n; } }
     function roundPrice(v) {
         if (v <= 0) return 0;
@@ -241,7 +250,7 @@
             var old = parseFloat(el.dataset.old);
             if (f === null) { el.textContent = '—'; el.className = 'adj-new'; return; }
             var nw = roundPrice(old * f);
-            el.textContent = fmt(nw);
+            el.textContent = fmt(nw, el);
             el.className = 'adj-new ' + (nw > old ? 'text-success' : (nw < old ? 'text-danger' : ''));
         });
     }
@@ -279,7 +288,7 @@
         document.querySelectorAll('.calc-new').forEach(function (el) {
             var base = parseFloat(el.dataset.base), mm = mult(el.dataset.tier);
             if (isNaN(base) || base <= 0 || isNaN(mm) || mm <= 0) { el.textContent = '—'; return; }
-            el.textContent = fmt(roundPrice(base * mm));
+            el.textContent = fmt(roundPrice(base * mm), el);
         });
     }
     function calcCount() {

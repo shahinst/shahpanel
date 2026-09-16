@@ -160,11 +160,14 @@ final class SmsSettings
     }
 
     /**
+     * پارامترهای #NAME# موجود در متن پیامک. اگر متنی داده نشود، متن ذخیره‌شده
+     * خوانده می‌شود (برای اعتبارسنجی قبل از ذخیره، متن ارسالی فرم پاس داده می‌شود).
+     *
      * @return list<string>
      */
-    public static function placeholdersInMessage(): array
+    public static function placeholdersInMessage(?string $message = null): array
     {
-        $message = self::accountLoginMessage();
+        $message ??= self::accountLoginMessage();
         preg_match_all('/#([A-Za-z0-9_]+)#/', $message, $matches);
 
         return array_values(array_unique(array_map(
