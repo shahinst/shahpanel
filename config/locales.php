@@ -17,24 +17,28 @@ return [
             'english_name' => 'Persian',
             'dir' => 'rtl',
             'digits' => 'fa',
+            'currency' => 'IRT',
         ],
         'en' => [
             'name' => 'English',
             'english_name' => 'English',
             'dir' => 'ltr',
             'digits' => 'latn',
+            'currency' => 'USD',
         ],
         'ru' => [
             'name' => 'Русский',
             'english_name' => 'Russian',
             'dir' => 'ltr',
             'digits' => 'latn',
+            'currency' => 'USD',
         ],
         'zh' => [
             'name' => '中文',
             'english_name' => 'Chinese',
             'dir' => 'ltr',
             'digits' => 'latn',
+            'currency' => 'USD',
         ],
     ],
 

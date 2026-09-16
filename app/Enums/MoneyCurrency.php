@@ -46,6 +46,23 @@ enum MoneyCurrency: string
     }
 
     /**
+     * ارزی که وقتی مبلغی ارز مشخصی ندارد، فقط برای *نمایش* استفاده می‌شود.
+     *
+     * عمداً از default() جداست: آن یکی در User::wallet() و
+     * WalletService::getOrCreateWallet() کیف پول را از دیتابیس انتخاب و
+     * ایجاد می‌کند، پس اگر با زبان کاربر عوض شود، یک کاربر انگلیسی کیف پول
+     * دیگری می‌بیند و شارژ در کیف اشتباه می‌نشیند. این یکی هیچ‌وقت به کوئری
+     * نمی‌رسد و فقط نماد و تعداد رقم اعشار را تعیین می‌کند.
+     */
+    public static function displayDefault(): self
+    {
+        $meta = (array) config('locales.supported.'.app()->getLocale(), []);
+        $code = (string) ($meta['currency'] ?? '');
+
+        return self::tryFrom(strtoupper($code)) ?? self::default();
+    }
+
+    /**
      * @return list<self>
      */
     public static function sellable(): array
