@@ -699,7 +699,11 @@ if [[ -n "$EMAIL" ]]; then
 elif [[ "$MODE" == "domain" ]]; then
     ADMIN_EMAIL="admin@${DOMAIN}"
 else
-    ADMIN_EMAIL="admin@localhost"
+    # install:finalize validates this with FILTER_VALIDATE_EMAIL, which rejects
+    # any domain without a dot -- so "admin@localhost" failed every IP-mode
+    # install at the very last step. A bare IP is rejected too (it has to be
+    # bracketed to pass), so use a dotted placeholder the admin can change later.
+    ADMIN_EMAIL="admin@shahpanel.local"
 fi
 
 ADMIN_PASS="$(openssl rand -base64 18 | tr -d '/+=' | cut -c1-16)"

@@ -142,7 +142,12 @@ class FirewallService
         }
 
         try {
-            $process = new Process(array_merge(['sudo', '-n', self::SCRIPT], $args));
+            // The cwd is pinned to the app directory on purpose. Without it Symfony
+            // inherits whatever directory the PHP process happens to sit in, and
+            // refuses to start when www-data cannot read it -- which is exactly what
+            // happens when the installer runs artisan from /root/sp: every firewall
+            // call fails with a misleading "cwd does not exist".
+            $process = new Process(array_merge(['sudo', '-n', self::SCRIPT], $args), base_path());
             $process->setTimeout($timeout);
             $process->run();
 
