@@ -23,6 +23,7 @@ class ZarinpalGateway implements PaymentGatewayDriverInterface
 
         $payload = [
             'amount' => $amountRial,
+            'currency' => 'IRR',
             'callback_url' => route('webhooks.zarinpal'),
             'description' => __('payment_gateways.zarinpal_order_description', [
                 'amount' => persian_digits(number_format((float) $payment->gross_toman, 0)),

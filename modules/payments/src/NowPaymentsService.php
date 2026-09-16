@@ -11,6 +11,7 @@ use App\Services\PaymentGateways\PaymentGatewayCommissionCalculator;
 use App\Services\PaymentGateways\PaymentGatewayException;
 use App\Support\PaymentSettings;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * NowPayments-specific orchestration extracted from the core GatewayPaymentService.
@@ -114,6 +115,33 @@ class NowPaymentsService
             $mappedStatus = $this->mapStatus($externalStatus);
 
             if ($mappedStatus === GatewayPaymentStatus::Completed) {
+                // NowPayments also reports under-paid deposits and repeated
+                // (top-up) deposits as `finished`, and their docs warn twice not
+                // to release goods on those without checking. Crediting the
+                // invoiced amount for a deposit that arrived short hands out
+                // wallet balance that was never received, so such payments are
+                // parked for an admin instead. When the amounts are absent we
+                // cannot judge, and the previous behaviour stands.
+                $paidAmount = (float) ($payload['actually_paid'] ?? 0);
+                $dueAmount = (float) ($payload['pay_amount'] ?? 0);
+                $isRepeatDeposit = ($payload['parent_payment_id'] ?? null) !== null;
+                $isUnderpaid = $paidAmount > 0 && $dueAmount > 0 && $paidAmount < ($dueAmount * 0.99);
+
+                if ($isRepeatDeposit || $isUnderpaid) {
+                    $payment->status = GatewayPaymentStatus::Processing;
+                    $payment->save();
+
+                    Log::warning('NowPayments deposit held for review', [
+                        'payment_id' => $payment->id,
+                        'uuid' => $payment->uuid,
+                        'actually_paid' => $paidAmount,
+                        'pay_amount' => $dueAmount,
+                        'repeat_deposit' => $isRepeatDeposit,
+                    ]);
+
+                    return $payment->fresh();
+                }
+
                 $payment->save();
                 $this->core->completePayment($payment);
 
