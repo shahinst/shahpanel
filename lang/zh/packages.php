@@ -59,7 +59,7 @@ return [
     'invalid_assignment_selection' => '所选套餐中有一个或多个不被允许。',
     'seller_packages_must_match_parent' => '销售商的套餐必须是其上级代理商套餐的子集。',
     'test_already_used_for_client' => '该买家已在此套餐上使用过试用账号。',
-    'toman' => '托曼',
+    'toman' => 'IRT',
     'catalog_price' => '基础价（管理员）',
     'catalog_price_ceiling' => '基础价 / 允许上限',
     'your_agent_price' => '你的价格（代理商）',
@@ -131,7 +131,7 @@ return [
     'gb_range_hint' => '介于 :min 与 :max GB 之间。',
     'gb_min_hint' => '至少 :min GB。',
     'gb_unit' => 'GB',
-    'toman_per_gb' => '托曼 / GB',
+    'toman_per_gb' => 'IRT / GB',
     'payable_total' => '应付金额',
 
     'pasarguard_section_title' => 'PasarGuard 设置（group_ids）',

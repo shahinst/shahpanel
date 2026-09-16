@@ -59,7 +59,7 @@ return [
     'invalid_assignment_selection' => 'One or more of the selected packages are not allowed.',
     'seller_packages_must_match_parent' => 'A seller\'s packages must be a subset of the parent agent\'s packages.',
     'test_already_used_for_client' => 'This buyer has already had a trial account on this package.',
-    'toman' => 'Toman',
+    'toman' => 'IRT',
     'catalog_price' => 'Base price (admin)',
     'catalog_price_ceiling' => 'Base price / allowed ceiling',
     'your_agent_price' => 'Your price (agent)',
@@ -131,7 +131,7 @@ return [
     'gb_range_hint' => 'Between :min and :max GB.',
     'gb_min_hint' => 'At least :min GB.',
     'gb_unit' => 'GB',
-    'toman_per_gb' => 'Toman / GB',
+    'toman_per_gb' => 'IRT / GB',
     'payable_total' => 'Amount payable',
 
     'pasarguard_section_title' => 'PasarGuard settings (group_ids)',
