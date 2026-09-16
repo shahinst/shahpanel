@@ -25,13 +25,14 @@ return [
         'portal_enabled' => '启用客户门户',
         'registration_enabled' => '自助注册',
         'ticket_auto_close_days' => '工单自动关闭天数',
+        'display_currency' => '显示货币',
     ],
 
     'hints' => [
         'site_name' => '显示在页面标题和邮件中。',
         'site_url' => '带 https 的完整地址。',
         'timezone' => '推荐：Asia/Tehran',
-        'currency_label' => '例如：托曼',
+        'currency_label' => '例如：美元',
         'support_telegram' => '不带 @',
         'default_payment_card' => '用于卡对卡付款的卡号。',
         'min_charge_amount' => '充值申请的最低金额。',
@@ -41,6 +42,7 @@ return [
         'sync_interval_minutes' => '应与 Cron 一致（默认 5）。',
         'default_agent_daily_server_changes' => '未单独设置数值的代理商，每日更换账号服务器的次数上限。',
         'ticket_auto_close_days' => '超过这么多天没有活动的工单将被自动关闭。',
+        'display_currency' => '仅影响本身没有货币的金额的显示方式。套餐仍使用各自的货币，钱包不受影响。',
     ],
 
     'options' => [

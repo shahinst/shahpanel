@@ -378,7 +378,7 @@ return [
     // Misc
     'jalali_date_placeholder' => '1403/01/15',
     'menu_pricing' => 'Цены',
-    'min_amount_irt_hint' => 'Минимум обычно составляет 1 000 Томан.',
+    'min_amount_irt_hint' => 'Минимум обычно составляет 1 000 IRT.',
     'amount_in_selected_currency_hint' => 'Введите сумму в выбранной валюте.',
     'install_via_ssh' => 'Установка выполняется по SSH:',
     'phase_zero_ready' => 'Фаза 0 настроена успешно.',

@@ -42,7 +42,7 @@ return [
     'pricing_card' => 'Seller pricing policy',
     'pricing_hint' => 'The maximum percentage above the agent wholesale price that an agent may set for a seller. Zero means disabled (only the package base price cap applies).',
     'agent_seller_markup_percent' => 'Maximum agent profit percentage on sellers',
-    'agent_seller_markup_help' => 'Example: at 10%, if the agent wholesale price is 5,000 Toman, the seller pays at most 5,500 Toman — and the agent profit is at most 500 Toman per unit.',
+    'agent_seller_markup_help' => 'Example: at 10%, if the agent wholesale price is 5,000, the seller pays at most 5,500 — and the agent profit is at most 500 per unit.',
     'pricing_saved' => 'Seller pricing settings saved.',
     'pricing_page_title' => 'Automation — agent pricing',
     'pricing_page_hint' => 'The maximum profit percentage an agent may apply when setting the seller wholesale price.',

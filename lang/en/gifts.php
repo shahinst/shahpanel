@@ -22,7 +22,7 @@ return [
     'days_summary' => ':updated account(s) for :recipients recipient(s) renewed by :days day(s). (No expiry: :skipped — failed: :failed). Server sync continues in the background.',
     'wallet_section' => 'Top up wallet',
     'wallet_hint' => 'The amount entered is added to the wallet of each selected agent or seller.',
-    'amount' => 'Amount (Toman)',
+    'amount' => 'Amount',
     'amount_invalid' => 'The amount must be greater than zero.',
     'wallet_submit' => 'Add the amount to the account',
     'wallet_summary' => ':amount credited to :credited of :recipients recipient(s). (Failed: :failed)',

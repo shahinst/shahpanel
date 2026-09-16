@@ -12,7 +12,7 @@ return [
     'package_section' => 'Package and price',
     'package' => 'Package',
     'duration' => 'Duration',
-    'charge' => 'Amount to charge to the wallet (Toman)',
+    'charge' => 'Amount to charge to the wallet',
     'charge_hint' => 'Enter 0 for a free account.',
     'name_prefix' => 'Account name prefix',
     'name_prefix_hint' => 'The full name of the agent or seller is appended to this text. For example: "Agent account-"',
