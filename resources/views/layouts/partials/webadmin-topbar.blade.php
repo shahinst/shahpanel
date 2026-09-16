@@ -76,6 +76,8 @@
             </span>
         @endif
 
+        @include('layouts.partials.locale-switcher')
+
         <a href="{{ route('notifications.index') }}" class="vp-topbar__btn" aria-label="{{ __('menu.notifications') ?? '' }}">
             <i class="bx bx-bell"></i>
             @if ($unreadCount > 0)

@@ -3,3 +3,5 @@
          alt="{{ app_display_name() }}" width="48" height="48">
     <span class="auth-brand__text">{{ app_display_name() }}</span>
 </a>
+
+@include('auth.partials.locale-links')

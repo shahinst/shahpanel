@@ -18,10 +18,51 @@ if (! function_exists('persian_digits')) {
             return '';
         }
 
+        // Only Persian reads Eastern Arabic numerals. Called from ~300 places,
+        // so gating it here is what keeps English, Russian and Chinese pages
+        // from showing ۱۲۳ instead of 123.
+        if (locale_digits() !== 'fa') {
+            return (string) $value;
+        }
+
         $western = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
         $persian = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹'];
 
         return str_replace($western, $persian, (string) $value);
+    }
+}
+
+if (! function_exists('locale_meta')) {
+    /** @return array<string, string> */
+    function locale_meta(?string $locale = null): array
+    {
+        $locale ??= app()->getLocale();
+        $all = (array) config('locales.supported', []);
+
+        return (array) ($all[$locale] ?? $all['fa'] ?? ['dir' => 'rtl', 'digits' => 'fa']);
+    }
+}
+
+if (! function_exists('locale_dir')) {
+    /** "rtl" or "ltr" for the active language. */
+    function locale_dir(?string $locale = null): string
+    {
+        return (string) (locale_meta($locale)['dir'] ?? 'rtl');
+    }
+}
+
+if (! function_exists('locale_is_rtl')) {
+    function locale_is_rtl(?string $locale = null): bool
+    {
+        return locale_dir($locale) === 'rtl';
+    }
+}
+
+if (! function_exists('locale_digits')) {
+    /** Numeral set the active language reads: "fa" or "latn". */
+    function locale_digits(?string $locale = null): string
+    {
+        return (string) (locale_meta($locale)['digits'] ?? 'latn');
     }
 }
 

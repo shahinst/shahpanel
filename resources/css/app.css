@@ -944,7 +944,7 @@ html[dir="ltr"] .vp-sidebar {
 .vp-sidebar__scroll { flex: 1 1 auto; overflow-y: auto; padding: .85rem .75rem 1.5rem; }
 .vp-nav {
     list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .15rem;
-    direction: rtl; text-align: right;
+    direction: inherit; text-align: start;
 }
 .vp-nav__title { padding: 1.1rem .75rem .4rem; font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; color: #64748b; font-weight: 700; }
 .vp-nav__link {
@@ -971,7 +971,7 @@ html[dir="ltr"] .vp-sidebar {
 html[dir="rtl"] .vp-topbar {
     right: var(--sidebar-w);
     left: 0;
-    direction: rtl;
+    direction: inherit;
 }
 html[dir="ltr"] .vp-topbar {
     left: var(--sidebar-w);
@@ -1363,7 +1363,7 @@ button.panel-quick-action { width: 100%; cursor: pointer; font: inherit; text-al
     position: fixed;
     min-width: 220px;
     text-align: start;
-    direction: rtl;
+    direction: inherit;
     z-index: 10050;
     box-shadow: var(--shadow-lg);
     margin: 0;

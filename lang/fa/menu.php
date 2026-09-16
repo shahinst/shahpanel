@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'language' => 'زبان',
     'dashboard' => 'داشبورد',
     'agents' => 'نمایندگان',
     'sellers' => 'فروشندگان',

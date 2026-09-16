@@ -30,6 +30,7 @@ class User extends Authenticatable
         'full_name',
         'phone',
         'status',
+        'locale',
         'enabled_currencies',
         'settlement_currency',
         'daily_server_change_limit',
