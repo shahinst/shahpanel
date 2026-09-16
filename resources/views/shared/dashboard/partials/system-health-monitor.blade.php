@@ -261,7 +261,7 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(function (data) {
                 render(data);
                 if (clock && data.checked_at) {
-                    clock.textContent = labels.updated + ' ' + new Date(data.checked_at).toLocaleTimeString('fa-IR');
+                    clock.textContent = labels.updated + ' ' + new Date(data.checked_at).toLocaleTimeString(@json(locale_tag()));
                 }
             })
             .catch(function () {

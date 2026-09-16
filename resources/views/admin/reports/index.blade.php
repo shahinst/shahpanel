@@ -223,7 +223,7 @@
     if (r) new Chart(r, {
         type: 'bar',
         data: { labels: labels, datasets: [{ label: @json(__('ui.revenue')), data: revenue, backgroundColor: '#34c38f' }] },
-        options: { responsive: true, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function (c) { try { return new Intl.NumberFormat('fa-IR').format(c.raw) + ' ' + @json(__('packages.toman')); } catch (e) { return c.raw; } } } } }, scales: { x: { ticks: { maxTicksLimit: 12 } }, y: { ticks: { callback: function (v) { try { return new Intl.NumberFormat('fa-IR').format(v); } catch (e) { return v; } } } } } }
+        options: { responsive: true, plugins: { legend: { display: false }, tooltip: { callbacks: { label: function (c) { try { return new Intl.NumberFormat(@json(locale_tag())).format(c.raw) + ' ' + @json(__('packages.toman')); } catch (e) { return c.raw; } } } } }, scales: { x: { ticks: { maxTicksLimit: 12 } }, y: { ticks: { callback: function (v) { try { return new Intl.NumberFormat(@json(locale_tag())).format(v); } catch (e) { return v; } } } } } }
     });
 })();
 </script>

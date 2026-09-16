@@ -132,7 +132,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var currency = currencyOpt.value;
         var symbol = currencyOpt.getAttribute('data-symbol') || currency;
         var amount = Number(balances[currency] || 0);
-        balanceEl.textContent = amount.toLocaleString('fa-IR', { maximumFractionDigits: 2 }) + ' ' + symbol;
+        balanceEl.textContent = amount.toLocaleString(@json(locale_tag()), { maximumFractionDigits: 2 }) + ' ' + symbol;
         if (amountHint) {
             amountHint.textContent = @json(__('ui.charge_on_wallet_prefix')) + ' ' + symbol;
         }

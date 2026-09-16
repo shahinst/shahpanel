@@ -17,6 +17,8 @@ return [
             'english_name' => 'Persian',
             'dir' => 'rtl',
             'digits' => 'fa',
+        // برچسب BCP47 برای Intl در مرورگر — تعیین می‌کند ارقام با چه خطی نوشته شوند.
+        'tag' => 'fa-IR',
             'currency' => 'IRT',
         ],
         'en' => [
@@ -24,6 +26,8 @@ return [
             'english_name' => 'English',
             'dir' => 'ltr',
             'digits' => 'latn',
+        // برچسب BCP47 برای Intl در مرورگر — تعیین می‌کند ارقام با چه خطی نوشته شوند.
+        'tag' => 'en-US',
             'currency' => 'USD',
         ],
         'ru' => [
@@ -31,6 +35,8 @@ return [
             'english_name' => 'Russian',
             'dir' => 'ltr',
             'digits' => 'latn',
+        // برچسب BCP47 برای Intl در مرورگر — تعیین می‌کند ارقام با چه خطی نوشته شوند.
+        'tag' => 'ru-RU',
             'currency' => 'USD',
         ],
         'zh' => [
@@ -38,6 +44,8 @@ return [
             'english_name' => 'Chinese',
             'dir' => 'ltr',
             'digits' => 'latn',
+        // برچسب BCP47 برای Intl در مرورگر — تعیین می‌کند ارقام با چه خطی نوشته شوند.
+        'tag' => 'zh-CN',
             'currency' => 'USD',
         ],
     ],

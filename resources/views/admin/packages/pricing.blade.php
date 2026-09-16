@@ -213,12 +213,12 @@
         var symbol = (el && el.dataset.symbol) || '';
         var decimals = parseInt((el && el.dataset.decimals) || '0', 10);
         try {
-            return new Intl.NumberFormat('fa-IR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(n) + ' ' + symbol;
+            return new Intl.NumberFormat(@json(locale_tag()), { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(n) + ' ' + symbol;
         } catch (e) {
             return n + ' ' + symbol;
         }
     }
-    function faInt(n) { try { return new Intl.NumberFormat('fa-IR').format(n); } catch (e) { return '' + n; } }
+    function faInt(n) { try { return new Intl.NumberFormat(@json(locale_tag())).format(n); } catch (e) { return '' + n; } }
     function roundPrice(v) {
         if (v <= 0) return 0;
         var step = v >= 100000 ? 1000 : (v >= 1000 ? 100 : 50);

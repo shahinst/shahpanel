@@ -189,7 +189,7 @@
         if (!Number.isFinite(amount)) {
             return '—';
         }
-        return amount.toLocaleString('fa-IR', {
+        return amount.toLocaleString(@json(locale_tag()), {
             minimumFractionDigits: decimals,
             maximumFractionDigits: decimals,
         }) + ' ' + symbol;
@@ -241,7 +241,7 @@
         if (formulaEl && data.is_per_gb && data.data_gb && data.unit_price) {
             formulaEl.textContent = '(' + priceFormulaTpl
                 .replace(':unit', formatMoney(data.unit_price))
-                .replace(':gb', Number(data.data_gb).toLocaleString('fa-IR')) + ')';
+                .replace(':gb', Number(data.data_gb).toLocaleString(@json(locale_tag()))) + ')';
         } else if (formulaEl && data.unit_price) {
             formulaEl.textContent = '(' + fixedOnceTpl
                 .replace(':unit', formatMoney(data.unit_price)) + ')';
@@ -264,7 +264,7 @@
 
         let wholesaleText = formatToman(data.wholesale_total);
         if (data.is_per_gb && data.data_gb && data.unit_price) {
-            wholesaleText = Number(data.data_gb).toLocaleString('fa-IR') + ' ' + gbUnit + ' × '
+            wholesaleText = Number(data.data_gb).toLocaleString(@json(locale_tag())) + ' ' + gbUnit + ' × '
                 + formatMoney(data.unit_price) + ' = '
                 + wholesaleText;
         }

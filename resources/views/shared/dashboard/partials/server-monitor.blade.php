@@ -315,7 +315,7 @@
                     if (!clock) return;
 
                     var timeText = data.polled_at
-                        ? new Date(data.polled_at).toLocaleTimeString('fa-IR')
+                        ? new Date(data.polled_at).toLocaleTimeString(@json(locale_tag()))
                         : '';
 
                     clock.textContent = @json(__('dashboard.server_monitor_updated')) + ' ' + timeText;

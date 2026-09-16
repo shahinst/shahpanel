@@ -58,6 +58,19 @@ if (! function_exists('locale_is_rtl')) {
     }
 }
 
+if (! function_exists('locale_tag')) {
+    /**
+     * برچسب BCP47 زبان جاری، برای toLocaleString در مرورگر.
+     * بدون این، جاوااسکریپت همیشه با fa-IR عدد می‌سازد و صفحهٔ انگلیسی هم رقم فارسی نشان می‌دهد.
+     */
+    function locale_tag(?string $locale = null): string
+    {
+        $meta = locale_meta($locale);
+
+        return (string) ($meta['tag'] ?? 'en-US');
+    }
+}
+
 if (! function_exists('locale_digits')) {
     /** Numeral set the active language reads: "fa" or "latn". */
     function locale_digits(?string $locale = null): string
