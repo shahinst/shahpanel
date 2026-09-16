@@ -59,7 +59,7 @@ return [
     'invalid_assignment_selection' => 'Один или несколько выбранных пакетов не разрешены.',
     'seller_packages_must_match_parent' => 'Пакеты продавца должны быть подмножеством пакетов вышестоящего агента.',
     'test_already_used_for_client' => 'У этого покупателя уже был пробный аккаунт по этому пакету.',
-    'toman' => 'Томан',
+    'toman' => 'IRT',
     'catalog_price' => 'Базовая цена (администратор)',
     'catalog_price_ceiling' => 'Базовая цена / допустимый предел',
     'your_agent_price' => 'Ваша цена (агент)',
@@ -131,7 +131,7 @@ return [
     'gb_range_hint' => 'От :min до :max GB.',
     'gb_min_hint' => 'Не менее :min GB.',
     'gb_unit' => 'GB',
-    'toman_per_gb' => 'Томан / GB',
+    'toman_per_gb' => 'IRT / GB',
     'payable_total' => 'Сумма к оплате',
 
     'pasarguard_section_title' => 'Настройки PasarGuard (group_ids)',
