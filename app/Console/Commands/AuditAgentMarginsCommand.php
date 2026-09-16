@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\MoneyCurrency;
 use App\Services\AgentMarginAuditService;
 use App\Services\AgentMarginCorrectionNoticeService;
 use Illuminate\Console\Command;
@@ -37,14 +38,16 @@ class AuditAgentMarginsCommand extends Command
         $this->newLine();
 
         $tableRows = [];
-        $grandTotal = '0.00';
+        // جمع مازاد به تفکیک ارز نگه داشته می‌شود؛ جمع کردن مبالغ ارزهای مختلف معنا ندارد.
+        $grandTotals = [];
         $applied = 0;
 
         foreach ($rows as $row) {
             $agent = $row['agent'];
             $account = $row['account'];
             $amount = $row['clawback_amount'];
-            $grandTotal = bcadd($grandTotal, $amount, 2);
+            $rowCurrency = MoneyCurrency::normalize($row['currency']);
+            $grandTotals[$rowCurrency->value] = bcadd($grandTotals[$rowCurrency->value] ?? '0.00', $amount, 2);
 
             $status = 'در انتظار';
 
@@ -63,9 +66,9 @@ class AuditAgentMarginsCommand extends Command
                 $agent->full_name ?? '—',
                 $account->id,
                 $account->remote_username,
-                format_toman($row['actual_margin']),
-                format_toman($row['expected_margin']),
-                format_toman($amount),
+                format_money($row['actual_margin'], $rowCurrency),
+                format_money($row['expected_margin'], $rowCurrency),
+                format_money($amount, $rowCurrency),
                 $status,
             ];
         }
@@ -77,7 +80,7 @@ class AuditAgentMarginsCommand extends Command
 
         $this->newLine();
         $this->info('تعداد مورد: '.$rows->count());
-        $this->info('جمع مازاد: '.format_toman($grandTotal));
+        $this->info('جمع مازاد: '.collect($grandTotals)->map(fn (string $amount, string $code): string => format_money($amount, $code))->implode(' + '));
 
         if ($apply) {
             $days = max(1, (int) $this->option('days'));

@@ -579,8 +579,8 @@ class UserPackagePricingService
                                 'package' => $package->name,
                                 'duration' => $duration->displayLabel(),
                                 'percent' => persian_digits(number_format($markupService->percent(), 2, '.', '')),
-                                'price' => number_format((float) $ceiling, 0, '.', ',').' '.__('packages.toman'),
-                                'margin' => number_format((float) $markupService->maxMarginPerUnit($floor), 0, '.', ',').' '.__('packages.toman'),
+                                'price' => format_money($ceiling, $package->moneyCurrency()),
+                                'margin' => format_money($markupService->maxMarginPerUnit($floor), $package->moneyCurrency()),
                             ]));
                         }
                     } else {
@@ -590,7 +590,7 @@ class UserPackagePricingService
                             throw new InvalidArgumentException(__('packages.seller_wholesale_above_catalog', [
                                 'package' => $package->name,
                                 'duration' => $duration->displayLabel(),
-                                'price' => number_format((float) $catalogCeiling, 0, '.', ',').' '.__('packages.toman'),
+                                'price' => format_money($catalogCeiling, $package->moneyCurrency()),
                             ]));
                         }
                     }

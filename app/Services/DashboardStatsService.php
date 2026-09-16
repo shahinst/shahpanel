@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\AccountCategory;
 use App\Enums\AccountStatus;
+use App\Enums\MoneyCurrency;
 use App\Enums\PaymentRequestStatus;
 use App\Enums\TransactionType;
 use App\Enums\UserRole;
@@ -34,8 +35,9 @@ class DashboardStatsService
             'pending_payments' => PaymentRequest::query()->where('status', PaymentRequestStatus::Pending)->count(),
             'wallet_balance' => $wallet['balance'],
             'wallet_infinite' => $wallet['infinite'],
-            'total_catalog_sales' => $revenue['total_catalog_sales'],
-            'total_agent_margin' => $revenue['total_agent_margin'],
+            'wallet_currency' => $wallet['currency'],
+            'total_catalog_sales_by_currency' => $revenue['total_catalog_sales_by_currency'],
+            'total_agent_margin_by_currency' => $revenue['total_agent_margin_by_currency'],
         ], Account::query()), [
             'panel' => 'admin',
         ]);
@@ -44,40 +46,82 @@ class DashboardStatsService
     /**
      * Historical admin revenue from ledger — never recalculated from current package prices.
      *
-     * @return array{total_catalog_sales: string, total_agent_margin: string}
+     * @return array{total_catalog_sales_by_currency: array<string, string>, total_agent_margin_by_currency: array<string, string>}
      */
     public function adminRevenueOverview(): array
     {
-        $revenueGross = number_format((float) (Transaction::query()
-            ->where('type', TransactionType::Revenue)
-            ->sum('amount') ?? 0), 2, '.', '');
+        $revenueGross = $this->ledgerSumByCurrency(
+            Transaction::query()->where('type', TransactionType::Revenue)
+        );
 
-        $revenueReversed = number_format((float) (Transaction::query()
-            ->where('type', TransactionType::Refund)
-            ->where('description', 'Account refund — admin revenue reversed')
-            ->sum('amount') ?? 0), 2, '.', '');
+        $revenueReversed = $this->ledgerSumByCurrency(
+            Transaction::query()
+                ->where('type', TransactionType::Refund)
+                ->where('description', 'Account refund — admin revenue reversed')
+        );
 
-        $catalogTotal = bccomp($revenueGross, $revenueReversed, 2) >= 0
-            ? bcsub($revenueGross, $revenueReversed, 2)
-            : '0.00';
+        $marginGross = $this->ledgerSumByCurrency(
+            Transaction::query()->where('type', TransactionType::Margin)
+        );
 
-        $marginGross = number_format((float) (Transaction::query()
-            ->where('type', TransactionType::Margin)
-            ->sum('amount') ?? 0), 2, '.', '');
+        $marginReversed = $this->ledgerSumByCurrency(
+            Transaction::query()
+                ->where('type', TransactionType::Refund)
+                ->where('description', 'Account refund — agent commission reversed')
+        );
 
-        $marginReversed = number_format((float) (Transaction::query()
-            ->where('type', TransactionType::Refund)
-            ->where('description', 'Account refund — agent commission reversed')
-            ->sum('amount') ?? 0), 2, '.', '');
-
-        $agentMargin = bccomp($marginGross, $marginReversed, 2) >= 0
-            ? bcsub($marginGross, $marginReversed, 2)
-            : '0.00';
-
+        // مبالغ به تفکیک ارز نگه داشته می‌شوند؛ جمع کردن ارزهای متفاوت در یک عدد بی‌معنا است.
         return [
-            'total_catalog_sales' => $catalogTotal,
-            'total_agent_margin' => $agentMargin,
+            'total_catalog_sales_by_currency' => $this->subtractByCurrency($revenueGross, $revenueReversed),
+            'total_agent_margin_by_currency' => $this->subtractByCurrency($marginGross, $marginReversed),
         ];
+    }
+
+    /**
+     * جمع مبلغ تراکنش‌ها به تفکیک ستون currency.
+     *
+     * @param  Builder<Transaction>  $query
+     * @return array<string, string>
+     */
+    protected function ledgerSumByCurrency(Builder $query): array
+    {
+        $totals = [];
+
+        $rows = $query
+            ->selectRaw('currency, SUM(amount) as total_amount')
+            ->groupBy('currency')
+            ->get();
+
+        foreach ($rows as $row) {
+            $code = MoneyCurrency::normalize($row->currency)->value;
+            $amount = number_format((float) $row->total_amount, 2, '.', '');
+            $totals[$code] = isset($totals[$code]) ? bcadd($totals[$code], $amount, 2) : $amount;
+        }
+
+        return $totals;
+    }
+
+    /**
+     * کسر برگشتی‌ها از ناخالص، ارز به ارز. خروجی هرگز منفی نمی‌شود.
+     *
+     * @param  array<string, string>  $gross
+     * @param  array<string, string>  $reversed
+     * @return array<string, string>
+     */
+    protected function subtractByCurrency(array $gross, array $reversed): array
+    {
+        $result = [];
+
+        foreach (array_unique(array_merge(array_keys($gross), array_keys($reversed))) as $code) {
+            $net = bcsub($gross[$code] ?? '0.00', $reversed[$code] ?? '0.00', 2);
+            $result[$code] = bccomp($net, '0.00', 2) >= 0 ? $net : '0.00';
+        }
+
+        if ($result === []) {
+            $result[MoneyCurrency::default()->value] = '0.00';
+        }
+
+        return $result;
     }
 
     /**
@@ -94,6 +138,7 @@ class DashboardStatsService
             'pending_payments' => PaymentRequest::query()->ownedByHierarchy($user)->where('status', PaymentRequestStatus::Pending)->count(),
             'wallet_balance' => $wallet['balance'],
             'wallet_infinite' => $wallet['infinite'],
+            'wallet_currency' => $wallet['currency'],
         ], $accountQuery), [
             'panel' => 'agent',
         ]);
@@ -112,6 +157,7 @@ class DashboardStatsService
             'pending_payments' => PaymentRequest::query()->where('requester_user_id', $user->id)->where('status', PaymentRequestStatus::Pending)->count(),
             'wallet_balance' => $wallet['balance'],
             'wallet_infinite' => $wallet['infinite'],
+            'wallet_currency' => $wallet['currency'],
             'transactions' => Transaction::query()->where('user_id', $user->id)->count(),
         ], $accountQuery), [
             'panel' => 'seller',
@@ -434,6 +480,7 @@ class DashboardStatsService
             'accounts_anyconnect' => 0,
             'wallet_balance' => $wallet['balance'],
             'wallet_infinite' => $wallet['infinite'],
+            'wallet_currency' => $wallet['currency'],
             'charts' => [
                 'status' => ['labels' => [], 'values' => [], 'by_category' => []],
                 'category' => ['labels' => [], 'values' => []],

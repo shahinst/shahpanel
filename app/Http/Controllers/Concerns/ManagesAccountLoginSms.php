@@ -10,6 +10,7 @@ use App\Services\Sms\SmsIrService;
 use App\Support\SmsSettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 use Illuminate\View\View;
 use Symfony\Component\Routing\Exception\RouteNotFoundException;
@@ -92,40 +93,62 @@ trait ManagesAccountLoginSms
             'mobile' => ['required', 'string', 'max:20'],
         ]);
 
+        $formRedirect = fn (string $message): RedirectResponse => redirect()
+            ->route($this->accountRoutePrefix().'.accounts.send-login-info-form', $account)
+            ->withInput()
+            ->with('error', $message);
+
+        if (! SmsIrService::isValidIranMobile($validated['mobile'])) {
+            return $formRedirect(__('sms.invalid_mobile'));
+        }
+
         $redirect = redirect()
             ->route($this->accountRoutePrefix().'.accounts.'.$account->service_type->accountCategory()->value);
 
+        // قفل اتمیک: بدون آن چند درخواست همزمان روی یک اکانت همگی از شرط
+        // loginSmsSent() بالا عبور می‌کنند (چون علامت‌گذاری بعد از تماس HTTP
+        // انجام می‌شود) و اعتبار پیامک چند بار مصرف می‌شود.
+        $lock = Cache::lock('sms:account-login-info:'.$account->id, 120);
+
+        if (! $lock->get()) {
+            return $redirect->with('error', __('sms.account_login_in_progress'));
+        }
+
         try {
+            $account->refresh();
+
+            if ($account->loginSmsSent()) {
+                return $redirect->with('error', __('accounts.send_login_info_already_sent'));
+            }
+
             app(PortalLinkService::class)->issue($account);
             $account->refresh();
             $result = $smsIrService->sendAccountLoginInfo($validated['mobile'], $account);
             $messageId = $result['messageId'];
             $cost = $result['cost'];
 
-            $flash = __('sms.account_login_sent', [
-                'message_id' => $messageId !== null ? (string) $messageId : '—',
-                'cost' => $cost !== null ? persian_digits(number_format($cost, 2)) : '—',
-            ]);
-
+            // messageId=0 یعنی شماره در لیست سیاه sms.ir است و پیامکی تحویل نشده؛
+            // پس اکانت را «ارسال‌شده» علامت نمی‌زنیم تا امکان ارسال مجدد بماند.
             if ($messageId === 0) {
-                $flash .= ' '.__('sms.test_blacklist');
+                return $formRedirect(__('sms.test_blacklist'));
             }
 
             $account->markLoginSmsSent();
 
-            return $redirect->with('success', $flash);
+            return $redirect->with('success', __('sms.account_login_sent', [
+                'message_id' => $messageId !== null ? (string) $messageId : '—',
+                'cost' => $cost !== null ? persian_digits(number_format($cost, 2)) : '—',
+            ]));
         } catch (SmsIrApiException $exception) {
-            return redirect()
-                ->route($this->accountRoutePrefix().'.accounts.send-login-info-form', $account)
-                ->withInput()
-                ->with('error', $exception->getMessage());
+            return $formRedirect($exception->getMessage());
         } catch (\Throwable $exception) {
+            // پیام خام استثنا را به نماینده/فروشنده نشان نمی‌دهیم؛ ممکن است
+            // جزئیات داخلی (کوئری، مسیر فایل) داشته باشد. فقط لاگ می‌شود.
             report($exception);
 
-            return redirect()
-                ->route($this->accountRoutePrefix().'.accounts.send-login-info-form', $account)
-                ->withInput()
-                ->with('error', $exception->getMessage());
+            return $formRedirect(__('sms.account_login_failed'));
+        } finally {
+            $lock->release();
         }
     }
 

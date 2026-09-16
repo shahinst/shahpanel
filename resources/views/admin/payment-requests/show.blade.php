@@ -11,7 +11,7 @@
                     <dt>درخواست‌دهنده</dt>
                     <dd>{{ $paymentRequest->requester->full_name }}</dd>
                     <dt>{{ __('menu.amount') }}</dt>
-                    <dd>{{ format_toman($paymentRequest->amount) }}</dd>
+                    <dd>{{ format_money($paymentRequest->amount, $paymentRequest->moneyCurrency()) }}</dd>
                     <dt>{{ __('menu.tracking_number') }}</dt>
                     <dd>{{ $paymentRequest->tracking_number }}</dd>
                     <dt>وضعیت</dt>

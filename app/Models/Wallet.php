@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\MoneyCurrency;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -26,6 +27,12 @@ class Wallet extends Model
             'locked_balance' => 'decimal:2',
             'updated_at' => 'datetime',
         ];
+    }
+
+    // ارز کیف‌پول را به‌صورت enum برمی‌گرداند تا نمایش مبالغ با واحد درست انجام شود.
+    public function moneyCurrency(): MoneyCurrency
+    {
+        return MoneyCurrency::normalize($this->currency);
     }
 
     public function user(): BelongsTo

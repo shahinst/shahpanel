@@ -106,6 +106,7 @@
                                 </div>
                             @endif
                         </div>
+                        <p class="text-muted small mb-3">{{ __('sms.refresh_on_save') }}</p>
                     @endif
 
                     @if ($panelError)

@@ -178,8 +178,8 @@
                                     @php
                                         $duration = $row['duration'];
                                         $priceLabel = $isElastic
-                                            ? format_toman($row['display_price']).' '.__('storefront.per_gb')
-                                            : format_toman($row['display_price']);
+                                            ? format_money($row['display_price'], $package->moneyCurrency()).' '.__('storefront.per_gb')
+                                            : format_money($row['display_price'], $package->moneyCurrency());
                                     @endphp
                                     <li>
                                         <span>

@@ -20,7 +20,7 @@
     @if (($canRenew ?? false) && $renewalPrice !== null && ! $account->isRefunded())
     <div class="col-lg-4">
         <x-card :title="__('clients.renew_account')">
-            <p>{{ __('clients.renew_price') }}: <strong>{{ format_toman($renewalPrice) }}</strong></p>
+            <p>{{ __('clients.renew_price') }}: <strong>{{ format_money($renewalPrice, $renewalCurrency) }}</strong></p>
             <form method="POST" action="{{ route('client.accounts.renew', $account) }}">
                 @csrf
                 <x-button type="submit">{{ __('menu.renew') }}</x-button>

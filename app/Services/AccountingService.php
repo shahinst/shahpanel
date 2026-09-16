@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\InvoiceType;
+use App\Enums\MoneyCurrency;
 use App\Enums\TransactionType;
 use App\Enums\UserRole;
 use App\Models\Account;
@@ -123,7 +124,7 @@ class AccountingService
 
     /**
      * @param  Collection<int, Invoice>  $invoices
-     * @return array<int, array{debited: string, credited: string, margin_percent: ?string, max_markup_percent: ?float}>
+     * @return array<int, array{debited: string, credited: string, currency: string, margin_percent: ?string, max_markup_percent: ?float}>
      */
     public function summarizeInvoicesForViewer(User $viewer, Collection $invoices): array
     {
@@ -156,13 +157,15 @@ class AccountingService
                 $transactions->get($invoice->id, collect()),
                 collect([$invoice]),
             );
+            // ارز هر ردیف حسابداری از ستون currency همان فاکتور خوانده می‌شود.
+            $summary[$invoice->id]['currency'] = $invoice->moneyCurrency()->value;
         }
 
         return $summary;
     }
 
     /**
-     * @param  array{debited: string, credited: string, margin_percent?: ?string}|null  $rowSummary
+     * @param  array{debited: string, credited: string, currency?: string, margin_percent?: ?string}|null  $rowSummary
      * @return list<string>
      */
     public function exportBillingRow(
@@ -174,6 +177,8 @@ class AccountingService
         bool $includeMarginPercent = false,
     ): array {
         $row = $rowSummary ?? ['debited' => '0', 'credited' => '0'];
+        // خلاصه‌ی خالی ارز ندارد؛ در آن حالت ارز پیش‌فرض پنل استفاده می‌شود.
+        $rowCurrency = MoneyCurrency::normalize($row['currency'] ?? null);
 
         $cells = [
             jalali_date($invoice->issued_at ?? $invoice->created_at),
@@ -186,7 +191,7 @@ class AccountingService
         ];
 
         if ($includeCredited) {
-            $cells[] = format_toman($row['credited']);
+            $cells[] = format_money($row['credited'], $rowCurrency);
         }
 
         if ($includeMarginPercent) {
@@ -195,7 +200,7 @@ class AccountingService
                 : '—';
         }
 
-        $cells[] = format_toman($row['debited']);
+        $cells[] = format_money($row['debited'], $rowCurrency);
 
         return $cells;
     }
@@ -269,12 +274,14 @@ class AccountingService
     }
 
     /**
-     * @param  array{debited: string, credited: string, margin_percent?: ?string}|null  $rowSummary
+     * @param  array{debited: string, credited: string, currency?: string, margin_percent?: ?string}|null  $rowSummary
      * @return list<string>
      */
     public function exportRow(Account $account, ?array $rowSummary, bool $includeCredited = true, bool $includeMarginPercent = false): array
     {
         $row = $rowSummary ?? ['debited' => '0', 'credited' => '0'];
+        // خلاصه‌ی خالی ارز ندارد؛ در آن حالت ارز پیش‌فرض پنل استفاده می‌شود.
+        $rowCurrency = MoneyCurrency::normalize($row['currency'] ?? null);
 
         $cells = [
             jalali_date($account->created_at),
@@ -286,7 +293,7 @@ class AccountingService
         ];
 
         if ($includeCredited) {
-            $cells[] = format_toman($row['credited']);
+            $cells[] = format_money($row['credited'], $rowCurrency);
         }
 
         if ($includeMarginPercent) {
@@ -295,7 +302,7 @@ class AccountingService
                 : '—';
         }
 
-        $cells[] = format_toman($row['debited']);
+        $cells[] = format_money($row['debited'], $rowCurrency);
 
         return $cells;
     }
@@ -335,7 +342,7 @@ class AccountingService
 
     /**
      * @param  list<int>  $accountIds
-     * @return array<int, array{debited: string, credited: string}>
+     * @return array<int, array{debited: string, credited: string, currency: string}>
      */
     public function summarizeForViewer(User $viewer, array $accountIds, ?Collection $accounts = null): array
     {
@@ -379,6 +386,9 @@ class AccountingService
                 $accountTransactions,
                 $accountInvoices
             );
+            // ارز ردیف از فاکتورهای همان اکانت گرفته می‌شود؛ در نبود فاکتور، ارز پیش‌فرض پنل.
+            $summary[$accountId]['currency'] = $accountInvoices->first()?->moneyCurrency()->value
+                ?? MoneyCurrency::default()->value;
         }
 
         return $summary;
@@ -603,15 +613,28 @@ class AccountingService
         $totalDebited = '0.00';
         $totalCredited = '0.00';
 
+        // جمع کردن مبالغ چند ارز مختلف در یک عدد معنا ندارد، پس جمع‌ها به تفکیک ارز نگه‌داشته می‌شوند.
+        $byCurrency = [];
+
         foreach ($entries as $entry) {
             $row = $summary[$entry->id] ?? ['debited' => '0.00', 'credited' => '0.00'];
+            $code = MoneyCurrency::normalize($row['currency'] ?? null)->value;
+            $byCurrency[$code] ??= ['debited' => '0.00', 'credited' => '0.00'];
+            $byCurrency[$code]['debited'] = bcadd($byCurrency[$code]['debited'], $row['debited'], 2);
+            $byCurrency[$code]['credited'] = bcadd($byCurrency[$code]['credited'], $row['credited'], 2);
             $totalDebited = bcadd($totalDebited, $row['debited'], 2);
             $totalCredited = bcadd($totalCredited, $row['credited'], 2);
         }
 
+        if ($byCurrency === []) {
+            $byCurrency[MoneyCurrency::default()->value] = ['debited' => '0.00', 'credited' => '0.00'];
+        }
+
+        // کلیدهای debited/credited برای سازگاری با فراخوان‌های قدیمی باقی می‌مانند.
         return [
             'debited' => $totalDebited,
             'credited' => $totalCredited,
+            'by_currency' => $byCurrency,
             'role' => $viewer->role,
         ];
     }

@@ -49,10 +49,14 @@
                                     $duration = $row['duration'];
                                     $wholesale = $row['list_price'];
                                     $defaultDisplay = $row['is_custom'] ? $row['display_price'] : $wholesale;
+                                    // قیمت‌های این ردیف متعلق به همین پکیج هستند، پس ارز پکیج ملاک نمایش است.
+                                    $rowCurrency = $row['package']->moneyCurrency();
                                 @endphp
-                                <tr data-wholesale="{{ $wholesale }}">
+                                <tr data-wholesale="{{ $wholesale }}"
+                                    data-currency-symbol="{{ $rowCurrency->symbol() }}"
+                                    data-currency-decimals="{{ $rowCurrency->displayDecimals() }}">
                                     <td>{{ $row['package']->name }} — {{ $duration->displayLabel() }}</td>
-                                    <td class="text-muted">{{ format_toman($wholesale) }}</td>
+                                    <td class="text-muted">{{ format_money($wholesale, $rowCurrency) }}</td>
                                     <td style="min-width: 9rem;">
                                         <input type="number" name="prices[{{ $duration->id }}][display_price]"
                                                value="{{ old('prices.'.$duration->id.'.display_price', $row['is_custom'] ? $row['display_price'] : '') }}"
@@ -62,7 +66,7 @@
                                     </td>
                                     <td>
                                         <span class="badge bg-light text-success client-retail-profit" data-duration-id="{{ $duration->id }}">
-                                            {{ format_toman($row['retail_profit']) }}
+                                            {{ format_money($row['retail_profit'], $rowCurrency) }}
                                         </span>
                                     </td>
                                     <td>
@@ -92,9 +96,14 @@
         return isNaN(n) ? 0 : n;
     }
 
-    function formatToman(amount) {
-        var n = Math.round(amount);
-        return n.toLocaleString('fa-IR') + ' {{ config('vpnpanel.currency_label') }}';
+    // واحد پول از data-attribute های همان ردیف خوانده می‌شود تا هر پکیج با ارز خودش نمایش داده شود.
+    function formatMoney(amount, meta) {
+        var decimals = parseInt((meta && meta.currency_decimals) || '0', 10);
+        if (isNaN(decimals)) decimals = 0;
+        var symbol = (meta && meta.currency_symbol) || '';
+        var value = decimals > 0 ? amount : Math.round(amount);
+        try { return value.toLocaleString('fa-IR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) + ' ' + symbol; }
+        catch (e) { return value.toFixed(decimals) + ' ' + symbol; }
     }
 
     function updateProfit(row) {
@@ -105,7 +114,7 @@
         var display = parseAmount(input.value);
         if (display <= 0) display = wholesale;
         var profit = Math.max(0, display - wholesale);
-        badge.textContent = formatToman(profit);
+        badge.textContent = formatMoney(profit, { currency_symbol: row.dataset.currencySymbol, currency_decimals: row.dataset.currencyDecimals });
     }
 
     document.querySelectorAll('tr[data-wholesale]').forEach(function (row) {

@@ -3,6 +3,10 @@
 @section('page_title', __('financial_plans.page_title_agent'))
 
 @section('panel_content')
+@php
+    // جدول طرح‌های مالی ستون ارز ندارد؛ این طرح‌ها از کیف‌پول ارز پیش‌فرض پنل خرید و تسویه می‌شوند.
+    $planCurrency = \App\Enums\MoneyCurrency::default();
+@endphp
 @include('partials.panel-page-hero', [
     'title' => __('financial_plans.page_title_agent'),
     'subtitle' => __('financial_plans.agent_hint'),
@@ -12,7 +16,7 @@
 <x-alert type="info" class="mb-3">
     {{ __('financial_plans.active_plans_summary', [
         'count' => persian_digits((string) $preview['active_count']),
-        'amount' => format_toman($preview['total_remaining']),
+        'amount' => format_money($preview['total_remaining'], $planCurrency),
     ]) }}
 </x-alert>
 
@@ -30,8 +34,8 @@
                 <tr>
                     <td>{{ jalali_date($purchase->purchased_at) }}</td>
                     <td>{{ $purchase->name }}</td>
-                    <td>{{ format_toman($purchase->credit_total) }}</td>
-                    <td>{{ format_toman($purchase->credit_remaining) }}</td>
+                    <td>{{ format_money($purchase->credit_total, $planCurrency) }}</td>
+                    <td>{{ format_money($purchase->credit_remaining, $planCurrency) }}</td>
                     <td>{{ persian_digits(number_format((float) $purchase->discount_percent, 2)) }}٪</td>
                     <td>{{ $purchase->status->label() }}</td>
                 </tr>

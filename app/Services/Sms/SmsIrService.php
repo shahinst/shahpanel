@@ -124,8 +124,27 @@ final class SmsIrService
         );
     }
 
+    /**
+     * فقط موبایل ایران معتبر است (قالب نهایی 09xxxxxxxxx). بدون این بررسی،
+     * یک شماره اشتباه به sms.ir می‌رود و در «ارسال اطلاعات اکانت» سهمیه
+     * یک‌بار ارسال هر اکانت را می‌سوزاند.
+     */
+    public static function isValidIranMobile(string $mobile): bool
+    {
+        return preg_match('/^09\d{9}$/', self::normalizeMobile($mobile)) === 1;
+    }
+
     public static function normalizeMobile(string $mobile): string
     {
+        // ارقام فارسی/عربی را اول به لاتین تبدیل می‌کنیم؛ کاربر پنل شماره را
+        // معمولاً با ارقام فارسی وارد یا کپی می‌کند و \D در حالت عادی همهٔ
+        // آن‌ها را حذف می‌کرد و رشتهٔ خالی به sms.ir می‌رفت.
+        $mobile = str_replace(
+            ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹', '٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'],
+            ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
+            $mobile,
+        );
+
         $digits = preg_replace('/\D+/', '', $mobile) ?? '';
 
         if (str_starts_with($digits, '0098')) {

@@ -110,7 +110,7 @@
             <div class="kpi-icon bg-soft-success text-success"><i class="bx bx-wallet"></i></div>
             <div>
                 <p class="kpi-label">{{ __('clients.wallet_balance') }}</p>
-                <p class="kpi-value">{{ format_toman($wallet->balance) }}</p>
+                <p class="kpi-value">{{ format_money($wallet->balance, $wallet->moneyCurrency()) }}</p>
             </div>
         </div>
     </div>
@@ -301,7 +301,7 @@
                     @php [$prColor, $prLabel] = $paymentStatusLabel($paymentRequest->status); @endphp
                     <div class="d-flex justify-content-between align-items-start gap-2 py-2 border-bottom">
                         <div>
-                            <div class="fw-semibold">{{ format_toman($paymentRequest->amount) }}</div>
+                            <div class="fw-semibold">{{ format_money($paymentRequest->amount, $paymentRequest->moneyCurrency()) }}</div>
                             <div class="text-muted small">{{ jalali_date($paymentRequest->created_at, 'Y/m/d H:i') }}</div>
                         </div>
                         <span class="badge bg-{{ $prColor }}">{{ $prLabel }}</span>
@@ -325,7 +325,7 @@
                             <div class="text-muted small">{{ jalali_date($tx->created_at, 'Y/m/d H:i') }}</div>
                         </div>
                         <div class="fw-semibold @if((float)$tx->amount < 0) text-danger @else text-success @endif">
-                            {{ format_toman($tx->amount) }}
+                            {{ format_money($tx->amount, $tx->moneyCurrency()) }}
                         </div>
                     </div>
                 @empty

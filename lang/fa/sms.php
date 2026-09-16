@@ -45,4 +45,8 @@ return [
     'account_login_sent' => 'پیامک ارسال شد. شناسه: :message_id — هزینه: :cost',
     'test_section_verify_hint' => 'با قالب Verify ذخیره‌شده، تست با پارامتر LOGIN ارسال می‌شود.',
     'test_login_url' => 'لینک نمونه برای تست (#LOGIN#)',
+    'invalid_mobile' => 'شماره موبایل معتبر نیست. شماره را به شکل 09xxxxxxxxx وارد کنید.',
+    'account_login_in_progress' => 'ارسال پیامک این اکانت هم‌اکنون در حال انجام است. چند لحظه بعد دوباره تلاش کنید.',
+    'account_login_failed' => 'ارسال پیامک ممکن نشد. خطا در لاگ سامانه ثبت شد.',
+    'parameter_missing_in_message' => 'متن پیامک باید شامل پارامتر #:parameter# باشد تا لینک پورتال جایگزین شود.',
 ];

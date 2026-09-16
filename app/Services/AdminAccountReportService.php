@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\InvoiceType;
+use App\Enums\MoneyCurrency;
 use App\Enums\TransactionType;
 use App\Enums\UserRole;
 use App\Models\Account;
@@ -116,7 +117,7 @@ class AdminAccountReportService
                     $invoice->issued_at ?? $invoice->created_at ?? $eventTransactions->first()?->created_at,
                 ),
                 'invoice_number' => $invoice->invoice_number,
-                'total' => format_toman($invoice->total),
+                'total' => format_money($invoice->total, $invoice->moneyCurrency()),
                 'buyer' => $this->userBrief($invoice->buyer),
                 'seller' => $this->userBrief($invoice->seller),
                 'agent' => $this->userBrief($invoice->agent),
@@ -144,7 +145,9 @@ class AdminAccountReportService
             ->values()
             ->all();
 
-        $totals = $this->summarizeTotals($transactions);
+        // این گزارش فقط به یک اکانت مربوط است و همه‌ی گردش‌های آن با ارز بسته‌ی همان اکانت ثبت می‌شوند؛
+        // اگر بسته حذف شده باشد ارز پیش‌فرض پنل ملاک است.
+        $totals = $this->summarizeTotals($transactions, $account->package?->moneyCurrency() ?? MoneyCurrency::default());
 
         return [
             'account' => $this->overview($account, $volumeRepair, $billingUsage, $panelLifetimeBytes),
@@ -317,7 +320,7 @@ class AdminAccountReportService
      * @param  Collection<int, Transaction>  $transactions
      * @return array<string, string|int>
      */
-    protected function summarizeTotals(Collection $transactions): array
+    protected function summarizeTotals(Collection $transactions, MoneyCurrency $currency): array
     {
         $sellerPaid = '0.00';
         $agentMargin = '0.00';
@@ -349,10 +352,10 @@ class AdminAccountReportService
         return [
             'purchase_count' => $purchases,
             'renewal_count' => $renewals,
-            'seller_paid' => format_toman($sellerPaid),
-            'agent_margin' => format_toman($agentMargin),
-            'admin_revenue' => format_toman($adminRevenue),
-            'refunds' => format_toman($refunds),
+            'seller_paid' => format_money($sellerPaid, $currency),
+            'agent_margin' => format_money($agentMargin, $currency),
+            'admin_revenue' => format_money($adminRevenue, $currency),
+            'refunds' => format_money($refunds, $currency),
         ];
     }
 
@@ -372,9 +375,9 @@ class AdminAccountReportService
             'type' => $transaction->type->value,
             'type_label' => $this->transactionTypeLabel($transaction->type),
             'direction' => $direction,
-            'amount' => format_toman($transaction->amount),
-            'balance_before' => format_toman($transaction->balance_before),
-            'balance_after' => format_toman($transaction->balance_after),
+            'amount' => format_money($transaction->amount, $transaction->moneyCurrency()),
+            'balance_before' => format_money($transaction->balance_before, $transaction->moneyCurrency()),
+            'balance_after' => format_money($transaction->balance_after, $transaction->moneyCurrency()),
             'user' => $this->userBrief($transaction->user),
             'description' => $transaction->description ?: '—',
             'invoice_id' => $transaction->related_invoice_id,
@@ -553,7 +556,8 @@ class AdminAccountReportService
             'purchase_count' => $data['totals']['purchase_count'] ?? 0,
             'renewal_count' => $data['totals']['renewal_count'] ?? 0,
             'seller_paid' => $data['totals']['seller_paid'] ?? '—',
-            'agent_margin' => format_toman($agentMargin),
+            // پورسانت نماینده با ارز بسته‌ی همین اکانت نمایش داده می‌شود.
+            'agent_margin' => format_money($agentMargin, $account->package?->moneyCurrency() ?? MoneyCurrency::default()),
             'refunds' => $data['totals']['refunds'] ?? '—',
         ];
         $data['meta'] = [

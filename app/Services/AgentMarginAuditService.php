@@ -29,6 +29,7 @@ class AgentMarginAuditService
      *     expected_margin: string,
      *     actual_margin: string,
      *     clawback_amount: string,
+     *     currency: string,
      *     reason: string
      * }>
      */
@@ -74,6 +75,7 @@ class AgentMarginAuditService
      *     expected_margin: string,
      *     actual_margin: string,
      *     clawback_amount: string,
+     *     currency: string,
      *     reason: string
      * }  $row
      */
@@ -131,6 +133,7 @@ class AgentMarginAuditService
      *     expected_margin: string,
      *     actual_margin: string,
      *     clawback_amount: string,
+     *     currency: string,
      *     reason: string
      * }|null
      */
@@ -209,10 +212,12 @@ class AgentMarginAuditService
             'expected_margin' => $expected,
             'actual_margin' => $actual,
             'clawback_amount' => $excess,
+            // ارز از خود تراکنش پورسانت خوانده می‌شود؛ هر سه مبلغ ردیف با همین ارز ثبت شده‌اند.
+            'currency' => $marginTx->moneyCurrency()->value,
             'reason' => __('accounting_corrections.reason_overpaid', [
                 'account' => $account->remote_username,
-                'expected' => format_toman($expected),
-                'actual' => format_toman($actual),
+                'expected' => format_money($expected, $marginTx->moneyCurrency()),
+                'actual' => format_money($actual, $marginTx->moneyCurrency()),
             ]),
         ];
     }

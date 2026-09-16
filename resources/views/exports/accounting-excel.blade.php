@@ -63,12 +63,12 @@
             <tr class="totals">
                 <td colspan="{{ $labelColspan }}">{{ __('accounting.export_totals') }}</td>
                 @if ($includeCredited ?? true)
-                    <td>{{ format_toman($totals['credited'] ?? 0) }}</td>
+                    <td>{{ collect($totals['by_currency'])->map(fn ($bucket, $code) => format_money($bucket['credited'], $code))->implode(' + ') }}</td>
                 @endif
                 @if ($showMarginPercent)
                     <td></td>
                 @endif
-                <td>{{ format_toman($totals['debited'] ?? 0) }}</td>
+                <td>{{ collect($totals['by_currency'])->map(fn ($bucket, $code) => format_money($bucket['debited'], $code))->implode(' + ') }}</td>
             </tr>
         </tfoot>
     </table>
