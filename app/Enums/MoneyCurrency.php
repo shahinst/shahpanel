@@ -12,17 +12,17 @@ enum MoneyCurrency: string
     public function label(): string
     {
         return match ($this) {
-            self::IRT => 'تومان',
-            self::TRY => 'لیر ترکیه',
-            self::USD => 'دلار',
-            self::EUR => 'یورو',
+            self::IRT => __('packages.toman'),
+            self::TRY => __('backend.currency_try'),
+            self::USD => __('backend.currency_usd'),
+            self::EUR => __('backend.currency_eur'),
         };
     }
 
     public function symbol(): string
     {
         return match ($this) {
-            self::IRT => 'تومان',
+            self::IRT => __('packages.toman'),
             self::TRY => '₺',
             self::USD => '$',
             self::EUR => '€',

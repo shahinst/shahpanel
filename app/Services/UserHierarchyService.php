@@ -30,7 +30,7 @@ class UserHierarchyService
         }
 
         if ($buyer->role !== UserRole::Seller) {
-            throw new InvalidArgumentException('فقط نماینده یا فروشنده می‌تواند اکانت بخرد.');
+            throw new InvalidArgumentException(__('services.only_agent_or_seller_buys'));
         }
         $parent = $buyer->parent;
         $agent = ($parent !== null && $parent->role === UserRole::Agent) ? $parent : null;
@@ -47,7 +47,7 @@ class UserHierarchyService
     public function promoteSellerToAgent(User $seller): User
     {
         if ($seller->role !== UserRole::Seller) {
-            throw new InvalidArgumentException('فقط فروشنده قابل ارتقا به نماینده است.');
+            throw new InvalidArgumentException(__('services.only_seller_upgradable'));
         }
 
         $admin = $this->resolveAdmin();
@@ -67,13 +67,13 @@ class UserHierarchyService
     public function validateSellerParent(?int $parentId): User
     {
         if ($parentId === null) {
-            throw new InvalidArgumentException('والد فروشنده مشخص نیست.');
+            throw new InvalidArgumentException(__('services.seller_parent_unknown'));
         }
 
         $parent = User::query()->findOrFail($parentId);
 
         if (! in_array($parent->role, [UserRole::Agent], true)) {
-            throw new InvalidArgumentException('فروشنده فقط می‌تواند زیرمجموعه نماینده باشد.');
+            throw new InvalidArgumentException(__('services.seller_parent_must_be_agent'));
         }
 
         return $parent;
@@ -84,7 +84,7 @@ class UserHierarchyService
         $admin = User::query()->where('role', UserRole::Admin)->orderBy('id')->first();
 
         if ($admin === null) {
-            throw new InvalidArgumentException('کاربر ادمین یافت نشد.');
+            throw new InvalidArgumentException(__('services.admin_user_not_found'));
         }
 
         return $admin;

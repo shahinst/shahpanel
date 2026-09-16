@@ -63,7 +63,7 @@ class SanaeiService
 
             return [
                 'ok' => false,
-                'message' => 'اتصال به پنل Sanaei ناموفق بود.',
+                'message' => __('services.sanaei_connect_failed'),
                 'error' => $exception->getMessage(),
             ];
         }
@@ -229,7 +229,7 @@ class SanaeiService
         $inbound = $this->getInbound($server, $inboundId);
 
         if ($inbound === null) {
-            throw new RemoteConnectionException("Inbound #{$inboundId} روی پنل یافت نشد.");
+            throw new RemoteConnectionException(__('services.sanaei_inbound_not_found', ['id' => $inboundId]));
         }
 
         $settings = $this->decodeInboundJson($inbound, 'settings');
@@ -508,7 +508,7 @@ class SanaeiService
 
         if ($inboundIds === []) {
             throw new RemoteProvisionException(
-                'روی پنل هیچ inbound فعالی نیست. برای subscribe حداقل یک inbound در 3x-ui بسازید.'
+                __('services.sanaei_no_active_inbound')
             );
         }
 
@@ -591,7 +591,7 @@ class SanaeiService
 
         if ($attached === 0) {
             throw new RemoteProvisionException(
-                $lastError ?? 'کلاینت روی هیچ inbound پنل ثبت نشد — نسخه 3x-ui یا مسیر API را بررسی کنید.'
+                $lastError ?? __('services.sanaei_client_not_registered')
             );
         }
     }
@@ -604,7 +604,7 @@ class SanaeiService
         $inbound = $this->getInbound($server, $inboundId);
 
         if ($inbound === null) {
-            throw new RemoteProvisionException("Inbound #{$inboundId} روی پنل Sanaei یافت نشد.");
+            throw new RemoteProvisionException(__('services.sanaei_inbound_not_found_panel', ['id' => $inboundId]));
         }
 
         $settings = $this->decodeInboundJson($inbound, 'settings');
@@ -680,7 +680,7 @@ class SanaeiService
         $existing = $this->resolvePanelClient($server, $email, $uuid, $legacyInboundId);
 
         if ($existing === null) {
-            throw new RemoteProvisionException("کلاینت Sanaei «{$email}» روی پنل یافت نشد.");
+            throw new RemoteProvisionException(__('services.sanaei_client_not_found', ['email' => $email]));
         }
 
         $client = $this->buildClientPayloadForApi(array_merge($existing, $changes), $uuid, $changes);
@@ -726,8 +726,10 @@ class SanaeiService
         $this->assertSuccessful($response, 'update Sanaei client');
 
         throw new RemoteProvisionException(
-            'به‌روزرسانی کلاینت Sanaei «'.$resolvedEmail.'» توسط پنل پذیرفته نشد: '
-            .scalar_string($response?->json('msg') ?? 'پاسخ نامشخص')
+            __('services.sanaei_client_update_rejected', [
+                'email' => $resolvedEmail,
+                'reason' => scalar_string($response?->json('msg') ?? __('services.unknown_response')),
+            ])
         );
     }
 
@@ -1662,13 +1664,13 @@ class SanaeiService
     {
         if ($server->isRemnawave()) {
             throw new InvalidArgumentException(
-                'سرور «'.$server->name.'» از نوع Remnawave است؛ API ثنایی (3x-ui) روی این میزبان وجود ندارد. نوع سرور را در تنظیمات بررسی کنید.'
+                __('services.sanaei_server_is_remnawave', ['name' => $server->name])
             );
         }
 
         if ($server->isPasarguard()) {
             throw new InvalidArgumentException(
-                'سرور «'.$server->name.'» از نوع PasarGuard است؛ از API مخصوص همان پنل استفاده کنید.'
+                __('services.sanaei_server_is_pasarguard', ['name' => $server->name])
             );
         }
 
@@ -1833,8 +1835,7 @@ class SanaeiService
 
             if (! is_array($json) || ! (array_key_exists('success', $json) || array_key_exists('obj', $json))) {
                 throw new RemoteProvisionException(
-                    'Failed to '.$operation.': پنل به‌جای پاسخ API یک صفحه وب برگرداند'
-                    .' — نشست پنل منقضی شده یا «مسیر پایه وب» نادرست است.'
+                    'Failed to '.$operation.': '.__('services.panel_html_instead_of_api')
                 );
             }
 

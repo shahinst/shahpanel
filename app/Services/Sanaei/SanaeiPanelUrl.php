@@ -112,7 +112,7 @@ final class SanaeiPanelUrl
         $parts = parse_url($url);
 
         if ($parts === false || empty($parts['host'])) {
-            throw new \InvalidArgumentException('آدرس پنل Sanaei نامعتبر است: '.$url);
+            throw new \InvalidArgumentException(__('services.sanaei_invalid_panel_url', ['url' => $url]));
         }
 
         $scheme = strtolower($parts['scheme'] ?? 'http');

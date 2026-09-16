@@ -13,11 +13,11 @@
             @if (! shahpanel_installed())
                 <div class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                     {{ __('app.install_required') }}
-                    <span class="mr-1">نصب از راه SSH انجام می‌شود: <code>php artisan install:finalize</code></span>
+                    <span class="mr-1">{{ __('ui.install_via_ssh') }} <code>php artisan install:finalize</code></span>
                 </div>
             @else
                 <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-                    {{ __('app.welcome') }} — فاز ۰ با موفقیت راه‌اندازی شد.
+                    {{ __('app.welcome') }} — {{ __('ui.phase_zero_ready') }}
                 </div>
             @endif
         </div>

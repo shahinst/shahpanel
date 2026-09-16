@@ -25,7 +25,7 @@
     <div class="col-12">
         <div class="card">
             <div class="card-body">
-                <x-table :headers="['کاربر', __('accounts.package'), 'وضعیت', 'انقضا', __('app.actions')]">
+                <x-table :headers="[__('ui.col_user'), __('accounts.package'), __('app.status'), __('accounts.expiry'), __('app.actions')]">
                     @forelse ($accounts as $account)
                         <tr>
                             <td>{{ $account->remote_username }}</td>

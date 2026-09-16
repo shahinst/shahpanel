@@ -6,7 +6,7 @@
         ['route' => 'admin.sellers.index', 'label' => __('menu.sellers'), 'icon' => 'bx-user'],
         ['route' => 'admin.clients.index', 'label' => __('menu.clients'), 'icon' => 'bx-group'],
         ['route' => 'admin.packages.index', 'label' => __('menu.packages'), 'icon' => 'bx-package', 'also_active' => ['admin.package-categories.*']],
-        ['route' => 'admin.packages.pricing', 'label' => 'قیمت‌گذاری', 'icon' => 'bx-purchase-tag'],
+        ['route' => 'admin.packages.pricing', 'label' => __('ui.menu_pricing'), 'icon' => 'bx-purchase-tag'],
         module_active('tunneling') ? ['route' => 'admin.tunneling.index', 'label' => __('menu.tunneling'), 'icon' => 'bx-git-branch', 'also_active' => ['admin.tunneling.*']] : null,
     ];
     $bottomLinks = [

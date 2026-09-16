@@ -84,7 +84,7 @@
                 <form method="POST" action="{{ route('admin.tunneling.locations.store') }}">
                     @csrf
                     <x-form.group :label="__('tunneling.name')">
-                        <input name="name" value="{{ old('name') }}" required class="form-control" placeholder="ترکیه">
+                        <input name="name" value="{{ old('name') }}" required class="form-control" placeholder="{{ __('ui.tunneling_location_name_placeholder') }}">
                     </x-form.group>
                     <x-form.group :label="__('tunneling.code')">
                         <input name="code" value="{{ old('code') }}" required class="form-control" dir="ltr" placeholder="tr">

@@ -8,19 +8,19 @@
     <form method="POST" action="{{ route($panel.'.client-payment-card.update') }}">
         @csrf
         @method('PUT')
-        <x-form.group label="شماره کارت">
+        <x-form.group label="{{ __('ui.card_number') }}">
             <input name="card_number" value="{{ old('card_number', $card->card_number ?? '') }}" required class="form-control">
         </x-form.group>
-        <x-form.group label="صاحب کارت">
+        <x-form.group label="{{ __('ui.card_holder') }}">
             <input name="card_holder" value="{{ old('card_holder', $card->card_holder ?? '') }}" class="form-control">
         </x-form.group>
-        <x-form.group label="نام بانک">
+        <x-form.group label="{{ __('ui.bank_name') }}">
             <input name="bank_name" value="{{ old('bank_name', $card->bank_name ?? '') }}" class="form-control">
         </x-form.group>
-        <x-form.group label="توضیحات واریز">
+        <x-form.group label="{{ __('ui.deposit_instructions') }}">
             <textarea name="instructions" class="form-control" rows="3">{{ old('instructions', $card->instructions ?? '') }}</textarea>
         </x-form.group>
-        <x-form.group label="فعال">
+        <x-form.group label="{{ __('app.active') }}">
             <input type="checkbox" name="is_active" value="1" @checked(old('is_active', $card->is_active ?? true))>
         </x-form.group>
         <x-form.actions>

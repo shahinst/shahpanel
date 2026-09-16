@@ -72,9 +72,9 @@
                                 @if ($payment->amount_usdt)
                                     <span dir="ltr">{{ persian_digits(number_format((float) $payment->amount_usdt, 2)) }} USDT</span><br>
                                 @endif
-                                {{ persian_digits(number_format((float) $payment->gross_toman, 0)) }} تومان
+                                {{ persian_digits(number_format((float) $payment->gross_toman, 0)) }} {{ __('packages.toman') }}
                             </td>
-                            <td>{{ persian_digits(number_format((float) $payment->net_toman, 0)) }} تومان</td>
+                            <td>{{ persian_digits(number_format((float) $payment->net_toman, 0)) }} {{ __('packages.toman') }}</td>
                             <td>{{ $payment->status->label() }}</td>
                             <td>{{ jalali_date($payment->created_at) }}</td>
                             <td class="text-end">

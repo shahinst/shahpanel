@@ -29,7 +29,7 @@ class IpPoolService
             [$network, $poolPrefix] = $this->parseCidr($pool->cidr);
 
             if ($prefix < $poolPrefix) {
-                throw new RuntimeException("اندازه سابنت /{$prefix} از سوپرنت /{$poolPrefix} بزرگ‌تر است.");
+                throw new RuntimeException(__('services.ip_subnet_larger_than_supernet', ['prefix' => $prefix, 'pool' => $poolPrefix]));
             }
 
             $taken = IpPoolAllocation::query()
@@ -57,7 +57,7 @@ class IpPoolService
                 }
             }
 
-            throw new RuntimeException("سوپرنت {$pool->cidr} فضای خالی برای /{$prefix} ندارد.");
+            throw new RuntimeException(__('services.ip_supernet_exhausted', ['cidr' => $pool->cidr, 'prefix' => $prefix]));
         });
     }
 
@@ -96,7 +96,7 @@ class IpPoolService
                 'cidr' => (string) config('tunneling.client_supernet', '10.64.0.0/12'),
                 'allocation_prefix' => 24,
             ],
-            default => throw new RuntimeException("نوع pool ناشناخته: {$purpose}"),
+            default => throw new RuntimeException(__('services.ip_pool_unknown_purpose', ['purpose' => $purpose])),
         };
 
         // wg/ppp share one client supernet through a single pool row.

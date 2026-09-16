@@ -62,9 +62,9 @@
             <div class="col-md-4">
                 <strong>{{ __('tunneling.configure_result_apply') }}</strong>
                 <ul class="small mb-0 mt-1">
-                    <li>ساخت: {{ persian_digits($configureResult['apply']['created'] ?? 0) }}</li>
-                    <li>اصلاح: {{ persian_digits($configureResult['apply']['updated'] ?? 0) }}</li>
-                    <li>خطا: {{ persian_digits($configureResult['apply']['failed'] ?? 0) }}</li>
+                    <li>{{ __('ui.tunneling_apply_created') }}: {{ persian_digits($configureResult['apply']['created'] ?? 0) }}</li>
+                    <li>{{ __('ui.tunneling_apply_updated') }}: {{ persian_digits($configureResult['apply']['updated'] ?? 0) }}</li>
+                    <li>{{ __('ui.label_error') }}: {{ persian_digits($configureResult['apply']['failed'] ?? 0) }}</li>
                 </ul>
             </div>
             <div class="col-md-4">
@@ -374,7 +374,7 @@
         <div class="panel-modern-card mb-3">
             <div class="card-head"><h3>{{ __('tunneling.managed_interfaces') }}</h3></div>
             <div class="card-body">
-                <x-table :headers="[__('tunneling.interface'), 'نوع', 'Subnet', __('app.status'), __('app.actions')]">
+                <x-table :headers="[__('tunneling.interface'), __('ui.col_type'), 'Subnet', __('app.status'), __('app.actions')]">
                     @forelse ($interfaces as $interface)
                         <tr>
                             <td><code>{{ $interface->name }}</code></td>
@@ -402,7 +402,7 @@
                         <input type="hidden" name="location_id" value="{{ $group->location_id }}">
                     @endif
                     <div>
-                        <label class="form-label small mb-0">نوع</label>
+                        <label class="form-label small mb-0">{{ __('ui.col_type') }}</label>
                         <select name="type" class="form-select form-select-sm">
                             <option value="wireguard">WireGuard</option>
                             <option value="ppp">PPP</option>
@@ -423,7 +423,7 @@
         <div class="panel-modern-card mb-3">
             <div class="card-head"><h3>{{ __('tunneling.config_versions') }}</h3></div>
             <div class="card-body">
-                <x-table :headers="[__('tunneling.version'), __('tunneling.reason'), 'تاریخ', __('app.actions')]">
+                <x-table :headers="[__('tunneling.version'), __('tunneling.reason'), __('ui.col_date'), __('app.actions')]">
                     @forelse ($group->configVersions->take(8) as $version)
                         <tr>
                             <td>v{{ persian_digits($version->version) }}</td>

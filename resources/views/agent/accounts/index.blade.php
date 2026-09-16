@@ -32,7 +32,7 @@
                     <button type="submit" class="btn btn-secondary btn-sm"><i class="bx bx-search"></i></button>
                 </form>
 
-                <x-table :headers="['کاربر', __('accounts.package'), 'وضعیت', 'انقضا', __('app.actions')]">
+                <x-table :headers="[__('ui.col_user'), __('accounts.package'), __('app.status'), __('accounts.expiry'), __('app.actions')]">
                     @forelse ($accounts as $account)
                         <tr>
                             <td>{{ $account->remote_username }}</td>

@@ -13,7 +13,7 @@ final class SmsIrService
         $key = SmsSettings::smsIrApiKey();
 
         if ($key === null || $key === '') {
-            throw new SmsIrApiException('کلید API پیامک (sms.ir) ذخیره نشده است.');
+            throw new SmsIrApiException(__('services.smsir_api_key_missing'));
         }
 
         return new SmsIrClient($key);
@@ -50,7 +50,7 @@ final class SmsIrService
         $templateId = SmsSettings::smsIrVerifyTemplateId();
 
         if ($templateId === null) {
-            throw new SmsIrApiException('شناسه قالب پیامک (Verify) در تنظیمات ذخیره نشده است.');
+            throw new SmsIrApiException(__('services.smsir_template_missing'));
         }
 
         return $this->client()->sendVerify(
@@ -73,7 +73,7 @@ final class SmsIrService
         $templateId = SmsSettings::smsIrVerifyTemplateId();
 
         if ($templateId === null) {
-            throw new SmsIrApiException('شناسه قالب پیامک (Verify) در تنظیمات ذخیره نشده است.');
+            throw new SmsIrApiException(__('services.smsir_template_missing'));
         }
 
         return $this->client()->sendVerify(
@@ -96,7 +96,7 @@ final class SmsIrService
         $line = SmsSettings::smsIrLineNumber();
 
         if ($line === null || $line === '') {
-            throw new SmsIrApiException('شماره خط ارسال انتخاب نشده است.');
+            throw new SmsIrApiException(__('services.smsir_line_missing'));
         }
 
         return $this->client()->sendBulk(

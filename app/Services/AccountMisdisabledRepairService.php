@@ -69,21 +69,21 @@ class AccountMisdisabledRepairService
         $account->loadMissing(['server', 'package']);
 
         if ($account->isExpired()) {
-            return $this->result(false, false, null, null, null, 'اکانت منقضی شده است.');
+            return $this->result(false, false, null, null, null, __('services.account_expired'));
         }
 
         if (! in_array($account->status, [AccountStatus::Exhausted, AccountStatus::Disabled], true)) {
-            return $this->result(true, false, null, null, null, 'وضعیت محلی فعال است — نیازی به اصلاح نیست.');
+            return $this->result(true, false, null, null, null, __('services.account_local_status_active'));
         }
 
         try {
             $snapshot = $this->remoteTrafficSnapshot($account);
         } catch (Throwable $exception) {
-            return $this->result(false, false, null, null, null, 'خطا در خواندن پنل: '.$exception->getMessage());
+            return $this->result(false, false, null, null, null, __('services.panel_read_error', ['error' => $exception->getMessage()]));
         }
 
         if ($snapshot === null) {
-            return $this->result(true, false, null, null, null, 'فقط Pasarguard/Remnawave پشتیبانی می‌شود.');
+            return $this->result(true, false, null, null, null, __('services.only_pasarguard_remnawave_supported_singular'));
         }
 
         $limit = $snapshot['limit_bytes'];
@@ -91,7 +91,7 @@ class AccountMisdisabledRepairService
         $remaining = $snapshot['remaining_bytes'];
 
         if ($limit !== null && $limit > 0 && $remaining !== null && $remaining <= self::REMAINING_TOLERANCE_BYTES) {
-            return $this->result(true, false, $remaining, $limit, $used, 'حجم پنل واقعاً تمام شده ('.format_data_size($used).' / '.format_data_size($limit).').');
+            return $this->result(true, false, $remaining, $limit, $used, __('services.panel_data_really_exhausted', ['used' => format_data_size($used), 'limit' => format_data_size($limit)]));
         }
 
         $remainingLabel = $remaining !== null
@@ -110,7 +110,7 @@ class AccountMisdisabledRepairService
             $remaining,
             $limit,
             $used,
-            'پنل هنوز '.$remainingLabel.' باقی دارد؛ shahpanel «'.$statusLabel.'» است.',
+            __('services.panel_still_has_data', ['remaining' => $remainingLabel, 'status' => $statusLabel]),
         );
     }
 
@@ -122,11 +122,11 @@ class AccountMisdisabledRepairService
         $inspection = $this->inspect($account);
 
         if (! ($inspection['ok'] ?? false)) {
-            return ['ok' => false, 'message' => (string) ($inspection['detail'] ?? 'خطای بررسی')];
+            return ['ok' => false, 'message' => (string) ($inspection['detail'] ?? __('services.inspection_error'))];
         }
 
         if (! ($inspection['eligible'] ?? false)) {
-            return ['ok' => true, 'message' => (string) ($inspection['detail'] ?? 'نیازی به اصلاح نیست')];
+            return ['ok' => true, 'message' => (string) ($inspection['detail'] ?? __('services.no_fix_needed'))];
         }
 
         $account->loadMissing(['server', 'package', 'packageDuration']);
@@ -140,13 +140,13 @@ class AccountMisdisabledRepairService
         } catch (Throwable $exception) {
             return [
                 'ok' => false,
-                'message' => 'فعال‌سازی ناموفق: '.$exception->getMessage(),
+                'message' => __('services.account_enable_failed', ['error' => $exception->getMessage()]),
             ];
         }
 
         return [
             'ok' => true,
-            'message' => 'اکانت #'.$account->id.' ('.$account->remote_username.') دوباره فعال شد (بدون تغییر سقف حجم).',
+            'message' => __('services.account_reenabled', ['id' => $account->id, 'username' => $account->remote_username]),
         ];
     }
 
@@ -159,7 +159,7 @@ class AccountMisdisabledRepairService
         $server = $account->server;
 
         if ($server === null) {
-            throw new \RuntimeException('اکانت بدون سرور است.');
+            throw new \RuntimeException(__('services.account_no_server'));
         }
 
         if ($server->isPasarguard() || $account->service_type->isPasarguard() || $account->pasarguard_user_id) {
@@ -174,7 +174,7 @@ class AccountMisdisabledRepairService
                 : $this->remnawaveService->getUser($server, $account->remote_username);
 
             if ($remote === null) {
-                throw new \RuntimeException('کاربر Remnawave روی پنل یافت نشد.');
+                throw new \RuntimeException(__('services.remnawave_user_not_found'));
             }
 
             return $this->remnawaveService->normalizeTrafficSnapshot($remote);

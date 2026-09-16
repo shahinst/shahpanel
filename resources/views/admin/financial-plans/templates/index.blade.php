@@ -43,7 +43,7 @@
                         @if ($template->is_active)
                             <span class="badge bg-success">{{ __('financial_plans.status_active') }}</span>
                         @else
-                            <span class="badge bg-secondary">غیرفعال</span>
+                            <span class="badge bg-secondary">{{ __('app.inactive') }}</span>
                         @endif
                     </td>
                     <td class="text-nowrap">

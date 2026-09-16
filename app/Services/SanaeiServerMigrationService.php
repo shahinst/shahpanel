@@ -45,7 +45,7 @@ class SanaeiServerMigrationService
         $this->assertSanaeiPair($fromServer, $toServer);
 
         if ($fromServer->id === $toServer->id) {
-            throw new InvalidArgumentException('سرور مبدأ و مقصد یکی است.');
+            throw new InvalidArgumentException(__('services.migration_same_server'));
         }
 
         $accounts = $this->accountsOnServer($fromServer);
@@ -105,7 +105,7 @@ class SanaeiServerMigrationService
     public function pushAllOnServer(Server $server, bool $dryRun = false, bool $syncInbounds = true): array
     {
         if (! $server->isSanaei()) {
-            throw new InvalidArgumentException('این عملیات فقط برای سرور Sanaei / 3x-ui است.');
+            throw new InvalidArgumentException(__('services.sanaei_operation_only'));
         }
 
         $accounts = $this->accountsOnServer($server);
@@ -141,11 +141,11 @@ class SanaeiServerMigrationService
     protected function assertSanaeiPair(Server $from, Server $to): void
     {
         if (! $from->isSanaei() || ! $to->isSanaei()) {
-            throw new InvalidArgumentException('هر دو سرور باید از نوع Sanaei (3x-ui) باشند.');
+            throw new InvalidArgumentException(__('services.migration_both_sanaei'));
         }
 
         if (! $from->is_active || ! $to->is_active) {
-            throw new InvalidArgumentException('سرور مبدأ و مقصد باید فعال باشند.');
+            throw new InvalidArgumentException(__('services.migration_servers_must_be_active'));
         }
     }
 

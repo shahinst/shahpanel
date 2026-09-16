@@ -298,7 +298,7 @@ class TunnelGroupController extends Controller
     protected function missingTunnelingTables(): array
     {
         if (! class_exists(TunnelingSchema::class)) {
-            return ['(کلاس TunnelingSchema آپلود نشده — app/Support/TunnelingSchema.php)'];
+            return [__('services.tunneling_schema_class_missing')];
         }
 
         return TunnelingSchema::missingTables();

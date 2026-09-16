@@ -5,7 +5,7 @@
 @section('panel_content')
 @include('partials.panel-page-hero', [
     'title' => __('menu.clients'),
-    'subtitle' => 'مدیریت مشتریان و اکانت‌های مرتبط',
+    'subtitle' => __('ui.clients_index_subtitle'),
     'icon' => 'bx-group',
     'actions' => '
         <a href="'.route($panel.'.clients.create').'" class="btn btn-light btn-sm"><i class="bx bx-user-plus"></i> '.e(__('clients.create_client')).'</a>

@@ -3,7 +3,7 @@
 
     $automationLinks = [
         ['route' => 'admin.automation.pricing', 'label' => __('menu.automation_pricing'), 'icon' => 'bx-purchase-tag'],
-        ['route' => 'admin.automation.expiring', 'label' => 'آستانه‌ی در حال انقضا', 'icon' => 'bx-time-five'],
+        ['route' => 'admin.automation.expiring', 'label' => __('ui.expiring_threshold_title'), 'icon' => 'bx-time-five'],
         ['route' => 'admin.automation.portal', 'label' => __('menu.automation_portal'), 'icon' => 'bx-mobile-alt'],
         ['route' => 'admin.automation.index', 'label' => __('menu.automation_cron'), 'icon' => 'bx-time-five'],
         ['route' => 'admin.settings.logs', 'label' => __('menu.settings_logs'), 'icon' => 'bx-file-find'],

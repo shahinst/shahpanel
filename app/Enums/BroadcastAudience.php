@@ -11,9 +11,9 @@ enum BroadcastAudience: string
     public function label(): string
     {
         return match ($this) {
-            self::Agents => 'نمایندگان',
-            self::Sellers => 'فروشندگان',
-            self::AgentSellers => 'فروشندگان این نماینده',
+            self::Agents => __('backend.broadcast_audience_agents'),
+            self::Sellers => __('broadcasts.audience_sellers'),
+            self::AgentSellers => __('backend.broadcast_audience_agent_sellers'),
         };
     }
 }

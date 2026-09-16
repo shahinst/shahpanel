@@ -25,7 +25,7 @@
     <div class="col-12">
         <div class="card">
             <div class="card-body">
-                <x-table :headers="['نام', 'نام کاربری', 'والد', __('wallet.settlement_currency'), __('wallet.remaining_balance'), 'وضعیت', __('app.actions')]">
+                <x-table :headers="[__('ui.col_name'), __('ui.col_username'), __('ui.col_parent'), __('wallet.settlement_currency'), __('wallet.remaining_balance'), __('app.status'), __('app.actions')]">
                     @forelse ($sellers as $seller)
                         @php
                             $settle = $seller->settlementMoneyCurrency();

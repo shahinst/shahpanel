@@ -224,7 +224,7 @@ class SanaeiToRemnawaveMigrationService
 
             return ServerMigrationEntry::query()->create(array_merge($base, [
                 'status' => 'failed',
-                'message' => 'انتقال ناموفق',
+                'message' => __('services.migration_failed'),
                 'error' => $exception->getMessage(),
             ]));
         }
@@ -269,7 +269,7 @@ class SanaeiToRemnawaveMigrationService
         $package = $account->package;
 
         if ($package === null) {
-            throw new InvalidArgumentException('اکانت #'.$account->id.' بدون پکیج است.');
+            throw new InvalidArgumentException(__('services.account_id_without_package', ['id' => $account->id]));
         }
 
         if ($package->service_type !== ServiceType::Remnawave) {
@@ -298,23 +298,23 @@ class SanaeiToRemnawaveMigrationService
     protected function assertPair(Server $from, Server $to): void
     {
         if (! $from->isSanaei()) {
-            throw new InvalidArgumentException('سرور مبدأ باید Sanaei (3x-ui) باشد.');
+            throw new InvalidArgumentException(__('services.migration_source_must_be_sanaei'));
         }
 
         if (! $to->isRemnawave()) {
-            throw new InvalidArgumentException('سرور مقصد باید Remnawave باشد.');
+            throw new InvalidArgumentException(__('services.migration_target_must_be_remnawave'));
         }
 
         if (! $from->is_active || ! $to->is_active) {
-            throw new InvalidArgumentException('هر دو سرور باید فعال باشند.');
+            throw new InvalidArgumentException(__('services.migration_both_must_be_active'));
         }
 
         if ($from->id === $to->id) {
-            throw new InvalidArgumentException('سرور مبدأ و مقصد یکی است.');
+            throw new InvalidArgumentException(__('services.migration_same_server'));
         }
 
         if (! $to->hasStoredRemnawaveApiToken()) {
-            throw new InvalidArgumentException('روی سرور Remnawave مقصد، توکن API ذخیره نشده است.');
+            throw new InvalidArgumentException(__('services.migration_target_token_missing'));
         }
     }
 }

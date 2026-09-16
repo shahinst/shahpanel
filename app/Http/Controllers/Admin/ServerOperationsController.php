@@ -72,7 +72,7 @@ class ServerOperationsController extends Controller
             return redirect()
                 ->route('admin.servers.show', $server)
                 ->with('error', __('servers.sync_profiles_failed', ['message' => $exception->getMessage()]))
-                ->with('operation_log', ['خطا: '.$exception->getMessage()]);
+                ->with('operation_log', [__('backend.server_log_error', ['message' => $exception->getMessage()])]);
         }
 
         $lines = array_merge($pushResult['lines'], $pullResult['lines'], $pushResult['errors'], $pullResult['errors']);
@@ -119,7 +119,7 @@ class ServerOperationsController extends Controller
             return redirect()
                 ->route('admin.servers.show', $server)
                 ->with('error', __('servers.sync_profiles_failed', ['message' => $exception->getMessage()]))
-                ->with('operation_log', ['خطا: '.$exception->getMessage()]);
+                ->with('operation_log', [__('backend.server_log_error', ['message' => $exception->getMessage()])]);
         }
 
         $lines = array_merge($result['lines'], $result['errors']);
@@ -252,9 +252,9 @@ class ServerOperationsController extends Controller
                 ->with('error', $exception->getMessage());
         }
         $lines = [
-            "وضعیت: {$log->status->value}",
-            "اکانت‌های سینک‌شده: {$log->accounts_synced}",
-            "خطاها: {$log->errors_count}",
+            __('backend.server_log_status', ['status' => $log->status->value]),
+            __('backend.server_log_accounts_synced', ['count' => $log->accounts_synced]),
+            __('backend.server_log_errors_count', ['count' => $log->errors_count]),
         ];
 
         if ($log->error_details) {
@@ -277,18 +277,18 @@ class ServerOperationsController extends Controller
         $details = $result['details'] ?? [];
 
         foreach ([
-            'panel_url' => 'آدرس پنل',
-            'api_url' => 'آدرس API',
-            'api_prefix' => 'مسیر API',
-            'admin_username' => 'کاربر پنل',
-            'panel_version' => 'نسخه پنل',
-            'inbound_count' => 'تعداد inbound',
-            'group_count' => 'تعداد گروه (ذخیره‌شده در سرور)',
-            'squad_count' => 'تعداد squad',
-            'node_count' => 'تعداد node',
-            'groups_synced_at' => 'آخرین سینک گروه‌ها',
-            'user_count' => 'تعداد کاربر (نمونه)',
-            'error' => 'خطا',
+            'panel_url' => __('backend.server_detail_panel_url'),
+            'api_url' => __('backend.server_detail_api_url'),
+            'api_prefix' => __('backend.server_detail_api_prefix'),
+            'admin_username' => __('backend.server_detail_admin_username'),
+            'panel_version' => __('backend.server_detail_panel_version'),
+            'inbound_count' => __('backend.server_detail_inbound_count'),
+            'group_count' => __('backend.server_detail_group_count'),
+            'squad_count' => __('backend.server_detail_squad_count'),
+            'node_count' => __('backend.server_detail_node_count'),
+            'groups_synced_at' => __('backend.server_detail_groups_synced_at'),
+            'user_count' => __('backend.server_detail_user_count'),
+            'error' => __('backend.server_detail_error'),
         ] as $key => $label) {
             if (! empty($details[$key])) {
                 $lines[] = "{$label}: {$details[$key]}";
@@ -299,19 +299,19 @@ class ServerOperationsController extends Controller
             $allowed = array_keys(array_filter($details['permissions']));
             $denied = array_keys(array_filter($details['permissions'], fn ($v) => ! $v));
             if ($allowed !== []) {
-                $lines[] = 'دسترسی‌های فعال: '.implode(', ', $allowed);
+                $lines[] = __('backend.server_log_permissions_allowed', ['list' => implode(', ', $allowed)]);
             }
             if ($denied !== []) {
-                $lines[] = 'دسترسی‌های محدود: '.implode(', ', $denied);
+                $lines[] = __('backend.server_log_permissions_denied', ['list' => implode(', ', $denied)]);
             }
         }
 
         if (! empty($details['tried_urls']) && is_array($details['tried_urls'])) {
-            $lines[] = 'آدرس‌های امتحان‌شده: '.implode(' | ', $details['tried_urls']);
+            $lines[] = __('backend.server_log_tried_urls', ['list' => implode(' | ', $details['tried_urls'])]);
         }
 
         if (! empty($details['warnings']) && is_array($details['warnings'])) {
-            $lines[] = 'هشدار: '.implode(' — ', $details['warnings']);
+            $lines[] = __('backend.server_log_warnings', ['list' => implode(' — ', $details['warnings'])]);
         }
 
         if (! empty($details['groups']) && is_array($details['groups'])) {
@@ -319,7 +319,10 @@ class ServerOperationsController extends Controller
                 if (! is_array($group)) {
                     continue;
                 }
-                $lines[] = 'گروه: #'.($group['id'] ?? '?').' — '.($group['name'] ?? '');
+                $lines[] = __('backend.server_log_group_entry', [
+                    'id' => $group['id'] ?? '?',
+                    'name' => $group['name'] ?? '',
+                ]);
             }
         }
 
@@ -333,8 +336,10 @@ class ServerOperationsController extends Controller
         }
 
         if ($server->isPasarguard() && $server->pasarguard_groups_synced_at) {
-            $lines[] = 'گروه‌های ذخیره‌شده روی سرور: '.persian_digits(count((array) $server->pasarguard_groups))
-                .' — '.$server->pasarguard_groups_synced_at->format('Y-m-d H:i');
+            $lines[] = __('backend.server_log_stored_groups', [
+                'count' => persian_digits(count((array) $server->pasarguard_groups)),
+                'at' => $server->pasarguard_groups_synced_at->format('Y-m-d H:i'),
+            ]);
         }
 
         if (! empty($details['debug']) && is_array($details['debug'])) {
@@ -360,7 +365,7 @@ class ServerOperationsController extends Controller
                 \App\Enums\ServerType::Remnawave => 'storage/logs/remnawave.log',
                 default => 'storage/logs/laravel.log',
             };
-            $lines[] = 'لاگ کامل: '.$logFile;
+            $lines[] = __('backend.server_log_full_log', ['file' => $logFile]);
         }
 
         return $lines;

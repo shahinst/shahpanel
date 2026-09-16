@@ -5,14 +5,14 @@
 @section('panel_content')
 @include('partials.panel-page-hero', [
     'title' => __('menu.invoices'),
-    'subtitle' => 'فاکتورهای صادر شده برای اکانت‌ها',
+    'subtitle' => __('ui.invoices_agent_subtitle'),
     'icon' => 'bx-receipt',
 ])
 
 <div class="panel-modern-card">
     <div class="card-head"><h3>{{ __('menu.invoices') }}</h3></div>
     <div class="card-body">
-        <x-table :headers="['شماره', 'فروشنده', 'مبلغ', 'وضعیت', __('app.actions')]">
+        <x-table :headers="[__('ui.col_invoice_number'), __('roles.seller'), __('menu.amount'), __('app.status'), __('app.actions')]">
             @forelse ($invoices as $invoice)
                 <tr>
                     <td>{{ $invoice->invoice_number }}</td>

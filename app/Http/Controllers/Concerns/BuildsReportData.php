@@ -121,28 +121,33 @@ trait BuildsReportData
         $myWallet = $this->reportSumByCurrency(Wallet::query()->where('user_id', $viewer->id), 'balance');
 
         // ---- role-aware KPI cards ----
-        $revLabel = $isAdmin ? 'درآمد کل (فاکتورها)' : ($isAgent ? 'گردش مالی مجموعه' : 'مجموع خرید شما');
+        $revLabel = $isAdmin
+            ? __('backend.report_revenue_total_admin')
+            : ($isAgent ? __('backend.report_revenue_total_agent') : __('backend.report_revenue_total_seller'));
         $kpis = [
             ['title' => $revLabel, 'value' => $this->formatReportMoney($revTotal), 'icon' => 'bx-wallet', 'color' => 'success',
-                'hint' => 'جدید: '.$this->formatReportMoney($revNew).' | تمدید: '.$this->formatReportMoney($revRenew)],
-            ['title' => 'اکانت‌های جدید', 'value' => persian_digits($newAccounts), 'icon' => 'bx-plus-circle', 'color' => 'primary',
-                'hint' => persian_digits($cntRenew).' تمدید در این بازه'],
-            ['title' => 'برگشت از خرید', 'value' => persian_digits($refundsCount), 'icon' => 'bx-undo', 'color' => 'danger', 'hint' => null],
+                'hint' => __('backend.report_revenue_hint', [
+                    'new' => $this->formatReportMoney($revNew),
+                    'renew' => $this->formatReportMoney($revRenew),
+                ])],
+            ['title' => __('backend.report_new_accounts'), 'value' => persian_digits($newAccounts), 'icon' => 'bx-plus-circle', 'color' => 'primary',
+                'hint' => __('backend.report_new_accounts_hint', ['count' => persian_digits($cntRenew)])],
+            ['title' => __('backend.report_refunds'), 'value' => persian_digits($refundsCount), 'icon' => 'bx-undo', 'color' => 'danger', 'hint' => null],
         ];
         if ($isAdmin) {
-            $kpis[] = ['title' => 'درآمد ادمین', 'value' => $this->formatReportMoney($adminRevenue), 'icon' => 'bx-trending-up', 'color' => 'success',
-                'hint' => 'سود نماینده‌ها: '.$this->formatReportMoney($agentMarginAll)];
-            $kpis[] = ['title' => 'نمایندگان جدید', 'value' => persian_digits($newAgents), 'icon' => 'bx-user-pin', 'color' => 'primary', 'hint' => null];
-            $kpis[] = ['title' => 'فروشندگان جدید', 'value' => persian_digits($newSellers), 'icon' => 'bx-user', 'color' => 'primary', 'hint' => null];
-            $kpis[] = ['title' => 'مشتریان جدید', 'value' => persian_digits($newClients), 'icon' => 'bx-group', 'color' => 'primary', 'hint' => null];
+            $kpis[] = ['title' => __('backend.report_admin_revenue'), 'value' => $this->formatReportMoney($adminRevenue), 'icon' => 'bx-trending-up', 'color' => 'success',
+                'hint' => __('backend.report_admin_revenue_hint', ['amount' => $this->formatReportMoney($agentMarginAll)])];
+            $kpis[] = ['title' => __('backend.report_new_agents'), 'value' => persian_digits($newAgents), 'icon' => 'bx-user-pin', 'color' => 'primary', 'hint' => null];
+            $kpis[] = ['title' => __('backend.report_new_sellers'), 'value' => persian_digits($newSellers), 'icon' => 'bx-user', 'color' => 'primary', 'hint' => null];
+            $kpis[] = ['title' => __('backend.report_new_clients'), 'value' => persian_digits($newClients), 'icon' => 'bx-group', 'color' => 'primary', 'hint' => null];
         } elseif ($isAgent) {
-            $kpis[] = ['title' => 'سود شما (بازه)', 'value' => $this->formatReportMoney($agentEarned), 'icon' => 'bx-trending-up', 'color' => 'success', 'hint' => null];
-            $kpis[] = ['title' => 'فروشندگان جدید', 'value' => persian_digits($newSellers), 'icon' => 'bx-user', 'color' => 'primary', 'hint' => null];
-            $kpis[] = ['title' => 'مشتریان جدید', 'value' => persian_digits($newClients), 'icon' => 'bx-group', 'color' => 'primary', 'hint' => null];
-            $kpis[] = ['title' => 'موجودی کیف‌پول شما', 'value' => $this->formatReportMoney($myWallet), 'icon' => 'bx-credit-card', 'color' => 'warning', 'hint' => null];
+            $kpis[] = ['title' => __('backend.report_agent_profit'), 'value' => $this->formatReportMoney($agentEarned), 'icon' => 'bx-trending-up', 'color' => 'success', 'hint' => null];
+            $kpis[] = ['title' => __('backend.report_new_sellers'), 'value' => persian_digits($newSellers), 'icon' => 'bx-user', 'color' => 'primary', 'hint' => null];
+            $kpis[] = ['title' => __('backend.report_new_clients'), 'value' => persian_digits($newClients), 'icon' => 'bx-group', 'color' => 'primary', 'hint' => null];
+            $kpis[] = ['title' => __('backend.report_my_wallet'), 'value' => $this->formatReportMoney($myWallet), 'icon' => 'bx-credit-card', 'color' => 'warning', 'hint' => null];
         } else { // seller
-            $kpis[] = ['title' => 'مشتریان جدید', 'value' => persian_digits($newClients), 'icon' => 'bx-group', 'color' => 'primary', 'hint' => null];
-            $kpis[] = ['title' => 'موجودی کیف‌پول شما', 'value' => $this->formatReportMoney($myWallet), 'icon' => 'bx-credit-card', 'color' => 'warning', 'hint' => null];
+            $kpis[] = ['title' => __('backend.report_new_clients'), 'value' => persian_digits($newClients), 'icon' => 'bx-group', 'color' => 'primary', 'hint' => null];
+            $kpis[] = ['title' => __('backend.report_my_wallet'), 'value' => $this->formatReportMoney($myWallet), 'icon' => 'bx-credit-card', 'color' => 'warning', 'hint' => null];
         }
 
         // ==================== CURRENT STATE (scoped) ====================

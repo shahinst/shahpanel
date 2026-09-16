@@ -41,12 +41,12 @@ class AgentServerChangeLimitService
         $limit = $this->dailyLimitForAgent($actor);
 
         if ($limit <= 0) {
-            throw new InvalidArgumentException('تغییر سرور اکانت برای این نماینده غیرفعال است.');
+            throw new InvalidArgumentException(__('services.agent_server_change_disabled'));
         }
 
         if ($this->changesToday($actor) >= $limit) {
             throw new InvalidArgumentException(
-                "سقف تغییر سرور روزانه ({$limit} بار) برای امروز تکمیل شده است."
+                __('services.agent_server_change_limit_reached', ['limit' => $limit])
             );
         }
     }

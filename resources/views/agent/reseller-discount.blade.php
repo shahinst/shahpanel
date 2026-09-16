@@ -1,25 +1,25 @@
 @extends('layouts.panel')
 
-@section('page_title', 'قیمت فروشنده‌ها')
+@section('page_title', __('ui.seller_pricing_page_title'))
 
 @section('panel_content')
 @php $canEdit = $range !== null; @endphp
 <div class="panel-modern-card">
     <div class="card-head">
-        <h3><i class="bx bx-purchase-tag"></i> قیمت فروشنده‌های من</h3>
+        <h3><i class="bx bx-purchase-tag"></i> {{ __('ui.my_seller_pricing') }}</h3>
     </div>
     <div class="card-body">
         @if (empty($rows))
-            <div class="alert alert-warning mb-0">هنوز پکیجی برای شما فعال نشده است. با ادمین هماهنگ کنید.</div>
+            <div class="alert alert-warning mb-0">{{ __('ui.no_packages_enabled') }}</div>
         @else
             @if ($canEdit)
                 <p class="text-muted small">
-                    شما می‌توانید برای هر پکیج، قیمت فروشنده‌هایتان را تا
+                    {{ __('ui.seller_pricing_intro_before') }}
                     <strong dir="ltr">{{ persian_digits(rtrim(rtrim(number_format($range, 2), '0'), '.')) }}٪</strong>
-                    بالاتر از قیمت خودتان تعیین کنید — <strong>همین درصد، سود شماست</strong>. بیشتر از این بازه مجاز نیست.
+                    {{ __('ui.seller_pricing_intro_middle') }} <strong>{{ __('ui.seller_pricing_intro_strong') }}</strong>{{ __('ui.seller_pricing_intro_after') }}
                 </p>
             @else
-                <div class="alert alert-info small">قیمت فروشنده‌های شما توسط ادمین تعیین می‌شود. در حال حاضر اجازه‌ی تغییر ندارید.</div>
+                <div class="alert alert-info small">{{ __('ui.seller_pricing_locked') }}</div>
             @endif
 
             <form method="POST" action="{{ route('agent.reseller-discount.update') }}">
@@ -29,14 +29,14 @@
                     <table class="table table-hover align-middle">
                         <thead>
                             <tr>
-                                <th>پکیج</th>
-                                <th>قیمت مشتری</th>
-                                <th>قیمت شما</th>
+                                <th>{{ __('accounts.package') }}</th>
+                                <th>{{ __('ui.col_client_price') }}</th>
+                                <th>{{ __('ui.col_your_price') }}</th>
                                 @if ($canEdit)
-                                    <th style="width: 160px;">درصد سود شما (٪)</th>
+                                    <th style="width: 160px;">{{ __('ui.col_your_margin_percent') }}</th>
                                 @endif
-                                <th>فروشنده می‌پردازد</th>
-                                <th>سود شما</th>
+                                <th>{{ __('ui.col_seller_pays') }}</th>
+                                <th>{{ __('ui.col_your_profit') }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -70,7 +70,7 @@
                     </table>
                 </div>
                 @if ($canEdit)
-                    <x-button type="submit"><i class="bx bx-save"></i> ذخیره</x-button>
+                    <x-button type="submit"><i class="bx bx-save"></i> {{ __('app.save') }}</x-button>
                 @endif
             </form>
         @endif

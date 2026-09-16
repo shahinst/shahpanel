@@ -11,11 +11,11 @@
 <div class="row">
     <div class="col-lg-6">
         <div class="panel-form-section">
-            <h4 class="panel-form-section-title"><i class="bx bx-info-circle align-middle"></i> اطلاعات پایه</h4>
+            <h4 class="panel-form-section-title"><i class="bx bx-info-circle align-middle"></i> {{ __('ui.section_basic_info') }}</h4>
             <x-form.group :label="__('servers.name')">
                 <input name="name" value="{{ old('name', $server?->name) }}" required class="form-control">
             </x-form.group>
-            <x-form.group label="موقعیت">
+            <x-form.group label="{{ __('ui.col_location') }}">
                 <input name="location" value="{{ old('location', $server?->location) }}" class="form-control">
             </x-form.group>
             <x-form.group :label="__('servers.type')">
@@ -46,15 +46,15 @@
                     <small class="text-muted d-block mt-1">{{ __('servers.role_hint') }}</small>
                 </x-form.group>
             </div>
-            <x-form.group label="حداکثر اکانت">
+            <x-form.group label="{{ __('ui.max_accounts_label') }}">
                 <input name="max_accounts" type="number" value="{{ old('max_accounts', $server?->max_accounts) }}" class="form-control">
             </x-form.group>
             <div class="row">
                 <div class="col-sm-6">
-                    <x-form.checkbox name="is_public" label="عمومی" :checked="old('is_public', $server?->is_public)" :hiddenZero="true" />
+                    <x-form.checkbox name="is_public" label="{{ __('ui.public') }}" :checked="old('is_public', $server?->is_public)" :hiddenZero="true" />
                 </div>
                 <div class="col-sm-6">
-                    <x-form.checkbox name="is_active" label="فعال" :checked="old('is_active', $server?->is_active ?? true)" :hiddenZero="true" />
+                    <x-form.checkbox name="is_active" label="{{ __('app.active') }}" :checked="old('is_active', $server?->is_active ?? true)" :hiddenZero="true" />
                 </div>
                 <div class="col-sm-6">
                     <x-form.checkbox
@@ -80,7 +80,7 @@
 
     <div class="col-lg-6">
         <div class="panel-form-section">
-            <h4 class="panel-form-section-title"><i class="bx bx-link align-middle"></i> اتصال و احراز هویت</h4>
+            <h4 class="panel-form-section-title"><i class="bx bx-link align-middle"></i> {{ __('ui.section_connection_auth') }}</h4>
             <x-form.group :label="__('servers.host')">
                 <input name="host" value="{{ old('host', $server?->host) }}" required class="form-control"
                        placeholder="panel1.example.com" id="server-host">
@@ -98,13 +98,13 @@
             </x-form.group>
             <x-form.group :label="__('servers.web_base_path')" id="panel-base-path-group" style="display:none">
                 <input name="web_base_path" value="{{ old('web_base_path', $server?->web_base_path ? ltrim($server->web_base_path, '/') : '') }}" class="form-control"
-                       placeholder="مثلاً dashboard (اختیاری)">
+                       placeholder="{{ __('ui.base_path_placeholder') }}">
                 <small class="text-muted d-block mt-1" id="panel-base-path-hint"></small>
             </x-form.group>
             <x-form.group :label="__('servers.panel_username')" id="panel-username-group" @style(['display: none' => ! $showUserPassForm])>
                 <input name="username" class="form-control" autocomplete="off"
                        value="{{ old('username', $isMikrotikForm && $server?->username_enc ? $server->username_enc : '') }}"
-                       placeholder="{{ $server && ! $isMikrotikForm ? '— بدون تغییر —' : '' }}">
+                       placeholder="{{ $server && ! $isMikrotikForm ? __('ui.unchanged_placeholder') : '' }}">
                 @if ($server?->isMikrotik() && $server->username_enc && $server->password_enc)
                     <small class="text-muted d-block mt-1" id="mikrotik-credentials-status">
                         <span class="text-success">{{ __('servers.mikrotik_credentials_saved') }}</span>
@@ -117,7 +117,7 @@
             </x-form.group>
             <x-form.group :label="__('servers.panel_password')" id="panel-password-group" @style(['display: none' => ! $showUserPassForm])>
                 <input name="password" type="password" class="form-control" autocomplete="new-password"
-                       placeholder="{{ $server ? '— بدون تغییر —' : '' }}">
+                       placeholder="{{ $server ? __('ui.unchanged_placeholder') : '' }}">
                 @if ($isMikrotikForm && $server)
                     <small class="text-muted d-block mt-1" id="panel-password-hint">{{ __('servers.mikrotik_credentials_edit_hint') }}</small>
                 @else
@@ -127,7 +127,7 @@
             <div id="panel-token-group" style="display:none">
                 <x-form.group :label="__('servers.panel_api_token')" id="panel-token-label">
                     <input name="api_token" id="server-api-token" class="form-control" autocomplete="off"
-                           placeholder="{{ $server?->isRemnawave() ? 'eyJ... — از API Tokens پنل' : ($server ? '— بدون تغییر —' : '') }}">
+                           placeholder="{{ $server?->isRemnawave() ? __('ui.remnawave_token_placeholder') : ($server ? __('ui.unchanged_placeholder') : '') }}">
                     <small class="text-muted d-block mt-1" id="panel-token-hint"></small>
                     @if ($server?->isRemnawave())
                         <div id="remnawave-token-status" class="small mt-2">
@@ -152,8 +152,8 @@
                            value="{{ old('wireguard_persistent_keepalive', $server?->wireguard_persistent_keepalive ?? 10) }}">
                     <small class="text-muted d-block mt-1">{{ __('servers.wireguard_persistent_keepalive_hint') }}</small>
                 </x-form.group>
-                <x-form.group label="توکن API">
-                    <input name="mikrotik_api_token" class="form-control" placeholder="فقط برای Mikrotik (اختیاری)">
+                <x-form.group label="{{ __('ui.api_token_label') }}">
+                    <input name="mikrotik_api_token" class="form-control" placeholder="{{ __('ui.mikrotik_only_optional') }}">
                 </x-form.group>
             </div>
         </div>
@@ -236,8 +236,8 @@
     </div>
 
 
-                    <h4 class="panel-form-section-title"><i class="bx bx-note align-middle"></i> یادداشت</h4>
-            <x-form.group wide label="یادداشت">
+                    <h4 class="panel-form-section-title"><i class="bx bx-note align-middle"></i> {{ __('ui.col_note') }}</h4>
+            <x-form.group wide label="{{ __('ui.col_note') }}">
                 <textarea name="notes" rows="3" class="form-control">{{ old('notes', $server?->notes) }}</textarea>
             </x-form.group>
         </div>

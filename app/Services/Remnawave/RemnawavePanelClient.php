@@ -183,7 +183,7 @@ final class RemnawavePanelClient
         } catch (Throwable $exception) {
             $result = [
                 'ok' => false,
-                'message' => 'اتصال به پنل Remnawave ناموفق بود.',
+                'message' => __('services.remnawave_connect_failed'),
                 'error' => $exception->getMessage(),
                 'panel_url' => $this->url()->displayAddress(),
                 'api_url' => $this->url()->apiBaseUrl(),
@@ -273,7 +273,7 @@ final class RemnawavePanelClient
         }
 
         throw new RemoteConnectionException(
-            'دریافت inboundها ناموفق بود. '.implode(' | ', $errors)
+            __('services.remnawave_inbounds_failed', ['detail' => implode(' | ', $errors)])
         );
     }
 
@@ -512,7 +512,7 @@ final class RemnawavePanelClient
                 'PATCH' => $client->asJson()->patch($url, $payload),
                 'PUT' => $client->asJson()->put($url, $payload),
                 'DELETE' => $client->delete($url),
-                default => throw new RemoteConnectionException("متد HTTP پشتیبانی نمی‌شود [{$method}]"),
+                default => throw new RemoteConnectionException(__('services.http_method_unsupported', ['method' => $method])),
             };
         } catch (ConnectionException $exception) {
             throw new RemoteConnectionException($this->friendlyConnectionError($exception->getMessage()), 0, $exception);
@@ -585,7 +585,7 @@ final class RemnawavePanelClient
             }
         }
 
-        throw new RemoteConnectionException($lastError.' — آدرس‌های امتحان‌شده: '.implode(' | ', $tried));
+        throw new RemoteConnectionException($lastError.' — '.__('services.panel_urls_tried', ['list' => implode(' | ', $tried)]));
     }
 
     /**
@@ -615,9 +615,10 @@ final class RemnawavePanelClient
             // A non-empty body that is not JSON is a proxy/Cloudflare page, not
             // a result. Returning [] here made a failed create look successful.
             throw new RemoteConnectionException(
-                'پاسخ Remnawave JSON معتبر نبود (HTTP '.$response->status()
-                .'، نوع: '.self::scalarString($response->header('Content-Type'), 'unknown').')'
-                .' — احتمالاً صفحه پروکسی یا Cloudflare به‌جای API برگشته است.'
+                __('services.remnawave_invalid_json', [
+                    'status' => $response->status(),
+                    'type' => self::scalarString($response->header('Content-Type'), 'unknown'),
+                ])
             );
         }
 
@@ -753,7 +754,7 @@ final class RemnawavePanelClient
                 return $this->missingApiTokenMessage();
             }
 
-            return $error !== '' ? $error : 'دسترسی به API کاربران Remnawave ناموفق بود.';
+            return $error !== '' ? $error : __('services.remnawave_users_api_failed');
         }
 
         return null;

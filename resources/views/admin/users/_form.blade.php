@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', function () {
 <x-form.group :label="__('auth.password')">
     <input name="password" type="password" {{ $user ? '' : 'required' }} class="form-control">
 </x-form.group>
-<x-form.group :label="'تأیید '.__('auth.password')">
+<x-form.group :label="__('ui.confirm_x', [':field' => __('auth.password')])">
     <input name="password_confirmation" type="password" class="form-control">
 </x-form.group>
 <x-form.group :label="__('app.status')">
@@ -123,15 +123,15 @@ document.addEventListener('DOMContentLoaded', function () {
 </x-form.group>
 
 @if (discount_pricing_enabled() && ($user?->role === \App\Enums\UserRole::Agent || (! $user && request()->routeIs('admin.users.create'))))
-    <x-form.group label="تخفیف پیش‌فرض نماینده (٪)" hint="پیش‌فرض برای پکیج‌هایی که پایین‌تر تخفیف اختصاصی ندارند. برای هر پکیج می‌توانید در جدول زیر تخفیف جداگانه تعیین کنید.">
+    <x-form.group label="{{ __('ui.agent_default_discount_label') }}" hint="{{ __('ui.agent_default_discount_hint') }}">
         <input name="reseller_discount_percent" type="number" step="0.01" min="0" max="100" dir="ltr" class="form-control"
                value="{{ old('reseller_discount_percent', $user?->reseller_discount_percent) }}"
-               placeholder="مثلاً 40">
+               placeholder="{{ __('ui.eg_40') }}">
     </x-form.group>
-    <x-form.group label="بازه‌ی سود نماینده برای فروشنده‌ها (٪) — اختیاری" hint="اگر پر شود، این نماینده در پنل خودش می‌تواند قیمت فروشنده‌هایش را تا این درصد بالاتر از قیمت خودش تعیین کند (بیشتر نه). خالی = نماینده اجازه‌ی تعیین قیمت فروشنده را ندارد و شما آن را کنترل می‌کنید.">
+    <x-form.group label="{{ __('ui.seller_markup_range_label') }}" hint="{{ __('ui.seller_markup_range_hint') }}">
         <input name="seller_markup_range_percent" type="number" step="0.01" min="0" max="1000" dir="ltr" class="form-control"
                value="{{ old('seller_markup_range_percent', $user?->seller_markup_range_percent) }}"
-               placeholder="مثلاً 30 (خالی = غیرفعال)">
+               placeholder="{{ __('ui.eg_30_empty_disabled') }}">
     </x-form.group>
 @endif
 

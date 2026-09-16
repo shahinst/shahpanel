@@ -8,13 +8,13 @@
         <div class="card">
             <div class="card-body">
                 <dl class="dl-horizontal">
-                    <dt>درخواست‌دهنده</dt>
+                    <dt>{{ __('ui.col_requester') }}</dt>
                     <dd>{{ $paymentRequest->requester->full_name }}</dd>
                     <dt>{{ __('menu.amount') }}</dt>
                     <dd>{{ format_money($paymentRequest->amount, $paymentRequest->moneyCurrency()) }}</dd>
                     <dt>{{ __('menu.tracking_number') }}</dt>
                     <dd>{{ $paymentRequest->tracking_number }}</dd>
-                    <dt>وضعیت</dt>
+                    <dt>{{ __('app.status') }}</dt>
                     <dd>{{ $paymentRequest->status->value }}</dd>
                 </dl>
 

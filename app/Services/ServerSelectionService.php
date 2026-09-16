@@ -72,7 +72,7 @@ class ServerSelectionService
         });
 
         if ($available->isEmpty()) {
-            throw new RuntimeException('هیچ سرور فعالی با ظرفیت خالی یافت نشد.');
+            throw new RuntimeException(__('services.no_active_server_with_capacity'));
         }
 
         $reachable = $available->filter(fn (Server $server): bool => $this->isServerReachable($server));

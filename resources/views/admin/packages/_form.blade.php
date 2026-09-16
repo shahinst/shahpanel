@@ -70,7 +70,7 @@
     }
 @endphp
 
-<x-form.group label="نام">
+<x-form.group label="{{ __('ui.col_name') }}">
     <input name="name" value="{{ old('name', $package?->name) }}" required class="form-control">
 </x-form.group>
 @php
@@ -114,7 +114,7 @@
         <p class="text-muted small mb-0">{{ __('packages.uncategorized') }}</p>
     @endif
 </x-form.group>
-<x-form.group label="نوع سرویس">
+<x-form.group label="{{ __('ui.col_service_type') }}">
     <select name="service_type" id="package-service-type" required class="form-control">
         <optgroup label="{{ __('packages.service_type_mikrotik') }}">
             @foreach (\App\Enums\ServiceType::cases() as $type)
@@ -349,7 +349,7 @@
 </x-form.group>
 
 <div id="package-fixed-fields" @if($pricingModel === \App\Enums\PackagePricingModel::Elastic->value) hidden @endif>
-    <x-form.group label="حجم (GB)">
+    <x-form.group label="{{ __('ui.data_gb_label') }}">
         <input name="data_limit_gb" type="number" step="0.01" value="{{ old('data_limit_gb', $package?->data_limit_gb) }}" class="form-control">
     </x-form.group>
 </div>
@@ -367,7 +367,7 @@
     </x-form.group>
 </div>
 
-<x-form.group label="ترتیب">
+<x-form.group label="{{ __('ui.col_sort_order') }}">
     <input name="sort_order" type="number" value="{{ old('sort_order', $package?->sort_order ?? 0) }}" class="form-control">
 </x-form.group>
 

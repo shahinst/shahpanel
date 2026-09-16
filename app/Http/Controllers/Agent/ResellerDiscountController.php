@@ -64,7 +64,7 @@ class ResellerDiscountController extends Controller
         $range = $agent->seller_markup_range_percent !== null ? (float) $agent->seller_markup_range_percent : null;
 
         if ($range === null) {
-            return back()->with('error', 'ادمین اجازه‌ی تعیین قیمت فروشنده را برای شما فعال نکرده است.');
+            return back()->with('error', __('backend.reseller_pricing_not_allowed'));
         }
 
         $discounts = app(ResellerDiscountService::class);
@@ -111,6 +111,6 @@ class ResellerDiscountController extends Controller
                 ->whereNull('created_at')->update(['created_at' => now()]);
         }
 
-        return back()->with('success', 'قیمت فروشنده‌ها ذخیره شد.');
+        return back()->with('success', __('backend.reseller_pricing_saved'));
     }
 }

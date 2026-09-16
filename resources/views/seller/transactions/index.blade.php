@@ -5,14 +5,14 @@
 @section('panel_content')
 @include('partials.panel-page-hero', [
     'title' => __('menu.transactions'),
-    'subtitle' => 'تاریخچه تراکنش‌های کیف پول',
+    'subtitle' => __('ui.transactions_subtitle'),
     'icon' => 'bx-transfer',
 ])
 
 <div class="panel-modern-card">
     <div class="card-head"><h3>{{ __('menu.transactions') }}</h3></div>
     <div class="card-body">
-        <x-table :headers="['نوع', __('menu.amount'), 'موجودی بعد', 'تاریخ']">
+        <x-table :headers="[__('ui.col_type'), __('menu.amount'), __('ui.col_balance_after'), __('ui.col_date')]">
             @forelse ($transactions as $transaction)
                 <tr>
                     <td>{{ $transaction->type->value }}</td>

@@ -27,7 +27,7 @@ class WireGuardConfigService
         $address = $account->wireguard_address;
 
         if ($server === null || $privateKey === null || $address === null || $account->wireguard_public_key === null) {
-            throw new RemoteProvisionException('اطلاعات WireGuard اکانت ناقص است.');
+            throw new RemoteProvisionException(__('services.wireguard_account_incomplete'));
         }
 
         $publicKey = $account->wireguard_public_key;
@@ -36,7 +36,7 @@ class WireGuardConfigService
         $details = $this->mikrotikService->getWireguardInterfaceDetails($server, $interface);
 
         if ($details === null) {
-            throw new RemoteProvisionException('کلید عمومی اینترفیس WireGuard روی سرور یافت نشد.');
+            throw new RemoteProvisionException(__('services.wireguard_interface_pubkey_missing'));
         }
 
         return $this->mikrotikService->buildClientConfig(

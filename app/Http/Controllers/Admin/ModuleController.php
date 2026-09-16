@@ -26,20 +26,20 @@ class ModuleController extends Controller
     {
         $request->validate([
             'module' => ['required', 'file', 'max:51200'],
-        ], [], ['module' => 'فایل ماژول']);
+        ], [], ['module' => __('backend.module_file_attribute')]);
 
         $file = $request->file('module');
         if (strtolower((string) $file->getClientOriginalExtension()) !== 'zip') {
-            return back()->with('error', 'فقط فایل با پسوند zip مجاز است.');
+            return back()->with('error', __('backend.module_zip_only'));
         }
 
         try {
             $module = $this->manager->installFromZip($file->getRealPath());
         } catch (\Throwable $e) {
-            return back()->with('error', 'نصب ماژول ناموفق بود: '.$e->getMessage());
+            return back()->with('error', __('backend.module_install_failed', ['message' => $e->getMessage()]));
         }
 
-        return back()->with('success', 'ماژول «'.$module->name.'» با موفقیت آپلود و نصب شد. برای استفاده آن را فعال کنید.');
+        return back()->with('success', __('backend.module_installed', ['name' => $module->name]));
     }
 
     public function activate(Module $module): RedirectResponse
@@ -47,17 +47,17 @@ class ModuleController extends Controller
         try {
             $this->manager->activate($module);
         } catch (\Throwable $e) {
-            return back()->with('error', 'فعال‌سازی ماژول ناموفق بود: '.$e->getMessage());
+            return back()->with('error', __('backend.module_activate_failed', ['message' => $e->getMessage()]));
         }
 
-        return back()->with('success', 'ماژول «'.$module->name.'» فعال شد.');
+        return back()->with('success', __('backend.module_activated', ['name' => $module->name]));
     }
 
     public function deactivate(Module $module): RedirectResponse
     {
         $this->manager->deactivate($module);
 
-        return back()->with('success', 'ماژول «'.$module->name.'» غیرفعال شد.');
+        return back()->with('success', __('backend.module_deactivated', ['name' => $module->name]));
     }
 
     public function destroy(Module $module): RedirectResponse
@@ -65,6 +65,6 @@ class ModuleController extends Controller
         $name = $module->name;
         $this->manager->delete($module);
 
-        return back()->with('success', 'ماژول «'.$name.'» به‌طور کامل حذف شد.');
+        return back()->with('success', __('backend.module_deleted', ['name' => $name]));
     }
 }

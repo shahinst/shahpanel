@@ -18,7 +18,7 @@
                 @endif
 
                 <p class="mb-1">{{ __('payment_gateways.status') }}: <strong>{{ $payment->status->label() }}</strong></p>
-                <p class="text-muted small">{{ __('payment_gateways.net_credit') }}: {{ persian_digits(number_format((float) $payment->net_toman, 0)) }} تومان</p>
+                <p class="text-muted small">{{ __('payment_gateways.net_credit') }}: {{ persian_digits(number_format((float) $payment->net_toman, 0)) }} {{ __('packages.toman') }}</p>
 
                 <div class="mt-4">
                     <a href="{{ route($routePrefix.'.create') }}" class="btn btn-primary">{{ __('payment_gateways.back_to_top_up') }}</a>

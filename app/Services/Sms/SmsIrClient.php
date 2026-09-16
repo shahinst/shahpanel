@@ -163,18 +163,18 @@ final class SmsIrClient
         $json = $response->json();
 
         if (! is_array($json)) {
-            throw new SmsIrApiException('پاسخ نامعتبر از sms.ir (کد HTTP: '.$response->status().').');
+            throw new SmsIrApiException(__('services.smsir_invalid_response', ['status' => $response->status()]));
         }
 
         $status = (int) ($json['status'] ?? 0);
         $message = (string) ($json['message'] ?? '');
 
         if ($response->failed()) {
-            throw new SmsIrApiException($message !== '' ? $message : 'خطای HTTP '.$response->status());
+            throw new SmsIrApiException($message !== '' ? $message : __('services.http_error', ['status' => $response->status()]));
         }
 
         if ($status !== 1) {
-            throw new SmsIrApiException($message !== '' ? $message : 'خطای sms.ir (کد '.$status.')');
+            throw new SmsIrApiException($message !== '' ? $message : __('services.smsir_error', ['status' => $status]));
         }
 
         return [
@@ -197,10 +197,10 @@ final class SmsIrClient
                 'GET' => $pending->get($url),
                 'POST' => $pending->post($url, $body),
                 'DELETE' => $pending->delete($url, $body),
-                default => throw new SmsIrApiException('متد HTTP پشتیبانی نمی‌شود.'),
+                default => throw new SmsIrApiException(__('services.http_method_unsupported_plain')),
             };
         } catch (ConnectionException $exception) {
-            throw new SmsIrApiException('اتصال به sms.ir برقرار نشد: '.$exception->getMessage(), 0, $exception);
+            throw new SmsIrApiException(__('services.smsir_connect_failed', ['error' => $exception->getMessage()]), 0, $exception);
         }
 
         return $response;

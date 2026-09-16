@@ -148,7 +148,7 @@
                                 <div class="col-md-8">
                                     <label class="form-label" for="test_message">{{ __('sms.test_message') }}</label>
                                     <textarea name="test_message" id="test_message" class="form-control" rows="2" required
-                                              placeholder="{{ __('sms.test_message_placeholder') }}">{{ old('test_message', 'تست shahpanel — sms.ir') }}</textarea>
+                                              placeholder="{{ __('sms.test_message_placeholder') }}">{{ old('test_message', __('ui.sms_test_message_default')) }}</textarea>
                                 </div>
                             @endif
                         </div>

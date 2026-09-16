@@ -69,7 +69,7 @@
                                         @endif
                                         @if (bccomp((string) $gateway->commission_fixed, '0', 2) > 0)
                                             @if (bccomp((string) $gateway->commission_percent, '0', 4) > 0) + @endif
-                                            {{ persian_digits(number_format((float) $gateway->commission_fixed, 0)) }} تومان
+                                            {{ persian_digits(number_format((float) $gateway->commission_fixed, 0)) }} {{ __('packages.toman') }}
                                         @endif
                                         @if (bccomp((string) $gateway->commission_percent, '0', 4) <= 0 && bccomp((string) $gateway->commission_fixed, '0', 2) <= 0)
                                             —

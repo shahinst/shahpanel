@@ -34,7 +34,7 @@ trait ManagesAccountKyc
         if (! empty($validated['package_id'])) {
             $package = Package::query()->findOrFail((int) $validated['package_id']);
             if (! $package->kyc_required) {
-                return response()->json(['message' => 'این پکیج نیاز به احراز ندارد.'], 422);
+                return response()->json(['message' => __('backend.kyc_package_not_required')], 422);
             }
         }
 

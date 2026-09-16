@@ -52,7 +52,7 @@
                 const year = Number(yearEl.value);
                 const month = Number(monthEl.value);
                 const prev = dayEl.value;
-                dayEl.innerHTML = '<option value="">روز</option>';
+                dayEl.innerHTML = '<option value="">' + @json(__('ui.day')) + '</option>';
                 if (!year || !month) {
                     syncHidden();
                     return;
@@ -82,7 +82,7 @@
             wrap.__resetJalaliDate = function () {
                 yearEl.value = '';
                 monthEl.value = '';
-                dayEl.innerHTML = '<option value="">روز</option>';
+                dayEl.innerHTML = '<option value="">' + @json(__('ui.day')) + '</option>';
                 hiddenEl.value = '';
             };
         });
@@ -243,15 +243,15 @@
             setSuccess('');
             const pkgId = els.packageSelect ? els.packageSelect.value : '';
             if (!pkgId) {
-                setError(@json(__('accounts.package')) + ' الزامی است.');
+                setError(@json(__('accounts.package')) + @json(__('ui.is_required_suffix')));
                 return;
             }
             if (!els.birthDate?.value) {
-                setError(@json(__('kyc.birth_date')) + ' الزامی است.');
+                setError(@json(__('kyc.birth_date')) + @json(__('ui.is_required_suffix')));
                 return;
             }
             if (!els.document?.files?.length) {
-                setError(@json(__('kyc.document')) + ' الزامی است.');
+                setError(@json(__('kyc.document')) + @json(__('ui.is_required_suffix')));
                 return;
             }
 
@@ -280,7 +280,7 @@
                     if (!result.ok) {
                         const msg = result.payload.message
                             || (result.payload.errors ? Object.values(result.payload.errors).flat().join(' ') : null)
-                            || 'خطا در ثبت احراز';
+                            || @json(__('ui.kyc_submit_error'));
                         setError(msg);
                         return;
                     }
@@ -289,7 +289,7 @@
                 })
                 .catch(function () {
                     els.submitBtn.disabled = false;
-                    setError('خطا در ارتباط با سرور');
+                    setError(@json(__('ui.server_connection_error')));
                 });
         });
     }
@@ -314,14 +314,14 @@
                 .then(function (result) {
                     if (result.payload.verification) applyVerification(result.payload.verification);
                     if (!result.ok) {
-                        setError(result.payload.message || 'احراز ناموفق بود');
+                        setError(result.payload.message || @json(__('ui.kyc_verify_failed')));
                         return;
                     }
                     setSuccess(result.payload.message || @json(__('kyc.verified_ready')));
                 })
                 .catch(function () {
                     els.verifyBtn.disabled = false;
-                    setError('خطا در ارتباط با سرور');
+                    setError(@json(__('ui.server_connection_error')));
                 });
         });
     }
@@ -345,14 +345,14 @@
                     els.resetBtn.disabled = false;
                     if (result.payload.verification) applyVerification(result.payload.verification);
                     if (!result.ok) {
-                        setError(result.payload.message || 'خطا');
+                        setError(result.payload.message || @json(__('ui.label_error')));
                         return;
                     }
                     setSuccess(result.payload.message || @json(__('kyc.reset_requested')));
                 })
                 .catch(function () {
                     els.resetBtn.disabled = false;
-                    setError('خطا در ارتباط با سرور');
+                    setError(@json(__('ui.server_connection_error')));
                 });
         });
     }

@@ -14,7 +14,7 @@
         <form method="GET" class="mb-3 row g-2">
             <div class="col-md-4">
                 <select name="status" class="form-select form-select-sm">
-                    <option value="">همه وضعیت‌ها</option>
+                    <option value="">{{ __('ui.all_statuses') }}</option>
                     @foreach ($statuses as $status)
                         <option value="{{ $status->value }}" @selected(request('status') === $status->value)>{{ $status->label() }}</option>
                     @endforeach
@@ -25,7 +25,7 @@
             </div>
         </form>
 
-        <x-table :headers="['#', 'نام', 'کد ملی', 'مدرک', 'وضعیت', 'تلاش', 'ثبت‌کننده', __('app.actions')]">
+        <x-table :headers="['#', __('ui.col_name'), __('kyc.national_code'), __('kyc.document'), __('app.status'), __('ui.col_attempts'), __('ui.col_initiated_by'), __('app.actions')]">
             @forelse ($items as $item)
                 <tr>
                     <td>{{ $item->id }}</td>

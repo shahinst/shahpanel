@@ -5,12 +5,12 @@
     $packageOptions = $packageOptions ?? [];
     $servers = $servers ?? collect();
     $purchasePricingLabels = [
-        'title' => 'محاسبه قیمت خرید',
-        'list_price' => 'قیمت عمده',
-        'final' => 'مبلغ نهایی (کسر از کیف پول)',
-        'margin_hint' => 'سود نماینده در این خرید: :amount (:percent٪ از عمده)',
-        'discount_hint' => '(تخفیف سراسری :percent٪ اعمال شده)',
-        'preview_failed' => 'محاسبه قیمت ممکن نشد.',
+        'title' => __('ui.purchase_price_calc'),
+        'list_price' => __('ui.wholesale_price'),
+        'final' => __('ui.final_amount_wallet_deduction'),
+        'margin_hint' => __('ui.agent_margin_hint'),
+        'discount_hint' => __('ui.global_discount_applied'),
+        'preview_failed' => __('ui.price_calc_failed'),
     ];
     $routePanel = explode('.', request()->route()?->getName() ?? '')[0] ?: 'admin';
     $canSelectServerOnCreate = ! $account && $routePanel === 'admin';
@@ -18,7 +18,7 @@
 
 @if (isset($accountOwners) || isset($sellers))
 @php $accountOwners = $accountOwners ?? $sellers ?? collect(); @endphp
-<x-form.group label="مالک اکانت" hint="نماینده می‌تواند برای خودش یا فروشندگانش اکانت بسازد.">
+<x-form.group label="{{ __('ui.account_owner_label') }}" hint="{{ __('ui.account_owner_hint_agent') }}">
     <select name="owner_seller_id" required class="form-control">
         @foreach ($accountOwners as $owner)
             <option value="{{ $owner->id }}" @selected(old('owner_seller_id') == $owner->id)>
@@ -91,15 +91,15 @@
 @endif
 
 @if ($canSelectServerOnCreate && isset($servers))
-<x-form.group label="سرور" hint="فقط سرورهای تعریف‌شده برای پکیج انتخاب‌شده.">
+<x-form.group label="{{ __('accounts.server') }}" hint="{{ __('ui.server_hint_package_only') }}">
     <select name="server_id" id="account-server-id" class="form-control">
-        <option value="">خودکار — کم‌ترافیک‌ترین سرور مجاز این پکیج</option>
+        <option value="">{{ __('ui.server_auto_option') }}</option>
     </select>
 </x-form.group>
 @endif
 
 @if ($account && isset($servers) && $canTransferServer)
-<x-form.group label="سرور (انتقال)" hint="فقط بین سرورهای مجاز همین پکیج.">
+<x-form.group label="{{ __('ui.server_transfer_label') }}" hint="{{ __('ui.server_transfer_hint') }}">
     <select name="server_id" class="form-control">
         @foreach ($servers as $server)
             <option value="{{ $server->id }}" @selected(old('server_id', $account->server_id) == $server->id)>{{ $server->name }}</option>
@@ -107,7 +107,7 @@
     </select>
 </x-form.group>
 @elseif ($account && $account->server)
-<x-form.static label="سرور" :value="$account->server->name" />
+<x-form.static label="{{ __('accounts.server') }}" :value="$account->server->name" />
 @endif
 
 @if ($account && $account->packageDuration)
@@ -143,7 +143,7 @@
     >
     <p class="help-block text-muted small mb-0">{{ __('accounts.service_username_hint') }}</p>
 </x-form.group>
-<x-form.group :label="__('auth.email').' مشتری'">
+<x-form.group :label="__('ui.x_of_client', [':field' => __('auth.email')])">
     <input name="client_email" type="email" value="{{ old('client_email', $account->client_email) }}" class="form-control">
 </x-form.group>
 @else
@@ -170,7 +170,7 @@
     </div>
 </x-form.group>
 <div id="client-new-fields">
-    <x-form.group label="نام کاربری خریدار" hint="خریدار با این نام کاربری وارد پنل خود می‌شود.">
+    <x-form.group label="{{ __('ui.buyer_username_label') }}" hint="{{ __('ui.buyer_username_hint') }}">
         <input name="client_username" id="client-username" value="{{ old('client_username') }}" class="form-control" autocomplete="off">
     </x-form.group>
     @php
@@ -204,7 +204,7 @@
             <button type="button" class="btn btn-outline-secondary" id="client-password-regenerate" hidden>{{ __('accounts.client_password_regenerate') }}</button>
         </div>
     </x-form.group>
-    <x-form.group label="نام کامل خریدار (اختیاری)">
+    <x-form.group label="{{ __('ui.buyer_full_name_label') }}">
         <input name="client_full_name" id="client-full-name" value="{{ old('client_full_name') }}" class="form-control">
     </x-form.group>
 </div>
@@ -605,7 +605,7 @@
     function formatMoney(value, currencyMeta) {
         const meta = currencyMeta || {};
         const decimals = Number.isFinite(Number(meta.decimals)) ? Number(meta.decimals) : 0;
-        const symbol = meta.symbol || meta.label || 'تومان';
+        const symbol = meta.symbol || meta.label || @json(__('packages.toman'));
         const amount = Number(value);
         if (!Number.isFinite(amount)) {
             return '—';
@@ -618,18 +618,18 @@
 
     function currencyMetaFrom(source) {
         if (!source) {
-            return { symbol: 'تومان', label: 'تومان', decimals: 0 };
+            return { symbol: @json(__('packages.toman')), label: @json(__('packages.toman')), decimals: 0 };
         }
         return {
             code: source.currency || 'IRT',
-            symbol: source.currency_symbol || source.currency_label || 'تومان',
-            label: source.currency_label || source.currency_symbol || 'تومان',
+            symbol: source.currency_symbol || source.currency_label || @json(__('packages.toman')),
+            label: source.currency_label || source.currency_symbol || @json(__('packages.toman')),
             decimals: Number.isFinite(Number(source.currency_decimals)) ? Number(source.currency_decimals) : 0,
         };
     }
 
     function formatToman(value) {
-        return formatMoney(value, { label: 'تومان', symbol: 'تومان', decimals: 0 });
+        return formatMoney(value, { label: @json(__('packages.toman')), symbol: @json(__('packages.toman')), decimals: 0 });
     }
 
     function hidePricing() {
@@ -665,7 +665,7 @@
         if (pricingDiscountHint) {
             pricingDiscountHint.textContent = '';
             if (data.plan_applied && Number(data.plan_discount) > 0) {
-                pricingDiscountHint.textContent = 'تخفیف بسته مالی: ' + formatMoney(data.plan_discount, currencyMeta);
+                pricingDiscountHint.textContent = @json(__('ui.financial_plan_discount')) + ': ' + formatMoney(data.plan_discount, currencyMeta);
             } else if (data.discount_active && Number(data.list_price) !== Number(data.charged_price)) {
                 pricingDiscountHint.textContent = pricingLabels.discount_hint.replace(':percent', String(data.discount_percent));
             }
@@ -677,7 +677,7 @@
                 if (data.agent_margin_percent) {
                     hint = hint.replace(':percent', String(data.agent_margin_percent));
                 } else {
-                    hint = hint.replace(' (:percent٪ از عمده)', '');
+                    hint = hint.replace(@json(__('ui.agent_margin_hint_percent_part')), '');
                 }
                 pricingMarginHint.textContent = hint;
             }
@@ -732,7 +732,7 @@
 
         durationSelect.innerHTML = '<option value="">—</option>';
         if (serverSelect) {
-            serverSelect.innerHTML = '<option value="">خودکار — کم‌ترافیک‌ترین سرور مجاز این پکیج</option>';
+            serverSelect.innerHTML = '<option value="">' + @json(__('ui.server_auto_option')) + '</option>';
         }
         hidePricing();
 

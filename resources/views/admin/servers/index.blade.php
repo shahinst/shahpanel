@@ -5,7 +5,7 @@
 @section('panel_content')
 @include('partials.panel-page-hero', [
     'title' => __('menu.servers'),
-    'subtitle' => 'مدیریت سرورهای VPN و اتصال به پنل',
+    'subtitle' => __('ui.servers_index_subtitle'),
     'icon' => 'bx-server',
     'actions' => view('admin.servers.partials.index-actions')->render(),
 ])

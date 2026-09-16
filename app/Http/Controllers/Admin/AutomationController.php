@@ -65,10 +65,10 @@ class AutomationController extends Controller
                 'max:'.\App\Support\ExpiringAccountThresholds::MAX_VOLUME_MB,
             ],
         ], [
-            'days.min' => 'حداقل ۱ روز.',
-            'days.max' => 'حداکثر ۷ روز.',
-            'volume_mb.min' => 'حداقل ۱۰۰ مگابایت.',
-            'volume_mb.max' => 'حداکثر ۵۱۲۰ مگابایت (۵ گیگ).',
+            'days.min' => __('backend.automation_days_min'),
+            'days.max' => __('backend.automation_days_max'),
+            'volume_mb.min' => __('backend.automation_volume_min'),
+            'volume_mb.max' => __('backend.automation_volume_max'),
         ]);
 
         Setting::setValue(
@@ -82,7 +82,7 @@ class AutomationController extends Controller
 
         return redirect()
             ->route('admin.automation.expiring')
-            ->with('success', 'آستانه‌ی اکانت‌های در حال انقضا ذخیره شد.');
+            ->with('success', __('backend.automation_expiring_saved'));
     }
 
     public function updatePricing(Request $request): RedirectResponse

@@ -5,7 +5,7 @@
 @section('panel_content')
 @include('partials.panel-page-hero', [
     'title' => __('broadcasts.page_title'),
-    'subtitle' => 'ارسال پیام به فروشندگان و مشتریان',
+    'subtitle' => __('ui.broadcasts_agent_subtitle'),
     'icon' => 'bx-broadcast',
     'actions' => '<a href="'.route('agent.broadcasts.create').'" class="btn btn-light btn-sm"><i class="bx bx-plus"></i> '.e(__('broadcasts.send_new')).'</a>',
 ])

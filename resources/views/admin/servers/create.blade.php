@@ -5,7 +5,7 @@
 @section('panel_content')
 @include('partials.panel-page-hero', [
     'title' => __('servers.create'),
-    'subtitle' => 'افزودن سرور جدید به سامانه',
+    'subtitle' => __('ui.servers_create_subtitle'),
     'icon' => 'bx-plus-circle',
     'tone' => 'admin',
 ])

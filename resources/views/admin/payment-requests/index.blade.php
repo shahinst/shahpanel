@@ -24,7 +24,7 @@
                 <x-button :href="route('admin.payment-requests.charge')" size="sm">{{ __('wallet.manual_charge') }}</x-button>
             </div>
             <div class="card-body">
-                <x-table :headers="['کاربر', __('wallet.direction'), __('menu.amount'), 'ادمین', 'تاریخ', 'یادداشت']">
+                <x-table :headers="[__('ui.col_user'), __('wallet.direction'), __('menu.amount'), __('ui.col_admin'), __('ui.col_date'), __('ui.col_note')]">
                     @forelse ($adjustments as $adjustment)
                         <tr class="{{ (int) $highlightAdjustmentId === (int) $adjustment->id ? 'table-success' : '' }}">
                             <td>{{ $adjustment->user->full_name }}</td>
@@ -54,7 +54,7 @@
                 <h4 class="card-title mb-0">{{ __('wallet.all_charge_requests') }}</h4>
             </div>
             <div class="card-body">
-                <x-table :headers="['درخواست‌دهنده', 'نقش', 'مسیر', 'تأییدکننده', __('menu.amount'), 'وضعیت', 'تاریخ', __('app.actions')]">
+                <x-table :headers="[__('ui.col_requester'), __('ui.col_role'), __('ui.col_path'), __('ui.col_approver'), __('menu.amount'), __('app.status'), __('ui.col_date'), __('app.actions')]">
                     @forelse ($paymentRequests as $paymentRequest)
                         @php
                             $requester = $paymentRequest->requester;

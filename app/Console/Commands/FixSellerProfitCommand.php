@@ -82,7 +82,7 @@ class FixSellerProfitCommand extends Command
                         TransactionType::Adjustment,
                         [
                             'source_user_id' => $seller->id,
-                            'description' => 'تصحیح سود اشتباه فروش — '.self::MARKER,
+                            'description' => __('backend.seller_profit_clawback_description', ['marker' => self::MARKER]),
                         ],
                         allowNegative: true,
                     );

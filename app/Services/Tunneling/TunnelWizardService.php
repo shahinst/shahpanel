@@ -58,14 +58,14 @@ class TunnelWizardService
         $exitIds = array_values(array_filter($exitIds, fn (int $id): bool => $id !== (int) $iranServer->id));
 
         if ($exitIds === []) {
-            throw new RuntimeException('حداقل یک سرور خارج باید انتخاب شود.');
+            throw new RuntimeException(__('services.tunnel_select_foreign_server'));
         }
 
         $kindValues = array_values(array_unique(array_map('strval', $data['tunnel_kinds'] ?? [])));
         $kinds = array_map(static fn (string $k): TunnelKind => TunnelKind::from($k), $kindValues);
 
         if ($kinds === []) {
-            throw new RuntimeException('حداقل یک نوع تانل باید انتخاب شود.');
+            throw new RuntimeException(__('services.tunnel_select_type'));
         }
 
         $clientServiceTypes = array_values(array_intersect(

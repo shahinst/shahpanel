@@ -38,7 +38,7 @@ class CiscoAnyconnectService
 
             return [
                 'ok' => false,
-                'message' => 'اتصال به Cisco ASA / AnyConnect ناموفق بود.',
+                'message' => __('services.cisco_connect_failed'),
                 'error' => $exception->getMessage(),
             ];
         }
@@ -69,7 +69,7 @@ class CiscoAnyconnectService
             ]);
 
             throw new RemoteProvisionException(
-                'ساخت کاربر Cisco AnyConnect روی ASA ناموفق بود: '.$exception->getMessage(),
+                __('services.cisco_create_user_failed', ['error' => $exception->getMessage()]),
                 previous: $exception
             );
         }
@@ -84,7 +84,7 @@ class CiscoAnyconnectService
         $package = $account->package;
 
         if ($server === null) {
-            throw new InvalidArgumentException('اکانت به سرور Cisco متصل نیست.');
+            throw new InvalidArgumentException(__('services.account_not_on_cisco_server'));
         }
 
         $this->assertCiscoServer($server);
@@ -93,7 +93,7 @@ class CiscoAnyconnectService
         $password = (string) ($account->remote_password_enc ?? '');
 
         if ($username === '' || $password === '') {
-            throw new RemoteProvisionException('نام کاربری یا رمز AnyConnect برای همگام‌سازی موجود نیست.');
+            throw new RemoteProvisionException(__('services.cisco_credentials_missing_for_sync'));
         }
 
         $options = $this->provisionOptions($server, $package);
@@ -135,7 +135,7 @@ class CiscoAnyconnectService
             ]);
 
             throw new RemoteProvisionException(
-                ($enabled ? 'فعال‌سازی' : 'غیرفعال‌سازی').' کاربر AnyConnect ناموفق: '.$exception->getMessage(),
+                __($enabled ? 'services.cisco_enable_user_failed' : 'services.cisco_disable_user_failed', ['error' => $exception->getMessage()]),
                 previous: $exception
             );
         }
@@ -162,7 +162,7 @@ class CiscoAnyconnectService
             ]);
 
             throw new RemoteProvisionException(
-                'حذف کاربر AnyConnect از ASA ناموفق: '.$exception->getMessage(),
+                __('services.cisco_remove_user_failed', ['error' => $exception->getMessage()]),
                 previous: $exception
             );
         }
@@ -273,7 +273,7 @@ class CiscoAnyconnectService
     protected function assertCiscoServer(Server $server): void
     {
         if (! $server->isCiscoAnyconnect()) {
-            throw new InvalidArgumentException('این عملیات فقط برای سرور Cisco AnyConnect است.');
+            throw new InvalidArgumentException(__('services.cisco_operation_only'));
         }
     }
 }

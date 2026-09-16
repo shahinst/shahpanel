@@ -50,8 +50,11 @@ class DispatchAlertsCommand extends Command
             $created = $alerts->notifyAccountAlert(
                 $recipient,
                 NotificationType::AccountExpiry,
-                'یادآوری انقضا',
-                "اکانت {$account->remote_username} تا ".jalali_date($account->expiry_at, 'Y/m/d').' منقضی می‌شود.',
+                __('backend.notify_expiry_reminder_title'),
+                __('backend.notify_expiry_reminder_body', [
+                    'username' => $account->remote_username,
+                    'date' => jalali_date($account->expiry_at, 'Y/m/d'),
+                ]),
                 $account,
                 'expiry:'.$account->id,
             );
@@ -90,8 +93,8 @@ class DispatchAlertsCommand extends Command
             $created = $alerts->notifyAccountAlert(
                 $recipient,
                 NotificationType::QuotaExhausted,
-                'هشدار حجم',
-                "اکانت {$account->remote_username} بیش از ۹۰٪ حجم مصرف شده است.",
+                __('backend.notify_quota_warning_title'),
+                __('backend.notify_quota_warning_body', ['username' => $account->remote_username]),
                 $account,
                 'quota90:'.$account->id,
             );
@@ -152,8 +155,11 @@ class DispatchAlertsCommand extends Command
                 $created = $alerts->notifyOnce(
                     $admin,
                     NotificationType::ServerSync,
-                    'خطا در همگام‌سازی سرور',
-                    "سرور {$log->server?->name} — {$log->errors_count} خطا",
+                    __('backend.notify_server_sync_error_title'),
+                    __('backend.notify_server_sync_error_body', [
+                        'server' => $log->server?->name ?? '',
+                        'errors' => $log->errors_count,
+                    ]),
                     'sync:'.$log->id.':user:'.$admin->id,
                     $link,
                     6,

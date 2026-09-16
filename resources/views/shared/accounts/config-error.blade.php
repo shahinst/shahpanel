@@ -8,5 +8,5 @@
 </p>
 
 <x-alert type="error">{{ $error }}</x-alert>
-<p class="help-block">سرور: {{ $account->server?->name ?? '—' }} — ابتدا از پنل ادمین «سینک اینترفیس‌ها» را اجرا کنید.</p>
+<p class="help-block">{{ __('accounts.server') }}: {{ $account->server?->name ?? '—' }} — {{ __('ui.config_error_sync_hint') }}</p>
 @endsection

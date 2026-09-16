@@ -2,7 +2,7 @@
     'name',
     'value' => null,
     'required' => false,
-    'placeholder' => '۱۴۰۳/۰۱/۱۵',
+    'placeholder' => __('ui.jalali_date_placeholder'),
 ])
 
 <input

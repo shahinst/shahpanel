@@ -227,9 +227,9 @@
         })
             .then(r => r.json())
             .then(data => {
-                grossEl.textContent = data.gross_toman_formatted + ' تومان';
-                commissionEl.textContent = data.commission_toman_formatted + ' تومان';
-                netEl.textContent = data.net_toman_formatted + ' تومان';
+                grossEl.textContent = data.gross_toman_formatted + ' ' + @json(__('packages.toman'));
+                commissionEl.textContent = data.commission_toman_formatted + ' ' + @json(__('packages.toman'));
+                netEl.textContent = data.net_toman_formatted + ' ' + @json(__('packages.toman'));
                 if (cryptoEl && cryptoLabel && data.estimated_crypto_formatted) {
                     cryptoEl.textContent = data.estimated_crypto_formatted;
                     cryptoEl.style.display = '';

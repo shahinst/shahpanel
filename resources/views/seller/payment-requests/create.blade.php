@@ -5,7 +5,7 @@
 @section('panel_content')
 @include('partials.panel-page-hero', [
     'title' => __('menu.new_charge_request'),
-    'subtitle' => 'ثبت درخواست شارژ کیف پول',
+    'subtitle' => __('ui.payment_requests_create_subtitle'),
     'icon' => 'bx-wallet',
 ])
 

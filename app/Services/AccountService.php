@@ -786,11 +786,11 @@ class AccountService
         $server = $account->server;
 
         if ($server === null) {
-            throw new \InvalidArgumentException('اکانت به سروری متصل نیست.');
+            throw new \InvalidArgumentException(__('services.account_not_attached_to_server'));
         }
 
         if (! $account->isUnlimited() && $account->data_limit_bytes === null) {
-            throw new \InvalidArgumentException('اکانت حجمی باید data_limit_bytes در دیتابیس داشته باشد.');
+            throw new \InvalidArgumentException(__('services.account_volume_requires_data_limit'));
         }
 
         if ($server->isPasarguard() || $account->service_type->isPasarguard() || $account->pasarguard_user_id) {
@@ -885,7 +885,7 @@ class AccountService
         if ($existingClient !== null && $onlyMissing) {
             return [
                 'action' => 'skipped',
-                'message' => "Sanaei «{$email}» از قبل روی سرور بود — رد شد.",
+                'message' => __('services.sanaei_client_already_existed', ['email' => $email]),
             ];
         }
 
@@ -909,7 +909,7 @@ class AccountService
 
             return [
                 'action' => 'updated',
-                'message' => "Sanaei «{$email}» به‌روزرسانی شد (حجم/انقضا از دیتابیس).",
+                'message' => __('services.sanaei_client_updated', ['email' => $email]),
             ];
         }
 
@@ -938,7 +938,7 @@ class AccountService
 
         return [
             'action' => 'created',
-            'message' => "Sanaei «{$email}» در بخش کلاینت‌های پنل ساخته شد (subscribe همه inboundهای فعال).",
+            'message' => __('services.sanaei_client_created', ['email' => $email]),
         ];
     }
 
@@ -953,7 +953,7 @@ class AccountService
         $package = $account->package;
 
         if ($package === null) {
-            throw new \InvalidArgumentException('اکانت PasarGuard به پکیج متصل نیست.');
+            throw new \InvalidArgumentException(__('services.account_pasarguard_no_package'));
         }
 
         try {
@@ -965,7 +965,7 @@ class AccountService
         if ($existing !== null && $onlyMissing) {
             return [
                 'action' => 'skipped',
-                'message' => "PasarGuard «{$username}» از قبل روی پنل بود — رد شد.",
+                'message' => __('services.pasarguard_user_already_existed', ['username' => $username]),
             ];
         }
 
@@ -990,7 +990,7 @@ class AccountService
 
             return [
                 'action' => 'created',
-                'message' => "PasarGuard «{$username}» روی پنل ساخته شد.",
+                'message' => __('services.pasarguard_user_created', ['username' => $username]),
             ];
         }
 
@@ -1011,7 +1011,7 @@ class AccountService
 
         return [
             'action' => 'updated',
-            'message' => "PasarGuard «{$username}» به‌روزرسانی شد (حجم/انقضا از دیتابیس).",
+            'message' => __('services.pasarguard_user_updated', ['username' => $username]),
         ];
     }
 
@@ -1054,7 +1054,7 @@ class AccountService
 
         if ($account->package === null) {
             throw new \InvalidArgumentException(
-                'اکانت #'.$account->id.' ('.$account->remote_username.') به پکیج متصل نیست.'
+                __('services.account_id_no_package', ['id' => $account->id, 'username' => $account->remote_username])
             );
         }
 
@@ -1066,7 +1066,7 @@ class AccountService
 
         if ($duration === null) {
             throw new \InvalidArgumentException(
-                'برای پکیج «'.$account->package->name.'» دورهٔ فعال تعریف نشده است.'
+                __('services.package_no_active_duration', ['name' => $account->package->name])
             );
         }
 
@@ -1135,7 +1135,7 @@ class AccountService
         $uuid = $this->resolveRemnawaveUuid($account);
 
         if ($uuid === null) {
-            throw new RemoteProvisionException('کاربر Remnawave روی پنل یافت نشد (شناسه نامشخص).');
+            throw new RemoteProvisionException(__('services.remnawave_user_not_found_unknown_id'));
         }
 
         if ($resetTraffic) {
@@ -1178,7 +1178,7 @@ class AccountService
         $package = $account->package;
 
         if ($package === null) {
-            throw new \InvalidArgumentException('اکانت Remnawave به پکیج متصل نیست.');
+            throw new \InvalidArgumentException(__('services.account_remnawave_no_package'));
         }
 
         $existing = $this->remnawaveService->getUser($server, $username);
@@ -1186,7 +1186,7 @@ class AccountService
         if ($existing !== null && $onlyMissing) {
             return [
                 'action' => 'skipped',
-                'message' => "Remnawave «{$username}» از قبل روی پنل بود — رد شد.",
+                'message' => __('services.remnawave_user_already_existed', ['username' => $username]),
             ];
         }
 
@@ -1212,14 +1212,14 @@ class AccountService
 
             return [
                 'action' => 'created',
-                'message' => "Remnawave «{$username}» روی پنل ساخته شد.",
+                'message' => __('services.remnawave_user_created', ['username' => $username]),
             ];
         }
 
         $uuid = \App\Services\Remnawave\RemnawaveUserIdentity::fromRemoteUser($existing)
             ?? trim((string) ($account->remnawave_uuid ?? ''));
         if ($uuid === '') {
-            throw new RemoteProvisionException('کاربر Remnawave روی پنل یافت نشد (شناسه نامشخص).');
+            throw new RemoteProvisionException(__('services.remnawave_user_not_found_unknown_id'));
         }
 
         $remote = $this->remnawaveService->modifyPanelUser(
@@ -1241,7 +1241,7 @@ class AccountService
 
         return [
             'action' => 'updated',
-            'message' => "Remnawave «{$username}» به‌روزرسانی شد (حجم/انقضا از دیتابیس).",
+            'message' => __('services.remnawave_user_updated', ['username' => $username]),
         ];
     }
 
@@ -1261,7 +1261,7 @@ class AccountService
         if ($exists && $onlyMissing) {
             return [
                 'action' => 'skipped',
-                'message' => "MikroTik «{$username}» از قبل وجود داشت — رد شد.",
+                'message' => __('services.mikrotik_user_already_existed', ['username' => $username]),
             ];
         }
 
@@ -1311,7 +1311,7 @@ class AccountService
 
             return [
                 'action' => 'created',
-                'message' => "MikroTik «{$username}» روی سرور ساخته شد.",
+                'message' => __('services.mikrotik_user_created', ['username' => $username]),
             ];
         }
 
@@ -1328,7 +1328,7 @@ class AccountService
 
         return [
             'action' => 'updated',
-            'message' => "MikroTik «{$username}» همگام شد (وضعیت از دیتابیس).",
+            'message' => __('services.mikrotik_user_synced', ['username' => $username]),
         ];
     }
 
@@ -1342,7 +1342,7 @@ class AccountService
         $privateKey = $account->wireguard_private_key_enc;
 
         if ($publicKey === null || $privateKey === null) {
-            throw new RemoteProvisionException('کلیدهای WireGuard در دیتابیس موجود نیست.');
+            throw new RemoteProvisionException(__('services.wireguard_keys_missing'));
         }
 
         $exists = $this->mikrotikService->wireguardPeerExists($server, $publicKey);
@@ -1353,7 +1353,7 @@ class AccountService
         if ($exists && $onlyMissing) {
             return [
                 'action' => 'skipped',
-                'message' => "WireGuard «{$account->remote_username}» از قبل روی سرور بود — رد شد.",
+                'message' => __('services.wireguard_peer_already_existed', ['username' => $account->remote_username]),
             ];
         }
 
@@ -1376,7 +1376,7 @@ class AccountService
 
             return [
                 'action' => 'created',
-                'message' => "WireGuard «{$account->remote_username}» روی {$interface} ساخته شد.",
+                'message' => __('services.wireguard_peer_created', ['username' => $account->remote_username, 'interface' => $interface]),
             ];
         }
 
@@ -1412,7 +1412,7 @@ class AccountService
 
         return [
             'action' => 'updated',
-            'message' => "WireGuard «{$account->remote_username}» همگام شد (IP/اینترفیس/وضعیت از دیتابیس).",
+            'message' => __('services.wireguard_peer_synced', ['username' => $account->remote_username]),
         ];
     }
 
@@ -1450,7 +1450,7 @@ class AccountService
             }
         }
 
-        throw new \RuntimeException('تولید نام کاربری یکتا ممکن نشد. دوباره تلاش کنید.');
+        throw new \RuntimeException(__('services.unique_username_failed'));
     }
 
     protected function generateRemotePassword(ServiceType $serviceType): string
@@ -1487,7 +1487,7 @@ class AccountService
             }
         }
 
-        throw new \RuntimeException('تولید نام کاربری یکتا برای OpenConnect ممکن نشد. دوباره تلاش کنید.');
+        throw new \RuntimeException(__('services.unique_username_failed_openconnect'));
     }
 
     /** OpenConnect: digits + 2 letters, e.g. 847291ab */
@@ -1511,7 +1511,7 @@ class AccountService
             }
         }
 
-        throw new \RuntimeException('تولید رمز یکتا برای OpenConnect ممکن نشد. دوباره تلاش کنید.');
+        throw new \RuntimeException(__('services.unique_password_failed_openconnect'));
     }
 
     /**
@@ -1547,7 +1547,7 @@ class AccountService
             }
         }
 
-        throw new \RuntimeException('تولید نام کاربری یکتا ممکن نشد. دوباره تلاش کنید.');
+        throw new \RuntimeException(__('services.unique_username_failed'));
     }
 
     /** 6-digit numeric password — unique in panel DB. */
@@ -1561,7 +1561,7 @@ class AccountService
             }
         }
 
-        throw new \RuntimeException('تولید رمز سرویس یکتا ممکن نشد. دوباره تلاش کنید.');
+        throw new \RuntimeException(__('services.unique_service_password_failed'));
     }
 
     /**
@@ -1587,7 +1587,7 @@ class AccountService
             }
         }
 
-        throw new \RuntimeException('تولید نام کاربری یکتا ممکن نشد. دوباره تلاش کنید.');
+        throw new \RuntimeException(__('services.unique_username_failed'));
     }
 
     /**
@@ -1803,11 +1803,10 @@ class AccountService
         $usedBytes = (int) $account->data_used_bytes;
 
         if ($usedBytes > $limitBytes) {
-            throw new \InvalidArgumentException(sprintf(
-                'سقف %s GB کمتر از مصرف فعلی (%s) است.',
-                rtrim(rtrim(number_format($targetGb, 2, '.', ''), '0'), '.'),
-                format_data_size($usedBytes),
-            ));
+            throw new \InvalidArgumentException(__('services.account_limit_below_usage', [
+                'limit' => rtrim(rtrim(number_format($targetGb, 2, '.', ''), '0'), '.'),
+                'used' => format_data_size($usedBytes),
+            ]));
         }
 
         $account->purchased_data_gb = $targetGb;
@@ -1905,7 +1904,7 @@ class AccountService
             ]);
 
             throw new RemoteProvisionException(
-                'ریست حجم روی Pasarguard انجام نشد: '.$exception->getMessage(),
+                __('services.pasarguard_traffic_reset_failed', ['error' => $exception->getMessage()]),
                 previous: $exception,
             );
         }
@@ -1927,7 +1926,7 @@ class AccountService
             ]);
 
             throw new RemoteProvisionException(
-                'ریست حجم روی Remnawave انجام نشد: '.$exception->getMessage(),
+                __('services.remnawave_traffic_reset_failed', ['error' => $exception->getMessage()]),
                 previous: $exception,
             );
         }
@@ -1959,7 +1958,7 @@ class AccountService
 
         if ($account->status === AccountStatus::Active && ! $account->isExpired() && $account->isQuotaExhausted()) {
             if ($resetTraffic) {
-                throw new RemoteProvisionException('بعد از تمدید، حجم پنل هنوز پر است — ریست ترافیک کامل نشده.');
+                throw new RemoteProvisionException(__('services.account_renew_traffic_not_reset'));
             }
 
             $this->pushAccountToServer($account->fresh(), onlyMissing: false);
@@ -1967,7 +1966,7 @@ class AccountService
             $account->refresh();
 
             if ($account->isQuotaExhausted()) {
-                throw new RemoteProvisionException('افزایش حجم روی پنل اعمال نشد — سقف حجم یا وضعیت کاربر هم‌خوان نیست.');
+                throw new RemoteProvisionException(__('services.account_volume_increase_not_applied'));
             }
 
             if ($account->status !== AccountStatus::Active) {
@@ -2042,11 +2041,10 @@ class AccountService
             }
         }
 
-        throw new RemoteProvisionException(sprintf(
-            'سقف حجم روی پنل (%s) با shahpanel (%s) هم‌خوان نیست — به‌روزرسانی Pasarguard/Remnawave ناموفق بود.',
-            format_data_size($remoteAfterPush ?? $remoteLimit),
-            format_data_size($localLimit),
-        ));
+        throw new RemoteProvisionException(__('services.account_panel_limit_mismatch', [
+            'remote' => format_data_size($remoteAfterPush ?? $remoteLimit),
+            'local' => format_data_size($localLimit),
+        ]));
     }
 
     protected function readRemoteLimitBytes(Account $account): ?int
@@ -2280,7 +2278,7 @@ class AccountService
         $account->loadMissing(['server', 'package', 'packageDuration']);
 
         if (! $this->usesPanelTrafficAccounting($account)) {
-            throw new \InvalidArgumentException('فقط اکانت‌های Pasarguard/Remnawave پشتیبانی می‌شوند.');
+            throw new \InvalidArgumentException(__('services.only_pasarguard_remnawave_supported'));
         }
 
         $this->renewRemoteAccount($account, resetTraffic: false, forceEnable: true);
@@ -2596,7 +2594,7 @@ class AccountService
 
         if (! $this->mikrotikService->wireguardPeerExists($server, $keys['public_key'])) {
             throw new RemoteProvisionException(
-                "WireGuard peer «{$username}» روی اینترفیس «{$interface}» ساخته نشد — پاسخ روتر را در لاگ MikroTik بررسی کنید."
+                __('services.wireguard_peer_create_failed', ['username' => $username, 'interface' => $interface])
             );
         }
 
@@ -2686,7 +2684,7 @@ class AccountService
         }
 
         if ($free === []) {
-            throw new RemoteProvisionException('آدرس آزاد WireGuard در سابنت یافت نشد — سابنت را بزرگ‌تر کنید.');
+            throw new RemoteProvisionException(__('services.wireguard_no_free_address'));
         }
 
         $ip = $free[random_int(0, count($free) - 1)];
@@ -3172,7 +3170,7 @@ class AccountService
 
         return [
             'action' => 'synced',
-            'message' => 'کاربر Cisco AnyConnect روی ASA همگام شد.',
+            'message' => __('services.cisco_user_synced'),
         ];
     }
 
@@ -3193,7 +3191,7 @@ class AccountService
 
         return [
             'action' => 'synced',
-            'message' => 'کاربر OpenConnect (ocserv) همگام شد.',
+            'message' => __('services.ocserv_user_synced'),
         ];
     }
 
