@@ -35,6 +35,21 @@ class SetLocale
             }
         }
 
+        // هیچ انتخاب ذخیره‌شده‌ای نیست: زبان خودِ مرورگر ملاک است، نه پیش‌فرض پنل.
+        // بدون این، یک بازدیدکنندهٔ انگلیسی‌زبان صفحهٔ ورود را فارسی و راست‌چین می‌بیند
+        // و تازه باید دنبال پرچم بگردد.
+        if ($locale === null) {
+            foreach ($request->getLanguages() as $browserLocale) {
+                $candidate = strtolower(substr(str_replace('_', '-', $browserLocale), 0, 2));
+
+                if (in_array($candidate, $supported, true)) {
+                    $locale = $candidate;
+                    break;
+                }
+            }
+        }
+
+        // مرورگر هم چیز قابل‌فهمی نگفت.
         if ($locale === null) {
             $default = (string) config('app.locale', 'fa');
             $locale = in_array($default, $supported, true) ? $default : 'fa';
