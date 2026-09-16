@@ -185,7 +185,7 @@
         if (!Number.isFinite(amount)) {
             return '—';
         }
-        return amount.toLocaleString('fa-IR', {
+        return amount.toLocaleString(@json(locale_tag()), {
             minimumFractionDigits: decimals,
             maximumFractionDigits: decimals,
         }) + ' ' + symbol;

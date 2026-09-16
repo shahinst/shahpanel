@@ -610,7 +610,7 @@
         if (!Number.isFinite(amount)) {
             return '—';
         }
-        return amount.toLocaleString('fa-IR', {
+        return amount.toLocaleString(@json(locale_tag()), {
             minimumFractionDigits: decimals,
             maximumFractionDigits: decimals,
         }) + ' ' + symbol;
@@ -656,7 +656,7 @@
         const currencyMeta = currencyMetaFrom(data);
         let listText = formatMoney(data.wholesale_price || data.list_price, currencyMeta);
         if (data.is_elastic && data.data_gb && data.unit_price) {
-            listText = Number(data.data_gb).toLocaleString('fa-IR') + ' {{ __('packages.gb_unit') }} × '
+            listText = Number(data.data_gb).toLocaleString(@json(locale_tag())) + ' {{ __('packages.gb_unit') }} × '
                 + formatMoney(data.unit_price, currencyMeta) + ' = '
                 + listText;
         }

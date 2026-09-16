@@ -88,7 +88,7 @@
         if (isNaN(decimals)) decimals = 0;
         var symbol = (meta && meta.currency_symbol) || '';
         var value = decimals > 0 ? n : Math.round(n);
-        try { return new Intl.NumberFormat('fa-IR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(value) + ' ' + symbol; }
+        try { return new Intl.NumberFormat(@json(locale_tag()), { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(value) + ' ' + symbol; }
         catch (e) { return value.toFixed(decimals) + ' ' + symbol; }
     }
     function roundNice(a) { if (a <= 0) return 0; var s = a >= 10000 ? 1000 : (a >= 1000 ? 100 : 50); return Math.round(a / s) * s; }

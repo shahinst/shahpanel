@@ -108,7 +108,7 @@ document.querySelectorAll('.shop-purchase-form[data-elastic="1"]').forEach(funct
     const currencyDecimals = parseInt(form.dataset.currencyDecimals || '0', 10);
 
     function formatMoney(value) {
-        return Number(value || 0).toLocaleString('fa-IR', {
+        return Number(value || 0).toLocaleString(@json(locale_tag()), {
             minimumFractionDigits: currencyDecimals,
             maximumFractionDigits: currencyDecimals,
         }) + ' ' + currencySymbol;
@@ -133,7 +133,7 @@ document.querySelectorAll('.shop-purchase-form[data-elastic="1"]').forEach(funct
         const total = unit * gb;
         totalBox.textContent = totalLabel + ': '
             + formatMoney(total)
-            + ' (' + gb.toLocaleString('fa-IR') + ' ' + gbUnitLabel + ' × '
+            + ' (' + gb.toLocaleString(@json(locale_tag())) + ' ' + gbUnitLabel + ' × '
             + formatMoney(unit) + ' / ' + gbUnitLabel + ')';
     }
 

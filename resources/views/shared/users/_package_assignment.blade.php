@@ -239,7 +239,7 @@
         if (isNaN(decimals)) decimals = 0;
         var symbol = (meta && meta.currency_symbol) || '';
         var value = decimals > 0 ? n : Math.round(n);
-        try { return new Intl.NumberFormat('fa-IR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(value) + ' ' + symbol; }
+        try { return new Intl.NumberFormat(@json(locale_tag()), { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(value) + ' ' + symbol; }
         catch (e) { return value.toFixed(decimals) + ' ' + symbol; }
     }
     function upd(pkg) {
@@ -269,7 +269,7 @@
         if (isNaN(decimals)) decimals = 0;
         var symbol = (meta && meta.currency_symbol) || '';
         var value = decimals > 0 ? n : Math.round(n);
-        try { return new Intl.NumberFormat('fa-IR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(value) + ' ' + symbol; }
+        try { return new Intl.NumberFormat(@json(locale_tag()), { minimumFractionDigits: decimals, maximumFractionDigits: decimals }).format(value) + ' ' + symbol; }
         catch (e) { return value.toFixed(decimals) + ' ' + symbol; }
     }
     document.querySelectorAll('.rsp-input').forEach(function (el) {

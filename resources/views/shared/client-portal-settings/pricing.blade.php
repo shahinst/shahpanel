@@ -102,7 +102,7 @@
         if (isNaN(decimals)) decimals = 0;
         var symbol = (meta && meta.currency_symbol) || '';
         var value = decimals > 0 ? amount : Math.round(amount);
-        try { return value.toLocaleString('fa-IR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) + ' ' + symbol; }
+        try { return value.toLocaleString(@json(locale_tag()), { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) + ' ' + symbol; }
         catch (e) { return value.toFixed(decimals) + ' ' + symbol; }
     }
 
