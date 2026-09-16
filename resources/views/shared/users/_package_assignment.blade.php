@@ -66,7 +66,7 @@
                                     @endphp
                                     <div class="row g-2 align-items-end">
                                         <div class="col-6 col-md-3">
-                                            <label class="form-label small mb-1">تخفیف نماینده (٪)</label>
+                                            <label class="form-label small mb-1">{{ __('ui.agent_discount_percent') }}</label>
                                             <input type="number" step="0.01" min="0" max="100" dir="ltr"
                                                    class="form-control form-control-sm rpd-agent" data-pkg="{{ $package->id }}" data-retail="{{ $retailUnit }}"
                                                    data-currency-symbol="{{ $packageCurrency->symbol() }}"
@@ -74,26 +74,26 @@
                                                    name="package_discounts[{{ $package->id }}][agent]" value="{{ $fmt($aVal) }}">
                                         </div>
                                         <div class="col-6 col-md-3">
-                                            <label class="form-label small mb-1">تخفیف فروشنده (٪)</label>
+                                            <label class="form-label small mb-1">{{ __('ui.seller_discount_percent') }}</label>
                                             <input type="number" step="0.01" min="0" max="100" dir="ltr"
                                                    class="form-control form-control-sm rpd-seller" data-pkg="{{ $package->id }}" data-retail="{{ $retailUnit }}"
                                                    name="package_discounts[{{ $package->id }}][seller]" value="{{ $fmt($sVal) }}">
                                         </div>
                                         <div class="col-md-6">
                                             <div class="small text-muted">
-                                                خرده‌فروشی: <strong>{{ format_money($retailUnit, $packageCurrency) }}</strong> —
-                                                نماینده: <strong class="rpd-ap" data-pkg="{{ $package->id }}">—</strong>،
-                                                فروشنده: <strong class="rpd-sp" data-pkg="{{ $package->id }}">—</strong>
+                                                {{ __('ui.retail_label') }}: <strong>{{ format_money($retailUnit, $packageCurrency) }}</strong> —
+                                                {{ __('roles.agent') }}: <strong class="rpd-ap" data-pkg="{{ $package->id }}">—</strong>،
+                                                {{ __('roles.seller') }}: <strong class="rpd-sp" data-pkg="{{ $package->id }}">—</strong>
                                             </div>
                                         </div>
                                     </div>
-                                    <p class="form-text small text-muted mb-0">سود نماینده = اختلاف دو درصد. تخفیف فروشنده باید ≤ تخفیف نماینده باشد. خالی = پیش‌فرض نماینده.</p>
+                                    <p class="form-text small text-muted mb-0">{{ __('ui.package_discount_hint') }}</p>
                                 @else
                                     @php $spRow = $sellerPriceRows[$package->id] ?? null; @endphp
                                     @if ($sellerPriceRange !== null && $spRow)
                                         <div class="row g-2 align-items-end">
                                             <div class="col-12 col-md-4">
-                                                <label class="form-label small mb-1">قیمت این فروشنده ({{ $packageCurrency->label() }})</label>
+                                                <label class="form-label small mb-1">{{ __('ui.this_seller_price_label', [':currency' => $packageCurrency->label()]) }}</label>
                                                 <input type="number" step="1" min="{{ (int) round($spRow['floor']) }}" max="{{ (int) round($spRow['ceil']) }}" dir="ltr"
                                                        class="form-control form-control-sm rsp-input" data-pkg="{{ $package->id }}"
                                                        data-currency-symbol="{{ $packageCurrency->symbol() }}"
@@ -104,15 +104,15 @@
                                             </div>
                                             <div class="col-12 col-md-8">
                                                 <div class="small text-muted">
-                                                    قیمت شما: <strong>{{ format_money($spRow['floor'], $packageCurrency) }}</strong> —
-                                                    سقف مجاز (+{{ persian_digits(rtrim(rtrim(number_format($sellerPriceRange, 2), '0'), '.')) }}٪): <strong>{{ format_money($spRow['ceil'], $packageCurrency) }}</strong> —
-                                                    سود شما: <strong class="text-success rsp-profit" data-pkg="{{ $package->id }}">{{ format_money($spRow['current'] - $spRow['floor'], $packageCurrency) }}</strong>
+                                                    {{ __('ui.col_your_price') }}: <strong>{{ format_money($spRow['floor'], $packageCurrency) }}</strong> —
+                                                    {{ __('ui.allowed_ceiling') }} (+{{ persian_digits(rtrim(rtrim(number_format($sellerPriceRange, 2), '0'), '.')) }}٪): <strong>{{ format_money($spRow['ceil'], $packageCurrency) }}</strong> —
+                                                    {{ __('ui.col_your_profit') }}: <strong class="text-success rsp-profit" data-pkg="{{ $package->id }}">{{ format_money($spRow['current'] - $spRow['floor'], $packageCurrency) }}</strong>
                                                 </div>
                                             </div>
                                         </div>
-                                        <p class="form-text small text-muted mb-0">قیمتی بین قیمت خودتان و سقف مجاز وارد کنید. خالی = پیش‌فرض نماینده.</p>
+                                        <p class="form-text small text-muted mb-0">{{ __('ui.seller_price_range_hint') }}</p>
                                     @else
-                                        <p class="text-muted small mb-0">قیمت این فروشنده از تخفیف نماینده‌اش محاسبه می‌شود.</p>
+                                        <p class="text-muted small mb-0">{{ __('ui.seller_price_from_agent_discount') }}</p>
                                     @endif
                                 @endif
                             @elseif ($package->durations->isEmpty())

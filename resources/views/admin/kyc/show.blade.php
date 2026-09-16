@@ -20,14 +20,14 @@
                     <dt class="col-sm-4">{{ __('kyc.national_code') }}</dt><dd class="col-sm-8" dir="ltr">{{ $item->national_code }}</dd>
                     <dt class="col-sm-4">{{ __('kyc.birth_date') }}</dt><dd class="col-sm-8" dir="ltr">{{ $item->birth_date }}</dd>
                     <dt class="col-sm-4">{{ __('kyc.mobile') }}</dt><dd class="col-sm-8" dir="ltr">{{ $item->mobile ?? $item->maskedMobile() }}</dd>
-                    <dt class="col-sm-4">وضعیت</dt><dd class="col-sm-8">{{ $item->status->label() }}</dd>
-                    <dt class="col-sm-4">تلاش</dt><dd class="col-sm-8">{{ $item->verify_attempts }}/{{ $item->max_verify_attempts }}</dd>
-                    <dt class="col-sm-4">ثبت‌کننده</dt><dd class="col-sm-8">{{ $item->initiatedBy?->full_name }}</dd>
-                    <dt class="col-sm-4">فروشنده</dt><dd class="col-sm-8">{{ $item->ownerSeller?->full_name ?? '—' }}</dd>
-                    <dt class="col-sm-4">پکیج</dt><dd class="col-sm-8">{{ $item->package?->name ?? '—' }}</dd>
-                    <dt class="col-sm-4">اکانت</dt><dd class="col-sm-8">{{ $item->account_id ? '#'.$item->account_id : '—' }}</dd>
+                    <dt class="col-sm-4">{{ __('app.status') }}</dt><dd class="col-sm-8">{{ $item->status->label() }}</dd>
+                    <dt class="col-sm-4">{{ __('ui.col_attempts') }}</dt><dd class="col-sm-8">{{ $item->verify_attempts }}/{{ $item->max_verify_attempts }}</dd>
+                    <dt class="col-sm-4">{{ __('ui.col_initiated_by') }}</dt><dd class="col-sm-8">{{ $item->initiatedBy?->full_name }}</dd>
+                    <dt class="col-sm-4">{{ __('roles.seller') }}</dt><dd class="col-sm-8">{{ $item->ownerSeller?->full_name ?? '—' }}</dd>
+                    <dt class="col-sm-4">{{ __('accounts.package') }}</dt><dd class="col-sm-8">{{ $item->package?->name ?? '—' }}</dd>
+                    <dt class="col-sm-4">{{ __('ui.col_account') }}</dt><dd class="col-sm-8">{{ $item->account_id ? '#'.$item->account_id : '—' }}</dd>
                     @if ($item->last_error)
-                        <dt class="col-sm-4">آخرین خطا</dt><dd class="col-sm-8 text-danger">{{ $item->last_error }}</dd>
+                        <dt class="col-sm-4">{{ __('ui.last_error') }}</dt><dd class="col-sm-8 text-danger">{{ $item->last_error }}</dd>
                     @endif
                 </dl>
             </div>
@@ -53,7 +53,7 @@
             <div class="panel-modern-card">
                 <div class="card-body">
                     <form method="POST" action="{{ route('admin.kyc.reset', $item) }}"
-                          onsubmit="return confirm('ریست احراز انجام شود؟')">
+                          onsubmit='return confirm(@json(__("ui.kyc_reset_confirm")))'>
                         @csrf
                         <button type="submit" class="btn btn-warning">
                             <i class="bx bx-reset"></i> {{ __('kyc.admin_resets') }}

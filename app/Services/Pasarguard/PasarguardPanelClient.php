@@ -108,7 +108,7 @@ final class PasarguardPanelClient
         } catch (Throwable $exception) {
             $result = [
                 'ok' => false,
-                'message' => 'اتصال به پنل PasarGuard ناموفق بود.',
+                'message' => __('services.pasarguard_connect_failed'),
                 'error' => $exception->getMessage(),
                 'panel_url' => $this->url()->displayAddress(),
                 'api_url' => $this->url()->apiBaseUrl(),
@@ -137,7 +137,7 @@ final class PasarguardPanelClient
 
         if ($this->server->username_enc === null || $this->server->password_enc === null) {
             throw new RemoteConnectionException(
-                'نام کاربری و رمز پنل PasarGuard برای سرور #'.$this->server->id.' تنظیم نشده است.'
+                __('services.pasarguard_credentials_missing', ['id' => $this->server->id])
             );
         }
 
@@ -445,7 +445,7 @@ final class PasarguardPanelClient
                 'POST' => $client->asJson()->post($url, $payload),
                 'PUT' => $client->asJson()->put($url, $payload),
                 'DELETE' => $client->delete($url),
-                default => throw new RemoteConnectionException("متد HTTP پشتیبانی نمی‌شود [{$method}]"),
+                default => throw new RemoteConnectionException(__('services.http_method_unsupported', ['method' => $method])),
             };
         } catch (ConnectionException $exception) {
             throw new RemoteConnectionException($this->friendlyConnectionError($exception->getMessage()), 0, $exception);
@@ -486,13 +486,13 @@ final class PasarguardPanelClient
 
         if (! $response->successful()) {
             throw new RemoteConnectionException(
-                'ورود PasarGuard ناموفق: HTTP '.$response->status().' — '.$this->errorDetail($response)
+                __('services.pasarguard_login_failed', ['status' => $response->status(), 'detail' => $this->errorDetail($response)])
             );
         }
 
         $token = $response->json('access_token');
         if (! is_string($token) || $token === '') {
-            throw new RemoteConnectionException('پاسخ ورود PasarGuard فاقد access_token است.');
+            throw new RemoteConnectionException(__('services.pasarguard_login_no_token'));
         }
 
         $this->accessToken = $token;
@@ -592,7 +592,7 @@ final class PasarguardPanelClient
             }
         }
 
-        throw new RemoteConnectionException($lastError.' — آدرس‌های امتحان‌شده: '.implode(' | ', $tried));
+        throw new RemoteConnectionException($lastError.' — '.__('services.panel_urls_tried', ['list' => implode(' | ', $tried)]));
     }
 
     /**

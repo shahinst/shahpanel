@@ -38,7 +38,7 @@ class OcservService
 
             return [
                 'ok' => false,
-                'message' => 'اتصال به OpenConnect (ocserv) ناموفق بود.',
+                'message' => __('services.openconnect_connect_failed'),
                 'error' => $exception->getMessage(),
             ];
         }
@@ -70,7 +70,7 @@ class OcservService
             ]);
 
             throw new RemoteProvisionException(
-                'ساخت کاربر OpenConnect (ocserv) ناموفق بود: '.$exception->getMessage(),
+                __('services.ocserv_create_user_failed', ['error' => $exception->getMessage()]),
                 previous: $exception
             );
         }
@@ -85,7 +85,7 @@ class OcservService
         $package = $account->package;
 
         if ($server === null) {
-            throw new InvalidArgumentException('اکانت به سرور ocserv متصل نیست.');
+            throw new InvalidArgumentException(__('services.account_not_on_ocserv_server'));
         }
 
         $this->assertOcservServer($server);
@@ -94,7 +94,7 @@ class OcservService
         $password = (string) ($account->remote_password_enc ?? '');
 
         if ($username === '' || $password === '') {
-            throw new RemoteProvisionException('نام کاربری یا رمز ocserv برای همگام‌سازی موجود نیست.');
+            throw new RemoteProvisionException(__('services.ocserv_credentials_missing_for_sync'));
         }
 
         $this->assertUsername($username);
@@ -110,7 +110,7 @@ class OcservService
                 $client->setPassword($username, $password);
                 $client->setLimits($username, $maxSessions);
             } catch (RemoteProvisionException $exception) {
-                if (! str_contains($exception->getMessage(), 'یافت نشد')) {
+                if ($exception->getCode() !== 404) {
                     throw $exception;
                 }
                 $client->createUser(
@@ -134,7 +134,7 @@ class OcservService
             ]);
 
             throw new RemoteProvisionException(
-                'همگام‌سازی کاربر ocserv ناموفق: '.$exception->getMessage(),
+                __('services.ocserv_sync_user_failed', ['error' => $exception->getMessage()]),
                 previous: $exception
             );
         }
@@ -170,7 +170,7 @@ class OcservService
             ]);
 
             throw new RemoteProvisionException(
-                ($enabled ? 'فعال‌سازی' : 'غیرفعال‌سازی').' کاربر ocserv ناموفق: '.$exception->getMessage(),
+                __($enabled ? 'services.ocserv_enable_user_failed' : 'services.ocserv_disable_user_failed', ['error' => $exception->getMessage()]),
                 previous: $exception
             );
         }
@@ -194,7 +194,7 @@ class OcservService
             ]);
 
             throw new RemoteProvisionException(
-                'حذف کاربر ocserv ناموفق: '.$exception->getMessage(),
+                __('services.ocserv_delete_user_failed', ['error' => $exception->getMessage()]),
                 previous: $exception
             );
         }
@@ -284,7 +284,7 @@ class OcservService
     {
         if (preg_match('/^[A-Za-z0-9._@-]{1,64}$/', $username) !== 1) {
             throw new InvalidArgumentException(
-                'نام کاربری ocserv نامعتبر است (فقط حروف، عدد، . _ @ - و حداکثر ۶۴ کاراکتر).'
+                __('services.ocserv_invalid_username')
             );
         }
     }
@@ -293,14 +293,14 @@ class OcservService
     {
         $len = strlen($password);
         if ($len < 1 || $len > 128 || str_contains($password, "\n") || str_contains($password, "\r")) {
-            throw new InvalidArgumentException('رمز عبور ocserv نامعتبر است.');
+            throw new InvalidArgumentException(__('services.ocserv_invalid_password'));
         }
     }
 
     protected function assertOcservServer(Server $server): void
     {
         if (! $server->isOcserv()) {
-            throw new InvalidArgumentException('این عملیات فقط برای سرور OpenConnect (ocserv) است.');
+            throw new InvalidArgumentException(__('services.ocserv_operation_only'));
         }
     }
 }

@@ -163,7 +163,7 @@ class ModuleManager
     public function installFromZip(string $zipPath): Module
     {
         if (! class_exists(ZipArchive::class)) {
-            throw new RuntimeException('افزونه‌ی Zip در PHP فعال نیست.');
+            throw new RuntimeException(__('services.module_zip_ext_missing'));
         }
 
         $tmp = storage_path('app/modules_tmp/'.Str::random(20));
@@ -172,7 +172,7 @@ class ModuleManager
         try {
             $zip = new ZipArchive();
             if ($zip->open($zipPath) !== true) {
-                throw new RuntimeException('فایل زیپ قابل باز کردن نیست.');
+                throw new RuntimeException(__('services.module_zip_unreadable'));
             }
 
             // Guard against path traversal / absolute paths inside the archive.
@@ -183,7 +183,7 @@ class ModuleManager
                 }
                 if (str_contains($entry, '..') || str_starts_with($entry, '/') || preg_match('#^[A-Za-z]:#', $entry)) {
                     $zip->close();
-                    throw new RuntimeException('مسیر نامعتبر در آرشیو: '.$entry);
+                    throw new RuntimeException(__('services.module_invalid_archive_path', ['entry' => $entry]));
                 }
             }
 
@@ -192,7 +192,7 @@ class ModuleManager
 
             $root = $this->locateManifestDir($tmp);
             if ($root === null) {
-                throw new RuntimeException('فایل module.json در آرشیو پیدا نشد.');
+                throw new RuntimeException(__('services.module_json_missing'));
             }
 
             $manifest = $this->readManifest($root);
@@ -293,16 +293,16 @@ class ModuleManager
         $manifest = json_decode((string) $raw, true);
 
         if (! is_array($manifest)) {
-            throw new RuntimeException('محتوای module.json نامعتبر است.');
+            throw new RuntimeException(__('services.module_json_invalid'));
         }
 
         $slug = $manifest['slug'] ?? null;
         if (! is_string($slug) || ! preg_match('/^[a-z0-9\-]+$/', $slug)) {
-            throw new RuntimeException('شناسه‌ی (slug) ماژول نامعتبر است؛ فقط حروف کوچک انگلیسی، عدد و خط تیره مجاز است.');
+            throw new RuntimeException(__('services.module_slug_invalid'));
         }
 
         if (empty($manifest['name']) || ! is_string($manifest['name'])) {
-            throw new RuntimeException('نام ماژول در module.json الزامی است.');
+            throw new RuntimeException(__('services.module_name_required'));
         }
 
         return $manifest;

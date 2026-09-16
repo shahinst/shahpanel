@@ -1,20 +1,20 @@
 @extends('layouts.panel')
 
-@section('page_title', 'راه‌اندازی تانلینگ')
+@section('page_title', __('ui.tunneling_setup_page_title'))
 
 @section('panel_content')
 <div class="panel-modern-card mb-3 border-warning">
-    <div class="card-head"><h3 class="text-warning mb-0">راه‌اندازی سیستم تانلینگ</h3></div>
+    <div class="card-head"><h3 class="text-warning mb-0">{{ __('ui.tunneling_setup_heading') }}</h3></div>
     <div class="card-body">
-        <p>کد تانلینگ آپلود شده اما دیتابیس یا فایل‌های لازم کامل نیست.</p>
+        <p>{{ __('ui.tunneling_setup_body') }}</p>
 
         @if ($error)
-            <div class="alert alert-danger mb-3"><strong>خطا:</strong> <code dir="ltr">{{ $error }}</code></div>
+            <div class="alert alert-danger mb-3"><strong>{{ __('ui.label_error') }}:</strong> <code dir="ltr">{{ $error }}</code></div>
         @endif
 
         @if ($missingTables !== [])
             <div class="alert alert-warning mb-3">
-                <strong>موارد ناقص:</strong>
+                <strong>{{ __('ui.missing_items') }}:</strong>
                 <code dir="ltr" class="d-block mt-2">{{ implode(', ', $missingTables) }}</code>
             </div>
         @endif

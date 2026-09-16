@@ -1,6 +1,6 @@
 @extends('layouts.panel')
 
-@section('page_title', 'اکانت‌های در حال انقضا')
+@section('page_title', __('ui.expiring_accounts_title'))
 
 @section('panel_content')
 @php
@@ -8,8 +8,8 @@
 @endphp
 
 @include('partials.panel-page-hero', [
-    'title' => 'اکانت‌های در حال انقضا',
-    'subtitle' => 'اکانت‌هایی که تا '.persian_digits($thresholdDays).' روز آینده منقضی می‌شوند یا کمتر از '.$thresholdLabel.' حجم دارند',
+    'title' => __('ui.expiring_accounts_title'),
+    'subtitle' => __('ui.expiring_accounts_subtitle', [':days' => persian_digits($thresholdDays), ':size' => $thresholdLabel]),
     'icon' => 'bx-time-five',
 ])
 
@@ -18,49 +18,49 @@
         <form method="GET" class="panel-filter-bar mb-3">
             <div class="row g-2 align-items-end">
                 <div class="col-md-4">
-                    <label class="form-label">نام یا آی‌پی</label>
+                    <label class="form-label">{{ __('ui.name_or_ip') }}</label>
                     <input type="search" name="search" value="{{ request('search') }}" class="form-control form-control-sm"
-                           placeholder="نام نمایشی، نام کاربری یا آی‌پی...">
+                           placeholder="{{ __('ui.search_account_placeholder') }}">
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">نوع اکانت</label>
+                    <label class="form-label">{{ __('ui.account_type') }}</label>
                     <select name="service_type" class="form-select form-select-sm">
-                        <option value="">همه‌ی نوع‌ها</option>
+                        <option value="">{{ __('ui.all_types') }}</option>
                         @foreach ($serviceTypeOptions as $type)
                             <option value="{{ $type->value }}" @selected(request('service_type') === $type->value)>{{ $type->label() }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">دلیل</label>
+                    <label class="form-label">{{ __('ui.reason') }}</label>
                     <select name="reason" class="form-select form-select-sm">
-                        <option value="">انقضا یا حجم</option>
-                        <option value="expiry" @selected(request('reason') === 'expiry')>فقط نزدیک انقضا</option>
-                        <option value="volume" @selected(request('reason') === 'volume')>فقط حجم کم</option>
+                        <option value="">{{ __('ui.expiry_or_data') }}</option>
+                        <option value="expiry" @selected(request('reason') === 'expiry')>{{ __('ui.only_near_expiry') }}</option>
+                        <option value="volume" @selected(request('reason') === 'volume')>{{ __('ui.only_low_data') }}</option>
                     </select>
                 </div>
                 <div class="col-md-2 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary btn-sm flex-grow-1"><i class="bx bx-filter-alt"></i> فیلتر</button>
-                    <a href="{{ route($prefix.'.accounts.expiring') }}" class="btn btn-outline-secondary btn-sm">حذف</a>
+                    <button type="submit" class="btn btn-primary btn-sm flex-grow-1"><i class="bx bx-filter-alt"></i> {{ __('ui.filter') }}</button>
+                    <a href="{{ route($prefix.'.accounts.expiring') }}" class="btn btn-outline-secondary btn-sm">{{ __('ui.clear_filters') }}</a>
                 </div>
             </div>
         </form>
 
         <p class="text-muted small">
-            مجموع: <strong>{{ persian_digits($accounts->total()) }}</strong> اکانت
+            {{ __('ui.total_label') }}: <strong>{{ persian_digits($accounts->total()) }}</strong> {{ __('ui.accounts_unit') }}
         </p>
 
         <div class="table-responsive">
             <table class="table table-hover align-middle">
                 <thead>
                     <tr>
-                        @if ($showOwnerColumn)<th>مالک</th>@endif
-                        <th>اکانت</th>
-                        <th>پکیج</th>
-                        <th>انقضا</th>
-                        <th>حجم باقی‌مانده</th>
-                        <th>وضعیت</th>
-                        <th>سرور</th>
+                        @if ($showOwnerColumn)<th>{{ __('accounts.filter_owner') }}</th>@endif
+                        <th>{{ __('ui.col_account') }}</th>
+                        <th>{{ __('accounts.package') }}</th>
+                        <th>{{ __('accounts.expiry') }}</th>
+                        <th>{{ __('ui.col_remaining_data') }}</th>
+                        <th>{{ __('app.status') }}</th>
+                        <th>{{ __('accounts.server') }}</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -111,22 +111,22 @@
                                 @if ($account->expiry_at && $expiringSoon)
                                     <span class="badge bg-danger">
                                         @if ($daysLeft >= 1)
-                                            {{ persian_digits($daysLeft) }} روز مانده
+                                            {{ __('ui.days_left', [':count' => persian_digits($daysLeft)]) }}
                                         @elseif ($hoursLeft >= 1)
-                                            {{ persian_digits($hoursLeft) }} ساعت مانده
+                                            {{ __('ui.hours_left', [':count' => persian_digits($hoursLeft)]) }}
                                         @else
-                                            {{ persian_digits(max(1, $minutesLeft)) }} دقیقه مانده
+                                            {{ __('ui.minutes_left', [':count' => persian_digits(max(1, $minutesLeft))]) }}
                                         @endif
                                     </span>
                                 @endif
                             </td>
                             <td>
                                 @if ($remaining === null)
-                                    <span class="text-muted">نامحدود</span>
+                                    <span class="text-muted">{{ __('ui.unlimited') }}</span>
                                 @else
                                     <span @class(['text-danger fw-semibold' => $lowVolume])>{{ format_data_size($remaining) }}</span>
                                     @if ($lowVolume)
-                                        <br><span class="badge bg-warning text-dark">حجم کم</span>
+                                        <br><span class="badge bg-warning text-dark">{{ __('ui.low_data') }}</span>
                                     @endif
                                 @endif
                             </td>
@@ -138,7 +138,7 @@
                         <tr>
                             <td colspan="{{ $showOwnerColumn ? 8 : 7 }}">
                                 <div class="alert alert-success mb-0">
-                                    هیچ اکانتی نزدیک انقضا یا کم‌حجم نیست. 🎉
+                                    {{ __('ui.no_expiring_accounts') }} 🎉
                                 </div>
                             </td>
                         </tr>

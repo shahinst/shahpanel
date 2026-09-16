@@ -60,7 +60,7 @@ class AccountRenewalRepairService
                 'mismatch' => false,
                 'local_remaining_bytes' => null,
                 'remote_remaining_bytes' => null,
-                'detail' => 'بدون سقف حجم یا بدون سرور — بررسی پنل لازم نیست.',
+                'detail' => __('services.quota_no_cap_or_server'),
             ];
         }
 
@@ -72,7 +72,7 @@ class AccountRenewalRepairService
                 'mismatch' => false,
                 'local_remaining_bytes' => null,
                 'remote_remaining_bytes' => null,
-                'detail' => 'خطا در خواندن پنل: '.$exception->getMessage(),
+                'detail' => __('services.panel_read_error', ['error' => $exception->getMessage()]),
             ];
         }
 
@@ -82,7 +82,7 @@ class AccountRenewalRepairService
                 'mismatch' => false,
                 'local_remaining_bytes' => null,
                 'remote_remaining_bytes' => null,
-                'detail' => 'نوع سرویس از پنل V2ray پشتیبانی نمی‌شود.',
+                'detail' => __('services.quota_service_type_unsupported'),
             ];
         }
 
@@ -99,7 +99,7 @@ class AccountRenewalRepairService
                 'mismatch' => false,
                 'local_remaining_bytes' => $localRemaining,
                 'remote_remaining_bytes' => null,
-                'detail' => 'پنل نامحدود — ناسازگاری حجم محسوس نیست.',
+                'detail' => __('services.quota_panel_unlimited'),
             ];
         }
 
@@ -116,9 +116,9 @@ class AccountRenewalRepairService
             'remote_remaining_bytes' => $remoteRemaining,
             'detail' => $mismatch
                 ? ($limitMismatch
-                    ? 'سقف پنل ('.format_data_size($remoteLimit).') با shahpanel ('.format_data_size($localLimit).') فرق دارد.'
-                    : 'پنل «اتمام حجم» یا نزدیک صفر است؛ در shahpanel هنوز '.format_data_size($localRemaining).' باقی مانده.')
-                : 'حجم پنل و shahpanel هم‌خوان به نظر می‌رسد.',
+                    ? __('services.quota_limit_differs', ['remote' => format_data_size($remoteLimit), 'local' => format_data_size($localLimit)])
+                    : __('services.quota_panel_exhausted_local_remaining', ['remaining' => format_data_size($localRemaining)]))
+                : __('services.quota_looks_consistent'),
         ];
     }
 
@@ -130,17 +130,17 @@ class AccountRenewalRepairService
         $account->loadMissing(['server', 'package', 'packageDuration']);
 
         if ($account->server === null) {
-            return ['ok' => false, 'message' => 'اکانت بدون سرور است.'];
+            return ['ok' => false, 'message' => __('services.account_no_server')];
         }
 
         $inspection = $this->inspectPanelQuota($account);
 
         if (! ($inspection['ok'] ?? false)) {
-            return ['ok' => false, 'message' => (string) ($inspection['detail'] ?? 'خطای بررسی')];
+            return ['ok' => false, 'message' => (string) ($inspection['detail'] ?? __('services.inspection_error'))];
         }
 
         if (! ($inspection['mismatch'] ?? false)) {
-            return ['ok' => true, 'message' => 'نیازی به اصلاح پنل نیست — '.$inspection['detail']];
+            return ['ok' => true, 'message' => __('services.account_panel_repair_not_needed', ['detail' => $inspection['detail']])];
         }
 
         $updates = [];
@@ -159,13 +159,13 @@ class AccountRenewalRepairService
         } catch (Throwable $exception) {
             return [
                 'ok' => false,
-                'message' => 'اصلاح پنل ناموفق: '.$exception->getMessage(),
+                'message' => __('services.account_panel_repair_failed', ['error' => $exception->getMessage()]),
             ];
         }
 
         return [
             'ok' => true,
-            'message' => 'حجم پنل با shahpanel هم‌تراز شد (سقف/ترافیک از دیتابیس).',
+            'message' => __('services.account_panel_data_aligned'),
         ];
     }
 
@@ -190,7 +190,7 @@ class AccountRenewalRepairService
             $remote = $this->remnawaveService->getUser($server, $account->remote_username);
 
             if ($remote === null) {
-                throw new \RuntimeException('کاربر Remnawave روی پنل یافت نشد.');
+                throw new \RuntimeException(__('services.remnawave_user_not_found'));
             }
 
             return $this->remnawaveService->normalizeTrafficSnapshot($remote);

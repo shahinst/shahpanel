@@ -224,7 +224,7 @@ class ServerResourceMonitorService
                 $server->isPasarguard() => $this->normalizePasarguard($this->pasarguardService->getSystemForMonitor($server)),
                 $server->isRemnawave() => ['health' => 'online'],
                 $server->isSanaei() => $this->normalizeSanaei($this->sanaeiService->getServerStatusForMonitor($server)),
-                default => throw new \InvalidArgumentException('نوع سرور برای مانیتور پشتیبانی نمی‌شود.'),
+                default => throw new \InvalidArgumentException(__('services.server_type_monitor_unsupported')),
             };
 
             $server->update([

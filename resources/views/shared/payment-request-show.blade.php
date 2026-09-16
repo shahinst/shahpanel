@@ -11,9 +11,9 @@
                     @endif
                     <dt>{{ __('menu.tracking_number') }}</dt>
                     <dd>{{ $paymentRequest->tracking_number }}</dd>
-                    <dt>وضعیت</dt>
+                    <dt>{{ __('app.status') }}</dt>
                     <dd>{{ $paymentRequest->status->value }}</dd>
-                    <dt>تاریخ</dt>
+                    <dt>{{ __('ui.col_date') }}</dt>
                     <dd>{{ jalali_date($paymentRequest->created_at) }}</dd>
                 </dl>
 

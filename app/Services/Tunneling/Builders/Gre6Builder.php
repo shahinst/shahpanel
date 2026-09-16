@@ -21,7 +21,7 @@ class Gre6Builder extends AbstractTunnelBuilder
 
         if ($iranV6 === '' || $foreignV6 === '') {
             throw new RuntimeException(
-                "تانل GRE6 برای agent #{$agent->id} نیاز به آدرس IPv6 دو سمت دارد — در تنظیمات خروجی گروه وارد کنید."
+                __('services.tunnel_gre6_needs_ipv6', ['id' => $agent->id])
             );
         }
 

@@ -184,7 +184,7 @@
     function formatMoney(value, meta) {
         const m = meta || currencyMeta || {};
         const decimals = Number.isFinite(Number(m.decimals)) ? Number(m.decimals) : 0;
-        const symbol = m.symbol || m.label || 'تومان';
+        const symbol = m.symbol || m.label || @json(__('packages.toman'));
         const amount = Number(value);
         if (!Number.isFinite(amount)) {
             return '—';

@@ -172,10 +172,10 @@
                             <table class="table table-sm table-bordered align-middle mb-0 account-ppp-details-table">
                                 <thead>
                                     <tr>
-                                        <th>پروتکل</th>
-                                        <th style="width: 90px;">پورت</th>
-                                        <th style="width: 70px;">نوع</th>
-                                        <th>مورد نیاز برای اتصال</th>
+                                        <th>{{ __('ui.col_protocol') }}</th>
+                                        <th style="width: 90px;">{{ __('ui.col_port') }}</th>
+                                        <th style="width: 70px;">{{ __('ui.col_type') }}</th>
+                                        <th>{{ __('ui.col_required_for_connection') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody>

@@ -24,17 +24,23 @@ class EnsureInstalled
 
     protected function notInstalledPage(): string
     {
-        return <<<'HTML'
+        $dir = locale_dir();
+        $title = __('backend.not_installed_title');
+        $heading = __('backend.not_installed_heading');
+        $sshOnly = __('backend.not_installed_ssh_only');
+        $manualHint = __('backend.not_installed_manual_hint', ['command' => '<code>migrate</code>']);
+
+        return <<<HTML
             <!doctype html>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <meta name="robots" content="noindex, nofollow">
-            <title>هنوز نصب نشده</title>
-            <div style="font-family:system-ui,sans-serif;direction:rtl;max-width:38rem;margin:4rem auto;padding:0 1rem;line-height:1.9;color:#1f2937">
-                <h1 style="font-size:1.25rem;margin:0 0 1rem">پنل هنوز نصب نشده است</h1>
-                <p style="margin:0 0 .75rem">نصب فقط از راه SSH انجام می‌شود:</p>
+            <title>{$title}</title>
+            <div style="font-family:system-ui,sans-serif;direction:{$dir};max-width:38rem;margin:4rem auto;padding:0 1rem;line-height:1.9;color:#1f2937">
+                <h1 style="font-size:1.25rem;margin:0 0 1rem">{$heading}</h1>
+                <p style="margin:0 0 .75rem">{$sshOnly}</p>
                 <pre style="background:#f3f4f6;padding:.75rem 1rem;border-radius:.5rem;direction:ltr;overflow-x:auto">sudo bash install.sh panel.example.com</pre>
-                <p style="margin:1rem 0 0">اگر کد را دستی نصب کرده‌اید، پس از <code>migrate</code> این دستور را اجرا کنید:</p>
+                <p style="margin:1rem 0 0">{$manualHint}</p>
                 <pre style="background:#f3f4f6;padding:.75rem 1rem;border-radius:.5rem;direction:ltr;overflow-x:auto">php artisan install:finalize</pre>
             </div>
             HTML;

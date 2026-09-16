@@ -94,7 +94,7 @@ final class ApiIrClient
         try {
             $response = $this->http()->post($this->url($path), $body);
         } catch (ConnectionException $exception) {
-            throw new ApiIrException('ارتباط با api.ir برقرار نشد: '.$exception->getMessage(), null, null);
+            throw new ApiIrException(__('services.apiir_connect_failed', ['error' => $exception->getMessage()]), null, null);
         }
 
         return $this->decode($response);
@@ -123,21 +123,21 @@ final class ApiIrClient
         $json = $response->json();
         if (! is_array($json)) {
             throw new ApiIrException(
-                'پاسخ نامعتبر از api.ir (HTTP '.$response->status().')',
+                __('services.apiir_invalid_response', ['status' => $response->status()]),
                 $response->status(),
                 $response->body()
             );
         }
 
         if ($response->failed() && ! array_key_exists('success', $json)) {
-            $message = (string) ($json['message'] ?? $json['title'] ?? 'خطای api.ir');
+            $message = (string) ($json['message'] ?? $json['title'] ?? __('services.apiir_error'));
             throw new ApiIrException($message, $response->status(), $json);
         }
 
         $success = (bool) ($json['success'] ?? $response->successful());
         if (! $success && $response->failed()) {
             throw new ApiIrException(
-                (string) ($json['message'] ?? 'درخواست api.ir ناموفق بود'),
+                (string) ($json['message'] ?? __('services.apiir_request_failed')),
                 $response->status(),
                 $json
             );

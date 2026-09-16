@@ -52,17 +52,17 @@
             <label class="form-label" for="{{ $kycIdPrefix }}-kyc-birth-year">{{ __('kyc.birth_date') }}</label>
             <input type="hidden" id="{{ $kycIdPrefix }}-kyc-birth-date" value="">
             <div class="kyc-jalali-date" data-kyc-jalali-date="{{ $kycIdPrefix }}">
-                <select id="{{ $kycIdPrefix }}-kyc-birth-year" class="form-select" aria-label="سال تولد">
-                    <option value="">سال</option>
+                <select id="{{ $kycIdPrefix }}-kyc-birth-year" class="form-select" aria-label="{{ __('ui.birth_year') }}">
+                    <option value="">{{ __('ui.year') }}</option>
                 </select>
-                <select id="{{ $kycIdPrefix }}-kyc-birth-month" class="form-select" aria-label="ماه تولد">
-                    <option value="">ماه</option>
-                    @foreach ([1=>'فروردین',2=>'اردیبهشت',3=>'خرداد',4=>'تیر',5=>'مرداد',6=>'شهریور',7=>'مهر',8=>'آبان',9=>'آذر',10=>'دی',11=>'بهمن',12=>'اسفند'] as $num => $name)
+                <select id="{{ $kycIdPrefix }}-kyc-birth-month" class="form-select" aria-label="{{ __('ui.birth_month') }}">
+                    <option value="">{{ __('ui.month') }}</option>
+                    @foreach ([1=>__('ui.jalali_month_1'),2=>__('ui.jalali_month_2'),3=>__('ui.jalali_month_3'),4=>__('ui.jalali_month_4'),5=>__('ui.jalali_month_5'),6=>__('ui.jalali_month_6'),7=>__('ui.jalali_month_7'),8=>__('ui.jalali_month_8'),9=>__('ui.jalali_month_9'),10=>__('ui.jalali_month_10'),11=>__('ui.jalali_month_11'),12=>__('ui.jalali_month_12')] as $num => $name)
                         <option value="{{ $num }}">{{ str_pad((string) $num, 2, '0', STR_PAD_LEFT) }} — {{ $name }}</option>
                     @endforeach
                 </select>
-                <select id="{{ $kycIdPrefix }}-kyc-birth-day" class="form-select" aria-label="روز تولد">
-                    <option value="">روز</option>
+                <select id="{{ $kycIdPrefix }}-kyc-birth-day" class="form-select" aria-label="{{ __('ui.birth_day') }}">
+                    <option value="">{{ __('ui.day') }}</option>
                 </select>
             </div>
             <p class="form-text text-muted mb-0">{{ __('kyc.birth_date_hint') }}</p>

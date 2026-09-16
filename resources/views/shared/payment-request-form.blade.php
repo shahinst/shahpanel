@@ -30,9 +30,9 @@
     <input name="amount" type="number" step="0.01" min="0.01" value="{{ old('amount') }}" required class="form-control">
     <p class="help-block mb-0">
         @if (($defaultCurrency ?? 'IRT') === 'IRT')
-            حداقل معمولاً ۱٬۰۰۰ تومان است.
+            {{ __('ui.min_amount_irt_hint') }}
         @else
-            مبلغ را با واحد ارز انتخاب‌شده وارد کنید.
+            {{ __('ui.amount_in_selected_currency_hint') }}
         @endif
     </p>
 </x-form.group>

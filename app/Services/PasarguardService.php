@@ -41,7 +41,7 @@ class PasarguardService
 
             return [
                 'ok' => false,
-                'message' => 'اتصال به پنل PasarGuard ناموفق بود.',
+                'message' => __('services.pasarguard_connect_failed'),
                 'error' => $exception->getMessage(),
             ];
         }

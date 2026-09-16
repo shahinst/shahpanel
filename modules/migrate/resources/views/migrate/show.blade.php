@@ -14,21 +14,21 @@
             <dt class="col-sm-3 text-muted">{{ __('migrate.to_server') }}</dt>
             <dd class="col-sm-9">{{ $migration->toServer?->name }}</dd>
             <dt class="col-sm-3 text-muted">{{ __('migrate.status') }}</dt>
-            <dd class="col-sm-9">{{ $migration->status }} @if($migration->dry_run) (پیش‌نمایش) @endif</dd>
+            <dd class="col-sm-9">{{ $migration->status }} @if($migration->dry_run) ({{ __('ui.migrate_dry_run') }}) @endif</dd>
             <dt class="col-sm-3 text-muted">{{ __('migrate.summary') }}</dt>
             <dd class="col-sm-9">{{ $migration->summary }}</dd>
-            <dt class="col-sm-3 text-muted">زمان</dt>
+            <dt class="col-sm-3 text-muted">{{ __('ui.col_time') }}</dt>
             <dd class="col-sm-9">
                 {{ $migration->started_at ? persian_digits($migration->started_at->format('Y-m-d H:i')) : '—' }}
                 —
                 {{ $migration->completed_at ? persian_digits($migration->completed_at->format('Y-m-d H:i')) : '—' }}
             </dd>
-            <dt class="col-sm-3 text-muted">آمار</dt>
+            <dt class="col-sm-3 text-muted">{{ __('ui.col_stats') }}</dt>
             <dd class="col-sm-9">
-                کل {{ persian_digits($migration->total_accounts) }} —
-                موفق {{ persian_digits($migration->migrated_count) }} —
-                خطا {{ persian_digits($migration->failed_count) }} —
-                رد {{ persian_digits($migration->skipped_count) }}
+                {{ __('ui.migrate_stat_total') }} {{ persian_digits($migration->total_accounts) }} —
+                {{ __('ui.migrate_stat_success') }} {{ persian_digits($migration->migrated_count) }} —
+                {{ __('ui.label_error') }} {{ persian_digits($migration->failed_count) }} —
+                {{ __('ui.migrate_stat_skipped') }} {{ persian_digits($migration->skipped_count) }}
             </dd>
         </dl>
     </div>

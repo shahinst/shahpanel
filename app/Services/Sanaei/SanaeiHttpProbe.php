@@ -22,12 +22,12 @@ final class SanaeiHttpProbe
         $parts = parse_url($origin);
 
         if ($parts === false || empty($parts['host'])) {
-            return ['ok' => false, 'error' => 'آدرس نامعتبر: '.$origin];
+            return ['ok' => false, 'error' => __('services.invalid_url', ['url' => $origin])];
         }
 
         $scheme = strtolower($parts['scheme'] ?? 'http');
         if ($scheme !== 'http') {
-            return ['ok' => false, 'error' => 'raw probe فقط برای HTTP'];
+            return ['ok' => false, 'error' => __('services.raw_probe_http_only')];
         }
 
         $host = $parts['host'];
@@ -46,7 +46,7 @@ final class SanaeiHttpProbe
         );
 
         if ($socket === false) {
-            return ['ok' => false, 'error' => $errstr !== '' ? $errstr : "اتصال TCP به {$host}:{$port} ناموفق"];
+            return ['ok' => false, 'error' => $errstr !== '' ? $errstr : __('services.tcp_connect_failed', ['host' => $host, 'port' => $port])];
         }
 
         stream_set_timeout($socket, $timeoutSeconds);
@@ -67,7 +67,7 @@ final class SanaeiHttpProbe
         fclose($socket);
 
         if ($response === '') {
-            return ['ok' => false, 'error' => 'پاسخ خالی از سرور'];
+            return ['ok' => false, 'error' => __('services.empty_response')];
         }
 
         $lines = explode("\r\n", $response);

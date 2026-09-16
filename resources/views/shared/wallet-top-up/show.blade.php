@@ -24,14 +24,14 @@
 
                     @if ($payment->amount_toman)
                         <dt class="col-sm-4">{{ __('payment_gateways.amount_toman') }}</dt>
-                        <dd class="col-sm-8">{{ persian_digits(number_format((float) $payment->amount_toman, 0)) }} تومان</dd>
+                        <dd class="col-sm-8">{{ persian_digits(number_format((float) $payment->amount_toman, 0)) }} {{ __('packages.toman') }}</dd>
                     @endif
 
                     <dt class="col-sm-4">{{ __('payment_gateways.toman_equivalent') }}</dt>
-                    <dd class="col-sm-8">{{ persian_digits(number_format((float) $payment->gross_toman, 0)) }} تومان</dd>
+                    <dd class="col-sm-8">{{ persian_digits(number_format((float) $payment->gross_toman, 0)) }} {{ __('packages.toman') }}</dd>
 
                     <dt class="col-sm-4">{{ __('payment_gateways.net_credit') }}</dt>
-                    <dd class="col-sm-8 fw-bold text-success">{{ persian_digits(number_format((float) $payment->net_toman, 0)) }} تومان</dd>
+                    <dd class="col-sm-8 fw-bold text-success">{{ persian_digits(number_format((float) $payment->net_toman, 0)) }} {{ __('packages.toman') }}</dd>
 
                     @if ($payment->tracking_number)
                         <dt class="col-sm-4">{{ __('payment_gateways.tracking_number') }}</dt>

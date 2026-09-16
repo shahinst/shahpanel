@@ -12,7 +12,7 @@
     <form method="POST" action="{{ route($prefix.'.accounts.transfer', $account) }}">
         @csrf
         <div class="form-group">
-            <label>سرور جدید</label>
+            <label>{{ __('ui.new_server') }}</label>
             <select name="server_id" class="form-select" required style="max-width:400px;">
                 @foreach ($servers as $server)
                     @if ((int) $server->id !== (int) $account->server_id)

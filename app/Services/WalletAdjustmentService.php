@@ -31,19 +31,19 @@ class WalletAdjustmentService
         MoneyCurrency|string|null $currency = null
     ): WalletAdjustment {
         if (! in_array($admin->role, [UserRole::Admin], true)) {
-            throw new InvalidArgumentException('فقط ادمین می‌تواند موجودی را تغییر دهد.');
+            throw new InvalidArgumentException(__('services.only_admin_changes_balance'));
         }
 
         if (! in_array($target->role, [UserRole::Agent, UserRole::Seller], true)) {
-            throw new InvalidArgumentException('فقط نماینده یا فروشنده قابل شارژ است.');
+            throw new InvalidArgumentException(__('services.only_agent_or_seller_topup'));
         }
 
         if (! in_array($direction, ['credit', 'debit'], true)) {
-            throw new InvalidArgumentException('جهت شارژ نامعتبر است.');
+            throw new InvalidArgumentException(__('services.adjustment_direction_invalid'));
         }
 
         if (bccomp($amount, '0', 2) <= 0) {
-            throw new InvalidArgumentException('مبلغ باید بزرگ‌تر از صفر باشد.');
+            throw new InvalidArgumentException(__('services.amount_must_be_positive'));
         }
 
         $currencyCode = MoneyCurrency::normalize(

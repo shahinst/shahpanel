@@ -32,7 +32,7 @@
         <strong>{{ __('menu.accounting') }}</strong><br>
         {{ $viewer->full_name }} — {{ jalali_date($generatedAt, 'Y/m/d H:i') }}
         @if (! empty($filters['date_from']) || ! empty($filters['date_to']))
-            — {{ __('accounting.filter_period') }}: {{ $filters['date_from'] ?? '…' }} تا {{ $filters['date_to'] ?? '…' }}
+            — {{ __('accounting.filter_period') }}: {{ $filters['date_from'] ?? '…' }} {{ __('ui.to_range') }} {{ $filters['date_to'] ?? '…' }}
         @endif
     </div>
 

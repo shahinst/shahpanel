@@ -1,6 +1,6 @@
 @extends('layouts.panel')
 
-@section('page_title', 'قیمت‌گذاری پکیج‌ها')
+@section('page_title', __('ui.packages_pricing_page_title'))
 
 @php
     // tier => current PackageDuration, per package, for the calc tab
@@ -17,10 +17,10 @@
 
 <ul class="nav nav-tabs mb-3">
     <li class="nav-item">
-        <button type="button" class="nav-link active" data-pp-tab="adjust"><i class="bx bx-slider"></i> افزایش و کاهش قیمت</button>
+        <button type="button" class="nav-link active" data-pp-tab="adjust"><i class="bx bx-slider"></i> {{ __('ui.pricing_tab_adjust') }}</button>
     </li>
     <li class="nav-item">
-        <button type="button" class="nav-link" data-pp-tab="calc"><i class="bx bx-calculator"></i> محاسبه‌ی قیمت دوره‌ای (۳/۶/۱۲ ماهه)</button>
+        <button type="button" class="nav-link" data-pp-tab="calc"><i class="bx bx-calculator"></i> {{ __('ui.pricing_tab_calc') }}</button>
     </li>
 </ul>
 
@@ -32,27 +32,26 @@
             <x-card>
                 <div class="card-body">
                     <p class="text-muted small">
-                        درصدی وارد کنید، پکیج‌ها را انتخاب کنید و «افزایش» یا «کاهش» را بزنید.
-                        قیمت‌ها تمیز گرد می‌شوند (مثلاً ۱۰۲۹۴ → ۱۰۳۰۰). روی <strong>قیمت مشتری (خرده‌فروشی)</strong> اعمال می‌شود.
+                        {{ __('ui.pricing_adjust_help_before') }} <strong>{{ __('ui.pricing_retail_price') }}</strong> {{ __('ui.pricing_adjust_help_after') }}
                     </p>
                     <div class="row g-3 align-items-end">
                         <div class="col-6 col-md-3">
-                            <label class="form-label">درصد (٪)</label>
+                            <label class="form-label">{{ __('ui.percent_label') }}</label>
                             <input type="number" step="0.01" min="0.01" max="1000" dir="ltr" id="adj-percent"
-                                   name="percent" class="form-control" value="{{ old('percent') }}" placeholder="مثلاً 10">
+                                   name="percent" class="form-control" value="{{ old('percent') }}" placeholder="{{ __('ui.percent_placeholder') }}">
                         </div>
                         <div class="col-6 col-md-4">
-                            <label class="form-label d-block">جهت</label>
+                            <label class="form-label d-block">{{ __('ui.direction_label') }}</label>
                             <div class="btn-group" role="group">
                                 <input type="radio" class="btn-check" name="direction" id="adj-inc" value="increase" @checked(old('direction', 'increase') === 'increase')>
-                                <label class="btn btn-outline-success" for="adj-inc"><i class="bx bx-up-arrow-alt"></i> افزایش</label>
+                                <label class="btn btn-outline-success" for="adj-inc"><i class="bx bx-up-arrow-alt"></i> {{ __('ui.increase') }}</label>
                                 <input type="radio" class="btn-check" name="direction" id="adj-dec" value="decrease" @checked(old('direction') === 'decrease')>
-                                <label class="btn btn-outline-danger" for="adj-dec"><i class="bx bx-down-arrow-alt"></i> کاهش</label>
+                                <label class="btn btn-outline-danger" for="adj-dec"><i class="bx bx-down-arrow-alt"></i> {{ __('ui.decrease') }}</label>
                             </div>
                         </div>
                         <div class="col-12 col-md-5 text-md-end">
-                            <span class="text-muted small me-2"><strong class="adj-count">0</strong> پکیج انتخاب شده</span>
-                            <x-button type="submit"><i class="bx bx-check"></i> اعمال</x-button>
+                            <span class="text-muted small me-2"><strong class="adj-count">0</strong> {{ __('ui.packages_selected') }}</span>
+                            <x-button type="submit"><i class="bx bx-check"></i> {{ __('ui.apply') }}</x-button>
                         </div>
                     </div>
                     @error('percent') <div class="text-danger small mt-2">{{ $message }}</div> @enderror
@@ -63,17 +62,17 @@
         <x-card>
             <div class="card-body">
                 <div class="d-flex flex-wrap gap-2 mb-3">
-                    <button type="button" class="btn btn-sm btn-outline-secondary" data-adj-select="all">انتخاب همه</button>
-                    <button type="button" class="btn btn-sm btn-outline-success" data-adj-select="active">انتخاب فعال‌ها</button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" data-adj-select="none">لغو انتخاب</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-adj-select="all">{{ __('ui.select_all') }}</button>
+                    <button type="button" class="btn btn-sm btn-outline-success" data-adj-select="active">{{ __('ui.select_active') }}</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-adj-select="none">{{ __('ui.select_none') }}</button>
                 </div>
-                @foreach (['active' => ['پکیج‌های فعال', $activePackages, 'success', 'فعال'], 'inactive' => ['پکیج‌های غیرفعال', $inactivePackages, 'secondary', 'غیرفعال']] as $key => $group)
+                @foreach (['active' => [__('ui.active_packages'), $activePackages, 'success', __('app.active')], 'inactive' => [__('ui.inactive_packages'), $inactivePackages, 'secondary', __('app.inactive')]] as $key => $group)
                     @php [$title, $packages, $color, $badge] = $group; @endphp
                     @if ($packages->isNotEmpty())
                         <h6 class="text-muted border-bottom pb-2 mb-3 mt-3"><span class="badge bg-{{ $color }}">{{ $badge }}</span> {{ $title }} <span class="text-muted">({{ persian_digits($packages->count()) }})</span></h6>
                         <div class="table-responsive mb-2">
                             <table class="table table-sm table-hover align-middle">
-                                <thead><tr><th style="width:36px;"></th><th>پکیج</th><th>قیمت فعلی → جدید</th></tr></thead>
+                                <thead><tr><th style="width:36px;"></th><th>{{ __('accounts.package') }}</th><th>{{ __('ui.col_price_current_new') }}</th></tr></thead>
                                 <tbody>
                                     @foreach ($packages as $package)
                                         <tr>
@@ -110,36 +109,36 @@
             <x-card>
                 <div class="card-body">
                     <p class="text-muted small">
-                        قیمت ۳ / ۶ / ۱۲ ماهه‌ی هر پکیج از روی قیمت <strong>۱ماهه</strong> و ضرایب زیر ساخته و
-                        <strong>فعال</strong> می‌شود. قیمت‌ها تمیز گرد می‌شوند.
+                        {{ __('ui.pricing_calc_help_1') }} <strong>{{ __('ui.tier_1m') }}</strong> {{ __('ui.pricing_calc_help_2') }}
+                        <strong>{{ __('ui.pricing_calc_help_activated') }}</strong> {{ __('ui.pricing_calc_help_3') }}
                     </p>
                     <div class="row g-3 align-items-end">
                         <div class="col-4 col-md-2">
-                            <label class="form-label">۳ ماهه ×</label>
+                            <label class="form-label">{{ __('ui.tier_3m_mult') }}</label>
                             <input type="number" step="0.1" min="0" dir="ltr" id="m3" name="mult_3m" class="form-control" value="{{ old('mult_3m', '3') }}">
                         </div>
                         <div class="col-4 col-md-2">
-                            <label class="form-label">۶ ماهه ×</label>
+                            <label class="form-label">{{ __('ui.tier_6m_mult') }}</label>
                             <input type="number" step="0.1" min="0" dir="ltr" id="m6" name="mult_6m" class="form-control" value="{{ old('mult_6m', '5.5') }}">
                         </div>
                         <div class="col-4 col-md-2">
-                            <label class="form-label">۱ ساله ×</label>
+                            <label class="form-label">{{ __('ui.tier_1y_mult') }}</label>
                             <input type="number" step="0.1" min="0" dir="ltr" id="m12" name="mult_1y" class="form-control" value="{{ old('mult_1y', '10') }}">
                         </div>
                         <div class="col-12 col-md-4">
-                            <label class="form-label d-block">حالت</label>
+                            <label class="form-label d-block">{{ __('ui.mode_label') }}</label>
                             <div class="btn-group" role="group">
                                 <input type="radio" class="btn-check" name="mode" id="mode-fill" value="fill" @checked(old('mode', 'fill') === 'fill')>
-                                <label class="btn btn-outline-primary" for="mode-fill">فقط دوره‌های خالی</label>
+                                <label class="btn btn-outline-primary" for="mode-fill">{{ __('ui.mode_fill_only') }}</label>
                                 <input type="radio" class="btn-check" name="mode" id="mode-ow" value="overwrite" @checked(old('mode') === 'overwrite')>
-                                <label class="btn btn-outline-warning" for="mode-ow">بازنویسی همه</label>
+                                <label class="btn btn-outline-warning" for="mode-ow">{{ __('ui.mode_overwrite_all') }}</label>
                             </div>
                         </div>
                         <div class="col-12 col-md-2 text-md-end">
-                            <x-button type="submit"><i class="bx bx-check"></i> اعمال</x-button>
+                            <x-button type="submit"><i class="bx bx-check"></i> {{ __('ui.apply') }}</x-button>
                         </div>
                     </div>
-                    <div class="small text-muted mt-2"><strong class="calc-count">0</strong> پکیج انتخاب شده — «فقط دوره‌های خالی» قیمت‌های تنظیم‌شده‌ی فعلی را دست نمی‌زند.</div>
+                    <div class="small text-muted mt-2"><strong class="calc-count">0</strong> {{ __('ui.packages_selected') }} — {{ __('ui.pricing_fill_mode_note') }}</div>
                     @error('mult_3m') <div class="text-danger small mt-2">{{ $message }}</div> @enderror
                 </div>
             </x-card>
@@ -148,17 +147,17 @@
         <x-card>
             <div class="card-body">
                 <div class="d-flex flex-wrap gap-2 mb-3">
-                    <button type="button" class="btn btn-sm btn-outline-secondary" data-calc-select="all">انتخاب همه</button>
-                    <button type="button" class="btn btn-sm btn-outline-success" data-calc-select="active">انتخاب فعال‌ها</button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" data-calc-select="none">لغو انتخاب</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-calc-select="all">{{ __('ui.select_all') }}</button>
+                    <button type="button" class="btn btn-sm btn-outline-success" data-calc-select="active">{{ __('ui.select_active') }}</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-calc-select="none">{{ __('ui.select_none') }}</button>
                 </div>
-                @foreach (['active' => ['پکیج‌های فعال', $activePackages, 'success', 'فعال'], 'inactive' => ['پکیج‌های غیرفعال', $inactivePackages, 'secondary', 'غیرفعال']] as $key => $group)
+                @foreach (['active' => [__('ui.active_packages'), $activePackages, 'success', __('app.active')], 'inactive' => [__('ui.inactive_packages'), $inactivePackages, 'secondary', __('app.inactive')]] as $key => $group)
                     @php [$title, $packages, $color, $badge] = $group; @endphp
                     @if ($packages->isNotEmpty())
                         <h6 class="text-muted border-bottom pb-2 mb-3 mt-3"><span class="badge bg-{{ $color }}">{{ $badge }}</span> {{ $title }} <span class="text-muted">({{ persian_digits($packages->count()) }})</span></h6>
                         <div class="table-responsive mb-2">
                             <table class="table table-sm table-hover align-middle">
-                                <thead><tr><th style="width:36px;"></th><th>پکیج</th><th>۱ ماهه</th><th>۳ ماهه</th><th>۶ ماهه</th><th>۱ ساله</th></tr></thead>
+                                <thead><tr><th style="width:36px;"></th><th>{{ __('accounts.package') }}</th><th>{{ __('ui.tier_1m') }}</th><th>{{ __('ui.tier_3m') }}</th><th>{{ __('ui.tier_6m') }}</th><th>{{ __('ui.tier_1y') }}</th></tr></thead>
                                 <tbody>
                                     @foreach ($packages as $package)
                                         @php
@@ -172,7 +171,7 @@
                                             </td>
                                             <td>
                                                 <span class="fw-semibold">{{ $package->name }}</span> <span class="badge bg-{{ $color }} ms-1">{{ $badge }}</span>
-                                                @if ($base <= 0)<div class="text-danger small">قیمت ۱ماهه ندارد</div>@endif
+                                                @if ($base <= 0)<div class="text-danger small">{{ __('ui.pricing_no_1m_price') }}</div>@endif
                                             </td>
                                             <td dir="ltr" class="text-muted">{{ $base > 0 ? format_money($base, $package->moneyCurrency()) : '—' }}</td>
                                             @foreach (['3m','6m','1y'] as $t)
@@ -180,11 +179,11 @@
                                                 <td dir="ltr">
                                                     <strong class="calc-new" data-base="{{ $base }}" data-tier="{{ $t }}" data-symbol="{{ $package->moneyCurrency()->symbol() }}" data-decimals="{{ $package->moneyCurrency()->displayDecimals() }}">—</strong>
                                                     @if ($curP > 0 && $curOn)
-                                                        <div class="small text-success">فعلی: {{ format_money($curP, $package->moneyCurrency()) }}</div>
+                                                        <div class="small text-success">{{ __('ui.current_label') }}: {{ format_money($curP, $package->moneyCurrency()) }}</div>
                                                     @elseif ($cur === null)
-                                                        <div class="small text-muted">— بدون ردیف —</div>
+                                                        <div class="small text-muted">{{ __('ui.pricing_no_row') }}</div>
                                                     @else
-                                                        <div class="small text-muted">خالی/غیرفعال</div>
+                                                        <div class="small text-muted">{{ __('ui.pricing_empty_disabled') }}</div>
                                                     @endif
                                                 </td>
                                             @endforeach
@@ -201,7 +200,7 @@
 </div>
 
 @if ($activePackages->isEmpty() && $inactivePackages->isEmpty())
-    <div class="alert alert-warning">هیچ پکیجی وجود ندارد.</div>
+    <div class="alert alert-warning">{{ __('ui.no_packages') }}</div>
 @endif
 @endsection
 
@@ -275,10 +274,10 @@
     document.getElementById('adj-form').addEventListener('submit', function (e) {
         var n = document.querySelectorAll('.adj-check:checked').length;
         var p = parseFloat(adjPercent.value);
-        if (!n) { e.preventDefault(); alert('حداقل یک پکیج را انتخاب کنید.'); return; }
-        if (isNaN(p) || p <= 0) { e.preventDefault(); alert('درصد معتبر وارد کنید.'); return; }
-        var dir = document.getElementById('adj-inc').checked ? 'افزایش' : 'کاهش';
-        if (!confirm(dir + ' قیمت ' + faInt(n) + ' پکیج به میزان ' + p + '٪ اعمال شود؟')) e.preventDefault();
+        if (!n) { e.preventDefault(); alert(@json(__('ui.select_at_least_one_package'))); return; }
+        if (isNaN(p) || p <= 0) { e.preventDefault(); alert(@json(__('ui.enter_valid_percent'))); return; }
+        var dir = document.getElementById('adj-inc').checked ? @json(__('ui.direction_increase')) : @json(__('ui.direction_decrease'));
+        if (!confirm(@json(__('ui.pricing_adjust_confirm')).replace(':dir', dir).replace(':count', faInt(n)).replace(':percent', p))) e.preventDefault();
     });
 
     /* ---- calc tab ---- */
@@ -310,9 +309,9 @@
     });
     document.getElementById('calc-form').addEventListener('submit', function (e) {
         var n = document.querySelectorAll('.calc-check:checked').length;
-        if (!n) { e.preventDefault(); alert('حداقل یک پکیج را انتخاب کنید.'); return; }
+        if (!n) { e.preventDefault(); alert(@json(__('ui.select_at_least_one_package'))); return; }
         var ow = document.getElementById('mode-ow').checked;
-        var msg = 'قیمت ۳/۶/۱۲ ماهه‌ی ' + faInt(n) + ' پکیج ساخته و فعال شود؟' + (ow ? '\n(حالت بازنویسی: قیمت‌های فعلی هم بازنویسی می‌شوند)' : '');
+        var msg = @json(__('ui.pricing_calc_confirm')).replace(':count', faInt(n)) + (ow ? '\n' + @json(__('ui.pricing_overwrite_note')) : '');
         if (!confirm(msg)) e.preventDefault();
     });
 

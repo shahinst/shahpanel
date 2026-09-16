@@ -41,7 +41,7 @@ final class OcservClient
             if ($response->status() === 401) {
                 return [
                     'ok' => false,
-                    'message' => 'نام کاربری یا رمز پنل ocserv اشتباه است.',
+                    'message' => __('services.ocserv_bad_credentials'),
                     'error' => 'unauthorized',
                     'api_url' => $this->baseUrl(),
                 ];
@@ -50,7 +50,7 @@ final class OcservClient
             if ($response->status() === 403) {
                 return [
                     'ok' => false,
-                    'message' => 'IP پنل برای API ocserv مجاز نیست.',
+                    'message' => __('services.ocserv_panel_ip_not_allowed'),
                     'error' => 'forbidden',
                     'api_url' => $this->baseUrl(),
                 ];
@@ -59,7 +59,7 @@ final class OcservClient
             if (! $response->successful() || ! ($response->json('ok') === true)) {
                 return [
                     'ok' => false,
-                    'message' => 'اتصال به ocserv ناموفق بود.',
+                    'message' => __('services.ocserv_connect_failed'),
                     'error' => $this->errorMessage($response),
                     'api_url' => $this->baseUrl(),
                 ];
@@ -67,7 +67,7 @@ final class OcservClient
 
             return [
                 'ok' => true,
-                'message' => 'اتصال به OpenConnect (ocserv) برقرار شد.',
+                'message' => __('services.ocserv_connect_ok'),
                 'api_url' => $this->baseUrl(),
             ];
         } catch (ConnectionException $exception) {
@@ -79,7 +79,7 @@ final class OcservClient
 
             return [
                 'ok' => false,
-                'message' => 'سرور در دسترس نیست یا IP پنل مجاز نیست.',
+                'message' => __('services.server_unreachable_or_ip_blocked'),
                 'error' => $exception->getMessage(),
                 'api_url' => $this->baseUrl(),
             ];
@@ -92,7 +92,7 @@ final class OcservClient
 
             return [
                 'ok' => false,
-                'message' => 'اتصال به ocserv ناموفق بود.',
+                'message' => __('services.ocserv_connect_failed'),
                 'error' => $exception->getMessage(),
                 'api_url' => $this->baseUrl(),
             ];
@@ -143,7 +143,7 @@ final class OcservClient
 
         if ($response->status() === 409) {
             throw new RemoteProvisionException(
-                'کاربر ocserv از قبل وجود دارد: '.$username
+                __('services.ocserv_user_exists', ['username' => $username])
             );
         }
 
@@ -289,7 +289,7 @@ final class OcservClient
             }
 
             throw new RemoteConnectionException(
-                'سرور ocserv در دسترس نیست یا IP پنل مجاز نیست: '.$exception->getMessage(),
+                __('services.ocserv_unreachable', ['error' => $exception->getMessage()]),
                 previous: $exception
             );
         }
@@ -302,7 +302,7 @@ final class OcservClient
 
         if ($username === '' || $password === '') {
             throw new RemoteConnectionException(
-                'نام کاربری و رمز پنل ocserv الزامی است.'
+                __('services.ocserv_credentials_required')
             );
         }
 
@@ -332,19 +332,22 @@ final class OcservClient
         $message = $this->errorMessage($response);
 
         if ($response->status() === 401) {
-            throw new RemoteConnectionException('نام کاربری یا رمز پنل ocserv اشتباه است.');
+            throw new RemoteConnectionException(__('services.ocserv_bad_credentials'));
         }
 
         if ($response->status() === 403) {
-            throw new RemoteConnectionException('IP پنل برای API ocserv مجاز نیست.');
+            throw new RemoteConnectionException(__('services.ocserv_panel_ip_not_allowed'));
         }
 
         if ($response->status() === 404) {
-            throw new RemoteProvisionException('کاربر روی سرور ocserv یافت نشد.');
+            // The 404 code is carried on the exception so callers can tell
+            // "no such user" from a real failure without matching on the
+            // message text, which changes with the panel language.
+            throw new RemoteProvisionException(__('services.ocserv_user_not_found'), 404);
         }
 
         throw new RemoteProvisionException(
-            'ocserv API ناموفق (HTTP '.$response->status().'): '.$message
+            __('services.ocserv_api_failed', ['status' => $response->status(), 'detail' => $message])
         );
     }
 

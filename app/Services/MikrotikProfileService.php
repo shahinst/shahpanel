@@ -43,7 +43,7 @@ class MikrotikProfileService
 
             if ($profile !== null) {
                 if ($this->isWireguardProfile($profile)) {
-                    throw new InvalidArgumentException('WireGuard از پروفایل MikroTik استفاده نمی‌کند.');
+                    throw new InvalidArgumentException(__('services.mikrotik_wireguard_no_profile'));
                 }
 
                 return $profile;
@@ -51,7 +51,7 @@ class MikrotikProfileService
         }
 
         if ($serviceType === ServiceType::Wireguard) {
-            throw new InvalidArgumentException('WireGuard از پروفایل MikroTik استفاده نمی‌کند.');
+            throw new InvalidArgumentException(__('services.mikrotik_wireguard_no_profile'));
         }
 
         return app(MikrotikPppProfileService::class)->resolveProfile($server, $serviceType, $profileKey);
@@ -67,7 +67,7 @@ class MikrotikProfileService
         bool $respectProfileKeyWhenFull = false,
     ): ServerInterface {
         if ($serviceType === ServiceType::Wireguard) {
-            throw new InvalidArgumentException('WireGuard از پروفایل MikroTik استفاده نمی‌کند.');
+            throw new InvalidArgumentException(__('services.mikrotik_wireguard_no_profile'));
         }
 
         return app(MikrotikPppProfileService::class)->resolveProfile(

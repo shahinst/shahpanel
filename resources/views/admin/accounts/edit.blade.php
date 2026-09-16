@@ -17,9 +17,9 @@
                 <h5 class="mb-1"><i class="bx bx-revision"></i> {{ __('menu.renew') }}</h5>
                 <p class="text-muted small mb-0">
                     @if ($account->status === \App\Enums\AccountStatus::Expired)
-                        این اکانت منقضی شده است. با تمدید، دوباره فعال می‌شود و هزینه از حساب مالک ({{ $account->ownerSeller?->full_name ?? '—' }}) کسر می‌شود.
+                        {{ __('ui.account_renew_expired_notice', [':owner' => $account->ownerSeller?->full_name ?? '—']) }}
                     @else
-                        تمدید اکانت؛ هزینه از حساب مالک ({{ $account->ownerSeller?->full_name ?? '—' }}) کسر می‌شود.
+                        {{ __('ui.account_renew_notice', [':owner' => $account->ownerSeller?->full_name ?? '—']) }}
                     @endif
                 </p>
             </div>

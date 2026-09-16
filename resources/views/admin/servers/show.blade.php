@@ -5,7 +5,7 @@
 @section('panel_content')
 @if (! \Illuminate\Support\Facades\Schema::hasTable('server_interfaces'))
     <x-alert type="warning" class="mb-3">
-        جدول server_interfaces وجود ندارد. از <a href="{{ route('admin.maintenance.index') }}">نگهداری DB</a> migrate را اجرا کنید، یا یک‌بار <a href="/maintain.php">maintain.php</a> را باز کنید.
+        {{ __('ui.server_interfaces_missing_before') }} <a href="{{ route('admin.maintenance.index') }}">{{ __('ui.db_maintenance_link') }}</a> {{ __('ui.server_interfaces_missing_middle') }} <a href="/maintain.php">maintain.php</a> {{ __('ui.server_interfaces_missing_after') }}
     </x-alert>
 @endif
 

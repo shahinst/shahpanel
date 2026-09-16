@@ -124,7 +124,7 @@
 
             <x-form.group :label="__('gift_accounts.name_prefix')" :hint="__('gift_accounts.name_prefix_hint')" class="col-md-6">
                 <input type="text" name="name_prefix" id="gift-name-prefix" class="form-control" maxlength="200" required
-                       value="{{ old('name_prefix', 'اکانت نماینده-') }}">
+                       value="{{ old('name_prefix', __('ui.gift_name_prefix_default')) }}">
                 <p class="form-text text-muted small mb-0 mt-1">
                     {{ __('gift_accounts.name_preview') }}: <span id="gift-name-preview">—</span>
                 </p>
@@ -235,7 +235,7 @@
         if (elastic && opt) {
             var min = opt.getAttribute('data-min-gb') || '';
             var max = opt.getAttribute('data-max-gb') || '';
-            dataGbHint.textContent = min && max ? ('بین ' + min + ' تا ' + max + ' گیگ') : '';
+            dataGbHint.textContent = min && max ? @json(__('ui.between_gb_range')).replace(':min', min).replace(':max', max) : '';
             if (min) dataGbInput.min = min;
             if (max) dataGbInput.max = max;
         }

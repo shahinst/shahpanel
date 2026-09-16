@@ -5,7 +5,7 @@
 @section('panel_content')
 @include('partials.panel-page-hero', [
     'title' => __('sellers.create'),
-    'subtitle' => 'افزودن فروشنده جدید به زیرمجموعه',
+    'subtitle' => __('ui.sellers_create_subtitle'),
     'icon' => 'bx-user-plus',
 ])
 

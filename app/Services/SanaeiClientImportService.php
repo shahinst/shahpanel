@@ -33,7 +33,7 @@ class SanaeiClientImportService
     public function fetchForAssignment(Server $server, int $inboundId): array
     {
         if (! $server->isSanaei()) {
-            throw new InvalidArgumentException('سینک کلاینت فقط برای سرور Sanaei است.');
+            throw new InvalidArgumentException(__('services.sanaei_sync_only'));
         }
 
         set_time_limit(300);

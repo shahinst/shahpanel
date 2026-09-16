@@ -5,9 +5,9 @@
 @section('panel_content')
 @if (empty($migrationTablesReady))
     <x-alert type="warning" class="margin-bottom">
-        جدول‌های انتقال هنوز ساخته نشده‌اند. از
-        <a href="{{ route('admin.maintenance.index') }}">نگهداری DB</a>
-        دکمه «اجرای migrate» را بزنید، یا در SSH: <code>php artisan migrate</code>
+        {{ __('ui.migrate_tables_missing_before') }}
+        <a href="{{ route('admin.maintenance.index') }}">{{ __('ui.db_maintenance_link') }}</a>
+        {{ __('ui.migrate_tables_missing_after') }} <code>php artisan migrate</code>
     </x-alert>
 @endif
 

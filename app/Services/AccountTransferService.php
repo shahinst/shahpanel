@@ -24,7 +24,7 @@ class AccountTransferService
     public function transfer(Account $account, Server $newServer, User $actor): Account
     {
         if ($account->server_id === $newServer->id) {
-            throw new InvalidArgumentException('اکانت از قبل روی این سرور است.');
+            throw new InvalidArgumentException(__('services.account_already_on_server'));
         }
 
         $account->loadMissing('package');

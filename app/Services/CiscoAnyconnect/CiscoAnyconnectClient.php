@@ -48,7 +48,7 @@ final class CiscoAnyconnectClient
 
             return [
                 'ok' => true,
-                'message' => 'اتصال به Cisco ASA / AnyConnect برقرار شد.',
+                'message' => __('services.cisco_connect_ok'),
                 'api_url' => $this->baseUrl(),
                 'asa_version' => $version ?? 'unknown',
                 'user_count' => count($users),
@@ -62,7 +62,7 @@ final class CiscoAnyconnectClient
 
             return [
                 'ok' => false,
-                'message' => 'اتصال به Cisco ASA ناموفق بود.',
+                'message' => __('services.cisco_asa_connect_failed'),
                 'error' => $exception->getMessage(),
                 'api_url' => $this->baseUrl(),
             ];
@@ -82,7 +82,7 @@ final class CiscoAnyconnectClient
 
         if ($username === '' || $password === '') {
             throw new RemoteConnectionException(
-                'نام کاربری و رمز ادمین ASA برای REST API الزامی است (privilege 15).'
+                __('services.cisco_admin_credentials_required')
             );
         }
 
@@ -111,7 +111,7 @@ final class CiscoAnyconnectClient
         $probe = $this->request('get', '/objects/localusers');
         if (! $probe->successful() && ! in_array($probe->status(), [404, 405], true)) {
             throw new RemoteConnectionException(
-                'احراز هویت ASA ناموفق (HTTP '.$probe->status().'): '.$this->snippet($probe)
+                __('services.cisco_auth_failed', ['status' => $probe->status(), 'detail' => $this->snippet($probe)])
             );
         }
 
@@ -131,7 +131,7 @@ final class CiscoAnyconnectClient
 
         if (! $response->successful()) {
             throw new RemoteConnectionException(
-                'خواندن local users ناموفق (HTTP '.$response->status().'): '.$this->snippet($response)
+                __('services.cisco_read_local_users_failed', ['status' => $response->status(), 'detail' => $this->snippet($response)])
             );
         }
 
@@ -226,7 +226,7 @@ final class CiscoAnyconnectClient
             $response = $this->request('delete', '/objects/localusers/'.rawurlencode($username));
             if (! $response->successful() && $response->status() !== 404) {
                 throw new RemoteProvisionException(
-                    'حذف کاربر ASA ناموفق: '.$exception->getMessage().' / HTTP '.$response->status()
+                    __('services.cisco_delete_user_failed', ['error' => $exception->getMessage(), 'status' => $response->status()])
                 );
             }
         }
@@ -249,7 +249,7 @@ final class CiscoAnyconnectClient
 
         if (! $response->successful()) {
             throw new RemoteProvisionException(
-                'ASA CLI ناموفق (HTTP '.$response->status().'): '.$this->snippet($response)
+                __('services.cisco_cli_failed_http', ['status' => $response->status(), 'detail' => $this->snippet($response)])
             );
         }
 
@@ -257,7 +257,7 @@ final class CiscoAnyconnectClient
 
         // ASA answers a rejected command with HTTP 200 and the error in the body.
         if (preg_match('/^\s*(?:ERROR\b|%)[^\r\n]*/mi', $output, $matches) === 1) {
-            throw new RemoteProvisionException('ASA CLI ناموفق: '.trim($matches[0]));
+            throw new RemoteProvisionException(__('services.cisco_cli_failed', ['detail' => trim($matches[0])]));
         }
 
         return $output;
@@ -363,7 +363,7 @@ final class CiscoAnyconnectClient
         // ASA splits CLI lines on CR/LF before honouring quotes, so a control
         // character here would run an extra command at privilege 15.
         if (preg_match('/[\x00-\x1F\x7F]/', $value) === 1) {
-            throw new RemoteProvisionException('مقدار نامعتبر برای دستور ASA (کاراکتر کنترلی).');
+            throw new RemoteProvisionException(__('services.cisco_invalid_command_value'));
         }
 
         if ($value === '' || preg_match('/[\s"\\\\]/', $value) === 1) {

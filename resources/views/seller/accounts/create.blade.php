@@ -5,7 +5,7 @@
 @section('panel_content')
 @include('partials.panel-page-hero', [
     'title' => __('accounts.create'),
-    'subtitle' => 'صدور اکانت جدید',
+    'subtitle' => __('ui.accounts_create_subtitle'),
     'icon' => 'bx-plus-circle',
 ])
 

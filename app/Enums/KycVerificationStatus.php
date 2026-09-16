@@ -13,11 +13,11 @@ enum KycVerificationStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::Draft => 'در انتظار احراز',
-            self::Verified => 'احراز شده',
-            self::Locked => 'قفل (بیش از حد تلاش)',
-            self::ResetRequested => 'درخواست ریست',
-            self::Used => 'مصرف‌شده برای اکانت',
+            self::Draft => __('backend.kyc_status_draft'),
+            self::Verified => __('backend.kyc_status_verified'),
+            self::Locked => __('backend.kyc_status_locked'),
+            self::ResetRequested => __('backend.kyc_status_reset_requested'),
+            self::Used => __('backend.kyc_status_used'),
         };
     }
 }

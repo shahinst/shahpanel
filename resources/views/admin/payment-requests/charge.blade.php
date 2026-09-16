@@ -74,7 +74,7 @@
             <form method="POST" action="{{ route('admin.payment-requests.bulk-charge') }}">
                 @csrf
                 <div class="row">
-                    <x-form.group wide :label="__('menu.amount').' (تومان)'">
+                    <x-form.group wide :label="__('menu.amount').' ('.__('packages.toman').')'">
                         <input type="number" name="amount" step="0.01" min="1" required class="form-control">
                     </x-form.group>
                     <x-form.group wide :label="__('menu.requester_note')">
@@ -134,7 +134,7 @@ document.addEventListener('DOMContentLoaded', function () {
         var amount = Number(balances[currency] || 0);
         balanceEl.textContent = amount.toLocaleString('fa-IR', { maximumFractionDigits: 2 }) + ' ' + symbol;
         if (amountHint) {
-            amountHint.textContent = 'شارژ روی کیف‌پول ' + symbol;
+            amountHint.textContent = @json(__('ui.charge_on_wallet_prefix')) + ' ' + symbol;
         }
     }
 
@@ -147,7 +147,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (chargeForm && chargeSubmit) {
         chargeForm.addEventListener('submit', function () {
             chargeSubmit.disabled = true;
-            chargeSubmit.textContent = 'در حال ثبت…';
+            chargeSubmit.textContent = @json(__('ui.submitting'));
         });
     }
 });

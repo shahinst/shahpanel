@@ -12,9 +12,9 @@ enum BalancingMode: string
     public function label(): string
     {
         return match ($this) {
-            self::Pcc => 'PCC (بر اساس اتصال)',
-            self::Ecmp => 'ECMP (وزن‌دار)',
-            self::RangeSplit => 'تقسیم بر اساس محدوده IP (بین لوکیشن‌ها)',
+            self::Pcc => __('backend.balancing_mode_pcc'),
+            self::Ecmp => __('backend.balancing_mode_ecmp'),
+            self::RangeSplit => __('backend.balancing_mode_range_split'),
         };
     }
 }

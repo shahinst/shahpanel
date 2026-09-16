@@ -117,7 +117,7 @@ class MikrotikService
 
             return [
                 'ok' => true,
-                'message' => 'اتصال به MikroTik برقرار شد.',
+                'message' => __('services.mikrotik_connect_ok'),
                 'identity' => $name,
             ];
         } catch (Throwable $exception) {
@@ -129,7 +129,7 @@ class MikrotikService
 
             return [
                 'ok' => false,
-                'message' => 'اتصال به MikroTik ناموفق بود.',
+                'message' => __('services.mikrotik_connect_failed'),
                 'error' => $exception->getMessage(),
             ];
         }
@@ -709,7 +709,7 @@ class MikrotikService
         bool $useEncryption = false,
     ): array {
         if ($this->pppProfileExists($server, $profileName)) {
-            throw new RemoteProvisionException("پروفایل PPP «{$profileName}» از قبل روی روتر وجود دارد.");
+            throw new RemoteProvisionException(__('services.mikrotik_ppp_profile_exists', ['name' => $profileName]));
         }
 
         [$rangeStart, $rangeEnd, $gateway] = $this->pppClientRangeFromSubnet($subnetCidr);
@@ -731,7 +731,7 @@ class MikrotikService
         ], fn ($value) => $value !== null && $value !== ''));
 
         if (! $this->pppProfileExists($server, $profileName)) {
-            throw new RemoteProvisionException("پروفایل PPP «{$profileName}» روی روتر ساخته نشد.");
+            throw new RemoteProvisionException(__('services.mikrotik_ppp_profile_create_failed', ['name' => $profileName]));
         }
 
         return [
@@ -1265,7 +1265,7 @@ class MikrotikService
         }
 
         throw new RemoteProvisionException(
-            'اینترفیس WireGuard روی روتر یافت نشد — ابتدا یک اینترفیس WireGuard در MikroTik بسازید.'
+            __('services.mikrotik_no_wg_interface')
         );
     }
 
@@ -1365,7 +1365,7 @@ class MikrotikService
         ?int $listenPort = null,
     ): array {
         if ($this->wireguardInterfaceExists($server, $name)) {
-            throw new RemoteProvisionException("اینترفیس WireGuard «{$name}» از قبل روی روتر وجود دارد.");
+            throw new RemoteProvisionException(__('services.mikrotik_wg_interface_exists', ['name' => $name]));
         }
 
         $keys = $this->generateKeys();
@@ -1380,7 +1380,7 @@ class MikrotikService
         ], fn ($value) => $value !== null && $value !== ''));
 
         if (! $this->wireguardInterfaceExists($server, $name)) {
-            throw new RemoteProvisionException("اینترفیس WireGuard «{$name}» روی روتر ساخته نشد.");
+            throw new RemoteProvisionException(__('services.mikrotik_wg_interface_create_failed', ['name' => $name]));
         }
 
         $this->execute($server, '/ip/address/add', [
@@ -1593,8 +1593,8 @@ class MikrotikService
             $available = implode(', ', $this->listWireguardInterfaceNames($server, preferEnabled: false));
 
             throw new RemoteProvisionException(
-                "اینترفیس WireGuard «{$interface}» روی روتر وجود ندارد."
-                .($available !== '' ? " اینترفیس‌های موجود: {$available}" : '')
+                __('services.mikrotik_wg_interface_missing', ['interface' => $interface])
+                .($available !== '' ? ' '.__('services.mikrotik_wg_available_interfaces', ['list' => $available]) : '')
             );
         }
 
@@ -1654,7 +1654,7 @@ class MikrotikService
         $peer = $this->findWireguardPeer($server, $publicKey);
 
         if ($peer === null) {
-            throw new RemoteProvisionException('WireGuard peer روی سرور یافت نشد.');
+            throw new RemoteProvisionException(__('services.wireguard_peer_not_found'));
         }
 
         $payload = ['.id' => $peer['.id']];
@@ -1697,7 +1697,7 @@ class MikrotikService
                 return;
             }
 
-            throw new RemoteProvisionException('WireGuard peer روی سرور یافت نشد.');
+            throw new RemoteProvisionException(__('services.wireguard_peer_not_found'));
         }
 
         $this->execute($server, '/interface/wireguard/peers/set', [
@@ -2004,7 +2004,7 @@ class MikrotikService
         }
 
         throw new RemoteProvisionException(
-            'MikroTik: '.($message ?? "خطا در {$path}")
+            'MikroTik: '.($message ?? __('services.mikrotik_error_at_path', ['path' => $path]))
         );
     }
 

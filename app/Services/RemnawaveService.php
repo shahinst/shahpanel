@@ -54,7 +54,7 @@ class RemnawaveService
 
             return [
                 'ok' => false,
-                'message' => 'اتصال به پنل Remnawave ناموفق بود.',
+                'message' => __('services.remnawave_connect_failed'),
                 'error' => $exception->getMessage(),
             ];
         }
@@ -68,11 +68,11 @@ class RemnawaveService
     public function syncCatalog(Server $server): array
     {
         if (! $server->isRemnawave()) {
-            throw new InvalidArgumentException('این عملیات فقط برای سرور Remnawave است.');
+            throw new InvalidArgumentException(__('services.remnawave_operation_only'));
         }
 
         if (! $server->hasStoredRemnawaveApiToken()) {
-            throw new InvalidArgumentException('روی سرور Remnawave توکن API ذخیره نشده است.');
+            throw new InvalidArgumentException(__('services.remnawave_token_missing'));
         }
 
         $lines = [];
@@ -438,22 +438,22 @@ class RemnawaveService
         $username = (string) $account->remote_username;
 
         if ($server === null || ! $server->isRemnawave()) {
-            throw new InvalidArgumentException('اکانت باید به سرور Remnawave متصل باشد.');
+            throw new InvalidArgumentException(__('services.account_must_be_on_remnawave'));
         }
 
         if ($package === null) {
-            throw new InvalidArgumentException('اکانت #'.$account->id.' بدون پکیج است.');
+            throw new InvalidArgumentException(__('services.account_id_without_package', ['id' => $account->id]));
         }
 
         if (! $server->hasStoredRemnawaveApiToken()) {
-            throw new InvalidArgumentException('روی سرور Remnawave توکن API ذخیره نشده است.');
+            throw new InvalidArgumentException(__('services.remnawave_token_missing'));
         }
 
         $duration = $account->packageDuration
             ?? $package->durations()->where('is_enabled', true)->orderBy('sort_order')->first();
 
         if ($duration === null) {
-            throw new InvalidArgumentException('مدت‌زمان پکیج برای انتقال یافت نشد.');
+            throw new InvalidArgumentException(__('services.package_duration_not_found'));
         }
 
         $this->resolveActiveSquadUuids($server, $package);
@@ -483,14 +483,14 @@ class RemnawaveService
 
             return [
                 'action' => 'created',
-                'message' => "Remnawave «{$username}» از دیتابیس shahpanel ساخته شد.",
+                'message' => __('services.remnawave_user_created_from_db', ['username' => $username]),
             ];
         }
 
         $uuid = RemnawaveUserIdentity::fromRemoteUser($existing)
             ?? trim((string) ($account->remnawave_uuid ?? ''));
         if ($uuid === '') {
-            throw new RemoteProvisionException('کاربر Remnawave روی پنل یافت نشد (شناسه نامشخص).');
+            throw new RemoteProvisionException(__('services.remnawave_user_not_found_unknown_id'));
         }
 
         $remote = $this->modifyPanelUser(
@@ -519,7 +519,7 @@ class RemnawaveService
 
         return [
             'action' => 'updated',
-            'message' => "Remnawave «{$username}» از دیتابیس shahpanel به‌روزرسانی شد (نام، حجم، انقضا).",
+            'message' => __('services.remnawave_user_updated_from_db', ['username' => $username]),
         ];
     }
 
@@ -674,7 +674,7 @@ class RemnawaveService
         }
 
         throw new InvalidArgumentException(
-            'هیچ Internal Squad فعالی تنظیم نشده است. روی سرور Remnawave «سینک squad» بزنید و در ویرایش سرور حداقل یک squad را انتخاب کنید (یا در پکیج Remnawave).'
+            __('services.remnawave_no_active_squad')
         );
     }
 

@@ -139,13 +139,13 @@
             <div class="card-body">
                 <p class="text-muted mb-0">{{ __('security.l7_protection_hint') }}</p>
                 <ul class="mt-2 mb-0">
-                    <li>محدودیت ورود: ۵ تلاش در دقیقه</li>
-                    <li>محدودیت ۲FA: ۱۰ تلاش در دقیقه</li>
-                    <li>محدودیت پنل خریدار: ۱۲۰ درخواست در دقیقه</li>
-                    <li>فایروال L7: اسکن الگوهای SQLi / XSS / Path Traversal</li>
-                    <li>هدرهای X-Frame-Options، CSP، X-Content-Type-Options، HSTS (HTTPS)</li>
-                    <li>هدایت خودکار از مسیرهای legacy به مسیر جدید</li>
-                    <li>ورود به پنل دیگر (impersonation): حداکثر {{ (int) config('shahpanel.impersonation_ttl_minutes', 3) }} دقیقه با تمدید در هر فعالیت</li>
+                    <li>{{ __('ui.security_rate_limit_login') }}</li>
+                    <li>{{ __('ui.security_rate_limit_2fa') }}</li>
+                    <li>{{ __('ui.security_rate_limit_client_portal') }}</li>
+                    <li>{{ __('ui.security_l7_firewall') }}</li>
+                    <li>{{ __('ui.security_headers') }}</li>
+                    <li>{{ __('ui.security_legacy_redirect') }}</li>
+                    <li>{{ __('ui.security_impersonation', [':minutes' => (int) config('shahpanel.impersonation_ttl_minutes', 3)]) }}</li>
                     @if (! ($htaccessPending ?? true))
                         <li class="text-success">{{ __('security.htaccess_all_applied') }}</li>
                     @endif

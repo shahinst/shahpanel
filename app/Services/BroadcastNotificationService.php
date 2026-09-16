@@ -55,7 +55,7 @@ class BroadcastNotificationService
     public function approve(NotificationBroadcast $broadcast, User $admin, ?string $note = null): NotificationBroadcast
     {
         if ($broadcast->status !== BroadcastStatus::Pending) {
-            throw new InvalidArgumentException('این درخواست قبلاً بررسی شده است.');
+            throw new InvalidArgumentException(__('services.broadcast_request_already_reviewed'));
         }
 
         $broadcast->update([
@@ -73,7 +73,7 @@ class BroadcastNotificationService
     public function reject(NotificationBroadcast $broadcast, User $admin, ?string $note = null): NotificationBroadcast
     {
         if ($broadcast->status !== BroadcastStatus::Pending) {
-            throw new InvalidArgumentException('این درخواست قبلاً بررسی شده است.');
+            throw new InvalidArgumentException(__('services.broadcast_request_already_reviewed'));
         }
 
         $broadcast->update([

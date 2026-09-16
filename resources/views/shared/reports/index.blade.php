@@ -5,11 +5,11 @@
 @php
     use App\Enums\ServiceType;
     $statusLabels = [
-        'active' => ['فعال', 'success'],
-        'disabled' => ['غیرفعال', 'secondary'],
-        'expired' => ['منقضی', 'danger'],
-        'exhausted' => ['اتمام حجم', 'warning'],
-        'pending' => ['در انتظار', 'info'],
+        'active' => [__('accounts.status_active'), 'success'],
+        'disabled' => [__('accounts.status_disabled'), 'secondary'],
+        'expired' => [__('accounts.status_expired'), 'danger'],
+        'exhausted' => [__('accounts.status_exhausted'), 'warning'],
+        'pending' => [__('accounts.status_pending'), 'info'],
     ];
     $bar = function (int $value, int $total, string $color = 'primary') {
         $pct = $total > 0 ? round($value / $total * 100, 1) : 0;
@@ -40,7 +40,7 @@
     $svgArea = function (array $labels, array $vals, string $color, ?string $currency = null) use ($W, $H, $pad, $grid, $hitCols) {
         $n = count($vals);
         if ($n === 0 || array_sum($vals) == 0) {
-            return '<div class="text-muted small text-center py-5">داده‌ای در این بازه نیست</div>';
+            return '<div class="text-muted small text-center py-5">'.e(__('ui.no_data_in_period')).'</div>';
         }
         $max = max($vals); $max = $max > 0 ? $max : 1;
         $iw = $W - 2 * $pad; $ih = $H - 2 * $pad;
@@ -61,14 +61,14 @@
             .'<polygon points="'.$area.'" fill="'.$color.'" fill-opacity=".12"/>'
             .'<polyline points="'.$line.'" fill="none" stroke="'.$color.'" stroke-width="2"/>'
             .$dots
-            .'<text x="'.$pad.'" y="'.($pad - 6).'" font-size="9" fill="currentColor" fill-opacity=".6">حداکثر: '.$maxLbl.'</text>'
+            .'<text x="'.$pad.'" y="'.($pad - 6).'" font-size="9" fill="currentColor" fill-opacity=".6">'.e(__('ui.max_x', [':value' => $maxLbl])).'</text>'
             .$hitCols($labels, $vals, $currency, $iw, $ih)
             .'</svg>';
     };
     $svgBars = function (array $labels, array $vals, string $color, string $currency) use ($W, $H, $pad, $grid, $hitCols, $mkTip) {
         $n = count($vals);
         if ($n === 0 || array_sum($vals) == 0) {
-            return '<div class="text-muted small text-center py-5">داده‌ای در این بازه نیست</div>';
+            return '<div class="text-muted small text-center py-5">'.e(__('ui.no_data_in_period')).'</div>';
         }
         $max = max($vals); $max = $max > 0 ? $max : 1;
         $iw = $W - 2 * $pad; $ih = $H - 2 * $pad;
@@ -82,7 +82,7 @@
         }
         return '<svg viewBox="0 0 '.$W.' '.$H.'" width="100%" preserveAspectRatio="none" style="color:#889;overflow:visible;">'
             .$grid($ih).$bars
-            .'<text x="'.$pad.'" y="'.($pad - 6).'" font-size="9" fill="currentColor" fill-opacity=".6">حداکثر: '.format_money($max, $currency).'</text>'
+            .'<text x="'.$pad.'" y="'.($pad - 6).'" font-size="9" fill="currentColor" fill-opacity=".6">'.e(__('ui.max_x', [':value' => format_money($max, $currency)])).'</text>'
             .$hitCols($labels, $vals, $currency, $iw, $ih)
             .'</svg>';
     };
@@ -102,26 +102,26 @@
     <div class="card-body">
         <form method="GET" class="row g-2 align-items-end">
             <div class="col-md-3">
-                <label class="form-label">از تاریخ (شمسی)</label>
+                <label class="form-label">{{ __('ui.date_from_jalali') }}</label>
                 <x-form.jalali-date name="from" :value="$fromInput" />
             </div>
             <div class="col-md-3">
-                <label class="form-label">تا تاریخ (شمسی)</label>
+                <label class="form-label">{{ __('ui.date_to_jalali') }}</label>
                 <x-form.jalali-date name="to" :value="$toInput" />
             </div>
             <div class="col-md-3">
-                <button type="submit" class="btn btn-primary btn-sm"><i class="bx bx-filter-alt"></i> اعمال بازه</button>
-                <a href="{{ route($panel.'.reports.index') }}" class="btn btn-outline-secondary btn-sm">۳۰ روز اخیر</a>
+                <button type="submit" class="btn btn-primary btn-sm"><i class="bx bx-filter-alt"></i> {{ __('ui.apply_range') }}</button>
+                <a href="{{ route($panel.'.reports.index') }}" class="btn btn-outline-secondary btn-sm">{{ __('ui.last_30_days') }}</a>
             </div>
             <div class="col-md-3 text-md-end">
-                <span class="text-muted small">بازه: {{ jalali_date($from,'Y/m/d') }} تا {{ jalali_date($to,'Y/m/d') }}</span>
+                <span class="text-muted small">{{ __('ui.range_from_to', [':from' => jalali_date($from,'Y/m/d'), ':to' => jalali_date($to,'Y/m/d')]) }}</span>
             </div>
         </form>
     </div>
 </div>
 
 {{-- ============ KPIs (role-aware) ============ --}}
-<h5 class="text-muted mb-2"><i class="bx bx-calendar"></i> عملکرد بازه‌ی انتخابی</h5>
+<h5 class="text-muted mb-2"><i class="bx bx-calendar"></i> {{ __('ui.reports_period_performance') }}</h5>
 <div class="row">
     @foreach ($kpis as $k)
         <x-stat-card :title="$k['title']" :value="$k['value']" :icon="$k['icon']" :color="$k['color']" :hint="$k['hint']" />
@@ -132,13 +132,13 @@
 <div class="row">
     <div class="col-lg-6">
         <div class="card">
-            <div class="card-header"><h6 class="mb-0"><i class="bx bx-line-chart"></i> اکانت‌های ساخته‌شده ({{ $trend['granularity']==='monthly'?'ماهانه':'روزانه' }})</h6></div>
+            <div class="card-header"><h6 class="mb-0"><i class="bx bx-line-chart"></i> {{ __('ui.reports_accounts_created') }} ({{ $trend['granularity']==='monthly' ? __('ui.monthly') : __('ui.daily') }})</h6></div>
             <div class="card-body">{!! $svgArea($trend['labels'], $trend['accounts'], '#556ee6', null) !!}</div>
         </div>
     </div>
     <div class="col-lg-6">
         <div class="card">
-            <div class="card-header"><h6 class="mb-0"><i class="bx bx-bar-chart-alt-2"></i> {{ $scope==='seller'?'خرید':'درآمد' }} ({{ $trend['granularity']==='monthly'?'ماهانه':'روزانه' }})</h6></div>
+            <div class="card-header"><h6 class="mb-0"><i class="bx bx-bar-chart-alt-2"></i> {{ $scope==='seller' ? __('ui.purchase') : __('ui.revenue') }} ({{ $trend['granularity']==='monthly' ? __('ui.monthly') : __('ui.daily') }})</h6></div>
             <div class="card-body">
                 {{-- برای هر ارز یک نمودار جدا رسم می‌شود تا مبالغ ارزهای مختلف با هم جمع نشوند. --}}
                 @foreach ($trend['revenue'] as $revenueSeries)
@@ -154,11 +154,11 @@
 </div>
 
 {{-- ============ Current account state ============ --}}
-<h5 class="text-muted mb-2 mt-2"><i class="bx bx-list-ul"></i> وضعیت فعلی اکانت‌ها ({{ $scope==='admin'?'کل سیستم':'اکانت‌های شما' }}: {{ persian_digits($state['totalAccounts']) }})</h5>
+<h5 class="text-muted mb-2 mt-2"><i class="bx bx-list-ul"></i> {{ __('ui.reports_current_account_state_scoped', [':scope' => $scope==='admin' ? __('ui.whole_system') : __('ui.your_accounts'), ':total' => persian_digits($state['totalAccounts'])]) }}</h5>
 <div class="row">
     <div class="col-lg-6">
         <div class="card h-100">
-            <div class="card-header"><h6 class="mb-0">بر اساس وضعیت</h6></div>
+            <div class="card-header"><h6 class="mb-0">{{ __('ui.reports_by_status') }}</h6></div>
             <div class="card-body">
                 <table class="table table-sm align-middle mb-0">
                     @foreach ($statusLabels as $key => [$label, $color])
@@ -170,15 +170,15 @@
                     @endforeach
                 </table>
                 <div class="mt-3 d-flex gap-3 flex-wrap">
-                    <span class="small">⏳ نزدیک انقضا (≤{{ persian_digits($state['thresholdDays']) }} روز): <strong class="text-danger">{{ persian_digits($state['expiringSoon']) }}</strong></span>
-                    <span class="small">📉 حجم کم (<{{ format_data_size($state['thresholdBytes']) }}): <strong class="text-warning">{{ persian_digits($state['lowVolume']) }}</strong></span>
+                    <span class="small">⏳ {{ __('ui.reports_expiring_soon', [':days' => persian_digits($state['thresholdDays'])]) }} <strong class="text-danger">{{ persian_digits($state['expiringSoon']) }}</strong></span>
+                    <span class="small">📉 {{ __('ui.reports_low_volume', [':size' => format_data_size($state['thresholdBytes'])]) }} <strong class="text-warning">{{ persian_digits($state['lowVolume']) }}</strong></span>
                 </div>
             </div>
         </div>
     </div>
     <div class="col-lg-6">
         <div class="card h-100">
-            <div class="card-header"><h6 class="mb-0">بر اساس نوع سرویس</h6></div>
+            <div class="card-header"><h6 class="mb-0">{{ __('ui.reports_by_service_type') }}</h6></div>
             <div class="card-body">
                 <table class="table table-sm align-middle mb-0">
                     @forelse ($state['accByService'] as $key => $c)
@@ -199,7 +199,7 @@
     @if ($flags['showServers'])
     <div class="col-lg-6">
         <div class="card h-100">
-            <div class="card-header"><h6 class="mb-0">اکانت‌ها بر اساس سرور</h6></div>
+            <div class="card-header"><h6 class="mb-0">{{ __('ui.reports_accounts_by_server') }}</h6></div>
             <div class="card-body">
                 <table class="table table-sm align-middle mb-0">
                     @forelse ($state['accByServer'] as $row)
@@ -214,7 +214,7 @@
     @endif
     <div class="{{ $flags['showServers'] ? 'col-lg-6' : 'col-12' }}">
         <div class="card h-100">
-            <div class="card-header"><h6 class="mb-0">پرفروش‌ترین پکیج‌ها (تعداد اکانت)</h6></div>
+            <div class="card-header"><h6 class="mb-0">{{ __('ui.reports_top_packages') }}</h6></div>
             <div class="card-body">
                 <table class="table table-sm align-middle mb-0">
                     @forelse ($state['accByPackage'] as $row)
@@ -230,19 +230,19 @@
 
 {{-- ============ Resellers (admin: all, agent: own) — hidden for sellers ============ --}}
 @if ($flags['showResellers'])
-<h5 class="text-muted mb-2 mt-2"><i class="bx bx-user"></i> {{ $scope==='admin'?'فروشندگان':'فروشنده‌های شما' }}</h5>
+<h5 class="text-muted mb-2 mt-2"><i class="bx bx-user"></i> {{ $scope==='admin' ? __('ui.sellers_plural') : __('ui.your_sellers') }}</h5>
 <div class="row">
-    <x-stat-card title="تعداد فروشندگان" :value="persian_digits($resellers['sellersCount'])" icon="bx-user" color="primary"
-                 :hint="'موجودی کل کیف‌پول‌ها: '.(collect($resellers['walletSellers'])->map(fn (string $amount, string $code): string => format_money($amount, $code))->implode(' + ') ?: format_money('0', \App\Enums\MoneyCurrency::default()))" />
+    <x-stat-card title="{{ __('ui.sellers_count') }}" :value="persian_digits($resellers['sellersCount'])" icon="bx-user" color="primary"
+                 :hint="__('ui.total_wallet_balance_x', [':amount' => (collect($resellers['walletSellers'])->map(fn (string $amount, string $code): string => format_money($amount, $code))->implode(' + ') ?: format_money('0', \App\Enums\MoneyCurrency::default()))])" />
 </div>
 <div class="row">
     <div class="col-lg-6">
         <div class="card h-100">
-            <div class="card-header"><h6 class="mb-0">فعال‌ترین فروشندگان (تعداد اکانت)</h6></div>
+            <div class="card-header"><h6 class="mb-0">{{ __('ui.reports_top_sellers') }}</h6></div>
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-sm table-hover align-middle mb-0">
-                        <thead><tr><th>فروشنده</th><th>کل اکانت</th><th>فعال</th></tr></thead>
+                        <thead><tr><th>{{ __('roles.seller') }}</th><th>{{ __('ui.col_total_accounts') }}</th><th>{{ __('app.active') }}</th></tr></thead>
                         <tbody>
                             @forelse ($resellers['topSellers'] as $s)
                                 <tr><td>{{ $s['name'] }}</td><td>{{ persian_digits($s['total']) }}</td><td><span class="text-success">{{ persian_digits($s['active']) }}</span></td></tr>
@@ -257,16 +257,16 @@
     </div>
     <div class="col-lg-6">
         <div class="card h-100">
-            <div class="card-header"><h6 class="mb-0">پردرآمدترین فروشندگان (در بازه)</h6></div>
+            <div class="card-header"><h6 class="mb-0">{{ __('ui.reports_top_sellers_revenue') }}</h6></div>
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-sm table-hover align-middle mb-0">
-                        <thead><tr><th>فروشنده</th><th>گردش</th><th>فاکتور</th></tr></thead>
+                        <thead><tr><th>{{ __('roles.seller') }}</th><th>{{ __('ui.col_turnover') }}</th><th>{{ __('ui.col_invoice') }}</th></tr></thead>
                         <tbody>
                             @forelse ($resellers['topSellersRevenue'] as $s)
                                 <tr><td>{{ $s['name'] }}</td><td>{{ collect($s['revenue'])->map(fn (string $amount, string $code): string => format_money($amount, $code))->implode(' + ') }}</td><td>{{ persian_digits($s['count']) }}</td></tr>
                             @empty
-                                <tr><td colspan="3" class="text-muted">در این بازه فاکتوری نیست</td></tr>
+                                <tr><td colspan="3" class="text-muted">{{ __('ui.reports_no_invoices_in_period') }}</td></tr>
                             @endforelse
                         </tbody>
                     </table>

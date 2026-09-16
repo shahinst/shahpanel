@@ -5,7 +5,7 @@
 @section('panel_content')
 @include('partials.panel-page-hero', [
     'title' => __('menu.payment_requests'),
-    'subtitle' => 'درخواست‌های شارژ کیف پول',
+    'subtitle' => __('ui.payment_requests_seller_subtitle'),
     'icon' => 'bx-wallet',
     'actions' => '<a href="'.route('seller.payment-requests.create').'" class="btn btn-light btn-sm"><i class="bx bx-plus"></i> '.e(__('menu.new_charge_request')).'</a>',
 ])
@@ -15,7 +15,7 @@
 <div class="panel-modern-card">
     <div class="card-head"><h3>{{ __('menu.payment_requests') }}</h3></div>
     <div class="card-body">
-        <x-table :headers="[__('menu.amount'), 'وضعیت', 'تاریخ', __('app.actions')]">
+        <x-table :headers="[__('menu.amount'), __('app.status'), __('ui.col_date'), __('app.actions')]">
             @forelse ($paymentRequests as $item)
                 <tr>
                     <td>{{ format_money($item->amount, $item->moneyCurrency()) }}</td>

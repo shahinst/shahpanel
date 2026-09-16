@@ -44,7 +44,7 @@ class ManagedInterfaceService
         bool $queueApply = true,
     ): ManagedInterface {
         if (! in_array($type, ['wireguard', 'ppp'], true)) {
-            throw new RuntimeException('نوع اینترفیس باید wireguard یا ppp باشد.');
+            throw new RuntimeException(__('services.interface_type_invalid'));
         }
 
         $suffix = $location?->code ?: 'public';
@@ -57,7 +57,7 @@ class ManagedInterfaceService
 
         if ($existing !== null) {
             if ($this->existsOnRouter($server, $name, $type)) {
-                throw new RuntimeException("اینترفیس «{$name}» قبلاً روی این سرور ساخته شده.");
+                throw new RuntimeException(__('services.interface_already_exists', ['name' => $name]));
             }
 
             $this->purgeOrphanInterface($existing);

@@ -148,7 +148,7 @@
                     @endif
 
                     @php
-                        $tableHeaders = ['نام', 'نوع سرویس', 'قیمت از', 'سرورها', 'وضعیت', __('app.actions')];
+                        $tableHeaders = [__('ui.col_name'), __('ui.col_service_type'), __('ui.col_price_from'), __('ui.col_servers'), __('app.status'), __('app.actions')];
                         if (($categories ?? collect())->isNotEmpty()) {
                             array_splice($tableHeaders, 1, 0, [__('packages.category')]);
                         }

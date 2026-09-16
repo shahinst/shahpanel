@@ -2,7 +2,7 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="utf-8">
-    <title>فاکتور {{ $invoice->invoice_number }}</title>
+    <title>{{ __('ui.col_invoice') }} {{ $invoice->invoice_number }}</title>
     @include('pdf.partials.vazirmatn-styles')
     <style>
         body {
@@ -58,28 +58,28 @@
 </head>
 <body>
     <div class="header">
-        <div class="title">فاکتور فروش</div>
+        <div class="title">{{ __('ui.sales_invoice') }}</div>
         <div>{{ $invoice->invoice_number }}</div>
     </div>
 
     <table class="meta-table">
         <tr>
             <td width="50%">
-                <strong>خریدار:</strong> {{ $invoice->buyer?->full_name ?? $invoice->buyer?->username }}<br>
-                <strong>فروشنده:</strong> {{ $invoice->seller?->full_name ?? $invoice->seller?->username }}<br>
-                <strong>نماینده:</strong> {{ $invoice->agent?->full_name ?? $invoice->agent?->username }}
+                <strong>{{ __('ui.buyer') }}:</strong> {{ $invoice->buyer?->full_name ?? $invoice->buyer?->username }}<br>
+                <strong>{{ __('roles.seller') }}:</strong> {{ $invoice->seller?->full_name ?? $invoice->seller?->username }}<br>
+                <strong>{{ __('roles.agent') }}:</strong> {{ $invoice->agent?->full_name ?? $invoice->agent?->username }}
             </td>
             <td width="50%">
-                <strong>تاریخ صدور:</strong> {{ jalali_date($invoice->issued_at) }}<br>
-                <strong>نوع:</strong> {{ $invoice->type->value }}<br>
-                <strong>وضعیت:</strong> {{ $invoice->status->value }}
+                <strong>{{ __('ui.issue_date') }}:</strong> {{ jalali_date($invoice->issued_at) }}<br>
+                <strong>{{ __('ui.col_type') }}:</strong> {{ $invoice->type->value }}<br>
+                <strong>{{ __('app.status') }}:</strong> {{ $invoice->status->value }}
             </td>
         </tr>
     </table>
 
     @if($invoice->account)
         <p>
-            <strong>اکانت:</strong> {{ $invoice->account->remote_username }}
+            <strong>{{ __('ui.col_account') }}:</strong> {{ $invoice->account->remote_username }}
             @if($invoice->account->package)
                 — {{ $invoice->account->package->name }}
             @endif
@@ -89,10 +89,10 @@
     <table class="items-table">
         <thead>
             <tr>
-                <th>شرح</th>
-                <th width="80">تعداد</th>
-                <th width="120">قیمت واحد</th>
-                <th width="120">جمع</th>
+                <th>{{ __('ui.col_description') }}</th>
+                <th width="80">{{ __('ui.col_quantity') }}</th>
+                <th width="120">{{ __('ui.col_unit_price') }}</th>
+                <th width="120">{{ __('ui.col_subtotal') }}</th>
             </tr>
         </thead>
         <tbody>
@@ -106,7 +106,7 @@
                 </tr>
             @endforeach
             <tr class="total-row">
-                <td colspan="3">جمع کل</td>
+                <td colspan="3">{{ __('accounting.export_totals') }}</td>
                 <td>{{ format_money($invoice->total, $invoice->currency) }}</td>
             </tr>
         </tbody>

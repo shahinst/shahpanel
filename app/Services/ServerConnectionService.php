@@ -30,7 +30,7 @@ class ServerConnectionService
             $server->isSanaei() => $this->sanaeiService->testConnectionDetails($server),
             default => [
                 'ok' => false,
-                'message' => 'نوع سرور «'.($server->type?->label() ?? 'نامشخص').'» پشتیبانی نمی‌شود یا اشتباه تنظیم شده است.',
+                'message' => __('services.server_type_unsupported', ['type' => $server->type?->label() ?? __('services.unknown')]),
                 'error' => 'server_type_unsupported',
             ],
         };

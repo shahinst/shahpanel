@@ -5,7 +5,7 @@
 @section('panel_content')
 @include('partials.panel-page-hero', [
     'title' => __('menu.sellers'),
-    'subtitle' => 'مدیریت فروشندگان زیرمجموعه',
+    'subtitle' => __('ui.sellers_agent_index_subtitle'),
     'icon' => 'bx-store',
     'actions' => view('agent.sellers.partials.create-action')->render(),
 ])

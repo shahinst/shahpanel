@@ -82,7 +82,7 @@ final class SanaeiPanelClient
 
             $result = [
                 'ok' => $response->successful(),
-                'message' => 'اتصال به پنل Sanaei برقرار شد.',
+                'message' => __('services.sanaei_connect_ok'),
                 'inbound_count' => is_array($inbounds) ? count($inbounds) : 0,
                 'panel_url' => $this->url()->displayAddress(),
                 'api_prefix' => $prefix,
@@ -95,7 +95,7 @@ final class SanaeiPanelClient
         } catch (\Throwable $exception) {
             $result = [
                 'ok' => false,
-                'message' => 'اتصال به پنل Sanaei ناموفق بود.',
+                'message' => __('services.sanaei_connect_failed'),
                 'error' => $exception->getMessage(),
                 'panel_url' => $this->url()->displayAddress(),
                 'tried_urls' => $tried,
@@ -121,7 +121,7 @@ final class SanaeiPanelClient
         }
 
         if ($this->server->username_enc === null || $this->server->password_enc === null) {
-            throw new RemoteConnectionException('نام کاربری و رمز پنل Sanaei برای سرور #'.$this->server->id.' تنظیم نشده است.');
+            throw new RemoteConnectionException(__('services.sanaei_credentials_missing', ['id' => $this->server->id]));
         }
 
         $this->resolveReachableUrl();
@@ -160,8 +160,8 @@ final class SanaeiPanelClient
         }
 
         throw new RemoteConnectionException(
-            'API پنل Sanaei یافت نشد. مسیرهای امتحان‌شده: '.implode(', ', $candidates)
-            .($this->server->web_base_path ? '' : ' — اگر در پنل webBasePath تنظیم کرده‌اید، «مسیر پایه وب» را در فرم سرور وارد کنید.')
+            __('services.sanaei_api_not_found', ['list' => implode(', ', $candidates)])
+            .($this->server->web_base_path ? '' : ' — '.__('services.sanaei_web_base_path_hint'))
         );
     }
 
@@ -195,7 +195,7 @@ final class SanaeiPanelClient
                     : $client->asJson()->post($url, $payload),
                 'PUT' => $client->asJson()->put($url, $payload),
                 'DELETE' => $client->delete($url, $payload),
-                default => throw new RemoteConnectionException("متد HTTP پشتیبانی نمی‌شود [{$method}]"),
+                default => throw new RemoteConnectionException(__('services.http_method_unsupported', ['method' => $method])),
             };
         } catch (ConnectionException $exception) {
             throw new RemoteConnectionException($this->friendlyConnectionError($exception->getMessage()), 0, $exception);
@@ -336,12 +336,12 @@ final class SanaeiPanelClient
             ]);
 
             throw new RemoteConnectionException(
-                'پنل Sanaei به‌جای پاسخ API یک صفحه وب برگرداند — نشست پنل منقضی شده یا «مسیر پایه وب» نادرست است.'
+                __('services.sanaei_html_instead_of_api')
             );
         }
 
         if ($last === null) {
-            throw new RemoteConnectionException('درخواست API به پنل Sanaei ارسال نشد.');
+            throw new RemoteConnectionException(__('services.sanaei_api_request_failed'));
         }
 
         if ($attempts >= $maxAttempts || microtime(true) >= $deadline) {
@@ -624,8 +624,7 @@ final class SanaeiPanelClient
 
         return [
             'reachable' => false,
-            'error' => 'پاسخ HTTP دریافت شد ولی مسیر پنل شناسایی نشد (آخرین وضعیت: '.($lastStatus ?? '?').'). '
-                .'مسیر پایه وب را بررسی کنید.',
+            'error' => __('services.sanaei_panel_path_undetected', ['status' => $lastStatus ?? '?']),
             'status' => $lastStatus,
             'body_snippet' => $lastBody,
         ];
@@ -682,8 +681,8 @@ final class SanaeiPanelClient
 
         return [
             'reachable' => false,
-            'error' => 'سرور با HTTP/0.0 به HTTPS ریدایرکت می‌کند — از https:// استفاده کنید.'
-                .(! empty($upgrade['upgrade_to']) ? ' مقصد: '.$upgrade['upgrade_to'] : ''),
+            'error' => __('services.sanaei_https_redirect')
+                .(! empty($upgrade['upgrade_to']) ? ' '.__('services.target_url', ['url' => $upgrade['upgrade_to']]) : ''),
         ];
     }
 
@@ -816,19 +815,19 @@ final class SanaeiPanelClient
 
         if (! $response->successful()) {
             throw new RemoteConnectionException(
-                'ورود Sanaei ناموفق: HTTP '.$response->status().' — آدرس: '.$loginUrl
-                .($response->status() === 404 ? ' — مسیر /login یافت نشد؛ webBasePath را بررسی کنید.' : '')
+                __('services.sanaei_login_failed_http', ['status' => $response->status(), 'url' => $loginUrl])
+                .($response->status() === 404 ? ' — '.__('services.sanaei_login_path_missing') : '')
             );
         }
 
         $json = $response->json();
         if (is_array($json) && array_key_exists('success', $json) && $json['success'] === false) {
-            throw new RemoteConnectionException('ورود Sanaei ناموفق: '.panel_api_message($json['msg'] ?? $json['message'] ?? null, 'نام کاربری یا رمز اشتباه'));
+            throw new RemoteConnectionException(__('services.sanaei_login_failed', ['reason' => panel_api_message($json['msg'] ?? $json['message'] ?? null, __('services.sanaei_bad_credentials'))]));
         }
 
         $cookie = $this->captureSessionCookie($response->headers()) ?? $this->captureSessionCookieFromJar();
         if ($cookie === null) {
-            throw new RemoteConnectionException('ورود Sanaei انجام شد ولی کوکی session برنگشت.');
+            throw new RemoteConnectionException(__('services.sanaei_login_no_session_cookie'));
         }
     }
 

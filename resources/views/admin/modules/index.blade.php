@@ -1,16 +1,15 @@
 @extends('layouts.panel')
 
-@section('page_title', 'ماژول‌ها')
+@section('page_title', __('ui.modules_page_title'))
 
 @section('panel_content')
 <div class="panel-modern-card mb-4">
     <div class="card-head">
-        <h3><i class="bx bx-extension"></i> افزودن ماژول جدید</h3>
+        <h3><i class="bx bx-extension"></i> {{ __('ui.modules_add_new') }}</h3>
     </div>
     <div class="card-body">
         <p class="text-muted mb-3">
-            فایل ماژول را با فرمت <code>.zip</code> انتخاب و آپلود کنید. پس از نصب، ماژول در حالت
-            «غیرفعال» قرار می‌گیرد؛ برای استفاده باید آن را فعال کنید.
+            {{ __('ui.modules_upload_hint_before') }} <code>.zip</code> {{ __('ui.modules_upload_hint_after') }}
         </p>
 
         <form action="{{ route('admin.modules.upload') }}" method="POST" enctype="multipart/form-data"
@@ -19,7 +18,7 @@
             <input type="file" name="module" accept=".zip" required
                    class="form-control" style="max-width: 360px;">
             <button type="submit" class="btn btn-primary">
-                <i class="bx bx-upload"></i> آپلود و نصب
+                <i class="bx bx-upload"></i> {{ __('ui.modules_upload_install') }}
             </button>
         </form>
 
@@ -31,22 +30,22 @@
 
 <div class="panel-modern-card">
     <div class="card-head">
-        <h3><i class="bx bx-cube"></i> ماژول‌های نصب‌شده</h3>
+        <h3><i class="bx bx-cube"></i> {{ __('ui.modules_installed') }}</h3>
     </div>
     <div class="card-body">
         @if ($modules->isEmpty())
-            <p class="text-muted mb-0">هنوز هیچ ماژولی نصب نشده است.</p>
+            <p class="text-muted mb-0">{{ __('ui.modules_none_installed') }}</p>
         @else
             <div class="table-responsive">
                 <table class="table align-middle">
                     <thead>
                         <tr>
-                            <th>نام</th>
-                            <th>نسخه</th>
-                            <th>سازنده</th>
-                            <th>وضعیت</th>
-                            <th>تاریخ نصب</th>
-                            <th class="text-end">عملیات</th>
+                            <th>{{ __('ui.col_name') }}</th>
+                            <th>{{ __('ui.col_version') }}</th>
+                            <th>{{ __('ui.col_author') }}</th>
+                            <th>{{ __('app.status') }}</th>
+                            <th>{{ __('ui.col_installed_at') }}</th>
+                            <th class="text-end">{{ __('app.actions') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -63,9 +62,9 @@
                                 <td>{{ $module->author ?: '—' }}</td>
                                 <td>
                                     @if ($module->isActive())
-                                        <span class="badge bg-success">فعال</span>
+                                        <span class="badge bg-success">{{ __('app.active') }}</span>
                                     @else
-                                        <span class="badge bg-secondary">غیرفعال</span>
+                                        <span class="badge bg-secondary">{{ __('app.inactive') }}</span>
                                     @endif
                                 </td>
                                 <td>{{ $module->installed_at ? jalali_date($module->installed_at) : '—' }}</td>
@@ -75,24 +74,24 @@
                                             <form action="{{ route('admin.modules.deactivate', $module) }}" method="POST">
                                                 @csrf
                                                 <button type="submit" class="btn btn-sm btn-outline-secondary">
-                                                    <i class="bx bx-pause"></i> غیرفعال‌سازی
+                                                    <i class="bx bx-pause"></i> {{ __('ui.deactivate') }}
                                                 </button>
                                             </form>
                                         @else
                                             <form action="{{ route('admin.modules.activate', $module) }}" method="POST">
                                                 @csrf
                                                 <button type="submit" class="btn btn-sm btn-primary">
-                                                    <i class="bx bx-play"></i> فعال‌سازی
+                                                    <i class="bx bx-play"></i> {{ __('ui.activate') }}
                                                 </button>
                                             </form>
                                         @endif
 
                                         <form action="{{ route('admin.modules.destroy', $module) }}" method="POST"
-                                              onsubmit="return confirm('حذف ماژول «{{ $module->name }}»؟ این عملیات فایل‌های ماژول را نیز پاک می‌کند.');">
+                                              onsubmit='return confirm(@json(__("ui.modules_delete_confirm", [":name" => $module->name])));'>
                                             @csrf
                                             @method('DELETE')
                                             <button type="submit" class="btn btn-sm btn-outline-danger">
-                                                <i class="bx bx-trash"></i> حذف
+                                                <i class="bx bx-trash"></i> {{ __('app.delete') }}
                                             </button>
                                         </form>
                                     </div>

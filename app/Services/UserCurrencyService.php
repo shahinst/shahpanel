@@ -94,7 +94,7 @@ class UserCurrencyService
 
         if (! $this->canUseCurrency($user, $currencyEnum)) {
             throw new InvalidArgumentException(
-                "کاربر «{$user->full_name}» مجاز به استفاده از ارز {$currencyEnum->label()} نیست."
+                __('services.user_currency_not_allowed', ['name' => $user->full_name, 'currency' => $currencyEnum->label()])
             );
         }
     }
@@ -129,7 +129,7 @@ class UserCurrencyService
             $allowed = $this->enabledCodes($parent);
             if (! in_array($currency->value, $allowed, true)) {
                 throw new InvalidArgumentException(
-                    "ارز {$currency->label()} برای نماینده والد فعال نیست."
+                    __('services.currency_not_enabled_for_parent', ['currency' => $currency->label()])
                 );
             }
         }

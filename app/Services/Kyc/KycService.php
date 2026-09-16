@@ -28,7 +28,7 @@ class KycService
     {
         $key = KycSettings::apiKey();
         if ($key === null) {
-            throw new ApiIrException('کلید API احراز هویت تنظیم نشده است.');
+            throw new ApiIrException(__('services.kyc_api_key_missing'));
         }
 
         return new ApiIrClient($key);
@@ -81,13 +81,13 @@ class KycService
         $birthDate = IranIdentityValidator::normalizeJalaliBirthDate($data['birth_date']);
 
         if (! IranIdentityValidator::isValidNationalCode($nationalCode)) {
-            throw ValidationException::withMessages(['national_code' => ['کد ملی نامعتبر است.']]);
+            throw ValidationException::withMessages(['national_code' => [__('services.kyc_invalid_national_code')]]);
         }
         if (! IranIdentityValidator::isValidMobile($mobile)) {
-            throw ValidationException::withMessages(['mobile' => ['شماره موبایل نامعتبر است. مثال: 09123456789']]);
+            throw ValidationException::withMessages(['mobile' => [__('services.kyc_invalid_mobile')]]);
         }
         if ($birthDate === null) {
-            throw ValidationException::withMessages(['birth_date' => ['تاریخ تولد نامعتبر است. فرمت: 1370/1/1']]);
+            throw ValidationException::withMessages(['birth_date' => [__('services.kyc_invalid_birth_date')]]);
         }
 
         $path = $this->storeDocument($document);
@@ -128,12 +128,12 @@ class KycService
         $this->assertCanManage($verification, $actor);
 
         if ($verification->account_id !== null || $verification->status === KycVerificationStatus::Used) {
-            throw new InvalidArgumentException('این احراز قبلاً برای ساخت اکانت مصرف شده است.');
+            throw new InvalidArgumentException(__('services.kyc_already_consumed'));
         }
 
         if ($verification->isLocked()) {
             throw new InvalidArgumentException(
-                'احراز این اکانت قفل شده است. باید ادمین ریست کند (حداکثر ۲ تلاش ناموفق).'
+                __('services.kyc_locked_needs_admin')
             );
         }
 
@@ -141,18 +141,18 @@ class KycService
             $verification->forceFill([
                 'status' => KycVerificationStatus::Locked,
                 'locked_at' => now(),
-                'last_error' => 'تعداد تلاش‌های احراز به پایان رسیده است.',
+                'last_error' => __('services.kyc_attempts_exhausted'),
             ])->save();
 
-            throw new InvalidArgumentException('تعداد تلاش‌های احراز به پایان رسیده است.');
+            throw new InvalidArgumentException(__('services.kyc_attempts_exhausted'));
         }
 
         if (! $verification->has_document || ! $verification->document_path) {
-            throw ValidationException::withMessages(['document' => ['آپلود تصویر کارت ملی الزامی است.']]);
+            throw ValidationException::withMessages(['document' => [__('services.kyc_document_required')]]);
         }
 
         if (! IranIdentityValidator::isValidMobile((string) $verification->mobile)) {
-            throw ValidationException::withMessages(['mobile' => ['شماره موبایل برای احراز ثبت نشده یا نامعتبر است.']]);
+            throw ValidationException::withMessages(['mobile' => [__('services.kyc_mobile_missing')]]);
         }
 
         $verification->verify_attempts = (int) $verification->verify_attempts + 1;
@@ -176,11 +176,11 @@ class KycService
             if (! ($shahkar['success'] ?? false) || ! ($shahkar['data'] ?? false)) {
                 $providerMessage = trim((string) ($shahkar['message'] ?? ''));
                 $errors[] = $providerMessage !== ''
-                    ? 'تطبیق موبایل با کد ملی ناموفق بود: '.$providerMessage
-                    : 'تطبیق موبایل با کد ملی ناموفق بود.';
+                    ? __('services.kyc_mobile_match_failed_reason', ['reason' => $providerMessage])
+                    : __('services.kyc_mobile_match_failed');
             }
         } catch (ApiIrException $exception) {
-            $errors[] = 'خطا در شاهکار: '.$exception->getMessage();
+            $errors[] = __('services.kyc_shahkar_error', ['error' => $exception->getMessage()]);
             $results['shahkar'] = ['error' => $exception->getMessage()];
         }
 
@@ -215,10 +215,10 @@ class KycService
             'errors' => $errors,
         ]);
 
-        throw new InvalidArgumentException(implode(' ', $errors).(
+        throw new InvalidArgumentException(implode(' ', $errors).' '.(
             $locked
-                ? ' احراز قفل شد؛ برای ادامه باید ادمین ریست کند.'
-                : ' تلاش باقی‌مانده: '.$verification->remainingAttempts()
+                ? __('services.kyc_locked_admin_reset')
+                : __('services.kyc_attempts_remaining', ['count' => $verification->remainingAttempts()])
         ));
     }
 
@@ -228,7 +228,7 @@ class KycService
 
         if (! $verification->isLocked() && $verification->status !== KycVerificationStatus::ResetRequested) {
             if ($verification->remainingAttempts() > 0) {
-                throw new InvalidArgumentException('هنوز امکان تلاش مجدد وجود دارد؛ نیازی به ریست نیست.');
+                throw new InvalidArgumentException(__('services.kyc_retry_still_possible'));
             }
         }
 
@@ -245,7 +245,7 @@ class KycService
     public function adminReset(AccountKycVerification $verification, User $admin): AccountKycVerification
     {
         if ($admin->role !== UserRole::Admin) {
-            throw new InvalidArgumentException('فقط ادمین می‌تواند احراز را ریست کند.');
+            throw new InvalidArgumentException(__('services.kyc_only_admin_can_reset'));
         }
 
         $verification->forceFill([
@@ -281,7 +281,7 @@ class KycService
 
         if ($verification === null) {
             throw ValidationException::withMessages([
-                'kyc_verification_id' => ['برای این پکیج ابتدا باید احراز هویت انجام شود.'],
+                'kyc_verification_id' => [__('services.kyc_required_for_package')],
             ]);
         }
 
@@ -289,19 +289,19 @@ class KycService
 
         if ($verification->package_id !== null && (int) $verification->package_id !== (int) $package->id) {
             throw ValidationException::withMessages([
-                'kyc_verification_id' => ['احراز هویت متعلق به پکیج دیگری است.'],
+                'kyc_verification_id' => [__('services.kyc_belongs_to_other_package')],
             ]);
         }
 
         if (! $verification->isVerified() || $verification->account_id !== null) {
             throw ValidationException::withMessages([
-                'kyc_verification_id' => ['احراز هویت معتبر و مصرف‌نشده یافت نشد.'],
+                'kyc_verification_id' => [__('services.kyc_no_valid_unused')],
             ]);
         }
 
         if (! $verification->has_document) {
             throw ValidationException::withMessages([
-                'kyc_document' => ['مدارک کارت ملی برای این احراز ثبت نشده است.'],
+                'kyc_document' => [__('services.kyc_document_missing')],
             ]);
         }
     }
@@ -316,7 +316,7 @@ class KycService
 
             if (! $locked || $locked->account_id !== null || $locked->status !== KycVerificationStatus::Verified) {
                 throw ValidationException::withMessages([
-                    'kyc_verification_id' => ['احراز هویت قابل مصرف نیست.'],
+                    'kyc_verification_id' => [__('services.kyc_not_consumable')],
                 ]);
             }
 
@@ -391,7 +391,7 @@ class KycService
         $path = $document->storeAs($directory.'/'.date('Y/m'), $safeName, $disk);
 
         if (! is_string($path) || $path === '') {
-            throw new InvalidArgumentException('ذخیره مدرک کارت ملی ناموفق بود.');
+            throw new InvalidArgumentException(__('services.kyc_document_store_failed'));
         }
 
         return $path;
@@ -400,13 +400,13 @@ class KycService
     protected function assertKycReady(): void
     {
         if (! KycSettings::enabled()) {
-            throw new InvalidArgumentException('سامانه احراز هویت غیرفعال است.');
+            throw new InvalidArgumentException(__('services.kyc_disabled'));
         }
         if (! KycSettings::hasApiKey()) {
-            throw new InvalidArgumentException('کلید API احراز هویت تنظیم نشده است.');
+            throw new InvalidArgumentException(__('services.kyc_api_key_missing'));
         }
         if (KycSettings::provider() !== KycProvider::ApiIr) {
-            throw new InvalidArgumentException('سامانه احراز انتخاب‌شده پشتیبانی نمی‌شود.');
+            throw new InvalidArgumentException(__('services.kyc_provider_unsupported'));
         }
     }
 
@@ -427,7 +427,7 @@ class KycService
             return;
         }
 
-        throw new InvalidArgumentException('دسترسی به این پرونده احراز مجاز نیست.');
+        throw new InvalidArgumentException(__('services.kyc_access_denied'));
     }
 
     protected function refreshCreditQuietly(): void

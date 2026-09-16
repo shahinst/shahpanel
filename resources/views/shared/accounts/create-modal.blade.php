@@ -157,7 +157,7 @@
     function formatMoney(value, currencyMeta) {
         const meta = currencyMeta || {};
         const decimals = Number.isFinite(Number(meta.decimals)) ? Number(meta.decimals) : 0;
-        const symbol = meta.symbol || meta.label || 'تومان';
+        const symbol = meta.symbol || meta.label || @json(__('packages.toman'));
         const amount = Number(value);
         if (!Number.isFinite(amount)) {
             return '—';
@@ -170,18 +170,18 @@
 
     function packageCurrencyMeta(pkg) {
         if (!pkg) {
-            return { symbol: 'تومان', label: 'تومان', decimals: 0 };
+            return { symbol: @json(__('packages.toman')), label: @json(__('packages.toman')), decimals: 0 };
         }
         return {
             code: pkg.currency || 'IRT',
-            symbol: pkg.currency_symbol || pkg.currency_label || 'تومان',
-            label: pkg.currency_label || pkg.currency_symbol || 'تومان',
+            symbol: pkg.currency_symbol || pkg.currency_label || @json(__('packages.toman')),
+            label: pkg.currency_label || pkg.currency_symbol || @json(__('packages.toman')),
             decimals: Number.isFinite(Number(pkg.currency_decimals)) ? Number(pkg.currency_decimals) : 0,
         };
     }
 
     function formatToman(value) {
-        return formatMoney(value, { symbol: 'تومان', decimals: 0 });
+        return formatMoney(value, { symbol: @json(__('packages.toman')), decimals: 0 });
     }
 
     function openModal() {

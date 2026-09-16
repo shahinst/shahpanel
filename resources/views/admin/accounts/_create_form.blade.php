@@ -6,7 +6,7 @@
     $serverCatalog = ($servers ?? collect())->map(fn ($s) => ['id' => $s->id, 'name' => $s->name])->values();
 @endphp
 
-<x-form.group label="مالک اکانت" hint="نماینده یا فروشنده‌ای که این اکانت به نام او ثبت می‌شود.">
+<x-form.group label="{{ __('ui.account_owner_label') }}" hint="{{ __('ui.account_owner_hint_admin') }}">
     <select name="owner_seller_id" id="admin-owner-id" required class="form-control">
         @foreach ($accountOwners as $owner)
             <option value="{{ $owner->id }}" @selected(old('owner_seller_id', $accountOwners->first()?->id) == $owner->id)>
@@ -62,9 +62,9 @@
     'kycIdPrefix' => 'admin',
 ])
 
-<x-form.group label="سرور" hint="خالی = خودکار (کم‌ترافیک‌ترین سرور مجاز)">
+<x-form.group label="{{ __('accounts.server') }}" hint="{{ __('ui.server_auto_hint') }}">
     <select name="server_id" id="admin-server-id" class="form-control">
-        <option value="">خودکار</option>
+        <option value="">{{ __('gift_accounts.server_auto') }}</option>
     </select>
 </x-form.group>
 
@@ -72,7 +72,7 @@
     $clientMode = old('client_mode', 'display_name');
 @endphp
 
-<x-form.group label="مشتری" wide>
+<x-form.group label="{{ __('ui.col_client') }}" wide>
     <div class="row g-2" role="group">
         <div class="col-sm-6">
             <input type="radio" class="btn-check" name="client_mode" id="admin-client-display" value="display_name" @checked($clientMode === 'display_name') autocomplete="off">
@@ -180,7 +180,7 @@
     function formatMoney(value, currencyMeta) {
         const meta = currencyMeta || {};
         const decimals = Number.isFinite(Number(meta.decimals)) ? Number(meta.decimals) : 0;
-        const symbol = meta.symbol || meta.label || 'تومان';
+        const symbol = meta.symbol || meta.label || @json(__('packages.toman'));
         const amount = Number(value);
         if (!Number.isFinite(amount)) {
             return '—';
@@ -193,18 +193,18 @@
 
     function packageCurrencyMeta(pkg) {
         if (!pkg) {
-            return { symbol: 'تومان', label: 'تومان', decimals: 0 };
+            return { symbol: @json(__('packages.toman')), label: @json(__('packages.toman')), decimals: 0 };
         }
         return {
             code: pkg.currency || 'IRT',
-            symbol: pkg.currency_symbol || pkg.currency_label || 'تومان',
-            label: pkg.currency_label || pkg.currency_symbol || 'تومان',
+            symbol: pkg.currency_symbol || pkg.currency_label || @json(__('packages.toman')),
+            label: pkg.currency_label || pkg.currency_symbol || @json(__('packages.toman')),
             decimals: Number.isFinite(Number(pkg.currency_decimals)) ? Number(pkg.currency_decimals) : 0,
         };
     }
 
     function formatToman(value) {
-        return formatMoney(value, { symbol: 'تومان', decimals: 0 });
+        return formatMoney(value, { symbol: @json(__('packages.toman')), decimals: 0 });
     }
 
     function toggleClientMode() {
@@ -333,7 +333,7 @@
     function refreshPackageFields() {
         const pkg = optionsById[String(packageSelect.value)] || null;
         durationSelect.innerHTML = '<option value="">—</option>';
-        if (serverSelect) serverSelect.innerHTML = '<option value="">خودکار</option>';
+        if (serverSelect) serverSelect.innerHTML = '<option value="">' + @json(__('gift_accounts.server_auto')) + '</option>';
         hidePricing();
 
         if (window.__kycPanel_admin) {

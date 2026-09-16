@@ -45,8 +45,8 @@ class PackagePricingController extends Controller
             'package_ids' => ['required', 'array', 'min:1'],
             'package_ids.*' => ['integer', 'exists:packages,id'],
         ], [
-            'package_ids.required' => 'حداقل یک پکیج را انتخاب کنید.',
-            'percent.required' => 'درصد را وارد کنید.',
+            'package_ids.required' => __('backend.pricing_packages_required'),
+            'percent.required' => __('backend.pricing_percent_required'),
         ]);
 
         $percent = (float) $validated['percent'];
@@ -111,12 +111,15 @@ class PackagePricingController extends Controller
         if ($changed === 0) {
             return redirect()
                 ->route('admin.packages.pricing')
-                ->with('warning', 'هیچ قیمتی تغییر نکرد (پکیج‌های انتخابی قیمت معتبر نداشتند).');
+                ->with('warning', __('backend.pricing_no_price_changed'));
         }
 
         return redirect()
             ->route('admin.packages.pricing')
-            ->with('success', "قیمت {$pkgCount} پکیج ({$changed} مورد قیمت) با موفقیت به‌روزرسانی شد.");
+            ->with('success', __('backend.pricing_prices_updated', [
+                'packages' => $pkgCount,
+                'durations' => $changed,
+            ]));
     }
 
     /**
@@ -137,7 +140,7 @@ class PackagePricingController extends Controller
             'package_ids' => ['required', 'array', 'min:1'],
             'package_ids.*' => ['integer', 'exists:packages,id'],
         ], [
-            'package_ids.required' => 'حداقل یک پکیج را انتخاب کنید.',
+            'package_ids.required' => __('backend.pricing_packages_required'),
         ]);
 
         $mult = [
@@ -221,12 +224,15 @@ class PackagePricingController extends Controller
         if ($changed === 0) {
             return redirect()
                 ->route('admin.packages.pricing')
-                ->with('warning', 'هیچ دوره‌ای تغییر نکرد (یا همه از قبل تنظیم بودند یا قیمت ۱ماهه نداشتند).');
+                ->with('warning', __('backend.pricing_no_duration_changed'));
         }
 
         return redirect()
             ->route('admin.packages.pricing')
-            ->with('success', "قیمت دوره‌ای برای {$pkgCount} پکیج ({$changed} دوره) محاسبه، ثبت و فعال شد.");
+            ->with('success', __('backend.pricing_durations_generated', [
+                'packages' => $pkgCount,
+                'durations' => $changed,
+            ]));
     }
 
     /**

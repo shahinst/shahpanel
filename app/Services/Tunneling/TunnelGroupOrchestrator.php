@@ -247,7 +247,7 @@ class TunnelGroupOrchestrator
         $group->loadMissing('iranServer', 'exits.server', 'exits.agents');
 
         if ($group->exits->isEmpty()) {
-            throw new RuntimeException('گروه تانل حداقل یک سرور خروجی (خارج) لازم دارد.');
+            throw new RuntimeException(__('services.tunnel_group_needs_egress'));
         }
 
         if ($group->mtu_calculated === null) {
@@ -329,7 +329,7 @@ class TunnelGroupOrchestrator
     public function rollback(TunnelGroup $group, ConfigVersion $version): void
     {
         if ($version->tunnel_group_id !== $group->id) {
-            throw new RuntimeException('نسخه انتخابی متعلق به این گروه نیست.');
+            throw new RuntimeException(__('services.tunnel_revision_mismatch'));
         }
 
         $snapshot = $version->snapshot;
@@ -650,7 +650,7 @@ class TunnelGroupOrchestrator
         $iran = $group->iranServer;
 
         if ($iran === null) {
-            throw new RuntimeException('سرور ایران برای این گروه انتخاب نشده است.');
+            throw new RuntimeException(__('services.tunnel_group_needs_ingress'));
         }
 
         $group->loadMissing('location');

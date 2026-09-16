@@ -14,7 +14,7 @@
         ['route' => "{$panel}.accounts.ppp", 'label' => __('menu.accounts_ppp'), 'icon' => 'bx-plug'],
         ['route' => "{$panel}.accounts.v2ray", 'label' => __('menu.accounts_v2ray'), 'icon' => 'bx-rocket'],
         ['route' => "{$panel}.accounts.anyconnect", 'label' => __('menu.accounts_anyconnect'), 'icon' => 'bx-network-chart'],
-        ['route' => "{$panel}.accounts.expiring", 'label' => 'اکانت‌های در حال انقضا', 'icon' => 'bx-time-five'],
+        ['route' => "{$panel}.accounts.expiring", 'label' => __('ui.expiring_accounts_title'), 'icon' => 'bx-time-five'],
     ];
 
     $accountLinks = array_values(array_filter(
