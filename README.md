@@ -32,6 +32,13 @@
 
 ---
 
+<div align="center">
+  <a href="README.md" title="فارسی"><img src="docs/flags/ir.svg" width="26" alt="فارسی"></a>
+  <a href="README.en.md" title="English"><img src="docs/flags/gb.svg" width="26" alt="English"></a>
+  <a href="README.ru.md" title="Русский"><img src="docs/flags/ru.svg" width="26" alt="Русский"></a>
+  <a href="README.zh.md" title="中文"><img src="docs/flags/cn.svg" width="26" alt="中文"></a>
+</div>
+
 ## 📌 shahpanel چیست؟
 
 یک پنل تحت وب برای **فروش و مدیریت سرویس VPN** با ساختار چندسطحی. هر سطح کیف پول، قیمت‌گذاری، مشتریان و گزارش مستقل خودش را دارد:

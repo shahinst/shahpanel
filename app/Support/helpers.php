@@ -90,9 +90,12 @@ if (! function_exists('format_toman')) {
 if (! function_exists('format_money')) {
     function format_money(int|float|string|null $amount, \App\Enums\MoneyCurrency|string|null $currency = null): string
     {
-        $currencyEnum = \App\Enums\MoneyCurrency::normalize(
-            $currency instanceof \App\Enums\MoneyCurrency ? $currency->value : $currency
-        );
+        $code = $currency instanceof \App\Enums\MoneyCurrency ? $currency->value : $currency;
+
+        // بدون ارز مشخص، ارز نمایشی زبان فعلی؛ با ارز مشخص، دقیقاً همان.
+        $currencyEnum = ($code === null || trim((string) $code) === '')
+            ? \App\Enums\MoneyCurrency::displayDefault()
+            : \App\Enums\MoneyCurrency::normalize($code);
 
         if ($amount === null || $amount === '') {
             $amount = 0;
