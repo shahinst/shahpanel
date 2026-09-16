@@ -122,7 +122,6 @@ return [
     'max_data_gb' => 'Maximum data (GB)',
     'elastic_help' => 'In an elastic package, the price of each duration is treated as the "price of 1 GB". The buyer picks any amount between the minimum and the maximum, and is invoiced and charged from their wallet accordingly.',
     'elastic_bounds_required' => 'An elastic package must have a minimum and a maximum data amount (GB).',
-    'price_per_gb' => 'Price per GB (Toman)',
     'per_gb_short' => 'Per GB',
     'price_hint_fixed' => 'For each duration, enter the total price of the package.',
     'price_hint_elastic' => 'For each duration, enter the price of 1 GB. The final amount is the price per GB × the chosen data.',
