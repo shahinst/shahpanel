@@ -117,7 +117,7 @@ box_line() {
     local text="     $1" pad
     pad=$(( 58 - ${#text} ))
     (( pad < 0 )) && pad=0
-    secret "$(printf '  |%s%*s|' "$text" "$pad" '')"
+    secret "$(printf '  │%s%*s│' "$text" "$pad" '')"
 }
 
 # Prints how long the step that just ended took, so a slow apt or composer run
@@ -849,7 +849,14 @@ secret "  DB pass   : ${DB_PASS}"
 [[ -n "$PMA_PATH" ]] && secret "  phpMyAdmin: ${APP_URL}/${PMA_PATH}/"
 secret ""
 
-if [[ "$MODE" == "ip" && $WITH_SSL -eq 1 ]]; then
+# Which of these is true depends on whether step 11 got a certificate for the
+# IP, so the summary has to branch -- it used to claim self-signed either way.
+if [[ "$MODE" == "ip" && $WITH_SSL -eq 1 && ${IP_CERT_OK:-0} -eq 1 ]]; then
+secret "  The certificate is a real Let's Encrypt one issued for this IP,"
+secret "  so browsers will not warn. It is short-lived by design (about six"
+secret "  days) and acme.sh renews it automatically four times a day."
+secret ""
+elif [[ "$MODE" == "ip" && $WITH_SSL -eq 1 ]]; then
 secret "  The certificate is self-signed, so the browser will warn you"
 secret "  the first time. Choose \"advanced\" and continue. To replace it"
 secret "  with a trusted one later, point a domain at ${SERVER_IP} and run:"
