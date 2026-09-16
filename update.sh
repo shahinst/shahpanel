@@ -155,7 +155,10 @@ chmod -R 775 storage bootstrap/cache
 # The queue worker runs the old code until it is told to stop and respawn.
 sudo -u www-data php artisan queue:restart >/dev/null 2>&1 || true
 PHPFPM="$(systemctl list-units --type=service --no-legend 'php*-fpm.service' | awk '{print $1}' | head -1)"
-[[ -n "$PHPFPM" ]] && run systemctl reload "$PHPFPM"
+# restart, not reload: a reload keeps the existing workers alive, so OPcache
+# goes on serving the PHP files from before the update and the panel silently
+# runs half the old code until something else restarts the service.
+[[ -n "$PHPFPM" ]] && run systemctl restart "$PHPFPM"
 ok "caches cleared, workers signalled to restart"
 
 echo -e "\n${GRN}${BLD}Update complete.${RST}"
