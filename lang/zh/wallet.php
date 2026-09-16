@@ -29,7 +29,7 @@ return [
     'charge_form_record_hint' => '点击「执行」后，充值记录会写入充值申请页面的「手动充值/扣除记录」中（不在卡对卡申请列表里）。',
     'charge_duplicate_submit' => '该充值已经记录过，或表单已失效 —— 请刷新页面后重试。',
     'enabled_currencies' => '代理商启用的货币',
-    'enabled_currencies_hint' => '每种货币都会创建一个独立的钱包。目前每个代理商都使用托曼；只有确有需要时才添加里拉/美元。',
+    'enabled_currencies_hint' => '每种货币都会创建一个独立的钱包。目前每个代理商都使用默认货币；只有确有需要时才添加里拉/美元。',
     'settlement_currency' => '销售商结算货币',
     'settlement_currency_hint' => '该销售商的套餐购买和充值只使用此货币，且它必须是其上级代理商已启用的货币之一。',
     'wallet_currency' => '钱包货币',

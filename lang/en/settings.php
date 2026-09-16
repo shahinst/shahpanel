@@ -25,13 +25,14 @@ return [
         'portal_enabled' => 'Client portal enabled',
         'registration_enabled' => 'Self registration',
         'ticket_auto_close_days' => 'Auto-close tickets after (days)',
+        'display_currency' => 'Display currency',
     ],
 
     'hints' => [
         'site_name' => 'Shown in page titles and emails.',
         'site_url' => 'Full URL with https.',
         'timezone' => 'Recommended: Asia/Tehran',
-        'currency_label' => 'e.g. Toman',
+        'currency_label' => 'e.g. Dollar',
         'support_telegram' => 'Without @',
         'default_payment_card' => 'Card number for card-to-card payments.',
         'min_charge_amount' => 'Minimum top-up request amount.',
@@ -41,6 +42,7 @@ return [
         'sync_interval_minutes' => 'Should match cron (default 5).',
         'default_agent_daily_server_changes' => 'Daily limit for changing an account\'s server, for agents without their own value.',
         'ticket_auto_close_days' => 'Tickets with no activity are closed automatically after this many days.',
+        'display_currency' => 'Only changes how amounts that carry no currency of their own are shown. Packages keep their own currency, and wallets are not affected.',
     ],
 
     'options' => [

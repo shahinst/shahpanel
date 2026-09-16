@@ -12,7 +12,7 @@ return [
     'package_section' => '套餐与价格',
     'package' => '套餐',
     'duration' => '时长',
-    'charge' => '从钱包扣除的金额（托曼）',
+    'charge' => '从钱包扣除的金额',
     'charge_hint' => '免费账号请填 0。',
     'name_prefix' => '账号名称前缀',
     'name_prefix_hint' => '代理商或销售商的全名会附加在此文本之后。例如：“代理商账号-”',

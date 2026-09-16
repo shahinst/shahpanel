@@ -47,6 +47,30 @@
         @endif
     @endforeach
 
+    <x-card :title="__('settings.fields.display_currency')" class="margin-bottom">
+        <p class="help-block text-muted small">{{ __('settings.hints.display_currency') }}</p>
+        <div class="row">
+            @foreach (config('locales.supported', []) as $localeCode => $localeMeta)
+                @php
+                    $displayKey = \App\Enums\MoneyCurrency::displaySettingKey($localeCode);
+                    $selectedDisplay = old($displayKey, $displayCurrencies[$localeCode] ?? '');
+                @endphp
+                <x-form.group
+                    :for="'setting_'.$displayKey"
+                    :label="$localeMeta['name'] ?? $localeCode"
+                >
+                    <select id="setting_{{ $displayKey }}" name="{{ $displayKey }}" class="form-control">
+                        @foreach (\App\Enums\MoneyCurrency::cases() as $currencyOption)
+                            <option value="{{ $currencyOption->value }}" @selected($selectedDisplay === $currencyOption->value)>
+                                {{ $currencyOption->label() }} ({{ $currencyOption->symbol() }})
+                            </option>
+                        @endforeach
+                    </select>
+                </x-form.group>
+            @endforeach
+        </div>
+    </x-card>
+
     <div class="row">
         <x-form.actions>
             <x-button type="submit">{{ __('app.save') }}</x-button>

@@ -378,7 +378,7 @@ return [
     // Misc
     'jalali_date_placeholder' => '1403/01/15',
     'menu_pricing' => '定价',
-    'min_amount_irt_hint' => '最低金额通常为 1,000 托曼。',
+    'min_amount_irt_hint' => '最低金额通常为 1,000 IRT。',
     'amount_in_selected_currency_hint' => '请按所选货币输入金额。',
     'install_via_ssh' => '安装通过 SSH 执行：',
     'phase_zero_ready' => '阶段 0 已成功设置。',

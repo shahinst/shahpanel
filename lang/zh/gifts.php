@@ -22,7 +22,7 @@ return [
     'days_summary' => '已为 :recipients 个接收人的 :updated 个账号续费 :days 天。（无到期时间：:skipped — 失败：:failed）。服务器同步正在后台继续。',
     'wallet_section' => '钱包充值',
     'wallet_hint' => '所填金额会加到每个选定代理商或销售商的钱包中。',
-    'amount' => '金额（托曼）',
+    'amount' => '金额',
     'amount_invalid' => '金额必须大于零。',
     'wallet_submit' => '将金额加到账号',
     'wallet_summary' => '已向 :recipients 个接收人中的 :credited 个入账 :amount。（失败：:failed）',

@@ -29,7 +29,7 @@ return [
     'charge_form_record_hint' => 'After "Apply", the top-up row is recorded under "Manual top-up/deduction history" on the top-up requests page (not in the card-to-card request list).',
     'charge_duplicate_submit' => 'This top-up has already been recorded, or the form has expired — refresh the page and try again.',
     'enabled_currencies' => 'Agent\'s enabled currencies',
-    'enabled_currencies_hint' => 'A separate wallet is created for each currency. For now every Agent uses Toman; add Lira/Dollar only when it is genuinely needed.',
+    'enabled_currencies_hint' => 'A separate wallet is created for each currency. For now every Agent uses the default currency; add Lira/Dollar only when it is genuinely needed.',
     'settlement_currency' => 'Seller settlement currency',
     'settlement_currency_hint' => 'Package purchases and top-ups for this Seller use this currency only, and it must be one of the parent Agent\'s enabled currencies.',
     'wallet_currency' => 'Wallet currency',

@@ -378,7 +378,7 @@ return [
     // Misc
     'jalali_date_placeholder' => '1403/01/15',
     'menu_pricing' => 'Pricing',
-    'min_amount_irt_hint' => 'The minimum is usually 1,000 Toman.',
+    'min_amount_irt_hint' => 'The minimum is usually 1,000 IRT.',
     'amount_in_selected_currency_hint' => 'Enter the amount in the selected currency.',
     'install_via_ssh' => 'Installation is performed over SSH:',
     'phase_zero_ready' => 'Phase 0 was set up successfully.',

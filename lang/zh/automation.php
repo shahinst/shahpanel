@@ -42,7 +42,7 @@ return [
     'pricing_card' => '销售商定价策略',
     'pricing_hint' => '代理商为销售商定价时，可在代理商批发价之上加价的最高百分比。设为零表示停用（仅套餐基础价上限生效）。',
     'agent_seller_markup_percent' => '代理商对销售商的最高利润百分比',
-    'agent_seller_markup_help' => '例如：设为 10% 时，若代理商批发价为 5,000 托曼，销售商最多支付 5,500 托曼 —— 代理商每单位最多获利 500 托曼。',
+    'agent_seller_markup_help' => '例如：设为 10% 时，若代理商批发价为 5,000，销售商最多支付 5,500 —— 代理商每单位最多获利 500。',
     'pricing_saved' => '销售商定价设置已保存。',
     'pricing_page_title' => '自动化 —— 代理商定价',
     'pricing_page_hint' => '代理商设定销售商批发价时可加的最高利润百分比。',
