@@ -77,6 +77,17 @@ enum MoneyCurrency: string
      * هر سه مرحله از tryFrom رد می‌شوند تا یک رکورد خراب یا خالی در جدول
      * settings فقط نادیده گرفته شود و صفحه را نیندازد.
      */
+    /**
+     * آیا مدیر برای زبان فعلی ارز نمایشی انتخاب کرده است؟
+     * اگر بله، همان بر تمام مبلغ‌ها حاکم می‌شود؛ اگر نه، هر مبلغ ارز خودش را نگه می‌دارد.
+     */
+    public static function displayOverridden(?string $locale = null): bool
+    {
+        $locale = $locale ?? app()->getLocale();
+
+        return self::tryFrom(strtoupper(trim(self::storedDisplayCode($locale)))) !== null;
+    }
+
     public static function displayFor(string $locale): self
     {
         // format_money در هر صفحه ده‌ها بار صدا زده می‌شود؛ بدون این حافظه،

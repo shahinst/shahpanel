@@ -105,10 +105,17 @@ if (! function_exists('format_money')) {
     {
         $code = $currency instanceof \App\Enums\MoneyCurrency ? $currency->value : $currency;
 
-        // بدون ارز مشخص، ارز نمایشی زبان فعلی؛ با ارز مشخص، دقیقاً همان.
-        $currencyEnum = ($code === null || trim((string) $code) === '')
-            ? \App\Enums\MoneyCurrency::displayDefault()
-            : \App\Enums\MoneyCurrency::normalize($code);
+        // ارز نمایشی زبان فعلی، که مدیر در تنظیمات انتخاب می‌کند، بر همه‌جا حاکم است:
+        // وقتی مدیر می‌گوید پنل لیر است، هر مبلغی باید لیر دیده شود، نه اینکه هدر
+        // چیز دیگری بگوید و صفحهٔ پکیج چیز دیگری. این فقط برچسب و تعداد رقم اعشار را
+        // عوض می‌کند — هیچ تبدیل نرخی انجام نمی‌شود، چون عددها همان‌اند که ثبت شده‌اند.
+        $currencyEnum = \App\Enums\MoneyCurrency::displayDefault();
+
+        // تنها استثنا: وقتی مدیر هیچ ارز نمایشی انتخاب نکرده، ارز خودِ مبلغ ملاک است،
+        // تا پنلی که چندارزی کار می‌کند رفتار قبلی‌اش را از دست ندهد.
+        if (! \App\Enums\MoneyCurrency::displayOverridden() && $code !== null && trim((string) $code) !== '') {
+            $currencyEnum = \App\Enums\MoneyCurrency::normalize($code);
+        }
 
         if ($amount === null || $amount === '') {
             $amount = 0;
