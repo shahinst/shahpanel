@@ -17,10 +17,24 @@ class NowPaymentsSignatureVerifier
         }
 
         $sorted = $this->sortPayload($payload);
-        $encoded = json_encode($sorted, JSON_UNESCAPED_SLASHES);
-        $calculated = hash_hmac('sha512', (string) $encoded, trim($ipnSecret));
+        $expected = strtolower(trim($signature));
 
-        return hash_equals(strtolower($calculated), strtolower(trim($signature)));
+        // NowPayments signs with Node's JSON.stringify, which writes non-ASCII as
+        // raw UTF-8, while PHP's json_encode escapes it to \uXXXX unless told not
+        // to. Any IPN carrying a Persian order description therefore failed to
+        // verify and the customer's wallet was never credited. Their own docs are
+        // self-inconsistent here (the Node sample emits UTF-8, the Python sample
+        // escapes), so both encodings are accepted. That costs nothing: forging
+        // either one still requires the IPN secret.
+        foreach ([JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE, JSON_UNESCAPED_SLASHES] as $flags) {
+            $calculated = hash_hmac('sha512', (string) json_encode($sorted, $flags), trim($ipnSecret));
+
+            if (hash_equals(strtolower($calculated), $expected)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

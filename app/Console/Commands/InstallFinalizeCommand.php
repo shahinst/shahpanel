@@ -23,15 +23,15 @@ use Illuminate\Support\Facades\Schema;
 class InstallFinalizeCommand extends Command
 {
     protected $signature = 'install:finalize
-        {--admin-username= : نام کاربری مدیر (یا متغیر VPN_ADMIN_USERNAME)}
-        {--admin-email= : ایمیل مدیر (یا متغیر VPN_ADMIN_EMAIL)}
-        {--admin-password= : رمز عبور مدیر (یا متغیر VPN_ADMIN_PASSWORD)}
-        {--admin-name= : نام کامل مدیر (یا متغیر VPN_ADMIN_NAME)}
-        {--admin-path= : مسیر اختصاصی پنل مدیر، مثلاً p4ba5e8c6f7}
-        {--site-name= : نام سایت}
-        {--site-url= : آدرس کامل سایت}';
+        {--admin-username= : Administrator username (or the VPN_ADMIN_USERNAME variable)}
+        {--admin-email= : Administrator e-mail (or the VPN_ADMIN_EMAIL variable)}
+        {--admin-password= : Administrator password (or the VPN_ADMIN_PASSWORD variable)}
+        {--admin-name= : Administrator full name (or the VPN_ADMIN_NAME variable)}
+        {--admin-path= : Private admin portal path, e.g. p4ba5e8c6f7}
+        {--site-name= : Site name}
+        {--site-url= : Full site URL}';
 
-    protected $description = 'ایجاد حساب مدیر و تکمیل تنظیمات پایه نصب (بدون نیاز به نصب‌کننده وب)';
+    protected $description = 'Create the administrator account and finish the base install settings';
 
     public function handle(): int
     {
@@ -41,25 +41,25 @@ class InstallFinalizeCommand extends Command
         $fullName = $this->resolve('admin-name', 'VPN_ADMIN_NAME') ?: 'مدیر سامانه';
 
         if ($username === '' || $email === '' || $password === '') {
-            $this->error('نام کاربری، ایمیل و رمز عبور مدیر الزامی هستند.');
+            $this->error('Administrator username, e-mail and password are all required.');
 
             return self::FAILURE;
         }
 
         if (mb_strlen($password) < 8) {
-            $this->error('رمز عبور مدیر باید حداقل ۸ کاراکتر باشد.');
+            $this->error('The administrator password must be at least 8 characters long.');
 
             return self::FAILURE;
         }
 
         if (! filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $this->error('ایمیل مدیر معتبر نیست.');
+            $this->error('The administrator e-mail is not a valid address.');
 
             return self::FAILURE;
         }
 
         if (! Schema::hasTable('users')) {
-            $this->error('جدول users یافت نشد. ابتدا migrate را اجرا کنید.');
+            $this->error('The users table is missing. Run the migrations first.');
 
             return self::FAILURE;
         }
@@ -80,15 +80,15 @@ class InstallFinalizeCommand extends Command
 
         if ($admin) {
             $admin->fill($attributes)->save();
-            $this->info("حساب مدیر موجود به‌روزرسانی شد: {$username}");
+            $this->info("Updated the existing administrator account: {$username}");
         } else {
             User::create($attributes + ['parent_id' => null]);
-            $this->info("حساب مدیر ایجاد شد: {$username}");
+            $this->info("Created the administrator account: {$username}");
         }
 
         $this->persistSettings();
 
-        $this->info('نصب با موفقیت تکمیل شد.');
+        $this->info('Installation completed successfully.');
 
         return self::SUCCESS;
     }
@@ -120,10 +120,10 @@ class InstallFinalizeCommand extends Command
             $slug = PortalPaths::sanitizeSlug($adminPath, '');
 
             if ($slug === '') {
-                $this->warn("مسیر پنل مدیر نامعتبر بود و نادیده گرفته شد: {$adminPath}");
+                $this->warn("The admin portal path was invalid and has been ignored: {$adminPath}");
             } else {
                 Setting::setValue('portal_path_admin', $slug);
-                $this->info("مسیر پنل مدیر تنظیم شد: /{$slug}");
+                $this->info("Admin portal path set to: /{$slug}");
             }
         }
 

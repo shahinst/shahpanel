@@ -111,7 +111,28 @@ on_error() {
 }
 trap 'on_error $LINENO' ERR
 
-step()   { echo; echo "==> $*"; }
+# Pads a line to the fixed inner width of the welcome box, so the border stays
+# square whatever the repo URL happens to be.
+box_line() {
+    local text="     $1" pad
+    pad=$(( 58 - ${#text} ))
+    (( pad < 0 )) && pad=0
+    secret "$(printf '  |%s%*s|' "$text" "$pad" '')"
+}
+
+# Prints how long the step that just ended took, so a slow apt or composer run
+# reads as finished work rather than as a hang.
+STEP_NAME=""
+STEP_T0=0
+step() {
+    if [[ -n "$STEP_NAME" ]]; then
+        echo "    done in $(( $(date +%s) - STEP_T0 ))s"
+    fi
+    STEP_NAME="$*"
+    STEP_T0="$(date +%s)"
+    echo
+    echo "==> $*"
+}
 info()   { echo "    $*"; }
 warn()   { echo "    [!] $*"; }
 secret() { printf '%s\n' "$*" >&3; }
@@ -148,8 +169,8 @@ secret "  │     ███████ ███████ ██████
 secret "  │          ██ ██   ██ ██   ██ ██   ██                      │"
 secret "  │     ███████ ██   ██ ██   ██ ██   ██                      │"
 secret "  │                                                          │"
-secret "  │     پنل مدیریت و نمایندگی VPN                             │"
-secret "  │     ${APP_REPO_URL}      │"
+box_line "VPN reseller and management panel"
+box_line "${APP_REPO_URL}"
 secret "  │                                                          │"
 secret "  └──────────────────────────────────────────────────────────┘"
 secret ""
@@ -280,12 +301,12 @@ step "2/13  Installing system packages"
 
 export DEBIAN_FRONTEND=noninteractive
 
-run apt-get update -qq
-run apt-get install -y -qq software-properties-common ca-certificates curl gnupg lsb-release openssl
+run apt-get update
+run apt-get install -y software-properties-common ca-certificates curl gnupg lsb-release openssl
 
 if ! grep -rq "ondrej/php" /etc/apt/sources.list /etc/apt/sources.list.d/ 2>/dev/null; then
     run add-apt-repository -y ppa:ondrej/php
-    run apt-get update -qq
+    run apt-get update
 fi
 
 APT_PACKAGES=(
@@ -296,7 +317,7 @@ APT_PACKAGES=(
 )
 [[ "$MODE" == "domain" ]] && APT_PACKAGES+=(certbot python3-certbot-nginx)
 
-run apt-get install -y -qq "${APT_PACKAGES[@]}"
+run apt-get install -y "${APT_PACKAGES[@]}"
 run systemctl enable --now "php${PHP_VER}-fpm" nginx mysql cron
 
 # ---------------------------------------------------------------------------
@@ -332,7 +353,7 @@ fi
 
 mkdir -p "$(dirname "$APP_DIR")"
 
-if ! git clone --depth 1 --branch "$BRANCH" "$CLONE_URL" "$APP_DIR" 2>&1 | mask; then
+if ! git clone --progress --depth 1 --branch "$BRANCH" "$CLONE_URL" "$APP_DIR" 2>&1 | mask; then
     die "git clone failed — check the repository URL and GITHUB_TOKEN."
 fi
 
@@ -631,8 +652,48 @@ if [[ "$MODE" == "domain" && $WITH_SSL -eq 1 ]]; then
         WITH_SSL=0
     fi
 elif [[ "$MODE" == "ip" && $WITH_SSL -eq 1 ]]; then
-    info "Serving HTTPS with the self-signed certificate in ${SSL_DIR}."
-    info "Browsers will warn on first visit — that is expected without a domain."
+    # Let's Encrypt does issue certificates for bare IP addresses, but only under
+    # the "shortlived" profile (~6 days) and only to clients that can request a
+    # profile. Certbot still rejects IP identifiers outright, so acme.sh is used
+    # here; it installs its own renewal cron, which the short lifetime requires.
+    info "Requesting a Let's Encrypt certificate for ${SERVER_IP} (short-lived profile)."
+    info "This replaces the self-signed certificate so browsers stop warning."
+
+    ACME_HOME="/root/.acme.sh"
+
+    if [[ ! -x "$ACME_HOME/acme.sh" ]]; then
+        info "Installing acme.sh."
+        if curl -fsS --max-time 60 -o /tmp/acme-install.sh https://get.acme.sh; then
+            CLEANUP_FILES+=("/tmp/acme-install.sh")
+            HOME=/root sh /tmp/acme-install.sh || warn "acme.sh installation failed."
+        else
+            warn "Could not download acme.sh."
+        fi
+    fi
+
+    IP_CERT_OK=0
+
+    if [[ -x "$ACME_HOME/acme.sh" ]]; then
+        HOME=/root "$ACME_HOME/acme.sh" --set-default-ca --server letsencrypt || true
+
+        if HOME=/root "$ACME_HOME/acme.sh" --issue -d "$SERVER_IP"                 --webroot "$APP_DIR/public"                 --server letsencrypt                 --keylength ec-256                 --cert-profile shortlived; then
+            if HOME=/root "$ACME_HOME/acme.sh" --install-cert -d "$SERVER_IP" --ecc                     --key-file "${SSL_DIR}/panel.key"                     --fullchain-file "${SSL_DIR}/panel.crt"                     --reloadcmd "systemctl reload nginx"; then
+                IP_CERT_OK=1
+            fi
+        fi
+    fi
+
+    if [[ $IP_CERT_OK -eq 1 ]]; then
+        info "Trusted certificate installed for ${SERVER_IP}. Browsers will not warn."
+        info "It lasts about six days; acme.sh renews it automatically four times a day."
+    else
+        warn "Could not obtain a Let's Encrypt certificate for this IP."
+        warn "Keeping the self-signed certificate in ${SSL_DIR} — browsers will warn."
+        warn "Retry later with:"
+        warn "  ${ACME_HOME}/acme.sh --issue -d ${SERVER_IP} --webroot ${APP_DIR}/public \\"
+        warn "      --server letsencrypt --keylength ec-256 --cert-profile shortlived"
+    fi
+
     set_env SESSION_SECURE_COOKIE "true"
 else
     info "Skipped — the panel is reachable over plain HTTP."

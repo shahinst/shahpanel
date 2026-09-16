@@ -40,6 +40,8 @@ class ServerOperationsController extends Controller
         Server $server,
         ServerInterfaceSyncService $interfaceSyncService
     ): RedirectResponse {
+        $this->authorize('update', $server);
+
         return $this->runInterfacePull($server, $interfaceSyncService);
     }
 
@@ -98,6 +100,15 @@ class ServerOperationsController extends Controller
         Server $server,
         ServerInterfaceSyncService $interfaceSyncService,
     ): RedirectResponse {
+        // ServerInterfaceSyncService::sync() ends in a Sanaei default arm, so an
+        // ocserv or Cisco server would be sent a 3x-ui login it cannot answer.
+        // The buttons are hidden in the view; this stops a direct POST.
+        if ($server->isAnyconnectFamily()) {
+            return redirect()
+                ->route('admin.servers.show', $server)
+                ->with('error', __('servers.operation_not_supported_anyconnect'));
+        }
+
         @set_time_limit(max(120, (int) config('vpnpanel.mikrotik.inline_max_seconds', 600)));
 
         try {

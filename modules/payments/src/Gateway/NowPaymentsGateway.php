@@ -47,10 +47,11 @@ class NowPaymentsGateway implements PaymentGatewayDriverInterface
             ]),
         ];
 
-        if (! $gateway->mode->isLive()) {
-            $payload['is_fixed_rate'] = true;
-            $payload['is_fee_paid_by_user'] = false;
-        }
+        // Freezing the rate for 10 minutes is what protects the invoiced USD
+        // value from drifting before the customer pays, so it belongs on live
+        // invoices -- it used to be set only in sandbox, which is backwards.
+        $payload['is_fixed_rate'] = true;
+        $payload['is_fee_paid_by_user'] = false;
 
         try {
             $response = $client->createInvoice($payload);

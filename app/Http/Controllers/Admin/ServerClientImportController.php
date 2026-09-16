@@ -20,6 +20,14 @@ class ServerClientImportController extends Controller
     {
         $this->authorize('update', $server);
 
+        // These servers have no inbounds to import from -- the wizard's fallback
+        // branch would render an inbound picker that can never be populated.
+        if ($server->isAnyconnectFamily()) {
+            return redirect()
+                ->route('admin.servers.show', $server)
+                ->with('error', __('servers.operation_not_supported_anyconnect'));
+        }
+
         if ($server->isPasarguard()) {
             return view('admin.servers.import-clients', compact('server'));
         }

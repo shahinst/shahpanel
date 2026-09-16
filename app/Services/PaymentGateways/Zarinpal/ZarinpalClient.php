@@ -51,13 +51,18 @@ class ZarinpalClient
      */
     public function verifyPayment(array $payload): array
     {
+        // Same reason as the request stage: without an explicit unit ZarinPal
+        // interprets the amount using the merchant terminal's own setting, so a
+        // terminal configured in Toman would mis-match our Rial figure.
+        $payload['currency'] ??= 'IRR';
+
         return $this->request('post', '/payment/verify.json', $payload);
     }
 
     public function startPayUrl(string $authority): string
     {
         $base = $this->mode->isLive()
-            ? (string) config('payment_gateways.zarinpal.live_start_pay_url', 'https://www.zarinpal.com/pg/StartPay/')
+            ? (string) config('payment_gateways.zarinpal.live_start_pay_url', 'https://payment.zarinpal.com/pg/StartPay/')
             : (string) config('payment_gateways.zarinpal.sandbox_start_pay_url', 'https://sandbox.zarinpal.com/pg/StartPay/');
 
         return rtrim($base, '/').'/'.urlencode($authority);

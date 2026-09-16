@@ -149,6 +149,8 @@
                         {{ $server->isPasarguardReseller() ? __('servers.operations_hint_pasarguard_reseller') : __('servers.operations_hint_pasarguard_admin') }}
                     @elseif ($server->isRemnawave())
                         {{ __('servers.operations_hint_remnawave') }}
+                    @elseif ($server->isAnyconnectFamily())
+                        {{ __('servers.operations_hint_anyconnect') }}
                     @else
                         {{ __('servers.operations_hint') }}
                     @endif
@@ -191,7 +193,7 @@
                             @csrf
                             <x-button type="submit" variant="secondary" size="sm"><i class="bx bx-refresh"></i> {{ __('servers.sync_remnawave_catalog') }}</x-button>
                         </form>
-                    @else
+                    @elseif ($server->isSanaei())
                         <form method="POST" action="{{ route('admin.servers.sync-inbounds', $server) }}" class="d-inline">
                             @csrf
                             <x-button type="submit" variant="secondary" size="sm"><i class="bx bx-refresh"></i> {{ __('servers.sync_inbounds') }}</x-button>
@@ -209,10 +211,14 @@
                         <input type="hidden" name="only_missing" value="1">
                         <x-button type="submit" variant="ghost" size="sm">{{ __('servers.push_accounts_missing') }}</x-button>
                     </form>
-                    <form method="POST" action="{{ route('admin.servers.sync-traffic', $server) }}" class="d-inline">
-                        @csrf
-                        <x-button type="submit" variant="ghost" size="sm"><i class="bx bx-transfer"></i> {{ __('servers.sync_traffic') }}</x-button>
-                    </form>
+                    {{-- ocserv and Cisco expose no per-user counters, so this would flash
+                         "traffic synced" after doing nothing. Quota is tracked panel-side. --}}
+                    @unless ($server->isAnyconnectFamily())
+                        <form method="POST" action="{{ route('admin.servers.sync-traffic', $server) }}" class="d-inline">
+                            @csrf
+                            <x-button type="submit" variant="ghost" size="sm"><i class="bx bx-transfer"></i> {{ __('servers.sync_traffic') }}</x-button>
+                        </form>
+                    @endunless
                     @if ($server->isSanaei() && ($sanaeiServers ?? collect())->isNotEmpty())
                         <form method="POST" action="{{ route('admin.servers.migrate-sanaei', $server) }}" class="d-inline"
                               onsubmit="return confirm(@json(__('servers.migrate_sanaei_confirm')));">
