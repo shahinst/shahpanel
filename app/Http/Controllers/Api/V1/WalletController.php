@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\TransactionType;
 use App\Http\Controllers\Api\V1\Concerns\RespondsWithJson;
 use App\Http\Controllers\Controller;
 use App\Models\Transaction;
 use App\Services\WalletService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class WalletController extends Controller
 {
@@ -31,7 +33,8 @@ class WalletController extends Controller
     public function transactions(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'type' => ['nullable', 'string', 'max:40'],
+            // نوع ناشناخته باید ۴۲۲ بدهد، نه فیلتری که بی‌صدا نادیده گرفته شود.
+            'type' => ['nullable', Rule::enum(TransactionType::class)],
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date'],
             'per_page' => ['nullable', 'integer'],

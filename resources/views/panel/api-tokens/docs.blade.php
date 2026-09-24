@@ -36,7 +36,8 @@
     <div class="card-body">
         <p class="text-muted small">{{ __('api.docs_envelope_note') }}</p>
         <pre class="bg-dark text-light p-3 rounded small mb-0" dir="ltr"><code>{{ '{ "ok": true,  "data": { … }, "meta": { "pagination": { … } } }' }}
-{{ '{ "ok": false, "error": { "code": "…", "message": "…" } }' }}</code></pre>
+{{ '{ "ok": false, "error": { "code": "…", "message": "…" } }' }}
+{{ '{ "ok": false, "error": { "code": "validation_failed", "message": "…", "errors": { "field": ["…"] } } }' }}</code></pre>
     </div>
 </div>
 

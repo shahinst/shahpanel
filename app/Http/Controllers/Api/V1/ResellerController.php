@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\UserRole;
+use App\Enums\UserStatus;
 use App\Http\Controllers\Api\V1\Concerns\RespondsWithJson;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Api\V1\AccountTransformer;
@@ -11,6 +12,7 @@ use App\Models\User;
 use App\Services\WalletService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 /**
  * An agent's own sellers. Read-only by design: the panel gives agents no way
@@ -27,7 +29,8 @@ class ResellerController extends Controller
     {
         $data = $request->validate([
             'search' => ['nullable', 'string', 'max:100'],
-            'status' => ['nullable', 'string', 'max:20'],
+            // وضعیت ناشناخته باید ۴۲۲ بدهد، نه فیلتری که بی‌صدا نادیده گرفته شود.
+            'status' => ['nullable', Rule::enum(UserStatus::class)],
             'per_page' => ['nullable', 'integer'],
         ]);
 

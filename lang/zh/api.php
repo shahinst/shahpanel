@@ -17,6 +17,7 @@ return [
 
     'not_found' => '没有该标识对应的记录。',
     'endpoint_not_found' => '不存在该接口。',
+    'method_not_allowed' => '该接口不允许使用此 HTTP 方法。',
     'forbidden' => '您无权访问该记录。',
     'validation_failed' => '输入无效。',
     'server_error' => '服务器内部错误。',

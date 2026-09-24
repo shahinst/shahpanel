@@ -21,10 +21,14 @@ Route::prefix('v1')->group(function (): void {
     Route::post('auth/login', [AuthController::class, 'login'])
         ->middleware('api.throttle:10');
 
+    // Stays open — it is a liveness probe — but not free: without a limit the
+    // same IP could hammer it forever. `throttle:api` is the panel's existing
+    // named limiter (60/min, keyed by IP for a guest), so this adds no new
+    // mechanism and shares no bucket with the login or client-panel limiters.
     Route::get('ping', fn () => response()->json([
         'ok' => true,
         'data' => ['pong' => true, 'time' => now()->toIso8601String()],
-    ]));
+    ]))->middleware('throttle:api');
 
     Route::middleware(['api.auth', 'api.throttle'])->group(function (): void {
         // ── Identity ─────────────────────────────────────────────────────

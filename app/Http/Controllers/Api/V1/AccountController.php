@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\AccountBillingContext;
 use App\Enums\AccountStatus;
+use App\Enums\ServiceType;
 use App\Enums\UserRole;
 use App\Http\Controllers\Api\V1\Concerns\RespondsWithJson;
 use App\Http\Controllers\Concerns\ManagesAccounts;
@@ -22,6 +23,7 @@ use App\Services\PackageService;
 use App\Services\ServerSelectionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
@@ -39,9 +41,12 @@ class AccountController extends Controller
 
     public function index(Request $request): JsonResponse
     {
+        // یک مقدار ناشناخته در فیلتر باید ۴۲۲ بدهد، نه ۲۰۰ با فیلترِ بی‌اثر:
+        // وگرنه ربات باور می‌کند فیلتر اعمال شده و فهرست اشتباه را به مشتری
+        // نشان می‌دهد. sort از اول همین رفتار را داشت، بقیه هم‌تراز شدند.
         $data = $request->validate([
-            'status' => ['nullable', 'string', 'max:20'],
-            'service_type' => ['nullable', 'string', 'max:30'],
+            'status' => ['nullable', Rule::enum(AccountStatus::class)],
+            'service_type' => ['nullable', Rule::enum(ServiceType::class)],
             'package_id' => ['nullable', 'integer'],
             'server_id' => ['nullable', 'integer'],
             'seller_id' => ['nullable', 'integer'],
@@ -191,7 +196,7 @@ class AccountController extends Controller
         \App\Services\AgentSellerMarkupService $markupService,
         \App\Services\AgentFinancialPlanService $financialPlanService,
     ): JsonResponse {
-        return $this->purchasePreviewResponse(
+        $response = $this->purchasePreviewResponse(
             $request,
             $globalDiscountService,
             $packageService,
@@ -199,6 +204,20 @@ class AccountController extends Controller
             $markupService,
             $financialPlanService,
         );
+
+        // این تریت با صفحات پنل مشترک است و خطایش قالب همان صفحات را دارد
+        // ({"error": ...}) — بدون ok، پس ربات آن را «موفق‌شکل» می‌خواند. ترجمه
+        // همین‌جا انجام می‌شود نه در تریت، که JS خود پنل را می‌شکست.
+        if ($response->getStatusCode() >= 400) {
+            $payload = $response->getData(true);
+            $message = is_string($payload['error'] ?? null) && $payload['error'] !== ''
+                ? $payload['error']
+                : __('accounts.purchase_preview_failed');
+
+            return $this->fail('preview_failed', $message, $response->getStatusCode());
+        }
+
+        return $response;
     }
 
     public function renew(Request $request, string $accountKey, AccountService $accountService): JsonResponse

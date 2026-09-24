@@ -1,8 +1,15 @@
 <?php
 
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -45,6 +52,15 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->web(append: $append);
 
+        // بدون این خط، پاسخ‌های API همیشه به زبان پیش‌فرض پنل برمی‌گشتند: گروه
+        // «web» زبان را تعیین می‌کرد و گروه «api» هیچ‌وقت از آن رد نمی‌شد. یک ربات
+        // تلگرام معمولاً برای کاربر غیرفارسی‌زبان کار می‌کند، پس هدر Accept-Language
+        // باید شنیده شود. جلوتر از api.auth اجرا می‌شود، یعنی ترجیح صریحِ
+        // درخواست تعیین‌کننده است نه ستون locale صاحب توکن.
+        $middleware->api(prepend: [
+            \App\Http\Middleware\SetLocale::class,
+        ]);
+
         // Router probe reports authenticate with a per-server signed token.
         $middleware->validateCsrfTokens(except: [
             'tunneling/report',
@@ -72,5 +88,82 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias($aliases);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        /*
+         * قالب خطای API.
+         *
+         * ربات فقط روی کلید ok شرط می‌گذارد. خطاهای کاری و احراز هویت همیشه
+         * {"ok":false,"error":{...}} برمی‌گرداندند، اما خطای اعتبارسنجی با قالب
+         * پیش‌فرض لاراول بیرون می‌رفت: بدون ok، یعنی برای ربات «موفق‌شکل» بود و
+         * بعد سرِ data کرش می‌کرد. پس هر خطای API در همین قالب بسته می‌شود.
+         *
+         * دامنه فقط api/v1/* است: فرم‌های Blade پنل و اندپوینت‌های ادمینِ ماژول
+         * تانل (api/servers و api/tunnels با گروه web) باید دست‌نخورده بمانند،
+         * وگرنه هر فرم پنل و هر اسکریپت ادمین می‌شکند.
+         */
+        $isApi = static fn (Request $request): bool => $request->is('api/v1/*');
+
+        $envelope = static fn (string $code, string $message, int $status, array $extra = []): JsonResponse => response()->json([
+            'ok' => false,
+            'error' => array_merge(['code' => $code, 'message' => $message], $extra),
+        ], $status);
+
+        $exceptions->render(function (ValidationException $e, Request $request) use ($isApi, $envelope) {
+            if (! $isApi($request)) {
+                return null;
+            }
+
+            // نام کلید «errors» است چون راهنمای API همین را وعده داده
+            // (api.docs_e_validation) و ربات‌های موجود روی آن حساب می‌کنند.
+            return $envelope('validation_failed', __('api.validation_failed'), $e->status, [
+                'errors' => $e->errors(),
+            ]);
+        });
+
+        $exceptions->render(function (ThrottleRequestsException $e, Request $request) use ($isApi, $envelope) {
+            if (! $isApi($request)) {
+                return null;
+            }
+
+            $headers = $e->getHeaders();
+
+            // همان کد خطایی که api.throttle می‌دهد، تا ربات یک شاخه کمتر داشته باشد.
+            return $envelope('rate_limited', __('api.rate_limited', [
+                'seconds' => (int) ($headers['Retry-After'] ?? 60),
+            ]), 429)->withHeaders($headers);
+        });
+
+        $exceptions->render(function (HttpExceptionInterface $e, Request $request) use ($isApi, $envelope) {
+            if (! $isApi($request)) {
+                return null;
+            }
+
+            $status = $e->getStatusCode();
+
+            [$code, $message] = match ($status) {
+                401 => ['unauthenticated', __('api.missing_token')],
+                403 => ['forbidden', __('api.forbidden')],
+                404 => ['not_found', __('api.not_found')],
+                405 => ['method_not_allowed', __('api.method_not_allowed')],
+                default => ['http_error', __('api.server_error')],
+            };
+
+            return $envelope($code, $message, $status);
+        });
+
+        // آخرین سد: یک استثنای مدیریت‌نشده نباید صفحهٔ HTML لاراول را به پارسر
+        // ربات تحویل بدهد (کلاینت‌های Guzzle معمولاً هدر Accept نمی‌فرستند، پس
+        // expectsJson دروغ می‌گوید). در حالت دیباگ کنار می‌رود تا ردّ خطا دیده
+        // شود. دو استثنا رد می‌شوند چون خودِ لاراول بعدِ همین callback‌ها درست
+        // ترجمه‌شان می‌کند و این سدِ عمومی ۵۰۰ اشتباه می‌ساخت.
+        $exceptions->render(function (Throwable $e, Request $request) use ($isApi, $envelope) {
+            if (! $isApi($request) || config('app.debug')) {
+                return null;
+            }
+
+            if ($e instanceof HttpResponseException || $e instanceof AuthenticationException) {
+                return null;
+            }
+
+            return $envelope('server_error', __('api.server_error'), 500);
+        });
     })->create();

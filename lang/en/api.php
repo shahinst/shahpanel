@@ -17,6 +17,7 @@ return [
 
     'not_found' => 'No record with that identifier.',
     'endpoint_not_found' => 'No such endpoint.',
+    'method_not_allowed' => 'That HTTP method is not allowed for this endpoint.',
     'forbidden' => 'You do not have access to this record.',
     'validation_failed' => 'The input is invalid.',
     'server_error' => 'Internal server error.',

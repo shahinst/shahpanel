@@ -322,6 +322,7 @@ class ApiDocs
             ['status' => 403, 'code' => 'role_forbidden', 'meaning' => __('api.docs_e_role')],
             ['status' => 403, 'code' => 'ip_not_allowed', 'meaning' => __('api.docs_e_ip')],
             ['status' => 404, 'code' => 'not_found', 'meaning' => __('api.docs_e_not_found')],
+            ['status' => 405, 'code' => 'method_not_allowed', 'meaning' => __('api.method_not_allowed')],
             ['status' => 422, 'code' => 'validation_failed', 'meaning' => __('api.docs_e_validation')],
             ['status' => 429, 'code' => 'rate_limited', 'meaning' => __('api.docs_e_rate')],
         ];

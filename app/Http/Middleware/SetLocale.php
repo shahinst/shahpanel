@@ -13,6 +13,10 @@ use Symfony\Component\HttpFoundation\Response;
  * Order: the signed-in user's saved preference, then the guest session, then
  * the app default. The user column wins so that someone who set English on
  * their laptop still gets English on their phone.
+ *
+ * Runs in the "api" group too, where there is no session and no resolved user
+ * yet — hence the guards below. There Accept-Language is the only signal, which
+ * is what an API consumer serving non-Persian users actually needs.
  */
 class SetLocale
 {
@@ -28,7 +32,9 @@ class SetLocale
             $locale = $user->locale;
         }
 
-        if ($locale === null) {
+        // گروه api هیچ سشنی ندارد؛ بدون این شرط، خواندن سشن هر درخواست API را
+        // با خطای «Session store not set on request» می‌انداخت.
+        if ($locale === null && $request->hasSession()) {
             $fromSession = $request->session()->get($sessionKey);
             if (is_string($fromSession) && in_array($fromSession, $supported, true)) {
                 $locale = $fromSession;
