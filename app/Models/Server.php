@@ -29,6 +29,8 @@ class Server extends Model
         'remnawave_nodes_synced_at',
         'role',
         'host',
+        'client_host',
+        'client_port',
         'public_ip',
         'cisco_vpn_hostname',
         'cisco_group_policy',
@@ -87,6 +89,7 @@ class Server extends Model
             'remnawave_nodes' => 'array',
             'remnawave_nodes_synced_at' => 'datetime',
             'port' => 'integer',
+            'client_port' => 'integer',
             'ssh_port' => 'integer',
             'username_enc' => 'encrypted',
             'password_enc' => 'encrypted',
@@ -245,6 +248,38 @@ class Server extends Model
         }
 
         return $host;
+    }
+
+    /**
+     * نشانی‌ای که باید در کانفیگ‌ها و لینک اشتراکِ تحویلی به کاربر بنشیند.
+     *
+     * فروشندهٔ دارای تونل، پنل را روی IP مستقیم سرور مدیریت می‌کند ولی کاربرش
+     * باید به تونل وصل شود. خالی‌بودن client_host یعنی رفتار قبلی: همان میزبان
+     * مدیریتی به کاربر داده می‌شود.
+     */
+    public function clientHost(): string
+    {
+        $clientHost = $this->normalizeConnectionHost((string) ($this->client_host ?? ''));
+
+        if ($clientHost !== '') {
+            return $clientHost;
+        }
+
+        return $this->normalizeConnectionHost((string) $this->host);
+    }
+
+    /** آیا نشانی کاربرمحور تنظیم شده؟ مبنای «دست نزن» برای بازنویس نشانی‌ها. */
+    public function hasClientHost(): bool
+    {
+        return $this->normalizeConnectionHost((string) ($this->client_host ?? '')) !== '';
+    }
+
+    /** پورت اختیاری کانفیگ‌های کاربر؛ null یعنی پورت اینباند/کانفیگ حفظ شود. */
+    public function clientPort(): ?int
+    {
+        $port = (int) ($this->client_port ?? 0);
+
+        return $port >= 1 && $port <= 65535 ? $port : null;
     }
 
     /** SSH/SFTP port on MikroTik for native .backup download (separate from API port). */

@@ -101,6 +101,9 @@ class RefreshSubscriptionCacheJob implements ShouldBeUnique, ShouldQueue
             return;
         }
 
+        // بدنه عیناً همان‌طور که پنل داده ذخیره می‌شود؛ نشانی کاربرمحور
+        // (servers.client_host) هنگام تحویل در SubscriptionFeedService اعمال
+        // می‌شود تا تغییر آن تنظیم، کش‌های موجود را بی‌اعتبار نکند.
         $account->forceFill([
             'subscription_cache' => $body,
             'subscription_cached_at' => now(),

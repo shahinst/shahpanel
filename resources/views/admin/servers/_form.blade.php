@@ -87,6 +87,16 @@
                 <small class="text-muted d-block mt-1" id="mikrotik-host-hint" @style(['display: none' => ! $isMikrotikForm])>{{ __('servers.mikrotik_host_hint') }}</small>
                 <small class="text-muted" id="panel-host-hint" style="display:none"></small>
             </x-form.group>
+            <x-form.group :label="__('servers.client_host')" id="client-host-group" @style(['display: none' => ! $isPanelForm])>
+                <input name="client_host" value="{{ old('client_host', $server?->client_host) }}" class="form-control"
+                       placeholder="tunnel.example.com" id="server-client-host">
+                <small class="text-muted d-block mt-1">{{ __('servers.client_host_hint') }}</small>
+            </x-form.group>
+            <x-form.group :label="__('servers.client_port')" id="client-port-group" @style(['display: none' => ! $isPanelForm])>
+                <input name="client_port" type="number" min="1" max="65535" value="{{ old('client_port', $server?->client_port) }}"
+                       class="form-control" placeholder="443" id="server-client-port">
+                <small class="text-muted d-block mt-1">{{ __('servers.client_port_hint') }}</small>
+            </x-form.group>
             <x-form.group :label="__('servers.public_ip')" id="mikrotik-public-ip-group" @style(['display: none' => ! $isMikrotikForm])>
                 <input name="public_ip" value="{{ old('public_ip', $server?->public_ip) }}" class="form-control"
                        placeholder="1.2.3.4">
@@ -257,6 +267,8 @@ document.addEventListener('DOMContentLoaded', function () {
     var mikrotikHostHint = document.getElementById('mikrotik-host-hint');
     var panelHint = document.getElementById('panel-host-hint');
     var mikrotikPublicIpGroup = document.getElementById('mikrotik-public-ip-group');
+    var clientHostGroup = document.getElementById('client-host-group');
+    var clientPortGroup = document.getElementById('client-port-group');
     var basePathGroup = document.getElementById('panel-base-path-group');
     var basePathHint = document.getElementById('panel-base-path-hint');
     var panelUser = document.getElementById('panel-username-group');
@@ -320,6 +332,10 @@ document.addEventListener('DOMContentLoaded', function () {
             if (portLabel) portLabel.textContent = isMikrotik ? @json(__('servers.mikrotik_api_port')) : @json(__('servers.port'));
         }
         if (mikrotikPublicIpGroup) mikrotikPublicIpGroup.style.display = isMikrotik ? 'block' : 'none';
+        // فقط سرورهای پنل‌محور کانفیگ/لینک اشتراک تحویل می‌دهند؛ سیسکو، اوسی‌سرو
+        // و میکروتیک نشانی کاربرمحور مخصوص خودشان را دارند.
+        if (clientHostGroup) clientHostGroup.style.display = isPanel ? 'block' : 'none';
+        if (clientPortGroup) clientPortGroup.style.display = isPanel ? 'block' : 'none';
         if (basePathGroup) basePathGroup.style.display = isPanel ? 'block' : 'none';
         if (basePathHint) basePathHint.textContent = cfg ? cfg.base : '';
         if (panelUser) panelUser.style.display = showUserPass ? 'block' : 'none';

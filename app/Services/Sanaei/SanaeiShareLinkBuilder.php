@@ -5,15 +5,38 @@ namespace App\Services\Sanaei;
 use App\Enums\ServiceType;
 use App\Models\Account;
 use App\Models\Server;
+use App\Services\ClientAddressRewriter;
 use App\Services\SanaeiService;
 
 class SanaeiShareLinkBuilder
 {
     public function __construct(
         protected SanaeiService $sanaeiService,
+        protected ClientAddressRewriter $clientAddressRewriter,
     ) {}
 
+    /**
+     * کانفیگ نهایی کاربر. چون بخشی از این لینک‌ها را خودِ پنل ساخته
+     * (configLinkFromSubscription) و بخشی را ما، بازنویسیِ نشانی کاربرمحور روی
+     * خروجی انجام می‌شود تا هیچ مسیری — از جمله listen اینباند و externalProxy —
+     * نتواند نشانی مدیریتی را بیرون ببرد.
+     */
     public function buildForAccount(Account $account): ?string
+    {
+        $link = $this->resolveConfigLink($account);
+
+        if ($link === null) {
+            return null;
+        }
+
+        $server = $account->server;
+
+        return $server !== null
+            ? $this->clientAddressRewriter->rewriteConfigUri($link, $server)
+            : $link;
+    }
+
+    protected function resolveConfigLink(Account $account): ?string
     {
         $account->loadMissing('server');
         $server = $account->server;
@@ -122,6 +145,12 @@ class SanaeiShareLinkBuilder
         );
     }
 
+    /**
+     * لینک اشتراک روی نشانی مدیریتی پنل. عمداً بازنویسی نمی‌شود چون خودِ
+     * شاه‌پنل هم با همین نشانی محتوای اشتراک را از پنل می‌گیرد
+     * (RefreshSubscriptionCacheJob و subscriptionFetchCandidates). برای نمایش به
+     * کاربر از clientSubscriptionLinkForAccount() استفاده کنید.
+     */
     public function subscriptionLinkForAccount(Account $account): ?string
     {
         $account->loadMissing('server');
@@ -147,6 +176,25 @@ class SanaeiShareLinkBuilder
         } catch (\Throwable) {
             return null;
         }
+    }
+
+    /**
+     * همان لینک اشتراک، ولی با نشانی کاربرمحور — این نسخه است که به کاربر
+     * نمایش/تحویل داده می‌شود.
+     */
+    public function clientSubscriptionLinkForAccount(Account $account): ?string
+    {
+        $link = $this->subscriptionLinkForAccount($account);
+
+        if ($link === null) {
+            return null;
+        }
+
+        $server = $account->server;
+
+        return $server !== null
+            ? $this->clientAddressRewriter->rewriteUrlHost($link, $server)
+            : $link;
     }
 
     /**
@@ -536,6 +584,12 @@ class SanaeiShareLinkBuilder
 
     protected function linkHost(Server $server): string
     {
+        // نشانی کاربرمحور بر subDomain پنل مقدم است: پنل فقط نشانی مدیریتی خودش
+        // را می‌شناسد و از تونلِ جلوی سرور بی‌خبر است.
+        if ($server->hasClientHost()) {
+            return $server->clientHost();
+        }
+
         $settings = $this->sanaeiService->getPanelSettings($server);
         $subDomain = trim((string) ($settings['subDomain'] ?? ''));
 

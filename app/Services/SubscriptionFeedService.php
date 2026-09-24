@@ -25,6 +25,7 @@ class SubscriptionFeedService
 
     public function __construct(
         protected SanaeiPortalService $sanaeiPortalService,
+        protected ClientAddressRewriter $clientAddressRewriter,
     ) {}
 
     /**
@@ -132,7 +133,21 @@ class SubscriptionFeedService
             }
         }
 
-        return $lines;
+        if ($lines === []) {
+            return [];
+        }
+
+        // کش، خروجی خامِ خودِ پنل است و نشانی مدیریتی داخلش نشسته. بازنویسی
+        // هنگام تحویل انجام می‌شود، نه هنگام کش‌کردن: با تغییر client_host
+        // همهٔ اکانت‌ها فوراً درست می‌شوند، در حالی که بازنویسیِ زمانِ کش تا
+        // اجرای بعدی جاب، کانفیگ مرده تحویل می‌داد. هزینه‌اش چند جایگزینی رشته
+        // روی متن حاضر است و بودجهٔ ۳ ثانیه‌ای /sub را تهدید نمی‌کند.
+        $account->loadMissing('server');
+        $server = $account->server;
+
+        return $server !== null
+            ? $this->clientAddressRewriter->rewriteConfigUris($lines, $server)
+            : $lines;
     }
 
     /**

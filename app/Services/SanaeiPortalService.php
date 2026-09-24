@@ -15,6 +15,7 @@ class SanaeiPortalService
     public function __construct(
         protected SanaeiShareLinkBuilder $shareLinkBuilder,
         protected SanaeiService $sanaeiService,
+        protected ClientAddressRewriter $clientAddressRewriter,
     ) {}
 
     /**
@@ -22,20 +23,31 @@ class SanaeiPortalService
      * همان چیزی که هنگام ساخت اکانت در ستون‌های خودِ ما ذخیره شده. اندپوینت
      * عمومی /sub که باید بسیار سریع پاسخ بدهد تنها از همین متد استفاده می‌کند
      * تا ترتیب اولویت لینک‌ها در یک جا بماند.
+     *
+     * این نشانی‌ها را خودِ پنل راه دور برگردانده و روی میزبان مدیریتی‌اند؛ چون
+     * هر دو مصرف‌کنندهٔ این متد کاربرمحورند، نشانی کاربرمحور همین‌جا اعمال
+     * می‌شود. ستون‌های خام دست‌نخورده می‌مانند تا هم‌گام‌سازی با پنل نشکند.
      */
     public function storedSubscriptionLink(Account $account): ?string
     {
         $account->loadMissing('server');
+        $server = $account->server;
 
-        if ($account->server?->isPasarguard() && filled($account->pasarguard_subscription_url)) {
-            return (string) $account->pasarguard_subscription_url;
+        $stored = null;
+
+        if ($server?->isPasarguard() && filled($account->pasarguard_subscription_url)) {
+            $stored = (string) $account->pasarguard_subscription_url;
+        } elseif (filled($account->remnawave_subscription_url)) {
+            $stored = (string) $account->remnawave_subscription_url;
         }
 
-        if (filled($account->remnawave_subscription_url)) {
-            return (string) $account->remnawave_subscription_url;
+        if ($stored === null) {
+            return null;
         }
 
-        return null;
+        return $server !== null
+            ? $this->clientAddressRewriter->rewriteUrlHost($stored, $server)
+            : $stored;
     }
 
     /**
@@ -61,7 +73,8 @@ class SanaeiPortalService
 
         $this->backfillSubId($account);
 
-        $subscriptionLink = $this->shareLinkBuilder->subscriptionLinkForAccount($account);
+        // نسخهٔ کاربرمحور: همین لینک در پورتال و QR به دست کاربر می‌رسد.
+        $subscriptionLink = $this->shareLinkBuilder->clientSubscriptionLinkForAccount($account);
 
         return [
             'subscription_link' => $subscriptionLink,

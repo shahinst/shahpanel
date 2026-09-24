@@ -207,6 +207,8 @@ class ServerController extends Controller
             'pasarguard_mode' => ['nullable', Rule::enum(PasarguardConnectionMode::class)],
             'role' => ['nullable', 'in:internal,external'],
             'host' => ['required', 'string', 'max:255'],
+            'client_host' => ['nullable', 'string', 'max:255'],
+            'client_port' => ['nullable', 'integer', 'min:1', 'max:65535'],
             'public_ip' => ['nullable', 'string', 'max:45'],
             'port' => ['required', 'integer', 'min:1', 'max:65535'],
             'ssh_port' => ['nullable', 'integer', 'min:1', 'max:65535'],
@@ -248,6 +250,14 @@ class ServerController extends Controller
             'type' => $validated['type'],
             'role' => $validated['role'] ?? 'internal',
             'host' => $validated['host'],
+            // نشانی/پورت کاربرمحور فقط در کانفیگ و لینک اشتراکِ کاربر استفاده
+            // می‌شود؛ خالی‌ماندنشان یعنی همان رفتار قبلی با میزبان مدیریتی.
+            'client_host' => isset($validated['client_host']) && trim((string) $validated['client_host']) !== ''
+                ? trim((string) $validated['client_host'])
+                : null,
+            'client_port' => isset($validated['client_port']) && $validated['client_port'] !== null
+                ? (int) $validated['client_port']
+                : null,
             'public_ip' => isset($validated['public_ip']) && trim((string) $validated['public_ip']) !== ''
                 ? trim((string) $validated['public_ip'])
                 : null,
@@ -369,6 +379,14 @@ class ServerController extends Controller
 
         if (! Schema::hasColumn('servers', 'ssh_port')) {
             unset($payload['ssh_port']);
+        }
+
+        if (! Schema::hasColumn('servers', 'client_host')) {
+            unset($payload['client_host']);
+        }
+
+        if (! Schema::hasColumn('servers', 'client_port')) {
+            unset($payload['client_port']);
         }
 
         return $payload;
