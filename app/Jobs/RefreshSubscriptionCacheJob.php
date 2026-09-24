@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\Account;
 use App\Services\Sanaei\SanaeiShareLinkBuilder;
+use App\Services\SanaeiService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -74,12 +75,27 @@ class RefreshSubscriptionCacheJob implements ShouldBeUnique, ShouldQueue
         }
     }
 
-    public function handle(SanaeiShareLinkBuilder $shareLinkBuilder): void
+    public function handle(SanaeiShareLinkBuilder $shareLinkBuilder, SanaeiService $sanaeiService): void
     {
         $account = Account::query()->with('server')->find($this->accountId);
 
         if ($account === null || ! $account->service_type->isPanelV2ray()) {
             return;
+        }
+
+        // سنایی اول از مسیر چندکاندیدای خودِ SanaeiService می‌آید. یک GET ساده
+        // روی لینک ساخته‌شده روی نصب پیش‌فرض 3x-ui شکست می‌خورد: سرور ساب روی
+        // پورت دیگری و با HTTP ساده بالا می‌آید، پس لینک https به آن پورت خطای
+        // TLS می‌دهد. آن متد چند نشانی و چند طرح را امتحان می‌کند و همان چیزی را
+        // برمی‌گرداند که کلاینت می‌بیند.
+        if ($account->service_type->isSanaei()) {
+            $lines = $this->fetchSanaeiLines($account, $sanaeiService);
+
+            if ($lines !== null) {
+                $this->storeBody($account, $lines);
+
+                return;
+            }
         }
 
         $url = $this->resolveRemoteUrl($account, $shareLinkBuilder);
@@ -101,13 +117,59 @@ class RefreshSubscriptionCacheJob implements ShouldBeUnique, ShouldQueue
             return;
         }
 
-        // بدنه عیناً همان‌طور که پنل داده ذخیره می‌شود؛ نشانی کاربرمحور
-        // (servers.client_host) هنگام تحویل در SubscriptionFeedService اعمال
-        // می‌شود تا تغییر آن تنظیم، کش‌های موجود را بی‌اعتبار نکند.
+        $this->storeBody($account, $body);
+    }
+
+    /**
+     * بدنه عیناً همان‌طور که پنل داده ذخیره می‌شود؛ نشانی کاربرمحور
+     * (servers.client_host) هنگام تحویل در SubscriptionFeedService اعمال می‌شود
+     * تا تغییر آن تنظیم، کش‌های موجود را بی‌اعتبار نکند.
+     */
+    protected function storeBody(Account $account, string $body): void
+    {
         $account->forceFill([
             'subscription_cache' => $body,
             'subscription_cached_at' => now(),
         ])->save();
+    }
+
+    /**
+     * فهرست کانفیگ سنایی از مسیر چندکاندیدای SanaeiService. null یعنی نشد و
+     * باید سراغ GET مستقیم رفت؛ رشتهٔ خالی هرگز برنمی‌گردد چون ذخیرهٔ بدنهٔ
+     * خالی یعنی پاک کردن کانفیگ‌های کلاینت.
+     */
+    protected function fetchSanaeiLines(Account $account, SanaeiService $sanaeiService): ?string
+    {
+        $subId = (string) ($account->sanaei_sub_id ?? '');
+
+        if ($subId === '' || $account->server === null) {
+            return null;
+        }
+
+        try {
+            $links = $sanaeiService->fetchSubscriptionConfigLinks($account->server, $subId);
+        } catch (Throwable $exception) {
+            Log::warning('Subscription cache: Sanaei fetch failed, falling back', [
+                'account_id' => $account->id,
+                'server_id' => $account->server_id,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return null;
+        }
+
+        $lines = [];
+
+        foreach ($links as $link) {
+            $link = trim((string) $link);
+
+            if ($link !== '' && str_contains($link, '://')) {
+                $lines[] = $link;
+            }
+        }
+
+        return $lines === [] ? null : implode("
+", $lines);
     }
 
     /**

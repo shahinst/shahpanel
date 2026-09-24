@@ -20,7 +20,17 @@ class SubscriptionController extends Controller
         // دقیقاً مثل پورتال کاربر (ClientPortalController::show) که وضعیت را
         // نمایش می‌دهد ولی لینک را پنهان نمی‌کند. وضعیت واقعی از هدر
         // Subscription-Userinfo به کلاینت می‌رسد.
-        $body = $feed->body($feed->links($account), $this->wantsBase64($request));
+        $links = $feed->links($account);
+
+        // بدنهٔ خالی با کد ۲۰۰ بدترین پاسخ ممکن است: بیشتر کلاینت‌ها پروفایل
+        // ذخیره‌شده را با هر چه می‌گیرند بازنویسی می‌کنند، پس یک کش خالی
+        // کانفیگ‌های سالمِ مشتری را پاک می‌کند. تا وقتی محتوایی نداریم، پاسخ
+        // ۴۰۴ است و کلاینت آنچه دارد نگه می‌دارد.
+        if ($links === []) {
+            return $this->notFound();
+        }
+
+        $body = $feed->body($links, $this->wantsBase64($request));
 
         return response($body, 200, [
             'Content-Type' => 'text/plain; charset=utf-8',
