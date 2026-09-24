@@ -124,20 +124,25 @@ step "Fetching the latest code"
 echo -e "  ${DIM}\$ git fetch https://${GH_TOKEN:+***TOKEN***@}${REPO_PATH} ${BRANCH}${RST}"
 git fetch "$AUTH_URL" "$BRANCH"
 BEHIND="$(git rev-list --count HEAD..FETCH_HEAD)"
+# The checkout can already be current while the database is not — someone may
+# have moved the code with git directly, which a rewritten history forces them
+# to do. Exiting here would leave new code running against an old schema, so we
+# skip only the merge and still run composer, the migrations and the cache
+# clears below. They are all idempotent: a needless pass costs seconds, a
+# skipped one costs a broken panel.
 if [[ "$BEHIND" -eq 0 ]]; then
-  ok "already up to date — nothing to do"
-  echo -e "\n${GRN}${BLD}Done.${RST} Panel is on the latest version ($CURRENT).\n"
-  exit 0
+  ok "code is already current — checking dependencies and database anyway"
+else
+  info "$BEHIND new commit(s):"
+  git --no-pager log --oneline HEAD..FETCH_HEAD | sed 's/^/    /'
+  # A bootstrap copy of this script downloaded into the checkout is untracked and
+  # would block the merge; the tracked version is what replaces it.
+  if [[ -f update.sh ]] && ! git ls-files --error-unmatch update.sh >/dev/null 2>&1; then
+    info "removing the untracked bootstrap copy of update.sh"
+    rm -f update.sh
+  fi
+  run git merge --ff-only FETCH_HEAD
 fi
-info "$BEHIND new commit(s):"
-git --no-pager log --oneline HEAD..FETCH_HEAD | sed 's/^/    /'
-# A bootstrap copy of this script downloaded into the checkout is untracked and
-# would block the merge; the tracked version is what replaces it.
-if [[ -f update.sh ]] && ! git ls-files --error-unmatch update.sh >/dev/null 2>&1; then
-  info "removing the untracked bootstrap copy of update.sh"
-  rm -f update.sh
-fi
-run git merge --ff-only FETCH_HEAD
 ok "now at $(git rev-parse --short HEAD)"
 
 # ── 5) Dependencies ──────────────────────────────────────────────────────
