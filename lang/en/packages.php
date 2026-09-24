@@ -195,4 +195,13 @@ return [
     'ocserv_inherit_from_server' => 'From the server',
     'ocserv_requires_service_type' => 'An OpenConnect server must use the OpenConnect (ocserv) service type.',
     'ocserv_servers_only' => 'An OpenConnect package can only be attached to OpenConnect (ocserv) servers.',
+
+    'sanaei_section_title' => 'Sanaei panel settings (inbound)',
+    'sanaei_inbounds' => 'Package inbounds',
+    'sanaei_inbounds_help' => 'Accounts from this package are created only on the selected inbounds. If you select nothing, they are created on every enabled inbound of the server, as before.',
+    'sanaei_inbounds_all_hint' => 'Leaving this empty means every enabled inbound of the server is used.',
+    'sanaei_inbounds_select_server' => 'Choose a Sanaei server first.',
+    'sanaei_inbounds_empty' => 'No inbound has been fetched from this server yet — press "Fetch inbounds" on the server page.',
+    'sanaei_server_required' => 'To choose inbounds the package must have a Sanaei server selected.',
+    'sanaei_inbound_not_on_servers' => 'Inbound #:id does not exist on the Sanaei servers of this package.',
 ];

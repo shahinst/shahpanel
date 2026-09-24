@@ -87,6 +87,7 @@ class PackageController extends Controller
             'pasarguardGroupOptions' => [],
             'pasarguardGroupsByServer' => $this->pasarguardGroupsByServerMap($servers),
             'mikrotikProfilesByServer' => $this->mikrotikProfilesByServerMap($servers),
+            'sanaeiInboundsByServer' => $this->sanaeiInboundsByServerMap($servers),
         ]);
     }
 
@@ -133,6 +134,7 @@ class PackageController extends Controller
             'pasarguardGroupOptions' => $pasarguardGroupOptions,
             'pasarguardGroupsByServer' => $this->pasarguardGroupsByServerMap($servers),
             'mikrotikProfilesByServer' => $this->mikrotikProfilesByServerMap($servers),
+            'sanaeiInboundsByServer' => $this->sanaeiInboundsByServerMap($servers),
         ]);
     }
 
@@ -419,6 +421,22 @@ class PackageController extends Controller
             );
         }
 
+        // پکیج ثنایی می‌تواند به inboundهای مشخصی محدود شود؛ خالی یعنی «همهٔ inboundهای فعال» (رفتار قبلی پکیج‌های موجود).
+        $hasSanaei = $serviceTypeEnum->isSanaei()
+            || Server::query()->whereIn('id', $serverIds)->where('type', ServerType::Sanaei)->exists();
+
+        $sanaeiInboundIds = [];
+
+        if ($hasSanaei && $serviceTypeEnum->isSanaei()) {
+            $sanaeiRules = $request->validate([
+                'sanaei_inbound_ids' => ['nullable', 'array'],
+                'sanaei_inbound_ids.*' => ['integer', 'min:1'],
+            ]);
+            $validated = array_merge($validated, $sanaeiRules);
+            $sanaeiInboundIds = array_values(array_unique(array_map('intval', $sanaeiRules['sanaei_inbound_ids'] ?? [])));
+            $this->assertSanaeiInboundsAllowed($serverIds, $sanaeiInboundIds);
+        }
+
         return [
             'name' => $validated['name'],
             'currency' => $validated['currency'] ?? \App\Enums\MoneyCurrency::IRT->value,
@@ -450,6 +468,9 @@ class PackageController extends Controller
             'ocserv_group' => $hasOcserv ? ($validated['ocserv_group'] ?? null) : null,
             'mikrotik_profile_keys' => ($hasMikrotik && $serviceTypeEnum->isMikrotik())
                 ? array_values(array_unique(array_map('strval', $validated['mikrotik_profile_keys'])))
+                : null,
+            'sanaei_inbound_ids' => ($hasSanaei && $serviceTypeEnum->isSanaei() && $sanaeiInboundIds !== [])
+                ? $sanaeiInboundIds
                 : null,
             'sort_order' => $validated['sort_order'] ?? 0,
             'is_active' => $this->resolvePackageActiveState($request, $validated),
@@ -538,6 +559,137 @@ class PackageController extends Controller
         }
 
         return $map;
+    }
+
+    /**
+     * inboundهای همگام‌شدهٔ سرورهای ثنایی، گروه‌بندی‌شده بر اساس سرور تا ادمین بداند هر inbound مال کدام سرور است.
+     *
+     * @param  \Illuminate\Support\Collection<int, Server>|\Illuminate\Database\Eloquent\Collection<int, Server>  $servers
+     * @return array<string, list<array{id: int, name: string, protocol: string|null, port: int|null, label: string}>>
+     */
+    protected function sanaeiInboundsByServerMap($servers): array
+    {
+        $map = [];
+        $serverIds = [];
+
+        foreach ($servers as $server) {
+            if (! $server->isSanaei()) {
+                continue;
+            }
+
+            $map[(string) $server->id] = [];
+            $serverIds[] = $server->id;
+        }
+
+        if ($serverIds === []) {
+            return $map;
+        }
+
+        // فقط inbound فعال قابل انتخاب است؛ inbound غیرفعال روی پنل اکانت نمی‌سازد.
+        $rows = ServerInterface::query()
+            ->whereIn('server_id', $serverIds)
+            ->where('category', 'inbound')
+            ->where('is_enabled', true)
+            ->orderBy('name')
+            ->get();
+
+        foreach ($rows as $row) {
+            $inboundId = $this->sanaeiInboundIdFromRemoteKey((string) $row->remote_key);
+
+            if ($inboundId === null) {
+                continue;
+            }
+
+            $key = (string) $row->server_id;
+
+            if (! isset($map[$key])) {
+                continue;
+            }
+
+            $name = (string) ($row->name ?: 'Inbound '.$inboundId);
+            $details = array_values(array_filter([
+                $row->protocol,
+                $row->port !== null ? (string) $row->port : null,
+            ]));
+
+            // پروتکل و پورت در برچسب می‌آید چون چند inbound معمولاً نام مشابه دارند.
+            $map[$key][] = [
+                'id' => $inboundId,
+                'name' => $name,
+                'protocol' => $row->protocol,
+                'port' => $row->port,
+                'label' => $details === []
+                    ? $name.' (#'.$inboundId.')'
+                    : $name.' — '.implode(':', $details).' (#'.$inboundId.')',
+            ];
+        }
+
+        return $map;
+    }
+
+    /**
+     * شناسهٔ واقعی inbound در 3x-ui داخل remote_key به شکل «inbound:12» ذخیره شده است.
+     * PasarGuard هم از همین category استفاده می‌کند ولی کلیدش md5 تگ است، پس عددی بودن را چک می‌کنیم.
+     */
+    protected function sanaeiInboundIdFromRemoteKey(string $remoteKey): ?int
+    {
+        $prefix = 'inbound:';
+
+        if (! str_starts_with($remoteKey, $prefix)) {
+            return null;
+        }
+
+        $inboundId = substr($remoteKey, strlen($prefix));
+
+        return ctype_digit($inboundId) && (int) $inboundId > 0 ? (int) $inboundId : null;
+    }
+
+    /**
+     * فرم قابل دستکاری است، پس id ارسالی باید واقعاً متعلق به یکی از سرورهای ثنایی همین پکیج باشد.
+     *
+     * @param  list<int>  $serverIds
+     * @param  list<int>  $inboundIds
+     */
+    protected function assertSanaeiInboundsAllowed(array $serverIds, array $inboundIds): void
+    {
+        if ($inboundIds === []) {
+            return; // خالی مجاز است و یعنی «همهٔ inboundهای فعال»
+        }
+
+        $sanaeiServerIds = Server::query()
+            ->whereIn('id', $serverIds)
+            ->where('type', ServerType::Sanaei)
+            ->pluck('id')
+            ->all();
+
+        if ($sanaeiServerIds === []) {
+            throw ValidationException::withMessages([
+                'sanaei_inbound_ids' => [__('packages.sanaei_server_required')],
+            ]);
+        }
+
+        $allowed = [];
+
+        $remoteKeys = ServerInterface::query()
+            ->whereIn('server_id', $sanaeiServerIds)
+            ->where('category', 'inbound')
+            ->pluck('remote_key');
+
+        foreach ($remoteKeys as $remoteKey) {
+            $inboundId = $this->sanaeiInboundIdFromRemoteKey((string) $remoteKey);
+
+            if ($inboundId !== null) {
+                $allowed[$inboundId] = true;
+            }
+        }
+
+        foreach ($inboundIds as $inboundId) {
+            if (! isset($allowed[$inboundId])) {
+                throw ValidationException::withMessages([
+                    'sanaei_inbound_ids' => [__('packages.sanaei_inbound_not_on_servers', ['id' => $inboundId])],
+                ]);
+            }
+        }
     }
 
     /**

@@ -195,4 +195,14 @@ return [
     'ocserv_inherit_from_server' => 'از سرور',
     'ocserv_requires_service_type' => 'برای سرور OpenConnect باید نوع سرویس OpenConnect (ocserv) انتخاب شود.',
     'ocserv_servers_only' => 'پکیج OpenConnect فقط می‌تواند به سرورهای OpenConnect (ocserv) متصل شود.',
+
+    // انتخاب inbound در سطح پکیج: بدون این، ساخت اکانت روی همهٔ inboundهای فعال انجام می‌شد و خطا می‌داد.
+    'sanaei_section_title' => 'تنظیمات پنل ثنایی (inbound)',
+    'sanaei_inbounds' => 'inboundهای پکیج',
+    'sanaei_inbounds_help' => 'اکانت‌های این پکیج فقط روی inboundهای انتخاب‌شده ساخته می‌شوند. اگر چیزی انتخاب نکنید، مثل قبل روی همهٔ inboundهای فعال سرور ساخته می‌شوند.',
+    'sanaei_inbounds_all_hint' => 'خالی گذاشتن یعنی همهٔ inboundهای فعال سرور استفاده می‌شوند.',
+    'sanaei_inbounds_select_server' => 'ابتدا یک سرور Sanaei انتخاب کنید.',
+    'sanaei_inbounds_empty' => 'هنوز inboundی از این سرور دریافت نشده — در صفحهٔ سرور «دریافت inboundها» را بزنید.',
+    'sanaei_server_required' => 'برای انتخاب inbound باید یک سرور Sanaei در پکیج انتخاب شود.',
+    'sanaei_inbound_not_on_servers' => 'inbound شمارهٔ :id روی سرورهای Sanaei این پکیج وجود ندارد.',
 ];

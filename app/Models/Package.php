@@ -32,6 +32,7 @@ class Package extends Model
         'pasarguard_expiry_activation',
         'remnawave_squads',
         'remnawave_traffic_strategy',
+        'sanaei_inbound_ids',
         'cisco_group_policy',
         'cisco_tunnel_group',
         'cisco_simultaneous_logins',
@@ -56,6 +57,7 @@ class Package extends Model
             'pasarguard_hwid_limit' => 'integer',
             'pasarguard_expiry_activation' => PasarguardExpiryActivation::class,
             'remnawave_squads' => 'array',
+            'sanaei_inbound_ids' => 'array',
             'cisco_simultaneous_logins' => 'integer',
             'ocserv_max_sessions' => 'integer',
             'mikrotik_profile_keys' => 'array',
@@ -216,6 +218,28 @@ class Package extends Model
         $value = strtoupper((string) ($this->remnawave_traffic_strategy ?? 'NO_RESET'));
 
         return in_array($value, ['NO_RESET', 'DAY', 'WEEK', 'MONTH'], true) ? $value : 'NO_RESET';
+    }
+
+    /**
+     * inboundهای 3x-ui که اکانت‌های این پکیج باید روی آن‌ها ساخته شوند.
+     *
+     * چرا: خالی بودن این فهرست یعنی «همه inboundهای فعال سرور»، تا پکیج‌هایی
+     * که پیش از افزوده‌شدن این قابلیت ساخته شده‌اند بدون تغییر رفتار کار کنند.
+     *
+     * @return list<int>
+     */
+    public function sanaeiInboundIds(): array
+    {
+        $ids = $this->sanaei_inbound_ids;
+
+        if (! is_array($ids)) {
+            return [];
+        }
+
+        return array_values(array_unique(array_filter(
+            array_map(static fn (mixed $id): int => (int) $id, $ids),
+            static fn (int $id): bool => $id > 0
+        )));
     }
 
     /**

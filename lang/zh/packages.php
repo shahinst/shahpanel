@@ -195,4 +195,13 @@ return [
     'ocserv_inherit_from_server' => '继承服务器设置',
     'ocserv_requires_service_type' => 'OpenConnect 服务器必须使用 OpenConnect（ocserv）服务类型。',
     'ocserv_servers_only' => 'OpenConnect 套餐只能绑定到 OpenConnect（ocserv）服务器。',
+
+    'sanaei_section_title' => 'Sanaei 面板设置（inbound）',
+    'sanaei_inbounds' => '套餐的 inbound',
+    'sanaei_inbounds_help' => '该套餐的账号只会在所选的 inbound 上创建。如果不选择，则与以前一样在服务器的所有已启用 inbound 上创建。',
+    'sanaei_inbounds_all_hint' => '留空表示使用服务器上所有已启用的 inbound。',
+    'sanaei_inbounds_select_server' => '请先选择一台 Sanaei 服务器。',
+    'sanaei_inbounds_empty' => '尚未从该服务器获取任何 inbound —— 请在服务器页面点击“获取 inbound”。',
+    'sanaei_server_required' => '要选择 inbound，套餐中必须选中一台 Sanaei 服务器。',
+    'sanaei_inbound_not_on_servers' => '第 :id 号 inbound 不存在于该套餐的 Sanaei 服务器上。',
 ];

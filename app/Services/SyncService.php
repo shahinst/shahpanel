@@ -482,7 +482,9 @@ class SyncService
 
         if ($server->isSanaei() || $account->service_type->isSanaei()) {
             $email = $account->client_email ?? $account->remote_username;
-            $raw = $this->sanaeiService->getClientTraffics($server, $email);
+            // چرا: اکانت روی هر inbound کلاینت جداگانه‌ای با ایمیل یکتای خودش دارد؛
+            // خواندن فقط ایمیل پایه، مصرف inboundهای دیگر را نادیده می‌گرفت.
+            $raw = $this->sanaeiService->getAggregatedClientTraffics($server, $email);
 
             if ($raw === null) {
                 $this->lastPortalTrafficMeta = [

@@ -45,6 +45,24 @@
         (array) old('mikrotik_profile_keys', $package?->mikrotikProfileKeys() ?? [])
     );
 
+    // انتخاب inbound فقط برای پکیج ثنایی معنا دارد؛ بقیهٔ فیلدهای مخصوص سرویس هم دقیقاً همین الگو را دارند.
+    $isSanaeiPackage = $currentServiceType->isSanaei();
+    $sanaeiServers = $servers->filter(
+        fn ($s) => $s->type === \App\Enums\ServerType::Sanaei
+    );
+
+    if (! isset($sanaeiInboundsByServer) || ! is_array($sanaeiInboundsByServer)) {
+        $sanaeiInboundsByServer = [];
+        foreach ($sanaeiServers as $snServer) {
+            $sanaeiInboundsByServer[(string) $snServer->id] = [];
+        }
+    }
+
+    $selectedSanaeiInboundIds = array_map(
+        'intval',
+        (array) old('sanaei_inbound_ids', $package?->sanaei_inbound_ids ?? [])
+    );
+
     $pasarguardServers = $servers->filter(
         fn ($s) => $s->type === \App\Enums\ServerType::Pasarguard
     );
@@ -247,6 +265,54 @@
                     </div>
                     <small class="text-muted d-block mt-1" id="mikrotik-profile-hint">
                         {{ __('packages.mikrotik_multi_select_hint') }}
+                    </small>
+                </x-form.group>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- انتخاب inbound ثنایی: نمایش/اختفایش با همان اسکریپت نوع سرویسِ بقیهٔ بلوک‌های اختصاصی انجام می‌شود. --}}
+<div id="package-sanaei-fields" class="col-12 mb-3 {{ $isSanaeiPackage ? '' : 'd-none' }}">
+    <div class="panel-form-section border rounded p-3 bg-light">
+        <h4 class="panel-form-section-title h6 mb-3"><i class="bx bx-transfer align-middle"></i> {{ __('packages.sanaei_section_title') }}</h4>
+        <p class="help-block text-info small">{{ __('packages.sanaei_inbounds_help') }}</p>
+        <div class="row">
+            <div class="col-md-8">
+                <x-form.group :label="__('packages.sanaei_inbounds')">
+                    @php
+                        $selectedSanaeiServers = $sanaeiServers->filter(
+                            fn ($s) => in_array((int) $s->id, $selectedServerIds, true)
+                        );
+                    @endphp
+                    {{-- برای هر سرور ثناییِ انتخاب‌شده یک گروه: نام سرور و بعد inboundهای خودش. --}}
+                    <div id="sanaei-inbound-groups" class="border rounded p-2 bg-white"
+                         data-initial='@json($selectedSanaeiInboundIds)'>
+                        @forelse ($selectedSanaeiServers as $snServer)
+                            @php
+                                $inboundsForServer = $sanaeiInboundsByServer[(string) $snServer->id] ?? [];
+                            @endphp
+                            <div class="sanaei-inbound-server-group mb-3" data-server-id="{{ $snServer->id }}">
+                                <div class="fw-bold small text-primary border-bottom pb-1 mb-2">
+                                    <i class="bx bx-server align-middle"></i> {{ $snServer->name }}
+                                </div>
+                                @forelse ($inboundsForServer as $inbound)
+                                    <label class="d-block mb-2 ps-2">
+                                        <input type="checkbox" name="sanaei_inbound_ids[]" value="{{ $inbound['id'] }}"
+                                               class="sanaei-inbound-checkbox"
+                                               @checked(in_array((int) $inbound['id'], $selectedSanaeiInboundIds, true))>
+                                        {{ $inbound['label'] }}
+                                    </label>
+                                @empty
+                                    <p class="text-muted small mb-0 ps-2">{{ __('packages.sanaei_inbounds_empty') }}</p>
+                                @endforelse
+                            </div>
+                        @empty
+                            <p class="text-muted small mb-0">{{ __('packages.sanaei_inbounds_select_server') }}</p>
+                        @endforelse
+                    </div>
+                    <small class="text-muted d-block mt-1" id="sanaei-inbound-hint">
+                        {{ __('packages.sanaei_inbounds_all_hint') }}
                     </small>
                 </x-form.group>
             </div>
@@ -548,6 +614,7 @@ document.addEventListener('DOMContentLoaded', function () {
         refreshPasarguardFields();
         refreshRemnawaveFields();
         refreshMikrotikFields();
+        refreshSanaeiFields();
     }
 
     const mikrotikFields = document.getElementById('package-mikrotik-fields');
@@ -754,6 +821,89 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // بلوک inbound ثنایی عمداً همان ساختار بلوک MikroTik را دارد تا مکانیزم نمایش/اختفا یکی بماند.
+    const sanaeiFields = document.getElementById('package-sanaei-fields');
+    const sanaeiInboundGroups = document.getElementById('sanaei-inbound-groups');
+    const sanaeiInboundsByServer = @json($sanaeiInboundsByServer);
+    const sanaeiServerNames = @json($sanaeiServers->pluck('name', 'id'));
+    // انتخاب به‌خاطرسپرده‌شده تا تیک‌زدن/برداشتن سرورها انتخاب inbound را بی‌صدا پاک نکند.
+    let sanaeiSelectedIds = null;
+
+    function refreshSanaeiFields() {
+        if (!sanaeiFields) return;
+        const isSanaei = sanaeiTypes.includes(serviceSelect.value);
+        sanaeiFields.classList.toggle('d-none', !isSanaei);
+        if (isSanaei) {
+            loadSanaeiInboundsForSelectedServers();
+        }
+    }
+
+    function collectCheckedSanaeiIds(into) {
+        if (!sanaeiInboundGroups) return into;
+        sanaeiInboundGroups.querySelectorAll('input.sanaei-inbound-checkbox').forEach(function (cb) {
+            if (cb.checked) { into[cb.value] = true; }
+            else { delete into[cb.value]; }
+        });
+        return into;
+    }
+
+    // هر سرور ثنایی گروه خودش را دارد چون id هر inbound فقط روی همان سرور معتبر است.
+    function loadSanaeiInboundsForSelectedServers() {
+        if (!sanaeiInboundGroups) return;
+
+        if (sanaeiSelectedIds === null) {
+            sanaeiSelectedIds = {};
+            try {
+                (JSON.parse(sanaeiInboundGroups.dataset.initial || '[]') || []).forEach(function (id) {
+                    sanaeiSelectedIds[String(id)] = true;
+                });
+            } catch (e) { /* ignore */ }
+        }
+        collectCheckedSanaeiIds(sanaeiSelectedIds);
+
+        const checkedServers = Array.from(document.querySelectorAll(
+            '.package-server-option[data-server-type="sanaei"] input.package-server-checkbox:checked'
+        )).map(function (i) { return String(parseInt(i.value, 10)); });
+
+        if (!checkedServers.length) {
+            sanaeiInboundGroups.innerHTML = '<p class="text-muted small mb-0">'
+                + @json(__('packages.sanaei_inbounds_select_server')) + '</p>';
+            return;
+        }
+
+        let html = '';
+        checkedServers.forEach(function (serverId) {
+            const name = sanaeiServerNames[serverId] || sanaeiServerNames[Number(serverId)] || ('#' + serverId);
+            const inbounds = sanaeiInboundsByServer[serverId] || sanaeiInboundsByServer[String(serverId)] || [];
+
+            html += '<div class="sanaei-inbound-server-group mb-3" data-server-id="' + serverId + '">';
+            html += '<div class="fw-bold small text-primary border-bottom pb-1 mb-2">'
+                + '<i class="bx bx-server align-middle"></i> ' + mikrotikEscape(name) + '</div>';
+            if (inbounds.length) {
+                inbounds.forEach(function (inbound) {
+                    const value = String(inbound.id);
+                    const label = inbound.label || inbound.name || value;
+                    const isChecked = sanaeiSelectedIds[value] ? ' checked' : '';
+                    html += '<label class="d-block mb-2 ps-2"><input type="checkbox" name="sanaei_inbound_ids[]" value="'
+                        + mikrotikEscape(value) + '" class="sanaei-inbound-checkbox"' + isChecked + '> '
+                        + mikrotikEscape(label) + '</label>';
+                });
+            } else {
+                html += '<p class="text-muted small mb-0 ps-2">' + @json(__('packages.sanaei_inbounds_empty')) + '</p>';
+            }
+            html += '</div>';
+        });
+        sanaeiInboundGroups.innerHTML = html;
+        sanaeiInboundGroups.dataset.initial = '[]';
+
+        sanaeiInboundGroups.querySelectorAll('input.sanaei-inbound-checkbox').forEach(function (cb) {
+            cb.addEventListener('change', function () {
+                if (cb.checked) { sanaeiSelectedIds[cb.value] = true; }
+                else { delete sanaeiSelectedIds[cb.value]; }
+            });
+        });
+    }
+
     function refreshPasarguardFields() {
         if (!pasarguardFields) return;
         const isPasarguard = serviceSelect.value === pasarguardType;
@@ -894,6 +1044,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (el.checked) {
                     fetchServerProvisioningOptions(el.value, 'mikrotik');
                 }
+            }
+            if (sanaeiTypes.includes(serviceSelect.value)) {
+                loadSanaeiInboundsForSelectedServers();
             }
         });
     });

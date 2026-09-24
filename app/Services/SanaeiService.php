@@ -475,8 +475,78 @@ class SanaeiService
     }
 
     /**
-     * Create a global panel client and attach all enabled inbounds (subscription exposes every attached inbound).
+     * ایمیل کلاینت پنل برای یک inbound مشخص.
      *
+     * چرا: 3x-ui ایمیل کلاینت را در کل پنل یکتا می‌داند، پس وقتی یک اکانت روی
+     * چند inbound ساخته می‌شود نمی‌توان یک ایمیل را تکرار کرد (همان خطای
+     * «Duplicate email»). inbound اصلی ایمیل پایه را دست‌نخورده نگه می‌دارد تا
+     * هر جست‌وجوی موجود بر اساس accounts.client_email همچنان جواب بدهد و
+     * inboundهای بعدی پسوند «-i{id}» می‌گیرند که ذاتاً یکتاست.
+     */
+    public static function inboundClientEmail(string $baseEmail, int $inboundId, int $primaryInboundId): string
+    {
+        $baseEmail = trim($baseEmail);
+
+        if ($inboundId <= 0 || $inboundId === $primaryInboundId) {
+            return $baseEmail;
+        }
+
+        return $baseEmail.'-i'.$inboundId;
+    }
+
+    /**
+     * inboundهای انتخاب‌شده روی پکیج را به inboundهای واقعاً فعال پنل تبدیل می‌کند.
+     *
+     * چرا: انتخاب ادمین روی پکیج ذخیره می‌شود ولی ممکن است بعداً روی پنل حذف یا
+     * غیرفعال شود؛ خالی بودن انتخاب هم یعنی «همه inboundهای فعال» تا پکیج‌های
+     * قدیمی که چیزی انتخاب نکرده‌اند مثل قبل رفتار کنند.
+     *
+     * @param  list<int>|null  $requestedIds
+     * @return list<int>
+     */
+    public function resolveProvisionInboundIds(Server $server, ?array $requestedIds = null): array
+    {
+        $available = $this->listProvisionInboundIds($server);
+
+        if ($available === []) {
+            throw new RemoteProvisionException(__('services.sanaei_no_active_inbound'));
+        }
+
+        $requested = [];
+
+        foreach ($requestedIds ?? [] as $id) {
+            $id = (int) $id;
+
+            if ($id > 0 && ! in_array($id, $requested, true)) {
+                $requested[] = $id;
+            }
+        }
+
+        if ($requested === []) {
+            return $available;
+        }
+
+        $selected = array_values(array_filter(
+            $requested,
+            static fn (int $id): bool => in_array($id, $available, true)
+        ));
+
+        if ($selected === []) {
+            throw new RemoteProvisionException(
+                __('services.sanaei_package_inbounds_unavailable', ['ids' => implode(', ', $requested)])
+            );
+        }
+
+        return $selected;
+    }
+
+    /**
+     * ساخت کلاینت روی inboundهای هدف — به ازای هر inbound یک کلاینت با ایمیل یکتای خودش.
+     *
+     * چرا مسیر /clients/add حذف شد: 3x-ui اصلاً API کلاینت سراسری ندارد و آن
+     * درخواست همیشه 404 می‌شد؛ یک رفت‌وبرگشت بی‌فایده روی هر ساخت.
+     *
+     * @param  list<int>|null  $inboundIds  inboundهای پکیج؛ null/خالی یعنی همه inboundهای فعال
      * @return array<string, mixed>
      */
     public function createClient(
@@ -489,8 +559,14 @@ class SanaeiService
         int $up = 0,
         int $down = 0,
         ?string $subId = null,
+        ?array $inboundIds = null,
     ): array {
-        $client = $this->normalizeClientPayload([
+        $targets = $this->resolveProvisionInboundIds($server, $inboundIds);
+        $primaryInboundId = $targets[0];
+
+        // UUID و subId روی همه inboundها یکسان می‌ماند: subId مشترک باعث می‌شود
+        // لینک subscription همه inboundها را یکجا تحویل کاربر بدهد.
+        $base = $this->normalizeClientPayload([
             'id' => $uuid,
             'email' => $email,
             'limitIp' => $limitIp,
@@ -504,27 +580,108 @@ class SanaeiService
             'down' => max(0, $down),
         ]);
 
-        $inboundIds = $this->listProvisionInboundIds($server);
+        $created = 0;
+        $failures = [];
 
-        if ($inboundIds === []) {
+        foreach ($targets as $inboundId) {
+            $client = $base;
+            $client['email'] = self::inboundClientEmail($email, $inboundId, $primaryInboundId);
+
+            // چرا: شمارنده مصرف فقط روی کلاینت اصلی نوشته می‌شود؛ تکرار آن روی
+            // هر inbound باعث می‌شد جمعِ ترافیک، مصرف کاربر را چند برابر نشان دهد.
+            if ($inboundId !== $primaryInboundId) {
+                $client['up'] = 0;
+                $client['down'] = 0;
+            }
+
+            try {
+                $this->createClientOnInbound($server, $inboundId, $client);
+                $created++;
+            } catch (Throwable $exception) {
+                $failures[$inboundId] = $exception->getMessage();
+            }
+        }
+
+        if ($created === 0) {
             throw new RemoteProvisionException(
-                __('services.sanaei_no_active_inbound')
+                $failures !== []
+                    ? implode(' | ', $failures)
+                    : __('services.sanaei_client_not_registered')
             );
         }
 
-        $panel = $this->client($server);
-        $response = $panel->postCreateGlobalClient([
-            'client' => $this->mapClientToGlobalApi($client),
-            'inboundIds' => $inboundIds,
-        ]);
-
-        if (in_array($response->status(), [404, 405], true)) {
-            $this->createClientOnInboundsLegacy($server, $inboundIds, $client);
-        } else {
-            $this->assertSuccessful($response, 'create Sanaei client', $server);
+        if ($failures !== []) {
+            // چرا استثنا پرتاب نمی‌کنیم: اکانت روی پنل ساخته شده و گزارش «ناموفق»
+            // فقط کاربر را گمراه می‌کند؛ کمبود لاگ می‌شود تا «همگام‌سازی» جبرانش کند.
+            Log::channel('sanaei')->error('Sanaei client only partially provisioned', [
+                'server_id' => $server->id,
+                'email' => $email,
+                'created_inbounds' => $created,
+                'failed_inbounds' => $failures,
+            ]);
         }
 
-        return $this->normalizeInboundClient($client);
+        return $this->normalizeInboundClient($base);
+    }
+
+    /**
+     * ثبت یک کلاینت روی یک inbound مشخص.
+     *
+     * @param  array<string, mixed>  $client
+     */
+    protected function createClientOnInbound(Server $server, int $inboundId, array $client): void
+    {
+        $response = $this->client($server)->postAddInboundClient([
+            'id' => $inboundId,
+            'settings' => json_encode(['clients' => [$client]], JSON_THROW_ON_ERROR),
+        ]);
+
+        if ($this->panelMutationSucceeded($response)) {
+            return;
+        }
+
+        // چرا: پاسخ «Duplicate email» یعنی دقیقاً همان کلاینتی که می‌خواستیم بسازیم
+        // از قبل روی پنل هست. پرتاب خطا باعث می‌شد اکانتی که واقعاً ساخته شده
+        // «ناموفق» گزارش شود؛ پس آن را به‌عنوان موجود می‌پذیریم و فقط هشدار می‌دهیم.
+        if ($this->responseReportsDuplicate($response)) {
+            Log::channel('sanaei')->warning('Sanaei client already existed on inbound, adopted', [
+                'server_id' => $server->id,
+                'inbound_id' => $inboundId,
+                'email' => scalar_string($client['email'] ?? ''),
+                'panel_message' => panel_api_message($response->json('msg') ?? null, ''),
+            ]);
+
+            return;
+        }
+
+        if (in_array($response->status(), [404, 405], true)) {
+            $this->createClientViaInboundUpdate($server, $inboundId, $client);
+
+            return;
+        }
+
+        $this->assertSuccessful($response, 'create Sanaei client', $server);
+    }
+
+    /**
+     * آیا پنل پاسخ «تکراری بودن» داده است؟
+     */
+    protected function responseReportsDuplicate(\Illuminate\Http\Client\Response $response): bool
+    {
+        $json = $response->json();
+
+        if (! is_array($json)) {
+            return false;
+        }
+
+        $message = mb_strtolower(panel_api_message(
+            $json['msg'] ?? $json['message'] ?? $json['error'] ?? $json['obj'] ?? null,
+            ''
+        ));
+
+        return str_contains($message, 'duplicate')
+            || str_contains($message, 'already exist')
+            || str_contains($message, 'تکراری');
     }
 
     /**
@@ -548,52 +705,6 @@ class SanaeiService
             'up' => scalar_int($client['up'] ?? 0),
             'down' => scalar_int($client['down'] ?? 0),
         ];
-    }
-
-    /**
-     * @param  list<int>  $inboundIds
-     * @param  array<string, mixed>  $client
-     */
-    protected function createClientOnInboundsLegacy(Server $server, array $inboundIds, array $client): void
-    {
-        $panel = $this->client($server);
-        $settings = json_encode(['clients' => [$client]], JSON_THROW_ON_ERROR);
-        $lastError = null;
-        $attached = 0;
-
-        foreach ($inboundIds as $inboundId) {
-            $response = $panel->postAddInboundClient([
-                'id' => $inboundId,
-                'settings' => $settings,
-            ]);
-
-            if ($this->panelMutationSucceeded($response)) {
-                $attached++;
-
-                continue;
-            }
-
-            if (in_array($response->status(), [404, 405], true)) {
-                try {
-                    $this->createClientViaInboundUpdate($server, $inboundId, $client);
-                    $attached++;
-
-                    continue;
-                } catch (\Throwable $exception) {
-                    $lastError = $exception->getMessage();
-
-                    continue;
-                }
-            }
-
-            $this->assertSuccessful($response, 'create Sanaei client', $server);
-        }
-
-        if ($attached === 0) {
-            throw new RemoteProvisionException(
-                $lastError ?? __('services.sanaei_client_not_registered')
-            );
-        }
     }
 
     /**
@@ -854,6 +965,245 @@ class SanaeiService
     public function enableClient(Server $server, string $email, string $uuid, ?int $legacyInboundId = null): void
     {
         $this->updateClient($server, $email, $uuid, ['enable' => true], $legacyInboundId);
+    }
+
+    /**
+     * همه کلاینت‌های پنل که به یک اکانت تعلق دارند — یکی به ازای هر inbound.
+     *
+     * چرا از خود پنل می‌خوانیم و از روی پکیج بازسازی نمی‌کنیم: ادمین ممکن است
+     * بعد از ساخت اکانت، inboundهای پکیج را عوض کند و آن‌وقت حذف/غیرفعال‌سازی
+     * کلاینت‌های جامانده را نمی‌دید. UUID در همه کلاینت‌های یک اکانت یکسان است،
+     * پس یک بار خواندن فهرست inboundها برای پیدا کردن همه‌شان کافی است.
+     *
+     * @return list<array{inbound_id: int, email: string}>
+     */
+    public function findAccountClients(Server $server, string $uuid, string $baseEmail): array
+    {
+        $uuid = trim($uuid);
+        $baseEmail = trim($baseEmail);
+        $aliasPrefix = $baseEmail.'-i';
+        $matches = [];
+
+        foreach ($this->listInbounds($server) as $inbound) {
+            $inboundId = (int) ($inbound['id'] ?? 0);
+
+            if ($inboundId <= 0 || isset($matches[$inboundId])) {
+                continue;
+            }
+
+            $settings = $this->decodeInboundJson($inbound, 'settings');
+            $clients = is_array($settings['clients'] ?? null) ? $settings['clients'] : [];
+
+            foreach ($clients as $row) {
+                if (! is_array($row)) {
+                    continue;
+                }
+
+                $email = trim(scalar_string($row['email'] ?? ''));
+
+                $matchesUuid = $this->clientIdsMatch(trim(scalar_string($row['id'] ?? '')), $uuid);
+
+                // ctype_digit جلوی ایمیل‌هایی را می‌گیرد که تصادفاً با همین
+                // پیشوند شروع می‌شوند ولی پسوندشان شماره inbound ما نیست.
+                $matchesEmail = $baseEmail !== '' && (
+                    $email === $baseEmail
+                    || (str_starts_with($email, $aliasPrefix) && ctype_digit(substr($email, strlen($aliasPrefix))))
+                );
+
+                if (! $matchesUuid && ! $matchesEmail) {
+                    continue;
+                }
+
+                $matches[$inboundId] = ['inbound_id' => $inboundId, 'email' => $email];
+
+                break;
+            }
+        }
+
+        return array_values($matches);
+    }
+
+    /**
+     * به‌روزرسانی همه کلاینت‌های یک اکانت روی هر inboundی که روی آن ساخته شده است.
+     *
+     * @param  array<string, mixed>  $changes
+     */
+    public function updateAccountClients(
+        Server $server,
+        string $baseEmail,
+        string $uuid,
+        array $changes,
+        ?int $primaryInboundId = null
+    ): void {
+        $clients = $this->findAccountClients($server, $uuid, $baseEmail);
+
+        if ($clients === []) {
+            throw new RemoteProvisionException(__('services.sanaei_client_not_found', ['email' => $baseEmail]));
+        }
+
+        $primaryInboundId = $primaryInboundId !== null && $primaryInboundId > 0
+            ? $primaryInboundId
+            : $clients[0]['inbound_id'];
+
+        $failures = [];
+
+        foreach ($clients as $entry) {
+            $payload = $changes;
+
+            // چرا: شمارنده مصرف فقط روی کلاینت اصلی نوشته می‌شود؛ تکرار آن روی
+            // هر inbound باعث می‌شد جمعِ ترافیک، مصرف کاربر را چند برابر نشان دهد.
+            if ($entry['inbound_id'] !== $primaryInboundId) {
+                if (array_key_exists('up', $payload)) {
+                    $payload['up'] = 0;
+                }
+
+                if (array_key_exists('down', $payload)) {
+                    $payload['down'] = 0;
+                }
+            }
+
+            try {
+                $this->updateClient($server, $entry['email'], $uuid, $payload, $entry['inbound_id']);
+            } catch (Throwable $exception) {
+                $failures[$entry['inbound_id']] = $exception->getMessage();
+            }
+        }
+
+        $this->assertNoInboundFailures($server, $baseEmail, 'update', $failures, count($clients));
+    }
+
+    public function disableAccountClients(
+        Server $server,
+        string $baseEmail,
+        string $uuid,
+        ?int $primaryInboundId = null
+    ): void {
+        $this->updateAccountClients($server, $baseEmail, $uuid, ['enable' => false], $primaryInboundId);
+    }
+
+    public function enableAccountClients(
+        Server $server,
+        string $baseEmail,
+        string $uuid,
+        ?int $primaryInboundId = null
+    ): void {
+        $this->updateAccountClients($server, $baseEmail, $uuid, ['enable' => true], $primaryInboundId);
+    }
+
+    /**
+     * حذف همه کلاینت‌های یک اکانت از همه inboundها.
+     */
+    public function deleteAccountClients(Server $server, string $baseEmail, string $uuid): void
+    {
+        $clients = $this->findAccountClients($server, $uuid, $baseEmail);
+
+        // چرا خطا نمی‌دهیم: نبودن کلاینت یعنی همان وضعیت نهایی که می‌خواستیم.
+        if ($clients === []) {
+            return;
+        }
+
+        $failures = [];
+
+        foreach ($clients as $entry) {
+            try {
+                $this->deleteClient($server, $entry['email'], $uuid, $entry['inbound_id']);
+            } catch (Throwable $exception) {
+                if ($this->findClientOnInbound($server, $entry['inbound_id'], $uuid) === null) {
+                    continue;
+                }
+
+                $failures[$entry['inbound_id']] = $exception->getMessage();
+            }
+        }
+
+        $this->assertNoInboundFailures($server, $baseEmail, 'delete', $failures, count($clients));
+    }
+
+    /**
+     * چرا: اگر بخشی از کلاینت‌های یک اکانت تغییر کند و بخشی نه، اکانت نیمه‌کاره
+     * می‌ماند؛ این حالت نباید بی‌صدا رد شود، پس هم لاگ می‌شود و هم به کاربر
+     * گزارش می‌شود تا دوباره تلاش کند.
+     *
+     * @param  array<int, string>  $failures
+     */
+    protected function assertNoInboundFailures(
+        Server $server,
+        string $baseEmail,
+        string $operation,
+        array $failures,
+        int $total
+    ): void {
+        if ($failures === []) {
+            return;
+        }
+
+        Log::channel('sanaei')->error('Sanaei multi-inbound operation failed', [
+            'server_id' => $server->id,
+            'email' => $baseEmail,
+            'operation' => $operation,
+            'total_clients' => $total,
+            'failed_inbounds' => $failures,
+        ]);
+
+        throw new RemoteProvisionException(
+            __('services.sanaei_inbound_operation_failed', [
+                'email' => $baseEmail,
+                'inbounds' => implode(', ', array_keys($failures)),
+                'reason' => (string) reset($failures),
+            ])
+        );
+    }
+
+    /**
+     * جمع مصرف همه کلاینت‌های یک اکانت روی inboundهای مختلف.
+     *
+     * چرا: از وقتی هر inbound کلاینت جداگانه با ایمیل مخصوص خودش دارد، مصرف
+     * کاربر بین چند کلاینت پنل پخش می‌شود؛ خواندن فقط ایمیل پایه سهمیه را
+     * کمتر از واقع نشان می‌داد و کاربر عملاً بی‌حساب مصرف می‌کرد.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function getAggregatedClientTraffics(Server $server, string $baseEmail): ?array
+    {
+        $baseEmail = trim($baseEmail);
+
+        if ($baseEmail === '') {
+            return null;
+        }
+
+        $primary = $this->getClientTraffics($server, $baseEmail);
+
+        $aliasPrefix = $baseEmail.'-i';
+        $extraUp = 0;
+        $extraDown = 0;
+        $foundAlias = false;
+
+        foreach ($this->listInbounds($server) as $inbound) {
+            foreach ($this->indexClientStats($inbound) as $email => $row) {
+                if (! str_starts_with((string) $email, $aliasPrefix)) {
+                    continue;
+                }
+
+                if (! ctype_digit(substr((string) $email, strlen($aliasPrefix)))) {
+                    continue;
+                }
+
+                $foundAlias = true;
+                $extraUp += max(0, (int) ($row['up'] ?? 0));
+                $extraDown += max(0, (int) ($row['down'] ?? 0));
+            }
+        }
+
+        if (! $foundAlias) {
+            return $primary;
+        }
+
+        $merged = is_array($primary) ? $primary : [];
+        $merged['email'] = $baseEmail;
+        $merged['up'] = max(0, (int) ($merged['up'] ?? 0)) + $extraUp;
+        $merged['down'] = max(0, (int) ($merged['down'] ?? 0)) + $extraDown;
+
+        return $merged;
     }
 
     /**

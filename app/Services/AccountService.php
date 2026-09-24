@@ -707,11 +707,12 @@ class AccountService
 
         if (($serviceType?->isSanaei() ?? false) && filled($snapshot->sanaeiClientUuid)) {
             $email = $snapshot->clientEmail ?? $snapshot->remoteUsername.'@shahpanel.local';
-            $this->sanaeiService->deleteClient(
+            // چرا: یک اکانت ممکن است روی چند inbound کلاینت داشته باشد (هر کدام با
+            // ایمیل مخصوص خودش)؛ حذف فقط یکی از آن‌ها بقیه را روی پنل جا می‌گذاشت.
+            $this->sanaeiService->deleteAccountClients(
                 $server,
                 $email,
                 $snapshot->sanaeiClientUuid,
-                $snapshot->sanaeiInboundId ?: null,
             );
 
             return;
@@ -861,6 +862,14 @@ class AccountService
         $email = $account->client_email ?? $account->remote_username.'@shahpanel.local';
         $uuid = $account->sanaei_client_uuid;
         $legacyInboundId = (int) ($account->sanaei_inbound_id ?? 0) ?: null;
+        // چرا: inboundهای هدف روی پکیج تعیین می‌شوند؛ خالی بودن آن یعنی
+        // «همه inboundهای فعال» تا پکیج‌های قدیمی دقیقاً مثل قبل کار کنند.
+        $account->loadMissing('package');
+        $targetInboundIds = $this->sanaeiService->resolveProvisionInboundIds(
+            $server,
+            $account->package?->sanaeiInboundIds() ?? []
+        );
+        $primaryInboundId = $legacyInboundId ?: $targetInboundIds[0];
         $totalGB = $account->isUnlimited() ? null : $account->data_limit_bytes / (1024 ** 3);
         $expiryMs = $account->expiry_at ? (int) ($account->expiry_at->getTimestamp() * 1000) : 0;
         $panelTraffic = $this->sanaeiPanelTrafficFromAccount($account);
@@ -898,14 +907,14 @@ class AccountService
                 ]);
             }
 
-            $this->sanaeiService->updateClient($server, $email, $clientUuid, [
+            $this->sanaeiService->updateAccountClients($server, $email, $clientUuid, [
                 'totalGB' => $totalGB,
                 'expiryTime' => $expiryMs,
                 'enable' => $shouldEnable,
                 'up' => $panelTraffic['up'],
                 'down' => $panelTraffic['down'],
                 'subId' => $account->sanaei_sub_id ?: null,
-            ], $legacyInboundId);
+            ], $primaryInboundId);
 
             return [
                 'action' => 'updated',
@@ -923,16 +932,20 @@ class AccountService
             up: $panelTraffic['up'],
             down: $panelTraffic['down'],
             subId: $account->sanaei_sub_id,
+            inboundIds: $targetInboundIds,
         );
 
         if (! $shouldEnable) {
-            $this->sanaeiService->disableClient($server, $email, $uuid, $legacyInboundId);
+            $this->sanaeiService->disableAccountClients($server, $email, $uuid, $targetInboundIds[0]);
         }
 
         $account->update([
             'sanaei_client_uuid' => $uuid,
             'sanaei_sub_id' => $this->sanaeiService->extractSubId($createdClient),
-            'sanaei_inbound_id' => null,
+            // چرا: inbound اصلی همان جایی است که ایمیل پایه روی آن نشسته؛ تا
+            // پیش از این همیشه null ذخیره می‌شد و همه عملیات بعدی کورکورانه
+            // همه inboundها را می‌گشتند.
+            'sanaei_inbound_id' => $targetInboundIds[0],
             'client_email' => $email,
         ]);
 
@@ -2501,17 +2514,25 @@ class AccountService
 
         if ($serviceType->isSanaei() || $server->isSanaei()) {
             $uuid = (string) Str::uuid();
+            // چرا: اکانت دقیقاً روی همان inboundهایی ساخته می‌شود که ادمین روی
+            // پکیج انتخاب کرده است؛ خالی یعنی همه inboundهای فعال.
+            $inboundIds = $this->sanaeiService->resolveProvisionInboundIds(
+                $server,
+                $package->sanaeiInboundIds()
+            );
             $client = $this->sanaeiService->createClient(
                 $server,
                 $email,
                 $uuid,
                 limitIp: (int) ($clientData['limit_ip'] ?? 0),
                 totalGB: $totalGB,
-                expiryTime: $expiryMs
+                expiryTime: $expiryMs,
+                inboundIds: $inboundIds,
             );
 
             return [
-                'sanaei_inbound_id' => null,
+                // inbound اصلی = جایی که ایمیل پایه روی آن ساخته شد.
+                'sanaei_inbound_id' => $inboundIds[0],
                 'sanaei_client_uuid' => $uuid,
                 'sanaei_sub_id' => $client['subId'] ?? null,
             ];
@@ -2821,7 +2842,7 @@ class AccountService
 
         if ($account->service_type->isSanaei() && $account->sanaei_client_uuid) {
             $email = $account->client_email ?? $account->remote_username.'@shahpanel.local';
-            $this->sanaeiService->updateClient($server, $email, $account->sanaei_client_uuid, [
+            $this->sanaeiService->updateAccountClients($server, $email, $account->sanaei_client_uuid, [
                 'totalGB' => $totalGB,
                 'expiryTime' => $expiryMs,
                 'enable' => true,
@@ -2880,7 +2901,7 @@ class AccountService
 
         if ($account->service_type->isSanaei() && $account->sanaei_client_uuid) {
             $email = $account->client_email ?? $account->remote_username.'@shahpanel.local';
-            $this->sanaeiService->disableClient($server, $email, $account->sanaei_client_uuid, $account->sanaei_inbound_id ?: null);
+            $this->sanaeiService->disableAccountClients($server, $email, $account->sanaei_client_uuid, $account->sanaei_inbound_id ?: null);
 
             return;
         }
@@ -2932,7 +2953,7 @@ class AccountService
 
         if ($account->service_type->isSanaei() && $account->sanaei_client_uuid) {
             $email = $account->client_email ?? $account->remote_username.'@shahpanel.local';
-            $this->sanaeiService->enableClient($server, $email, $account->sanaei_client_uuid, $account->sanaei_inbound_id ?: null);
+            $this->sanaeiService->enableAccountClients($server, $email, $account->sanaei_client_uuid, $account->sanaei_inbound_id ?: null);
 
             return;
         }
@@ -3001,7 +3022,7 @@ class AccountService
 
         if (($serviceType?->isSanaei() ?? false) && $account->sanaei_client_uuid) {
             $email = $account->client_email ?? $account->remote_username.'@shahpanel.local';
-            $this->sanaeiService->deleteClient($server, $email, $account->sanaei_client_uuid, $account->sanaei_inbound_id ?: null);
+            $this->sanaeiService->deleteAccountClients($server, $email, $account->sanaei_client_uuid);
 
             return;
         }
