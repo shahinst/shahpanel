@@ -71,6 +71,7 @@ use App\Http\Controllers\Agent\SupportTicketController as AgentSupportTicketCont
 use App\Http\Controllers\Seller\ClientPortalSettingsController as SellerClientPortalSettingsController;
 use App\Http\Controllers\Seller\SupportTicketController as SellerSupportTicketController;
 use App\Http\Controllers\Storefront\PublicStorefrontController;
+use App\Http\Controllers\SubscriptionController;
 use App\Support\PortalPaths;
 use Illuminate\Support\Facades\Route;
 
@@ -127,6 +128,14 @@ Route::middleware('noindex')->group(function (): void {
     Route::get('/portal/{token}/config/download', [ClientPortalController::class, 'downloadConfig'])->name('portal.config.download');
     Route::get('/portal/{token}/config/qr', [ClientPortalController::class, 'downloadQr'])->name('portal.config.qr');
 });
+
+// نشانی اشتراک باید دقیقاً /sub/{token} باشد؛ ربات‌های واسط (مانند WizWiz) با
+// explode("/sub/", $url) توکن را جدا می‌کنند و بعد {panel_url}/sub/{token} را
+// صدا می‌زنند، پس هر پیشوند یا مسیر دیگری آن‌ها را از کار می‌اندازد.
+Route::get('/sub/{token}', [SubscriptionController::class, 'show'])
+    ->middleware(['noindex', 'throttle:subscription'])
+    ->name('subscription.show');
+
 Route::get('/portal-icons/{filename}', [PortalIconController::class, 'show'])
     ->where('filename', '[a-f0-9]{40}\.(png|jpe?g|webp|svg|ico)')
     ->name('portal-icons.show');

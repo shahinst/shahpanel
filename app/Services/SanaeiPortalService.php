@@ -18,27 +18,37 @@ class SanaeiPortalService
     ) {}
 
     /**
-     * @return array{subscription_link: ?string, subscription_qr: ?string}
+     * تنها لینک اشتراکی که بدون هیچ تماسی با پنل راه دور در دسترس است، یعنی
+     * همان چیزی که هنگام ساخت اکانت در ستون‌های خودِ ما ذخیره شده. اندپوینت
+     * عمومی /sub که باید بسیار سریع پاسخ بدهد تنها از همین متد استفاده می‌کند
+     * تا ترتیب اولویت لینک‌ها در یک جا بماند.
      */
-    public function portalAssets(Account $account): array
+    public function storedSubscriptionLink(Account $account): ?string
     {
         $account->loadMissing('server');
 
         if ($account->server?->isPasarguard() && filled($account->pasarguard_subscription_url)) {
-            $link = (string) $account->pasarguard_subscription_url;
-
-            return [
-                'subscription_link' => $link,
-                'subscription_qr' => $this->qrBase64($link),
-            ];
+            return (string) $account->pasarguard_subscription_url;
         }
 
         if (filled($account->remnawave_subscription_url)) {
-            $link = (string) $account->remnawave_subscription_url;
+            return (string) $account->remnawave_subscription_url;
+        }
 
+        return null;
+    }
+
+    /**
+     * @return array{subscription_link: ?string, subscription_qr: ?string}
+     */
+    public function portalAssets(Account $account): array
+    {
+        $stored = $this->storedSubscriptionLink($account);
+
+        if ($stored !== null) {
             return [
-                'subscription_link' => $link,
-                'subscription_qr' => $this->qrBase64($link),
+                'subscription_link' => $stored,
+                'subscription_qr' => $this->qrBase64($stored),
             ];
         }
 

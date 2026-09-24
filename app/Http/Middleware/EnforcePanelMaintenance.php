@@ -54,6 +54,14 @@ class EnforcePanelMaintenance
             return true;
         }
 
+        // خوراک اشتراک تنها از دیتابیس خودِ پنل خوانده می‌شود، پس حالت تعمیرات
+        // دلیلی برای قطع کردنش ندارد. اگر ۵۰۳ بگیرد، کلاینت‌های VPN پروفایل
+        // کاربران را با یک اشتراک خالی بازنویسی می‌کنند و کانفیگ‌ها از دست
+        // می‌رود.
+        if ($request->routeIs('subscription.show')) {
+            return true;
+        }
+
         if ($request->routeIs(
             'webhooks.*',
             'tunneling.report',

@@ -28,6 +28,7 @@ class PortalPaths
         'notifications',
         'portal',
         's',
+        'sub',
         'up',
     ];
 

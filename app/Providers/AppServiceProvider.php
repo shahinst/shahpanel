@@ -121,6 +121,13 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(120)->by($request->route('token').'|'.$request->ip());
         });
 
+        RateLimiter::for('subscription', function (Request $request) {
+            // هر کلاینت VPN این نشانی را روی تایمر صدا می‌زند و ربات‌های واسط
+            // هم روی تایم‌اوت کوتاه دوباره تلاش می‌کنند؛ سقف باید طوری باشد که
+            // یک کاربر معمولی هرگز مسدود نشود ولی اسکن توکن هم صرف نکند.
+            return Limit::perMinute(60)->by($request->route('token').'|'.$request->ip());
+        });
+
         RateLimiter::for('client-panel', function (Request $request) {
             return Limit::perMinute(120)->by($request->user()?->id ?: $request->ip());
         });
