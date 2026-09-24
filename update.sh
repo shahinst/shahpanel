@@ -59,13 +59,19 @@ cd "$APP_DIR"
 # The repo is private and install.sh deliberately leaves no token behind in
 # .git/config, so every pull needs one supplied here.
 step "GitHub access"
+# The repository is public, so a token is optional. It is still honoured for
+# anyone running a private fork — but never demanded, because an unattended
+# update (cron, a script, a pipe) has no terminal to type it into and would
+# hang here forever waiting for input nobody can give.
 GH_TOKEN="${GITHUB_TOKEN:-}"
-while [[ -z "$GH_TOKEN" ]]; do
-  read -rsp "  GitHub token (input hidden): " GH_TOKEN; echo
-done
 REPO_PATH="${REPO#https://}"
-AUTH_URL="https://${GH_TOKEN}@${REPO_PATH}"
-ok "token supplied (never written to disk)"
+if [[ -n "$GH_TOKEN" ]]; then
+  AUTH_URL="https://${GH_TOKEN}@${REPO_PATH}"
+  ok "token supplied (never written to disk)"
+else
+  AUTH_URL="https://${REPO_PATH}"
+  ok "public repository — no token needed"
+fi
 
 # ── 2) Local state ───────────────────────────────────────────────────────
 step "Checking local state"
@@ -115,7 +121,7 @@ ls -1t "$BACKUP_DIR"/db-*.sql.gz 2>/dev/null | tail -n +11 | xargs -r rm -f
 # ── 4) Pull ──────────────────────────────────────────────────────────────
 step "Fetching the latest code"
 # Deliberately NOT through run(): that would echo the token into the log file.
-echo -e "  ${DIM}\$ git fetch https://***TOKEN***@${REPO_PATH} ${BRANCH}${RST}"
+echo -e "  ${DIM}\$ git fetch https://${GH_TOKEN:+***TOKEN***@}${REPO_PATH} ${BRANCH}${RST}"
 git fetch "$AUTH_URL" "$BRANCH"
 BEHIND="$(git rev-list --count HEAD..FETCH_HEAD)"
 if [[ "$BEHIND" -eq 0 ]]; then
