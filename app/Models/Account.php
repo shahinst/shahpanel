@@ -87,6 +87,7 @@ class Account extends Model
             'last_sync_at' => 'datetime',
             'refunded_at' => 'datetime',
             'login_sms_sent_at' => 'datetime',
+            'subscription_cached_at' => 'datetime',
             'deleted_at' => 'datetime',
         ];
     }

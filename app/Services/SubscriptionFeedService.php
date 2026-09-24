@@ -81,18 +81,58 @@ class SubscriptionFeedService
     /**
      * فهرست لینک‌های کانفیگی که به‌صورت محلی ذخیره شده‌اند.
      *
-     * برای اکانت‌های پاسارگارد و رمناویو، نشانی اشتراک در همان ستون‌های اکانت
-     * نگه داشته می‌شود و بدون شبکه در دسترس است. برای سنایی هیچ لینکی در پنل
-     * ذخیره نشده و ساختنش نیازمند تماس با پنل راه دور است، پس این‌جا خالی
-     * برمی‌گردد تا شرط «بدون تماس بیرونی» نشکند.
+     * اولویت با کشِ محتوا (accounts.subscription_cache) است که
+     * RefreshSubscriptionCacheJob در پس‌زمینه پر می‌کند؛ این تنها منبعی است که
+     * برای سنایی هم جواب می‌دهد، چون ساختن نشانی اشتراک سنایی به POST
+     * /setting/all روی پنل راه دور نیاز دارد و آن تماس هرگز نباید در مسیر
+     * درخواست انجام شود.
+     *
+     * اگر کش خالی یا هنوز پر نشده باشد، رفتار قبلی حفظ می‌شود: نشانی اشتراکِ
+     * ذخیره‌شدهٔ پاسارگارد/رمناویو از ستون‌های خود اکانت. هر دو مسیر بدون شبکه‌اند.
      *
      * @return list<string>
      */
     public function links(Account $account): array
     {
+        $cached = $this->cachedLinks($account);
+
+        if ($cached !== []) {
+            return $cached;
+        }
+
         $stored = $this->sanaeiPortalService->storedSubscriptionLink($account);
 
         return $stored !== null ? [$stored] : [];
+    }
+
+    /**
+     * کش همیشه «متن ساده، هر کانفیگ در یک خط» ذخیره می‌شود؛ این‌جا فقط به خط
+     * شکسته و خطوط خالی دور ریخته می‌شوند تا body() خودش تصمیم base64 را بگیرد.
+     *
+     * ستون ممکن است در فاصلهٔ کپی‌شدن کد و اجرای مهاجرت‌ها نباشد؛ در آن حالت
+     * Eloquent صفتِ نبوده را null می‌دهد و همین شرط، مسیر قبلی را برمی‌گرداند.
+     *
+     * @return list<string>
+     */
+    protected function cachedLinks(Account $account): array
+    {
+        $raw = trim((string) ($account->subscription_cache ?? ''));
+
+        if ($raw === '') {
+            return [];
+        }
+
+        $lines = [];
+
+        foreach (preg_split('/\R/', $raw) ?: [] as $line) {
+            $line = trim($line);
+
+            if ($line !== '') {
+                $lines[] = $line;
+            }
+        }
+
+        return $lines;
     }
 
     /**

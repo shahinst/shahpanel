@@ -5,6 +5,7 @@ use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schedule;
+use Illuminate\Support\Facades\Schema;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -123,6 +124,61 @@ Schedule::command('queue:work', [
     ->withoutOverlapping(120)
     ->runInBackground()
     ->after(fn () => Cache::put('system_health.queue_worker_at', now()->timestamp, now()->addHours(6)));
+
+/*
+|--------------------------------------------------------------------------
+| Subscription cache — the /sub/{token} endpoint may only read the database,
+| so the config body is fetched from the panels here, in the background.
+|--------------------------------------------------------------------------
+*/
+
+// Every five minutes, 60 accounts at a time: an account is refreshed once its
+// cache is older than six hours, which keeps content fresher than the
+// Profile-Update-Interval (12h) advertised to clients while capping the load on
+// the remote panels at ~720 requests/hour. Never-cached rows sort first (MySQL
+// puts NULL first on ASC), so accounts that predate this feature are backfilled
+// before already-cached ones are merely refreshed.
+Schedule::call(function (): void {
+    // Same guard as the tunneling entries: do not add background work when the
+    // database queue is already backed up with apply/reconcile jobs.
+    if (TunnelQueueHealth::pendingJobsCount() > (int) config('tunneling.queue.skip_low_priority_above', 30)) {
+        return;
+    }
+
+    // Between deploying the code and running migrations the column may not exist
+    // yet; skipping is better than a failing schedule run every five minutes.
+    if (! Schema::hasColumn('accounts', 'subscription_cached_at')) {
+        return;
+    }
+
+    // میکروتیک و خانوادهٔ AnyConnect مفهوم «لینک کانفیگ» ندارند و هیچ‌وقت
+    // انتخاب نمی‌شوند؛ فهرست از خود enum می‌آید تا با اضافه‌شدن پنل جدید
+    // این‌جا از قلم نیفتد.
+    $panelTypes = array_map(
+        fn (\App\Enums\ServiceType $type): string => $type->value,
+        array_values(array_filter(
+            \App\Enums\ServiceType::cases(),
+            fn (\App\Enums\ServiceType $type): bool => $type->isPanelV2ray(),
+        )),
+    );
+
+    \App\Models\Account::query()
+        ->whereIn('service_type', $panelTypes)
+        // بدون توکن اشتراک هیچ‌کس نمی‌تواند /sub را صدا بزند، پس کش‌کردنش فقط
+        // مصرف بی‌خودِ پنل است؛ لحظه‌ای که توکن صادر شود ردیف واجد شرط می‌شود.
+        ->whereNotNull('subscription_token')
+        ->where('status', \App\Enums\AccountStatus::Active)
+        ->where(fn ($query) => $query
+            ->whereNull('expiry_at')
+            ->orWhere('expiry_at', '>', now()))
+        ->where(fn ($query) => $query
+            ->whereNull('subscription_cached_at')
+            ->orWhere('subscription_cached_at', '<', now()->subHours(6)))
+        ->orderBy('subscription_cached_at')
+        ->limit(60)
+        ->pluck('id')
+        ->each(fn (int $id) => \App\Jobs\RefreshSubscriptionCacheJob::dispatch($id));
+})->everyFiveMinutes()->name('subscription.refresh_cache');
 
 Schedule::command('firewall prune')->everyFifteenMinutes()->withoutOverlapping();
 Schedule::command('firewall resync')->hourly()->withoutOverlapping();

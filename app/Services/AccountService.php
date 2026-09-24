@@ -10,6 +10,7 @@ use App\Enums\ServiceType;
 use App\Enums\TransactionType;
 use App\Enums\UserRole;
 use App\Exceptions\RemoteProvisionException;
+use App\Jobs\RefreshSubscriptionCacheJob;
 use App\Jobs\RemoveRemoteAccountJob;
 use App\Support\AccountNameValidator;
 use App\Support\RemoteAccountCleanupSnapshot;
@@ -200,6 +201,13 @@ class AccountService
                         'client_portal_password_enc' => (string) $clientData['store_portal_password'],
                     ]);
                 }
+
+                // Cache the subscription body out-of-band so /sub/{token} can answer
+                // without touching the panel. Queued (never inline) because Sanaei
+                // needs a live POST /setting/all just to learn its subscription URL;
+                // the job row commits with this transaction, so a rolled-back
+                // purchase leaves no job behind.
+                RefreshSubscriptionCacheJob::dispatchFor($account);
 
                 return $account->fresh();
             });
@@ -398,6 +406,10 @@ class AccountService
                     'purchased_before_gb' => $purchasedBeforeGb,
                     'data_limit_before_bytes' => $limitBeforeBytes,
                 ]));
+
+                // Renewal can change inbounds/quota on the panel, so the cached
+                // subscription body is refreshed too (same queued path as creation).
+                RefreshSubscriptionCacheJob::dispatchFor($account);
 
                 return $account->fresh();
             });
