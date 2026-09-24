@@ -78,6 +78,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'api.ability' => \App\Http\Middleware\ApiAbility::class,
             'api.role' => \App\Http\Middleware\ApiRole::class,
             'api.throttle' => \App\Http\Middleware\ApiThrottle::class,
+            // نمای سازگار با مرزبان (routes/marzban.php). جدا از api.auth و
+            // api.throttle است، چون شکل خطای آن {"detail": ...} است نه
+            // {"ok":false,...} — ربات‌های مرزبان‌محور همان کلید را می‌خوانند.
+            'marzban.auth' => \App\Http\Middleware\MarzbanAuthenticate::class,
+            'marzban.throttle' => \App\Http\Middleware\MarzbanThrottle::class,
             'ip.guard' => \App\Http\Middleware\BlockBruteForcedIps::class,
         ];
 

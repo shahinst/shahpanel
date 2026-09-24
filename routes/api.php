@@ -84,6 +84,16 @@ Route::prefix('v1')->group(function (): void {
     });
 });
 
+/*
+ * نمای سازگار با مرزبان — سطحی کاملاً جدا و موازی با v1.
+ *
+ * مسیرهایش در خودِ درایور ربات‌های میرزا و ویزویز ثابت‌اند (api/admin/token،
+ * api/user، api/users، ...)، پس بیرون از گروه v1 و با همان پیشوند api ثبت
+ * می‌شود. قبل از fallback می‌آید تا حتی اگر رفتار fallback لاراول عوض شود،
+ * ترتیب ثبت درست بماند.
+ */
+require __DIR__.'/marzban.php';
+
 // A mistyped path must still answer in JSON — an HTML error page would break
 // the bot's parser instead of telling it what went wrong.
 Route::fallback([MetaController::class, 'fallback']);
