@@ -22,7 +22,7 @@
 
 <br>
 
-[Quick install](#-installation) · [Features](#-features) · [Updating](#-updating) · [Maintenance](#-maintenance) · [Troubleshooting](#-troubleshooting) · [FAQ](#-faq) · [Support](#-supporting-the-project)
+[Quick install](#-installation) · [Features](#-features) · [Telegram bots](#-connecting-ready-made-bots-mirza-and-wizwiz) · [Updating](#-updating) · [Maintenance](#-maintenance) · [Troubleshooting](#-troubleshooting) · [FAQ](#-faq) · [Support](#-supporting-the-project)
 
 <br>
 
@@ -488,6 +488,47 @@ For Cisco AnyConnect: [`docs/CISCO_ANYCONNECT_API.md`](docs/CISCO_ANYCONNECT_API
 For OpenConnect / ocserv: [`docs/OCSERV_API.md`](docs/OCSERV_API.md)
 
 ---
+
+## 🤖 Connecting ready-made bots (Mirza and WizWiz)
+
+You do not have to write a bot. Existing reseller bots connect to shahpanel unmodified.
+
+| Bot | Status |
+|:--|:--|
+| **Mirza** (MirzaBot) | ✅ Supported |
+| **WizWiz** | ✅ Supported |
+
+### How to connect
+
+In the bot's own panel, add a server of type **Marzban** and give it:
+
+| Field | Value |
+|:--|:--|
+| Panel address | `https://YOUR-PANEL` |
+| Username | the username of an **Agent** or **Seller** account |
+| Password | that account's password |
+
+That is all. Set the panel type to Marzban and the bot handles the rest.
+
+### Things worth knowing
+
+**Do not connect with the admin account.** Only Agents and Sellers are accepted. Every bot sale is debited from that account's wallet and recorded in the panel's accounting; the admin wallet is unlimited, so sales made through it would never appear in your profit and loss.
+
+**Your packages appear as inbounds.** When you build a plan in the bot you see the packages assigned to that Agent, one entry per package and duration. Pick one — nothing else needs configuring.
+
+**Volume and duration:** for a fixed package the package's own volume and duration apply and whatever you type in the bot is ignored. For an elastic (per-GB) package the bot's numbers are used.
+
+**Sellable services:** Sanaei (3x-ui), Pasarguard and Remnawave. MikroTik, Cisco AnyConnect and OpenConnect cannot be sold this way — they are username-and-password services with no subscription link, which is a limit of the protocol itself.
+
+**An account with 2FA enabled cannot connect a bot**, because the protocol has no field for a second-factor code. Create a separate Agent account for the bot.
+
+**If the bot says "created" but no account exists**, check the panel log:
+
+```bash
+sudo grep -i marzban /var/www/shahpanel/storage/logs/laravel-*.log | tail -20
+```
+
+Some bots misread an error response as success. The real reason is always in the panel log.
 
 ## 🛡 Login firewall
 
