@@ -530,6 +530,48 @@ sudo grep -i marzban /var/www/shahpanel/storage/logs/laravel-*.log | tail -20
 
 Some bots misread an error response as success. The real reason is always in the panel log.
 
+## 📦 Automatic backups on Telegram
+
+The panel can back your servers up and send the zip to you on Telegram on a schedule.
+
+**Setup**, under `Settings → Server backups`:
+
+1. Create a bot with [@BotFather](https://t.me/BotFather) and copy its **token**.
+2. Message your own bot once, then enter the **chat id**. For a group, add the bot to the group and use the group's id.
+3. Press **Send a test message**. Do not rely on the schedule until that test succeeds.
+4. For each server, enable the schedule and list the times — for example `03:30, 15:00`.
+
+**Things worth knowing:**
+
+- **Times are in the panel timezone** (`Asia/Tehran`), not UTC.
+- Several servers on the **same time** arrive in **one message**. Different times produce a separate message per server.
+- The message carries each server's status, what was backed up, the file size, the exact date and time, and a **separate hashtag per server** so you can search for it in Telegram.
+- **A failed backup still sends a message** naming the reason. Silence is the worst outcome, because you would assume backups are running.
+- Telegram refuses files over **50 MB**. In that case the status message still arrives and names the **path of the file on the server** so you can collect it manually.
+- Server backups work for **MikroTik, Pasarguard and Remnawave**. Sanaei, Cisco and OpenConnect servers are not in that list.
+- A Telegram outage never stops the backup being taken; the file stays on the server and only the delivery failure is logged.
+
+## 🌐 Tunnel address for configs
+
+If the panel reaches the foreign server directly but your users must connect through a tunnel or relay, keep the two addresses apart.
+
+| Field | What it is for |
+|---|---|
+| **Host** | the address the **panel** uses to talk to the server API |
+| **Client address** | the address handed **to users** inside configs and the subscription link |
+| **Client port** | when the tunnel listens on a different port |
+
+Example: host `1.2.3.4:2053` (the panel's direct link to the server) and client address `tunnel.example.com` on port `443` (the path users connect through).
+
+**Leave the client address empty** to keep the current behaviour; existing servers lose nothing.
+
+A few notes:
+
+- This only changes the **destination address**. The `sni`, `host` and `path` values are left alone, because they are the destination's TLS identity and rewriting them breaks the handshake.
+- It also applies to configs that already existed on the server and were imported, because the substitution happens at **delivery** time, not when the config is created.
+- Changing the setting takes effect immediately; there is no need to rebuild accounts.
+- The panel's own connection to the server never uses this address — it always goes through **Host**.
+
 ## 🛡 Login firewall
 
 It stops password guessing and can block a whole country's IP ranges.

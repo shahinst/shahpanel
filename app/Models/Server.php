@@ -66,6 +66,8 @@ class Server extends Model
         'ovpn_profile_original_name',
         'l2tp_use_ipsec',
         'l2tp_ipsec_secret_enc',
+        'backup_schedule_enabled',
+        'backup_times',
     ];
 
     protected $hidden = [
@@ -118,6 +120,8 @@ class Server extends Model
             'last_conntrack' => 'integer',
             'last_conntrack_max' => 'integer',
             'metrics_sampled_at' => 'datetime',
+            'backup_schedule_enabled' => 'boolean',
+            'backup_times' => 'array',
         ];
     }
 
@@ -537,5 +541,63 @@ class Server extends Model
     public function backups(): HasMany
     {
         return $this->hasMany(ServerBackup::class);
+    }
+
+    /**
+     * ساعت‌های بک‌آپ زمان‌بندی‌شده — همیشه به وقت پنل، یعنی config('app.timezone').
+     *
+     * @return list<string>
+     */
+    public function backupTimes(): array
+    {
+        return self::normalizeBackupTimes($this->backup_times);
+    }
+
+    /**
+     * فرم ادمین یک رشتهٔ چندمقداری می‌فرستد و ستون json یک آرایه برمی‌گرداند؛
+     * هر دو از همین‌جا به فهرست مرتب و یکتای «HH:MM» تبدیل می‌شوند تا مقایسهٔ
+     * رشته‌ای در زمان‌بند قابل اعتماد باشد.
+     *
+     * @return list<string>
+     */
+    public static function normalizeBackupTimes(mixed $value): array
+    {
+        if (is_string($value)) {
+            $value = preg_split('/[\s,;\x{060C}]+/u', $value) ?: [];
+        }
+
+        if (! is_array($value)) {
+            return [];
+        }
+
+        $times = [];
+
+        foreach ($value as $item) {
+            if (! is_string($item) && ! is_numeric($item)) {
+                continue;
+            }
+
+            // ارقام فارسی/عربیِ ورودی ادمین باید پیش از تطبیق با HH:MM لاتین شوند.
+            $candidate = trim(western_digits((string) $item));
+            $candidate = str_replace(['.', '：'], ':', $candidate);
+
+            if (preg_match('/^(\d{1,2}):(\d{2})$/', $candidate, $matches) !== 1) {
+                continue;
+            }
+
+            $hour = (int) $matches[1];
+            $minute = (int) $matches[2];
+
+            if ($hour > 23 || $minute > 59) {
+                continue;
+            }
+
+            $times[] = sprintf('%02d:%02d', $hour, $minute);
+        }
+
+        $times = array_values(array_unique($times));
+        sort($times);
+
+        return $times;
     }
 }

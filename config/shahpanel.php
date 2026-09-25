@@ -246,6 +246,18 @@ return [
     'server_backup' => [
         'timeout_seconds' => (int) env('SERVER_BACKUP_TIMEOUT', 300),
         'retention_days' => (int) env('SERVER_BACKUP_RETENTION_DAYS', 30),
+
+        // Telegram delivery. The bot token and chat id are NOT here: they are
+        // admin-entered and stored encrypted in `settings` (see
+        // App\Support\ServerBackupTelegramSettings). sendDocument caps uploads
+        // at 50 MB for bots, so the limit is configurable only to lower it.
+        'telegram' => [
+            'max_document_bytes' => (int) env('SERVER_BACKUP_TG_MAX_BYTES', 50 * 1024 * 1024),
+            'timeout_seconds' => (int) env('SERVER_BACKUP_TG_TIMEOUT', 20),
+            'upload_timeout_seconds' => (int) env('SERVER_BACKUP_TG_UPLOAD_TIMEOUT', 300),
+            'connect_timeout_seconds' => (int) env('SERVER_BACKUP_TG_CONNECT_TIMEOUT', 10),
+            'proxy' => env('SERVER_BACKUP_TG_PROXY', env('TUNNEL_TELEGRAM_PROXY', '')),
+        ],
     ],
 
 ];

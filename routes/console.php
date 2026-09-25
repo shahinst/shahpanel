@@ -180,6 +180,61 @@ Schedule::call(function (): void {
         ->each(fn (int $id) => \App\Jobs\RefreshSubscriptionCacheJob::dispatch($id));
 })->everyFiveMinutes()->name('subscription.refresh_cache');
 
+/*
+|--------------------------------------------------------------------------
+| Server backups → Telegram. A single every-minute entry: it looks up the
+| servers whose scheduled time is this exact minute and dispatches one job
+| for them. Because "due this minute" is itself the grouping key, servers
+| that share a time arrive in one Telegram message and servers with
+| different times get a message of their own — no extra grouping logic.
+|--------------------------------------------------------------------------
+*/
+
+Schedule::call(function (): void {
+    // بین دیپلوی کد و اجرای مایگریشن ستون‌ها وجود ندارند؛ رد کردن بهتر از
+    // خطا خوردن زمان‌بند در هر دقیقه است.
+    if (! Schema::hasTable('servers') || ! Schema::hasColumn('servers', 'backup_times')) {
+        return;
+    }
+
+    if (! \App\Support\ServerBackupTelegramSettings::isReady()) {
+        return;
+    }
+
+    // زمان‌ها به وقت پنل (config('app.timezone')) ذخیره شده‌اند و now() هم با
+    // همان تایم‌زون ساخته می‌شود، پس مقایسهٔ رشته‌ای درست است.
+    $now = now();
+    $slot = $now->format('H:i');
+
+    $dueServerIds = \App\Models\Server::query()
+        ->where('is_active', true)
+        ->where('backup_schedule_enabled', true)
+        ->whereNotNull('backup_times')
+        ->orderBy('name')
+        ->get(['id', 'name', 'backup_times'])
+        ->filter(fn (\App\Models\Server $server): bool => in_array($slot, $server->backupTimes(), true))
+        ->map(fn (\App\Models\Server $server): int => (int) $server->id)
+        ->values()
+        ->all();
+
+    if ($dueServerIds === []) {
+        return;
+    }
+
+    // برخلاف کارهای تونلینگ این‌جا صف شلوغ را دلیل رد کردن نمی‌گیریم: بک‌آپِ
+    // ردشده تا نوبت بعدی (شاید فردا) هیچ‌وقت گرفته نمی‌شود.
+    //
+    // اگر schedule:run در یک دقیقه دو بار اجرا شود (کرون تکراری یا اجرای دستی)
+    // این قفل اتمیک روی درایور کش دیتابیس جلوی بک‌آپ و پیام دوباره را می‌گیرد؛
+    // چون هر دقیقه حداکثر یک گروه دارد، کلیدِ «تاریخ + ساعت» کافی است و به
+    // ستون تازه روی جدول سرورها نیازی نیست.
+    if (! Cache::add('server_backup.telegram:'.$now->format('Y-m-d').':'.$slot, 1, now()->addMinutes(10))) {
+        return;
+    }
+
+    \App\Jobs\SendServerBackupToTelegramJob::dispatch($dueServerIds, $slot);
+})->everyMinute()->name('server_backup.telegram');
+
 Schedule::command('firewall prune')->everyFifteenMinutes()->withoutOverlapping();
 Schedule::command('firewall resync')->hourly()->withoutOverlapping();
 Schedule::command('firewall:sync-country-data')->weeklyOn(1, '03:30')->withoutOverlapping();

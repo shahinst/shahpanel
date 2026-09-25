@@ -7,6 +7,8 @@ use App\Models\Server;
 use App\Models\ServerBackup;
 use App\Services\ServerBackup\ServerBackupService;
 use App\Services\ServerBackup\ServerBackupStorage;
+use App\Services\ServerBackup\ServerBackupTelegramNotifier;
+use App\Support\ServerBackupTelegramSettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -19,11 +21,11 @@ class ServerBackupController extends Controller
     public function index(ServerBackupService $backupService): View
     {
         if (! Schema::hasTable('server_backups')) {
-            return view('admin.settings.server-backups.index', [
+            return view('admin.settings.server-backups.index', array_merge($this->telegramViewData(), [
                 'servers' => collect(),
                 'recentBackups' => collect(),
                 'migrationRequired' => true,
-            ]);
+            ]));
         }
 
         try {
@@ -36,21 +38,127 @@ class ServerBackupController extends Controller
                 ->get()
                 ->groupBy(static fn (ServerBackup $backup): string => (string) $backup->server_id);
 
-            return view('admin.settings.server-backups.index', [
+            return view('admin.settings.server-backups.index', array_merge($this->telegramViewData(), [
                 'servers' => $servers,
                 'recentBackups' => $recentBackups,
                 'migrationRequired' => false,
-            ]);
+            ]));
         } catch (Throwable $exception) {
             report($exception);
 
-            return view('admin.settings.server-backups.index', [
+            return view('admin.settings.server-backups.index', array_merge($this->telegramViewData(), [
                 'servers' => collect(),
                 'recentBackups' => collect(),
                 'migrationRequired' => false,
                 'loadError' => $exception->getMessage(),
-            ]);
+            ]));
         }
+    }
+
+    /**
+     * تنظیمات تلگرام و آمادگی ستون‌های زمان‌بندی؛ در هر سه مسیر index لازم است،
+     * حتی وقتی جدول بک‌آپ‌ها هنوز ساخته نشده، تا ادمین بتواند توکن را ذخیره کند.
+     *
+     * @return array<string, mixed>
+     */
+    protected function telegramViewData(): array
+    {
+        return [
+            'telegramEnabled' => ServerBackupTelegramSettings::isEnabled(),
+            'telegramConfigured' => ServerBackupTelegramSettings::isConfigured(),
+            'telegramMaskedToken' => ServerBackupTelegramSettings::maskedBotToken(),
+            'telegramChatId' => ServerBackupTelegramSettings::chatId(),
+            'scheduleReady' => Schema::hasColumn('servers', 'backup_times'),
+            'panelTimezone' => (string) config('app.timezone'),
+        ];
+    }
+
+    public function updateTelegram(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'telegram_bot_token' => ['nullable', 'string', 'max:255'],
+            'telegram_chat_id' => ['nullable', 'string', 'max:64'],
+        ]);
+
+        $token = trim((string) ($validated['telegram_bot_token'] ?? ''));
+
+        // فیلد خالی یعنی «توکن فعلی را نگه دار»؛ وگرنه هر ذخیرهٔ فرم آن را پاک می‌کرد،
+        // چون توکن هیچ‌وقت به صفحه برنمی‌گردد و فقط ماسک‌شده نمایش داده می‌شود.
+        if ($token !== '') {
+            ServerBackupTelegramSettings::setBotToken($token);
+        }
+
+        ServerBackupTelegramSettings::setChatId(trim((string) ($validated['telegram_chat_id'] ?? '')));
+        ServerBackupTelegramSettings::setEnabled($request->boolean('telegram_enabled'));
+
+        return redirect()
+            ->route('admin.settings.server-backups.index')
+            ->with('success', __('server_backups.telegram_saved'));
+    }
+
+    public function testTelegram(ServerBackupTelegramNotifier $notifier): RedirectResponse
+    {
+        $result = $notifier->sendTest();
+
+        return redirect()
+            ->route('admin.settings.server-backups.index')
+            ->with($result['ok'] ? 'success' : 'error', $result['message']);
+    }
+
+    public function updateSchedule(Request $request): RedirectResponse
+    {
+        if (! Schema::hasColumn('servers', 'backup_times')) {
+            return redirect()
+                ->route('admin.settings.server-backups.index')
+                ->with('error', __('server_backups.migration_required'));
+        }
+
+        $request->validate([
+            'schedule_enabled' => ['nullable', 'array'],
+            'schedule_times' => ['nullable', 'array'],
+        ]);
+
+        $enabled = $request->input('schedule_enabled');
+        $times = $request->input('schedule_times');
+        $enabled = is_array($enabled) ? $enabled : [];
+        $times = is_array($times) ? $times : [];
+
+        $servers = Server::query()
+            ->whereIn('id', array_map('intval', array_keys($times)))
+            ->orderBy('name')
+            ->get();
+
+        $rejected = [];
+
+        foreach ($servers as $server) {
+            $raw = $times[$server->id] ?? '';
+            $parsed = Server::normalizeBackupTimes(is_string($raw) ? $raw : '');
+            $wantsEnabled = (bool) ($enabled[$server->id] ?? false);
+
+            // فعال‌بودن بدون ساعت معتبر یعنی بک‌آپی که هرگز اجرا نمی‌شود؛ پس
+            // خاموشش می‌کنیم و صریح به ادمین می‌گوییم ورودی‌اش پذیرفته نشد.
+            if ($wantsEnabled && $parsed === []) {
+                $rejected[] = (string) $server->name;
+                $wantsEnabled = false;
+            }
+
+            $server->forceFill([
+                'backup_schedule_enabled' => $wantsEnabled,
+                'backup_times' => $parsed === [] ? null : $parsed,
+            ])->save();
+        }
+
+        $redirect = redirect()
+            ->route('admin.settings.server-backups.index')
+            ->with('success', __('server_backups.schedule_saved'));
+
+        if ($rejected !== []) {
+            $redirect->with('error', __('server_backups.schedule_invalid_times', [
+                'name' => implode(', ', $rejected),
+            ]));
+        }
+
+        return $redirect;
     }
 
     public function store(Request $request, ServerBackupService $backupService): RedirectResponse
