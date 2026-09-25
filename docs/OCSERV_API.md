@@ -37,4 +37,3 @@ Separate from Cisco ASA (`cisco_anyconnect`). Customers still use Cisco Secure C
 | Sessions / disconnect | `GET /api/sessions`, `POST /api/sessions/{u}/disconnect` |
 | Traffic / tunnels | `GET /api/traffic`, `GET /api/tunnels` |
 
-See also the uploaded ops docs for ocserv1.

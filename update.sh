@@ -2,8 +2,8 @@
 #
 # Updater for ShahPanel — pulls the latest code from GitHub.
 #
-#   sudo GITHUB_TOKEN=ghp_xxx bash update.sh
-#   sudo bash update.sh                       # asks for the token
+#   sudo bash update.sh                       # public repository, no token needed
+#   sudo GITHUB_TOKEN=<token> bash update.sh  # only for a private fork
 #
 # Backs up the database first, then pulls, installs dependencies, migrates
 # and clears caches. Everything is printed and saved to
