@@ -28,7 +28,7 @@ class MarzbanThrottle
     public function handle(Request $request, Closure $next, int|string $perMinute = 120, string $bucket = 'api'): Response
     {
         $max = max(self::FLOOR, (int) $perMinute);
-        $key = 'marzban-throttle:'.$bucket.':'.$this->identity($request, $bucket);
+        $key = 'marzban-throttle:'.$bucket.':'.$this->identity($request);
 
         if (RateLimiter::tooManyAttempts($key, $max)) {
             $seconds = RateLimiter::availableIn($key);
@@ -44,20 +44,19 @@ class MarzbanThrottle
 
     /**
      * پس از احراز هویت، توکن شناسهٔ دقیق‌تری از IP است (چند ربات می‌توانند پشت
-     * یک NAT باشند). روی مسیر توکن هنوز احراز هویتی نشده، پس IP + نام کاربری.
+     * یک NAT باشند). روی مسیر توکن هنوز احراز هویتی نشده، پس فقط IP.
+     *
+     * نام کاربری عمداً از این شناسه حذف شده: وقتی در کلید بود، هر نام کاربری
+     * سطل تازهٔ خودش را می‌گرفت و یک IP می‌توانست بی‌نهایت نام را امتحان کند
+     * (شمارش حساب‌ها). سقف حالا واقعاً «به ازای IP» است؛ شمارش شکست‌های
+     * TokenController هم جداگانه به ازای (نام کاربری، IP) سر جایش می‌ماند.
      */
-    protected function identity(Request $request, string $bucket): string
+    protected function identity(Request $request): string
     {
         $token = $request->attributes->get('api_token');
 
         if ($token instanceof ApiToken) {
             return 'token:'.$token->getKey();
-        }
-
-        if ($bucket === 'token') {
-            $username = mb_strtolower(trim((string) $request->input('username', '')));
-
-            return 'ip:'.sha1((string) $request->ip().'|'.$username);
         }
 
         return 'ip:'.sha1((string) $request->ip());

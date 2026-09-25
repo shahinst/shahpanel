@@ -308,4 +308,5 @@ TEXT,
     'copy_anyconnect_config' => 'Копировать данные подключения',
     'copy_anyconnect_config_copied' => 'Скопировано',
     'copy_anyconnect_config_failed' => 'Не удалось скопировать',
+    'owner_seller_not_allowed' => 'Вам не разрешено действовать от имени этого владельца.',
 ];

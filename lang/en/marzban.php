@@ -17,6 +17,7 @@ return [
     'login_throttled' => 'Too many failed attempts. Try again in :seconds seconds.',
     'two_factor_not_supported' => 'Two-factor authentication is enabled on this account and the bot protocol cannot carry a code. Use a dedicated account without two-factor authentication for the bot.',
     'rate_limited' => 'Rate limit reached. Try again in :seconds seconds.',
+    'ability_missing' => 'This token lacks the ability required for this request (:ability).',
 
     'unknown_status' => 'Unknown status filter.',
     'username_taken' => 'A user with this username already exists.',

@@ -44,4 +44,5 @@ return [
     'status_resolved' => '已解决',
     'status_closed' => '已关闭',
     'migration_hint' => '请运行数据库迁移以启用工单功能。',
+    'department_not_allowed' => '此部门对您不可用。',
 ];

@@ -33,6 +33,15 @@ final class SanaeiHttpProbe
         $host = $parts['host'];
         $port = (int) ($parts['port'] ?? 80);
         $path = '/'.ltrim($path, '/');
+
+        // مسیر از servers.web_base_path می‌آید و خام در خط درخواست نوشته می‌شود؛
+        // یک CR/LF (یا فاصله) اجازه می‌دهد هدر دلخواه یا یک درخواست دوم به میزبان
+        // مقصد تزریق شود. اعتبارسنجی فرم هم این را می‌گیرد، ولی مقدارهای بدِ
+        // ذخیره‌شده از قبل نباید به سوکت برسند.
+        if (preg_match('/[^A-Za-z0-9._~\-\/]/', $path) === 1) {
+            return ['ok' => false, 'error' => __('servers.web_base_path_invalid')];
+        }
+
         $request = "GET {$path} HTTP/1.1\r\nHost: {$host}".($port !== 80 ? ":{$port}" : '')."\r\nConnection: close\r\n\r\n";
 
         $errno = 0;

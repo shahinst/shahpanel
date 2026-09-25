@@ -242,7 +242,7 @@ Route::prefix($adminPath)->name('admin.')->middleware($adminMiddleware)->group(f
     Route::post('accounts', [AdminAccountController::class, 'store'])->name('accounts.store');
     Route::get('accounts/{account}/edit', [AdminAccountController::class, 'edit'])->name('accounts.edit');
     Route::put('accounts/{account}', [AdminAccountController::class, 'update'])->name('accounts.update');
-    Route::post('accounts/{account}/renew', [AdminAccountController::class, 'renew'])->name('accounts.renew');
+    Route::post('accounts/{account}/renew', [AdminAccountController::class, 'renew'])->middleware('throttle:money-actions')->name('accounts.renew');
     Route::post('accounts/{account}/disable', [AdminAccountController::class, 'disable'])->name('accounts.disable');
     Route::post('accounts/{account}/enable', [AdminAccountController::class, 'enable'])->name('accounts.enable');
     Route::get('accounts/{account}/portal-link', [AdminAccountController::class, 'issuePortalLink'])->name('accounts.portal-link');
@@ -256,8 +256,8 @@ Route::prefix($adminPath)->name('admin.')->middleware($adminMiddleware)->group(f
     Route::get('accounts/{account}/send-login-info', [AdminAccountController::class, 'showSendLoginInfo'])->name('accounts.send-login-info-form');
     Route::post('accounts/{account}/send-login-info', [AdminAccountController::class, 'sendLoginInfo'])->name('accounts.send-login-info');
     Route::post('accounts/{account}/transfer', [AdminAccountController::class, 'storeTransfer'])->name('accounts.transfer');
-    Route::post('accounts/{account}/refund', [AdminAccountController::class, 'refund'])->name('accounts.refund');
-    Route::post('accounts/{account}/reactivate', [AdminAccountController::class, 'reactivate'])->name('accounts.reactivate');
+    Route::post('accounts/{account}/refund', [AdminAccountController::class, 'refund'])->middleware('throttle:money-actions')->name('accounts.refund');
+    Route::post('accounts/{account}/reactivate', [AdminAccountController::class, 'reactivate'])->middleware('throttle:money-actions')->name('accounts.reactivate');
     Route::delete('accounts/{account}', [AdminAccountController::class, 'destroy'])->name('accounts.destroy');
 
     Route::get('payment-requests', [AdminPaymentRequestController::class, 'index'])->name('payment-requests.index');
@@ -265,8 +265,8 @@ Route::prefix($adminPath)->name('admin.')->middleware($adminMiddleware)->group(f
     Route::post('payment-requests/charge', [AdminPaymentRequestController::class, 'storeCharge'])->name('payment-requests.charge.store');
     Route::post('payment-requests/bulk-charge', [AdminPaymentRequestController::class, 'storeBulkCharge'])->name('payment-requests.bulk-charge');
     Route::get('payment-requests/{paymentRequest}', [AdminPaymentRequestController::class, 'show'])->name('payment-requests.show');
-    Route::post('payment-requests/{paymentRequest}/approve', [AdminPaymentRequestController::class, 'approve'])->name('payment-requests.approve');
-    Route::post('payment-requests/{paymentRequest}/reject', [AdminPaymentRequestController::class, 'reject'])->name('payment-requests.reject');
+    Route::post('payment-requests/{paymentRequest}/approve', [AdminPaymentRequestController::class, 'approve'])->middleware('throttle:money-actions')->name('payment-requests.approve');
+    Route::post('payment-requests/{paymentRequest}/reject', [AdminPaymentRequestController::class, 'reject'])->middleware('throttle:money-actions')->name('payment-requests.reject');
 
     Route::resource('financial-plan-templates', AdminFinancialPlanTemplateController::class)->except(['show']);
     Route::get('agent-financial-plans', [AdminAgentFinancialPlanPurchaseController::class, 'index'])->name('agent-financial-plans.index');
@@ -426,7 +426,7 @@ Route::prefix($agentPath)->name('agent.')->middleware(['auth', 'role:agent', 'lo
     Route::get('accounts/{account}/report', [AgentAccountController::class, 'report'])->name('accounts.report');
     Route::get('accounts/{account}', [AgentAccountController::class, 'show'])->name('accounts.show');
     Route::resource('accounts', AgentAccountController::class)->except(['show', 'index', 'destroy', 'create']);
-    Route::post('accounts/{account}/renew', [AgentAccountController::class, 'renew'])->name('accounts.renew');
+    Route::post('accounts/{account}/renew', [AgentAccountController::class, 'renew'])->middleware('throttle:money-actions')->name('accounts.renew');
     Route::post('accounts/{account}/disable', [AgentAccountController::class, 'disable'])->name('accounts.disable');
     Route::post('accounts/{account}/enable', [AgentAccountController::class, 'enable'])->name('accounts.enable');
     Route::get('accounts/{account}/portal-link', [AgentAccountController::class, 'issuePortalLink'])->name('accounts.portal-link');
@@ -440,15 +440,15 @@ Route::prefix($agentPath)->name('agent.')->middleware(['auth', 'role:agent', 'lo
     Route::get('accounts/{account}/send-login-info', [AgentAccountController::class, 'showSendLoginInfo'])->name('accounts.send-login-info-form');
     Route::post('accounts/{account}/send-login-info', [AgentAccountController::class, 'sendLoginInfo'])->name('accounts.send-login-info');
     Route::post('accounts/{account}/transfer', [AgentAccountController::class, 'storeTransfer'])->name('accounts.transfer');
-    Route::post('accounts/{account}/refund', [AgentAccountController::class, 'refund'])->name('accounts.refund');
+    Route::post('accounts/{account}/refund', [AgentAccountController::class, 'refund'])->middleware('throttle:money-actions')->name('accounts.refund');
 
     Route::get('payment-requests', [AgentPaymentRequestController::class, 'index'])->name('payment-requests.index');
     Route::get('financial-plans', [AgentFinancialPlanController::class, 'index'])->name('financial-plans.index');
     Route::get('payment-requests/create', [AgentPaymentRequestController::class, 'create'])->name('payment-requests.create');
     Route::post('payment-requests', [AgentPaymentRequestController::class, 'store'])->name('payment-requests.store');
     Route::get('payment-requests/{paymentRequest}', [AgentPaymentRequestController::class, 'show'])->name('payment-requests.show');
-    Route::post('payment-requests/{paymentRequest}/approve', [AgentPaymentRequestController::class, 'approve'])->name('payment-requests.approve');
-    Route::post('payment-requests/{paymentRequest}/reject', [AgentPaymentRequestController::class, 'reject'])->name('payment-requests.reject');
+    Route::post('payment-requests/{paymentRequest}/approve', [AgentPaymentRequestController::class, 'approve'])->middleware('throttle:money-actions')->name('payment-requests.approve');
+    Route::post('payment-requests/{paymentRequest}/reject', [AgentPaymentRequestController::class, 'reject'])->middleware('throttle:money-actions')->name('payment-requests.reject');
 
     Route::get('wallet/top-up', [GatewayTopUpController::class, 'create'])->name('wallet.top-up.create');
     Route::post('wallet/top-up', [GatewayTopUpController::class, 'store'])->name('wallet.top-up.store');
@@ -531,10 +531,10 @@ Route::prefix($sellerPath)->name('seller.')->middleware(['auth', 'role:seller', 
     Route::get('accounts/{account}/report', [SellerAccountController::class, 'report'])->name('accounts.report');
     Route::get('accounts/{account}', [SellerAccountController::class, 'show'])->name('accounts.show');
     Route::resource('accounts', SellerAccountController::class)->except(['show', 'index', 'destroy', 'create']);
-    Route::post('accounts/{account}/renew', [SellerAccountController::class, 'renew'])->name('accounts.renew');
+    Route::post('accounts/{account}/renew', [SellerAccountController::class, 'renew'])->middleware('throttle:money-actions')->name('accounts.renew');
     Route::post('accounts/{account}/disable', [SellerAccountController::class, 'disable'])->name('accounts.disable');
     Route::post('accounts/{account}/enable', [SellerAccountController::class, 'enable'])->name('accounts.enable');
-    Route::post('accounts/{account}/refund', [SellerAccountController::class, 'refund'])->name('accounts.refund');
+    Route::post('accounts/{account}/refund', [SellerAccountController::class, 'refund'])->middleware('throttle:money-actions')->name('accounts.refund');
     Route::get('accounts/{account}/portal-link', [SellerAccountController::class, 'issuePortalLink'])->name('accounts.portal-link');
     Route::get('accounts/{account}/config', [SellerAccountController::class, 'showConfig'])->name('accounts.config');
     Route::get('accounts/{account}/config/download', [SellerAccountController::class, 'downloadConfig'])->name('accounts.config.download');
@@ -549,8 +549,8 @@ Route::prefix($sellerPath)->name('seller.')->middleware(['auth', 'role:seller', 
     Route::get('payment-requests/create', [SellerPaymentRequestController::class, 'create'])->name('payment-requests.create');
     Route::post('payment-requests', [SellerPaymentRequestController::class, 'store'])->name('payment-requests.store');
     Route::get('payment-requests/{paymentRequest}', [SellerPaymentRequestController::class, 'show'])->name('payment-requests.show');
-    Route::post('payment-requests/{paymentRequest}/approve', [SellerPaymentRequestController::class, 'approve'])->name('payment-requests.approve');
-    Route::post('payment-requests/{paymentRequest}/reject', [SellerPaymentRequestController::class, 'reject'])->name('payment-requests.reject');
+    Route::post('payment-requests/{paymentRequest}/approve', [SellerPaymentRequestController::class, 'approve'])->middleware('throttle:money-actions')->name('payment-requests.approve');
+    Route::post('payment-requests/{paymentRequest}/reject', [SellerPaymentRequestController::class, 'reject'])->middleware('throttle:money-actions')->name('payment-requests.reject');
 
     Route::get('wallet/top-up', [GatewayTopUpController::class, 'create'])->name('wallet.top-up.create');
     Route::post('wallet/top-up', [GatewayTopUpController::class, 'store'])->name('wallet.top-up.store');

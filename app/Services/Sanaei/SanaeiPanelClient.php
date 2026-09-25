@@ -936,7 +936,7 @@ final class SanaeiPanelClient
      * Keep scheme/host/port (useful for diagnosis) but drop the path, which on
      * 3x-ui is the secret webBasePath.
      */
-    protected static function redactUrl(string $url): string
+    public static function redactUrl(string $url): string
     {
         $parts = @parse_url($url);
 

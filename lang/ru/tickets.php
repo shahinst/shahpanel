@@ -44,4 +44,5 @@ return [
     'status_resolved' => 'Решён',
     'status_closed' => 'Закрыт',
     'migration_hint' => 'Выполните миграцию базы данных, чтобы включить тикеты.',
+    'department_not_allowed' => 'Этот отдел вам недоступен.',
 ];

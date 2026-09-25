@@ -1,14 +1,17 @@
 @php
     $captcha = is_array($captcha ?? null) ? $captcha : [];
     $token = (string) ($captcha['token'] ?? '');
-    $display = (string) ($captcha['display'] ?? '');
+    $svg = (string) ($captcha['svg'] ?? '');
 @endphp
 <div class="mb-3" id="login-captcha-block">
     <label class="form-label" for="captcha-input">{{ __('auth.captcha_label') }}</label>
     <div class="d-flex align-items-stretch gap-2 mb-2">
         <div class="login-captcha-box flex-grow-1 border rounded bg-white overflow-hidden" dir="ltr">
-            <span id="login-captcha-display" class="login-captcha-display @if ($display === '') login-captcha-loading @endif" @if ($display !== '') data-ready="1" @endif>
-                {{ $display !== '' ? $display : __('auth.captcha_loading') }}
+            <span id="login-captcha-display" class="login-captcha-display @if ($svg === '') login-captcha-loading @endif" @if ($svg !== '') data-ready="1" @endif>
+                {{-- نشانه‌گذاری SVG کامل سمت سرور و فقط از الفبای تصادفی خودِ LoginCaptchaService
+                     ساخته می‌شود و هیچ ورودی کاربری در آن راه ندارد، پس چاپ خام آن بی‌خطر است.
+                     پیش از این متنِ پاسخ چاپ می‌شد و کپچا هیچ رباتی را متوقف نمی‌کرد. --}}
+                @if ($svg !== ''){!! $svg !!}@else{{ __('auth.captcha_loading') }}@endif
             </span>
         </div>
         <button type="button" class="btn btn-outline-secondary login-captcha-refresh-btn d-flex" id="login-captcha-refresh"

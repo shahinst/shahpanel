@@ -13,7 +13,8 @@ use Illuminate\Http\Request;
  * اندپوینت‌های متادیتای نمای مرزبان.
  *
  * /api/inbounds و /api/system را میرزا می‌خواند و /api/core/config را ویزویز؛
- * هر سه فقط از دیتابیس محلی و منابع همین ماشین خوانده می‌شوند.
+ * هر سه فقط از دیتابیس محلی خوانده می‌شوند و هیچ مشخصهٔ واقعی‌ای از ماشین میزبان
+ * بیرون نمی‌دهند.
  */
 class MetaController extends Controller
 {
@@ -24,6 +25,22 @@ class MetaController extends Controller
      * نسخهٔ جدید اعلام می‌شود تا مسیرهای قدیمی و ناسازگارشان فعال نشود.
      */
     protected const ANNOUNCED_VERSION = '0.8.4';
+
+    /**
+     * منابع ماشین: مقادیر ثابت و ساختگی، نه خواندن واقعی.
+     *
+     * چرا: اعداد واقعی مشخصات میزبان پنل را به هر نمایندهٔ احراز هویت‌شده لو
+     * می‌داد — اندازهٔ رم، تعداد هسته و بار لحظه‌ای — یعنی هم نقشهٔ ظرفیت برای
+     * انتخاب زمان حمله و هم داده‌ای که فروشنده هیچ کاری با آن ندارد. ربات‌ها
+     * فقط به «صفر نبودن و معقول بودن» نیاز دارند، پس عدد ثابت کافی است.
+     */
+    protected const PLACEHOLDER_MEM_TOTAL = 8589934592;
+
+    protected const PLACEHOLDER_MEM_USED = 3221225472;
+
+    protected const PLACEHOLDER_CPU_CORES = 4;
+
+    protected const PLACEHOLDER_CPU_USAGE = 12.5;
 
     public function __construct(protected MarzbanInboundTagService $tags) {}
 
@@ -75,9 +92,10 @@ class MetaController extends Controller
     /**
      * GET /api/system — آمار پنل از نگاه همین نماینده.
      *
-     * اعداد حافظه و CPU عمداً هرگز صفر نمی‌شوند: میرزا برای نمایش درصد، بر
-     * mem_total تقسیم می‌کند و صفر در PHP 8 خطای DivisionByZero می‌دهد و صفحهٔ
-     * وضعیت ربات را می‌شکند.
+     * شمارش کاربران واقعی و محدود به سلسله‌مراتب همین نماینده است؛ اعداد حافظه و
+     * CPU ثابت و ساختگی‌اند (بالا را ببینید) و عمداً هرگز صفر نمی‌شوند: میرزا برای
+     * نمایش درصد بر mem_total و cpu_cores تقسیم می‌کند و صفر در PHP 8 خطای
+     * DivisionByZero می‌دهد و صفحهٔ وضعیت ربات را می‌شکند.
      */
     public function system(Request $request): JsonResponse
     {
@@ -87,15 +105,12 @@ class MetaController extends Controller
         $active = (clone $base)->where('status', AccountStatus::Active->value)->count();
         $used = (int) (clone $base)->sum('data_used_bytes');
 
-        $memory = $this->memory();
-        $cores = $this->cpuCores();
-
         return response()->json([
             'version' => self::ANNOUNCED_VERSION,
-            'mem_total' => $memory['total'],
-            'mem_used' => $memory['used'],
-            'cpu_cores' => $cores,
-            'cpu_usage' => $this->cpuUsage($cores),
+            'mem_total' => self::PLACEHOLDER_MEM_TOTAL,
+            'mem_used' => self::PLACEHOLDER_MEM_USED,
+            'cpu_cores' => self::PLACEHOLDER_CPU_CORES,
+            'cpu_usage' => self::PLACEHOLDER_CPU_USAGE,
             'total_user' => $total,
             'users_active' => $active,
             // پنل آپلود و دانلود را جدا نگه نمی‌دارد؛ کل مصرف در سمت دانلود
@@ -105,66 +120,5 @@ class MetaController extends Controller
             'incoming_bandwidth_speed' => 0,
             'outgoing_bandwidth_speed' => 0,
         ]);
-    }
-
-    /**
-     * حافظهٔ ماشین از /proc، بدون اجرای هیچ فرمانی. روی سیستم‌های بدون /proc
-     * مقدار جایگزین برگردانده می‌شود تا هیچ‌گاه صفر نباشد.
-     *
-     * @return array{total: int, used: int}
-     */
-    protected function memory(): array
-    {
-        $fallbackTotal = 1073741824;
-        $path = '/proc/meminfo';
-
-        if (! @is_readable($path)) {
-            return [
-                'total' => $fallbackTotal,
-                'used' => max(1, memory_get_usage(true)),
-            ];
-        }
-
-        $raw = (string) @file_get_contents($path);
-        $values = [];
-
-        foreach (['MemTotal', 'MemAvailable'] as $key) {
-            if (preg_match('/^'.$key.':\s+(\d+) kB/mi', $raw, $matches) === 1) {
-                $values[$key] = ((int) $matches[1]) * 1024;
-            }
-        }
-
-        $total = $values['MemTotal'] ?? $fallbackTotal;
-        $available = $values['MemAvailable'] ?? 0;
-
-        return [
-            'total' => max(1, $total),
-            'used' => max(0, $total - $available),
-        ];
-    }
-
-    protected function cpuCores(): int
-    {
-        $path = '/proc/cpuinfo';
-
-        if (! @is_readable($path)) {
-            return 1;
-        }
-
-        $raw = (string) @file_get_contents($path);
-
-        return max(1, preg_match_all('/^processor\s*:/mi', $raw));
-    }
-
-    /** درصد بار CPU از میانگین بار یک‌دقیقه‌ای، محدود به بازهٔ ۰ تا ۱۰۰. */
-    protected function cpuUsage(int $cores): float
-    {
-        $load = function_exists('sys_getloadavg') ? @sys_getloadavg() : false;
-
-        if (! is_array($load) || ! isset($load[0])) {
-            return 0.0;
-        }
-
-        return round(max(0.0, min(100.0, ((float) $load[0] / max(1, $cores)) * 100)), 2);
     }
 }

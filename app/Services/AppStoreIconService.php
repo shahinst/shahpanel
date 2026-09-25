@@ -4,11 +4,17 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 use Throwable;
 
 class AppStoreIconService
 {
-    public const STORED_ICON_PATTERN = '/^[a-f0-9]{40}\.(png|jpe?g|webp|svg|ico)$/i';
+    /**
+     * SVG عمداً از این فهرست حذف شده است: یک آیکون SVG می‌تواند <script> داشته
+     * باشد و چون روی دامنهٔ خودِ پنل و بدون احراز هویت سرو می‌شد، به XSS ذخیره‌شده
+     * روی همان مبدأ (با نشست کاربر بازدیدکننده) تبدیل می‌شد.
+     */
+    public const STORED_ICON_PATTERN = '/^[a-f0-9]{40}\.(png|jpe?g|gif|webp|ico)$/i';
 
     public function resolveAndStore(string $appUrl): string
     {
@@ -64,12 +70,20 @@ class AppStoreIconService
 
         $cacheKey = $cacheKey ?? $remoteUrl;
 
+        // SSRF: بدون این بررسی یک مدیر می‌توانست پنل را وادار کند
+        // 169.254.169.254 (متادیتای ابر) یا 127.0.0.1:2053 (پنل محلی) را بخواند و
+        // پاسخ آن روی یک نشانی عمومیِ آیکون خوانده شود.
+        if (! self::isFetchableUrl($remoteUrl)) {
+            return null;
+        }
+
         try {
             $response = Http::timeout(12)
                 ->withHeaders([
                     'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                     'Accept' => 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
                 ])
+                ->withOptions(['allow_redirects' => self::safeRedirectOptions()])
                 ->get($remoteUrl);
 
             if (! $response->successful()) {
@@ -118,7 +132,7 @@ class AppStoreIconService
             return $url;
         }
 
-        if (preg_match('#/(?:storage/)?portal-icons/([a-f0-9]{40}\.(?:png|jpe?g|webp|svg|ico))(?:\?.*)?$#i', $url, $matches)) {
+        if (preg_match('#/(?:storage/)?portal-icons/([a-f0-9]{40}\.(?:png|jpe?g|gif|webp|ico))(?:\?.*)?$#i', $url, $matches)) {
             return self::publicUrlForFilename($matches[1]);
         }
 
@@ -133,7 +147,7 @@ class AppStoreIconService
             return false;
         }
 
-        if (preg_match('#/portal-icons/([a-f0-9]{40}\.(?:png|jpe?g|webp|svg|ico))(?:\?.*)?$#i', $publicUrl, $matches)) {
+        if (preg_match('#/portal-icons/([a-f0-9]{40}\.(?:png|jpe?g|gif|webp|ico))(?:\?.*)?$#i', $publicUrl, $matches)) {
             return Storage::disk('public')->exists(self::storedRelativePath($matches[1]));
         }
 
@@ -180,9 +194,16 @@ class AppStoreIconService
         if (str_contains($host, 'play.google.com')
             || str_contains($host, 'apps.apple.com')
             || str_contains($host, 'itunes.apple.com')) {
+            // همان محافظت SSRF مسیر دانلود؛ تطبیق میزبان با str_contains نشانی
+            // هایی مثل play.google.com.attacker.internal را هم می‌پذیرد.
+            if (! self::isFetchableUrl($appUrl)) {
+                return $this->fallbackIconUrl($appUrl);
+            }
+
             try {
                 $html = Http::timeout(8)
                     ->withHeaders(['User-Agent' => 'Mozilla/5.0 (compatible; ShahPanel/1.0)'])
+                    ->withOptions(['allow_redirects' => self::safeRedirectOptions()])
                     ->get($appUrl)
                     ->body();
 
@@ -214,26 +235,15 @@ class AppStoreIconService
             return false;
         }
 
-        $contentType = strtolower($contentType);
-
-        if (str_starts_with($contentType, 'image/')) {
-            return true;
-        }
-
-        if (str_contains($contentType, 'octet-stream') || str_contains($contentType, 'svg')) {
-            return $this->detectImageExtension($body) !== null;
-        }
-
+        // Content-Type را سرور راه دور تعیین می‌کند، پس اعتماد به آن اجازه می‌داد
+        // یک SVG/HTML اجراشدنی زیر عنوان image/* ذخیره و بعد روی مبدأ پنل سرو شود.
+        // فقط امضای واقعی بایت‌های آغازین پذیرفته می‌شود.
         return $this->detectImageExtension($body) !== null;
     }
 
     protected function guessExtension(string $contentType, string $url, string $body): string
     {
         $contentType = strtolower($contentType);
-
-        if (str_contains($contentType, 'svg')) {
-            return 'svg';
-        }
 
         if (str_contains($contentType, 'png')) {
             return 'png';
@@ -247,13 +257,17 @@ class AppStoreIconService
             return 'webp';
         }
 
+        if (str_contains($contentType, 'gif')) {
+            return 'gif';
+        }
+
         if (str_contains($contentType, 'icon') || str_contains($contentType, 'ico')) {
             return 'ico';
         }
 
         $fromPath = strtolower((string) pathinfo((string) parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION));
 
-        if (in_array($fromPath, ['png', 'jpg', 'jpeg', 'webp', 'svg', 'ico'], true)) {
+        if (in_array($fromPath, ['png', 'jpg', 'jpeg', 'gif', 'webp', 'ico'], true)) {
             return $fromPath === 'jpeg' ? 'jpg' : $fromPath;
         }
 
@@ -274,10 +288,117 @@ class AppStoreIconService
             return 'webp';
         }
 
-        if (str_starts_with(ltrim($body), '<svg') || str_contains(substr($body, 0, 256), '<svg')) {
-            return 'svg';
+        if (str_starts_with($body, 'GIF87a') || str_starts_with($body, 'GIF89a')) {
+            return 'gif';
         }
 
+        if (str_starts_with($body, "\x00\x00\x01\x00") || str_starts_with($body, "\x00\x00\x02\x00")) {
+            return 'ico';
+        }
+
+        // SVG عمداً شناسایی نمی‌شود: متنِ اجراشدنی است، نه تصویر.
         return null;
+    }
+
+    /**
+     * سقف تغییر مسیر به‌همراه بازبینی هر پرش؛ وگرنه یک میزبان عمومی می‌توانست با
+     * یک 302 ما را به 127.0.0.1 یا 169.254.169.254 بفرستد و از بررسی اولیه بگذرد.
+     *
+     * @return array<string, mixed>
+     */
+    protected static function safeRedirectOptions(): array
+    {
+        return [
+            'max' => 2,
+            'strict' => true,
+            'referer' => false,
+            'protocols' => ['http', 'https'],
+            'on_redirect' => static function ($request, $response, $uri): void {
+                if (! self::isFetchableUrl((string) $uri)) {
+                    throw new RuntimeException('Blocked redirect to a non-public address.');
+                }
+            },
+        ];
+    }
+
+    /**
+     * فقط http/https و فقط میزبانی که همهٔ نشانی‌های حل‌شده‌اش عمومی باشند.
+     */
+    protected static function isFetchableUrl(string $url): bool
+    {
+        $parts = @parse_url(trim($url));
+
+        if (! is_array($parts) || empty($parts['host'])) {
+            return false;
+        }
+
+        if (! in_array(strtolower((string) ($parts['scheme'] ?? '')), ['http', 'https'], true)) {
+            return false;
+        }
+
+        return self::isPublicHost((string) $parts['host']);
+    }
+
+    protected static function isPublicHost(string $host): bool
+    {
+        $host = trim($host, '[]');
+
+        if ($host === '') {
+            return false;
+        }
+
+        if (filter_var($host, FILTER_VALIDATE_IP) !== false) {
+            return self::isPublicIp($host);
+        }
+
+        if (preg_match('/^[A-Za-z0-9._-]+$/', $host) !== 1) {
+            return false;
+        }
+
+        $addresses = gethostbynamel($host) ?: [];
+
+        foreach (@dns_get_record($host, DNS_AAAA) ?: [] as $record) {
+            if (isset($record['ipv6'])) {
+                $addresses[] = (string) $record['ipv6'];
+            }
+        }
+
+        if ($addresses === []) {
+            return false;
+        }
+
+        // اگر حتی یکی از رکوردها داخلی باشد رد می‌کنیم، چون انتخاب نشانی نهایی
+        // دست کلاینت HTTP است نه ما.
+        foreach ($addresses as $address) {
+            if (! self::isPublicIp((string) $address)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * همان رویکرد FirewallService::isRoutableIpv4 — پرچم‌های PHP محدودهٔ خصوصی و
+     * رزروشده (127/8، 169.254/16، fe80::/10، fc00::/7، ::1 و ::ffff:0:0/96) را رد
+     * می‌کنند؛ تنها RFC6598 یعنی 100.64/10 جا می‌افتد و دستی بررسی می‌شود.
+     */
+    protected static function isPublicIp(string $ip): bool
+    {
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
+            return false;
+        }
+
+        if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false) {
+            $long = ip2long($ip);
+
+            if ($long === false) {
+                return false;
+            }
+
+            return ($long & 0xFFC00000) !== ((100 << 24) | (64 << 16));
+        }
+
+        return true;
     }
 }

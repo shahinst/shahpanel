@@ -30,24 +30,69 @@ Route::post('admin/token', [TokenController::class, 'store'])
     ->middleware('marzban.throttle:600,token')
     ->name('marzban.token');
 
-Route::middleware(['marzban.auth', 'marzban.throttle:300,api'])->group(function (): void {
-    // متادیتا: inbounds و system را میرزا می‌خواند، core/config را ویزویز.
+/*
+| دسترسی‌های توکن این‌جا هم اعمال می‌شود، دقیقاً مثل /api/v1.
+|
+| پیش از این، گروه فقط marzban.auth داشت و هیچ‌کس can() توکن را صدا نمی‌زد؛ یعنی
+| یک توکن عمداً باریک (مثلاً فقط wallet:read) می‌توانست با POST /api/user اکانت
+| بسازد و کیف پول صاحب توکن را خرج کند. توانایی‌ها به صورت پارامتر به
+| marzban.auth داده می‌شود (نه با api.ability) چون پاسخ ۴۰۳ باید همان
+| {"detail": "..."} بماند؛ ربات‌ها فقط کلید detail را می‌خوانند.
+|
+| چند پارامتر یعنی «همه لازم است» (و نه یکی از آن‌ها) — توضیحش در
+| MarzbanAuthenticate آمده است.
+|
+| ترتیب میان‌افزارها عوض نمی‌شود: marzban.auth پیش از marzban.throttle می‌آید تا
+| سقف نرخ با شناسهٔ توکن شمرده شود، نه با IP مشترکِ پشت NAT.
+*/
+
+// متادیتا: inbounds و system را میرزا می‌خواند، core/config را ویزویز. دو مسیر
+// اول فهرست پکیج‌ها و بازه‌های قابل فروش را نشان می‌دهند، یعنی همان دادهٔ
+// /api/v1/catalog/*؛ پس catalog:read.
+Route::middleware(['marzban.auth:catalog:read', 'marzban.throttle:300,api'])->group(function (): void {
     Route::get('inbounds', [MetaController::class, 'inbounds'])->name('marzban.inbounds');
-    Route::get('system', [MetaController::class, 'system'])->name('marzban.system');
     Route::get('core/config', [MetaController::class, 'coreConfig'])->name('marzban.core.config');
+});
+
+// system شمارش و مصرفِ اکانت‌های همین نماینده را می‌دهد، پس خواندنِ اکانت است.
+Route::middleware(['marzban.auth:accounts:read', 'marzban.throttle:300,api'])->group(function (): void {
+    Route::get('system', [MetaController::class, 'system'])->name('marzban.system');
 
     // باید بدون هیچ کوئری‌استرینگی هم جواب بدهد.
     Route::get('users', [UserController::class, 'index'])->name('marzban.users.index');
+});
 
-    Route::post('user', [UserController::class, 'store'])->name('marzban.users.store');
+// فروش جدید: کیف پول کم می‌شود، پس همان accounts:create که /api/v1/accounts دارد.
+Route::post('user', [UserController::class, 'store'])
+    ->middleware(['marzban.auth:accounts:create', 'marzban.throttle:300,api'])
+    ->name('marzban.users.store');
 
-    // این دو پیش از user/{username} ثبت می‌شوند تا مسیر عمومی‌تر آن‌ها را
-    // نبلعد؛ لاراول به ترتیب ثبت تطبیق می‌دهد.
+// این دو پیش از user/{username} ثبت می‌شوند تا مسیر عمومی‌تر آن‌ها را
+// نبلعد؛ لاراول به ترتیب ثبت تطبیق می‌دهد.
+//
+// هیچ‌کدام پول نمی‌گیرد: reset فقط شمارنده‌ها را از پنل تازه می‌کند و
+// revoke_sub توکن اشتراک را می‌چرخاند. هر دو «تغییر اکانت»اند، پس accounts:update.
+Route::middleware(['marzban.auth:accounts:update', 'marzban.throttle:300,api'])->group(function (): void {
     Route::post('user/{username}/reset', [UserController::class, 'reset'])->name('marzban.users.reset');
     Route::post('user/{username}/revoke_sub', [UserController::class, 'revokeSub'])->name('marzban.users.revoke');
-
-    Route::get('user/{username}', [UserController::class, 'show'])->name('marzban.users.show');
-    // ربات‌ها PUT می‌فرستند و کل شیء را پس می‌دهند، نه PATCH.
-    Route::put('user/{username}', [UserController::class, 'update'])->name('marzban.users.update');
-    Route::delete('user/{username}', [UserController::class, 'destroy'])->name('marzban.users.destroy');
 });
+
+Route::get('user/{username}', [UserController::class, 'show'])
+    ->middleware(['marzban.auth:accounts:read', 'marzban.throttle:300,api'])
+    ->name('marzban.users.show');
+
+// ربات‌ها PUT می‌فرستند و کل شیء را پس می‌دهند، نه PATCH.
+//
+// همین یک مسیر هم تمدیدِ پولی انجام می‌دهد (applyRenewal → renewAccount، کسر از
+// کیف پول) و هم فعال/غیرفعال کردن و تغییر برچسب. کنترلر قابل تفکیک نیست، پس هر
+// دو دسترسی لازم است؛ وگرنه توکنی با accounts:update می‌توانست خرید پولی راه
+// بیندازد.
+Route::put('user/{username}', [UserController::class, 'update'])
+    ->middleware(['marzban.auth:accounts:update,accounts:renew', 'marzban.throttle:300,api'])
+    ->name('marzban.users.update');
+
+// حذف: کاتالوگ دسترسی‌ها accounts:delete ندارد و ساختنش توکن‌های صادرشده را
+// بی‌اثر می‌کرد، پس نزدیک‌ترین دسترسی موجود یعنی accounts:update گذاشته شده است.
+Route::delete('user/{username}', [UserController::class, 'destroy'])
+    ->middleware(['marzban.auth:accounts:update', 'marzban.throttle:300,api'])
+    ->name('marzban.users.destroy');

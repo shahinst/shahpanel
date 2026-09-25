@@ -87,6 +87,16 @@ class PaymentRequestService
         }
 
         return DB::transaction(function () use ($request, $approver, $adminNote) {
+            // Re-fetch under a row lock and re-check the status INSIDE the transaction. The
+            // assertPending() above is only an in-memory read taken before the transaction
+            // opens, so two concurrent approvals (or an approval racing a rejection) both pass
+            // it and the requester's wallet is credited twice for one receipt — and when the
+            // approver is the Admin the matching debit comes out of an infinite wallet, so
+            // nothing absorbs the duplicate credit.
+            $request = PaymentRequest::query()->whereKey($request->id)->lockForUpdate()->firstOrFail();
+
+            $this->assertPending($request);
+
             $amount = (string) $request->amount;
             $currency = $request->moneyCurrency()->value;
             $context = [
@@ -130,15 +140,24 @@ class PaymentRequestService
             throw new InvalidArgumentException('Only the assigned approver can reject this request.');
         }
 
-        $request->update([
-            'status' => PaymentRequestStatus::Rejected,
-            'admin_note' => $adminNote,
-            'decided_at' => now(),
-        ]);
+        return DB::transaction(function () use ($request, $approver, $adminNote) {
+            // Rejection has to take the same lock as approve(): without it a rejection and an
+            // approval of the same pending request can interleave, so the request ends up
+            // rejected while the wallet credit from the racing approval still happened.
+            $request = PaymentRequest::query()->whereKey($request->id)->lockForUpdate()->firstOrFail();
 
-        $this->activityLogService->log($approver, 'payment_request.rejected', $request);
+            $this->assertPending($request);
 
-        return $request->fresh();
+            $request->update([
+                'status' => PaymentRequestStatus::Rejected,
+                'admin_note' => $adminNote,
+                'decided_at' => now(),
+            ]);
+
+            $this->activityLogService->log($approver, 'payment_request.rejected', $request);
+
+            return $request->fresh();
+        });
     }
 
     protected function resolveApprover(User $requester): User

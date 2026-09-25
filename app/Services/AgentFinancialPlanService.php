@@ -216,7 +216,7 @@ class AgentFinancialPlanService
         }
     }
 
-    public function restoreForAccount(int $accountId, string $refundRatio = '1.0000'): void
+    public function restoreForAccount(int $accountId, string $refundRatio = '1.0000', ?int $invoiceId = null): void
     {
         if (! $this->isAvailable()) {
             return;
@@ -228,10 +228,7 @@ class AgentFinancialPlanService
             return;
         }
 
-        $usages = AgentFinancialPlanUsage::query()
-            ->where('related_account_id', $accountId)
-            ->orderBy('id')
-            ->get();
+        $usages = $this->usagesForInvoice($accountId, $invoiceId);
 
         foreach ($usages as $usage) {
             $restoreWholesale = $this->money(bcmul($this->money((string) $usage->wholesale_portion), $ratio, 4));
@@ -268,7 +265,7 @@ class AgentFinancialPlanService
         }
     }
 
-    public function reapplyForAccount(int $accountId, string $refundRatio = '1.0000'): void
+    public function reapplyForAccount(int $accountId, string $refundRatio = '1.0000', ?int $invoiceId = null): void
     {
         if (! $this->isAvailable()) {
             return;
@@ -280,10 +277,7 @@ class AgentFinancialPlanService
             return;
         }
 
-        $usages = AgentFinancialPlanUsage::query()
-            ->where('related_account_id', $accountId)
-            ->orderBy('id')
-            ->get();
+        $usages = $this->usagesForInvoice($accountId, $invoiceId);
 
         foreach ($usages as $usage) {
             $reapplyWholesale = $this->money(bcmul($this->money((string) $usage->wholesale_portion), $ratio, 4));
@@ -378,6 +372,30 @@ class AgentFinancialPlanService
             'total_remaining' => $totalRemaining,
             'lots' => $lots,
         ];
+    }
+
+    /**
+     * Plan usages that a refund (or its reversal) of a single invoice is allowed to touch.
+     *
+     * Unscoped, refunding one renewal restores the plan credit consumed by EVERY renewal of the
+     * account, handing the agent spendable credit it never lost. agent_financial_plan_usages has
+     * no invoice column, so the usage is matched through the wallet transaction it was charged
+     * on, which AccountService links to the invoice in the same transaction that writes the
+     * usage row. $invoiceId stays nullable for callers that legitimately cover the whole account
+     * (purchase rollback, and refunds recorded before the invoice was tracked).
+     *
+     * @return Collection<int, AgentFinancialPlanUsage>
+     */
+    protected function usagesForInvoice(int $accountId, ?int $invoiceId = null): Collection
+    {
+        return AgentFinancialPlanUsage::query()
+            ->where('related_account_id', $accountId)
+            ->when($invoiceId !== null, fn ($query) => $query->whereHas(
+                'transaction',
+                fn ($transaction) => $transaction->where('related_invoice_id', $invoiceId)
+            ))
+            ->orderBy('id')
+            ->get();
     }
 
     protected function chargeWithoutPlans(string $buyerWholesale, ?int $planOwnerId = null): array

@@ -77,13 +77,13 @@ class AppServiceProvider extends ServiceProvider
         View::composer('auth.login', function ($view): void {
             $captcha = $view->getData()['captcha'] ?? null;
 
-            if (is_array($captcha) && ($captcha['display'] ?? '') !== '' && ($captcha['token'] ?? '') !== '') {
+            if (is_array($captcha) && ($captcha['svg'] ?? '') !== '' && ($captcha['token'] ?? '') !== '') {
                 return;
             }
 
             $flash = session('loginCaptcha');
 
-            if (is_array($flash) && ($flash['display'] ?? '') !== '' && ($flash['token'] ?? '') !== '') {
+            if (is_array($flash) && ($flash['svg'] ?? '') !== '' && ($flash['token'] ?? '') !== '') {
                 $view->with('captcha', $flash);
 
                 return;
@@ -130,6 +130,13 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('client-panel', function (Request $request) {
             return Limit::perMinute(120)->by($request->user()?->id ?: $request->ip());
+        });
+
+        // مسیرهای پول‌جابه‌جاکن (تمدید، برگشت وجه، تأیید درخواست پرداخت) قفل ردیف دارند،
+        // ولی بدون محدودیت نرخ یک مهاجم می‌تواند هزاران درخواست همزمان بفرستد تا شکاف
+        // زمانی پیدا کند. این سقف کارِ عادی ادمین را نمی‌بندد و آن حمله را بی‌صرفه می‌کند.
+        RateLimiter::for('money-actions', function (Request $request) {
+            return [Limit::perMinute(60)->by($request->user()?->id ?: $request->ip())];
         });
 
         RateLimiter::for('client-actions', function (Request $request) {

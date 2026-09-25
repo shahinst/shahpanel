@@ -44,4 +44,5 @@ return [
     'status_resolved' => 'رسیدگی شده',
     'status_closed' => 'بسته',
     'migration_hint' => 'برای فعال‌سازی تیکت‌ها، migration دیتابیس را اجرا کنید.',
+    'department_not_allowed' => 'این دپارتمان برای شما مجاز نیست.',
 ];

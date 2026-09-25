@@ -364,17 +364,29 @@ class AccountService
                     ? $account->expiry_at->copy()
                     : now();
 
-                $account->expiry_at = $duration->expiryFrom($renewalBase);
-                $account->package_duration_id = $duration->id;
-                $account->status = AccountStatus::Active;
+                // add_volume فقط حجم می‌فروشد، نه زمان: قیمتش در
+                // AccountRenewalPricingService::billableGbForRenewal تنها گیگ‌های اضافه‌شده است،
+                // پس تمدید انقضا در این حالت یک دورهٔ کامل را به قیمت یک گیگ می‌بخشید.
+                // بقیهٔ حالت‌ها بهای دوره را می‌پردازند و انقضا را جابه‌جا می‌کنند.
+                if ($renewalMode !== 'add_volume') {
+                    $account->expiry_at = $duration->expiryFrom($renewalBase);
+                    $account->package_duration_id = $duration->id;
+                    $account->status = AccountStatus::Active;
+                } elseif (! $account->isExpired()) {
+                    // شارژ حجم، اکانتِ حجم‌تمام‌شده را برمی‌گرداند
+                    // ولی اکانتی که زمانش تمام شده را زنده نمی‌کند.
+                    $account->status = AccountStatus::Active;
+                }
 
                 $this->applyElasticRenewalVolume($account, $billingPackage, $renewalMode, $renewalGb);
 
                 $account->save();
 
-                $this->renewRemoteAccount($account, $resetTraffic, forceEnable: true);
-                $this->reconcilePanelQuotaAfterRenewal($account->fresh(), $resetTraffic);
-
+                // اول پول، بعد پنل. renewRemoteAccount انقضا را روی پنل مشتری تمدید
+                // و شمارندهٔ ترافیک را صفر می‌کند؛ این نوشتن راهِ برگشت ندارد، ولی کسر
+                // از کیف پول زیر قفل ردیف انجام می‌شود و catch با rollbackPurchase
+                // برش می‌گرداند. با ترتیب قبلی، چند درخواست همزمان تمدید همه پنل را
+                // تمدید می‌کردند و فقط یکی از آنها پول می‌داد — یعنی سرویس رایگان.
                 if (! $clientPortalBilling) {
                     $purchaseResult = $this->walletService->processTieredPurchase(
                         $economics,
@@ -398,6 +410,9 @@ class AccountService
                     $renewalInvoice = $this->invoiceService->createInvoice($account, \App\Enums\InvoiceType::Renewal, $buyerCharge);
                     $this->linkTieredPurchaseTransactionsToInvoice($purchaseResult, $renewalInvoice->id);
                 }
+
+                $this->renewRemoteAccount($account, $resetTraffic, forceEnable: true);
+                $this->reconcilePanelQuotaAfterRenewal($account->fresh(), $resetTraffic);
 
                 $this->activityLogService->log($actor, 'account.renewed', $account, array_filter([
                     'billing' => $clientPortalBilling ? AccountBillingContext::ClientPortal->value : null,
@@ -1486,6 +1501,13 @@ class AccountService
 
         if ($serviceType->isOcserv()) {
             return $this->generateOcservPassword();
+        }
+
+        // ASA پشتیبانی از escape با بک‌اسلش ندارد، پس رمزی که \ یا " داشته باشد
+        // روی دستگاه چیزی متفاوت از آنچه پنل نشان می‌دهد ذخیره می‌شود و مشتری
+        // نمی‌تواند وصل شود. طول را بیشتر می‌کنیم تا حذف نمادها آنتروپی را کم نکند.
+        if ($serviceType->isCiscoAnyconnect()) {
+            return Str::password(20, symbols: false);
         }
 
         return Str::password(12);

@@ -212,7 +212,9 @@ class ServerController extends Controller
             'public_ip' => ['nullable', 'string', 'max:45'],
             'port' => ['required', 'integer', 'min:1', 'max:65535'],
             'ssh_port' => ['nullable', 'integer', 'min:1', 'max:65535'],
-            'web_base_path' => ['nullable', 'string', 'max:255'],
+            // فقط نویسه‌های امن مسیر: این مقدار خام در خط درخواستِ probe خام
+            // نوشته می‌شود و یک CR/LF در آن به تزریق هدر/درخواست دوم می‌انجامد.
+            'web_base_path' => ['nullable', 'string', 'max:255', 'regex:/^[A-Za-z0-9._~\-\/]+$/'],
             'username' => ['nullable', 'string', 'max:255'],
             'password' => ['nullable', 'string', 'max:255'],
             'remnawave_api_key' => ['nullable', 'string', 'max:2000'],
@@ -236,6 +238,8 @@ class ServerController extends Controller
             'ocserv_default_max_sessions' => ['nullable', 'integer', 'min:0', 'max:1000'],
             'ocserv_group' => ['nullable', 'string', 'max:128'],
             'ocserv_verify_ssl' => ['sometimes', 'boolean'],
+        ], [
+            'web_base_path.regex' => __('servers.web_base_path_invalid'),
         ]);
 
         $validated = $this->mergeApiTokenFromRequest($request, $validated);

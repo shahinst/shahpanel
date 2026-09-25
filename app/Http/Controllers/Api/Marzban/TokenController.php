@@ -11,6 +11,7 @@ use App\Services\TwoFactorService;
 use App\Support\MarzbanDetailResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 
@@ -63,42 +64,32 @@ class TokenController extends Controller
             ->first();
 
         if ($user === null) {
-            RateLimiter::hit($key, self::FAILURE_DECAY_SECONDS);
-
-            return MarzbanDetailResponse::make(__('marzban.login_failed'), 401);
+            return $this->failed($key, $username, $request->ip());
         }
 
-        // همان قاعدهٔ /api/v1/auth/login: ادمین از راه API نمی‌فروشد.
-        if (! in_array($user->role, ApiTokenService::ALLOWED_ROLES, true)) {
-            RateLimiter::hit($key, self::FAILURE_DECAY_SECONDS);
+        // چرا همهٔ ردها پیش از بررسی رمز یک شکل دارند: پاسخ‌های متفاوت (کاربر
+        // نیست / نقشش اجازه ندارد / معلق است / دومرحله‌ای دارد) بدون دانستن هیچ
+        // رمزی نشان می‌دادند که چه نام‌هایی وجود دارند و وضعیتشان چیست — یعنی
+        // شمارش حساب‌ها روی مسیری که فایروال ورود پنل آن را نمی‌بیند.
+        //
+        // پس دلیل دقیق فقط به کسی گفته می‌شود که رمز درست را داده است؛ برای بقیه
+        // همان ۴۰۱ همیشگی. این Hash::check تنها روی همین مسیرِ سرد اجرا می‌شود،
+        // پس ورودِ سالم ویزویز (که پیش از هر عملیات لاگین می‌کند) همان‌قدر سریع
+        // می‌ماند و از کش MarzbanTokenService استفاده می‌کند.
+        $denial = $this->denialFor($user);
 
-            return MarzbanDetailResponse::make(__('marzban.login_role_not_allowed'), 403);
-        }
+        if ($denial !== null) {
+            if (! Hash::check($password, (string) $user->password)) {
+                return $this->failed($key, $username, $request->ip());
+            }
 
-        if ($user->status !== UserStatus::Active) {
-            RateLimiter::hit($key, self::FAILURE_DECAY_SECONDS);
-
-            return MarzbanDetailResponse::make(__('marzban.login_suspended'), 403);
-        }
-
-        // پروتکل مرزبان جایی برای کد دومرحله‌ای ندارد و رد کردن این بررسی یعنی
-        // دور زدن یک لایهٔ امنیتی که کاربر خودش روشن کرده؛ پس جواب روشن می‌دهیم
-        // تا حساب دیگری برای ربات ساخته شود.
-        if ($this->twoFactor->isEnabled($user)) {
-            return MarzbanDetailResponse::make(__('marzban.two_factor_not_supported'), 403);
+            return MarzbanDetailResponse::make($denial[0], $denial[1]);
         }
 
         $token = $this->marzbanTokens->authenticate($user, $password);
 
         if ($token === null) {
-            RateLimiter::hit($key, self::FAILURE_DECAY_SECONDS);
-
-            Log::warning('Marzban facade login failed', [
-                'username' => $username,
-                'ip' => $request->ip(),
-            ]);
-
-            return MarzbanDetailResponse::make(__('marzban.login_failed'), 401);
+            return $this->failed($key, $username, $request->ip());
         }
 
         RateLimiter::clear($key);
@@ -107,5 +98,49 @@ class TokenController extends Controller
             'access_token' => $token,
             'token_type' => 'bearer',
         ]);
+    }
+
+    /**
+     * دلیلی که این حساب — با رمز درست هم — نمی‌تواند توکن بگیرد.
+     *
+     * @return array{0: string, 1: int}|null
+     */
+    protected function denialFor(User $user): ?array
+    {
+        // همان قاعدهٔ /api/v1/auth/login: ادمین از راه API نمی‌فروشد.
+        if (! in_array($user->role, ApiTokenService::ALLOWED_ROLES, true)) {
+            return [__('marzban.login_role_not_allowed'), 403];
+        }
+
+        if ($user->status !== UserStatus::Active) {
+            return [__('marzban.login_suspended'), 403];
+        }
+
+        // پروتکل مرزبان جایی برای کد دومرحله‌ای ندارد و رد کردن این بررسی یعنی
+        // دور زدن یک لایهٔ امنیتی که کاربر خودش روشن کرده؛ پس جواب روشن می‌دهیم
+        // تا حساب دیگری برای ربات ساخته شود.
+        if ($this->twoFactor->isEnabled($user)) {
+            return [__('marzban.two_factor_not_supported'), 403];
+        }
+
+        return null;
+    }
+
+    /**
+     * شکست را می‌شمارد و همان پاسخ یکسانِ ۴۰۱ را می‌دهد.
+     *
+     * شمارندهٔ (نام کاربری، IP) دست‌نخورده می‌ماند: سقف ۱۰ شکست در ۹۰۰ ثانیه
+     * همان چیزی است که حملهٔ رمز و شمارش حساب را می‌بندد.
+     */
+    protected function failed(string $key, string $username, ?string $ip): JsonResponse
+    {
+        RateLimiter::hit($key, self::FAILURE_DECAY_SECONDS);
+
+        Log::warning('Marzban facade login failed', [
+            'username' => $username,
+            'ip' => $ip,
+        ]);
+
+        return MarzbanDetailResponse::make(__('marzban.login_failed'), 401);
     }
 }

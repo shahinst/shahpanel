@@ -308,4 +308,5 @@ TEXT,
     'copy_anyconnect_config' => 'Copy connection details',
     'copy_anyconnect_config_copied' => 'Copied',
     'copy_anyconnect_config_failed' => 'Could not copy',
+    'owner_seller_not_allowed' => 'You are not allowed to act on behalf of this owner.',
 ];

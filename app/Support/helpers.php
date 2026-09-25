@@ -139,7 +139,7 @@ if (! function_exists('webadmin_asset')) {
 
 if (! function_exists('login_page_captcha')) {
     /**
-     * @return array{token: string, display: string, svg: string}
+     * @return array{token: string, svg: string}
      */
     function login_page_captcha(\Illuminate\Http\Request $request): array
     {
@@ -150,7 +150,6 @@ if (! function_exists('login_page_captcha')) {
 
             return [
                 'token' => '',
-                'display' => '',
                 'svg' => '',
             ];
         }

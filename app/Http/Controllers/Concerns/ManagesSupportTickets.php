@@ -9,6 +9,7 @@ use App\Services\SupportTicketService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 trait ManagesSupportTickets
@@ -37,10 +38,18 @@ trait ManagesSupportTickets
 
     public function storeTicket(Request $request, SupportTicketService $ticketService): RedirectResponse
     {
+        // exists سراسری بود و هر شناسه‌ی دپارتمان معتبری را می‌پذیرفت، پس می‌شد تیکت
+        // را در صف پشتیبانی نماینده‌ی یک تنانت دیگر ثبت کرد و آن نماینده از طریق
+        // canAccess حق خواندن و پاسخ روی آن می‌گرفت. همان مجموعه‌ای که فرم ساخت را
+        // می‌سازد، اینجا هم مرز اعتبارسنجی است.
+        $allowedDepartmentIds = $ticketService->departmentsFor($request->user())
+            ->pluck('id')
+            ->all();
+
         $validated = $request->validate([
             'subject' => ['required', 'string', 'max:255'],
             'body' => ['required', 'string', 'max:5000'],
-            'department_id' => ['nullable', 'exists:support_departments,id'],
+            'department_id' => ['nullable', 'integer', Rule::in($allowedDepartmentIds)],
         ]);
 
         $ticketService->create($request->user(), $validated);

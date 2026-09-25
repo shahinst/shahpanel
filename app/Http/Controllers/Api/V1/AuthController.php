@@ -162,7 +162,13 @@ class AuthController extends Controller
         return $this->ok($tokens);
     }
 
-    /** Mint an extra, optionally narrower token (e.g. a read-only bot). */
+    /**
+     * Mint an extra, narrower token (e.g. a read-only bot).
+     *
+     * Narrower is the only direction available: the token used for this request
+     * is handed to the service as the parent, so the new one cannot hold an
+     * ability, an address range or a lifetime the caller does not already have.
+     */
     public function createToken(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -174,6 +180,8 @@ class AuthController extends Controller
             'expires_in_days' => ['nullable', 'integer', 'min:1', 'max:3650'],
         ]);
 
+        $parent = $request->attributes->get('api_token');
+
         $issued = $this->tokens->issue(
             $request->user(),
             $data['name'],
@@ -181,6 +189,7 @@ class AuthController extends Controller
             isset($data['expires_in_days']) ? now()->addDays((int) $data['expires_in_days']) : null,
             $data['allowed_ips'] ?? null,
             (int) ($data['rate_limit_per_minute'] ?? 120),
+            $parent instanceof ApiToken ? $parent : null,
         );
 
         return $this->ok([

@@ -90,11 +90,17 @@ class KycService
             throw ValidationException::withMessages(['birth_date' => [__('services.kyc_invalid_birth_date')]]);
         }
 
+        // owner_seller_id مستقیم از ورودی درخواست نوشته می‌شد و هیچ نسبتی با ثبت‌کننده
+        // بررسی نمی‌شد؛ یعنی یک فروشنده می‌توانست کد ملی، شماره موبایل و مدرک هویتی
+        // واقعی را به نام تنانت دیگری ثبت کند و آن نماینده از طریق assertCanManage
+        // صاحب مدیریت آن رکورد شود. مرز اینجا همان مرز پیش‌نمایش خرید است.
+        $ownerSellerId = $this->resolveOwnerSellerId($actor, $data['owner_seller_id'] ?? null);
+
         $path = $this->storeDocument($document);
 
         $verification = AccountKycVerification::query()->create([
             'initiated_by_user_id' => $actor->id,
-            'owner_seller_id' => $data['owner_seller_id'] ?? ($actor->role === UserRole::Seller ? $actor->id : null),
+            'owner_seller_id' => $ownerSellerId,
             'package_id' => $data['package_id'] ?? null,
             'status' => KycVerificationStatus::Draft,
             'first_name' => trim($data['first_name']),
@@ -120,6 +126,38 @@ class KycService
         ]);
 
         return $verification;
+    }
+
+    /**
+     * فقط ادمین می‌تواند رکورد را به نام هر کسی ثبت کند؛ نماینده محدود به زیردرخت
+     * خودش است و فروشنده تنها به نام خودش. شناسه‌ی نامعتبر رد می‌شود و خاموش
+     * جایگزین نمی‌گردد، تا رکوردِ PII به تنانت اشتباه نسبت داده نشود.
+     */
+    protected function resolveOwnerSellerId(User $actor, mixed $requested): ?int
+    {
+        if ($requested === null || $requested === '') {
+            return $actor->role === UserRole::Seller ? (int) $actor->id : null;
+        }
+
+        $requested = (int) $requested;
+
+        if ($requested === (int) $actor->id) {
+            return $requested;
+        }
+
+        if ($actor->role === UserRole::Admin) {
+            return $requested;
+        }
+
+        if ($actor->role !== UserRole::Agent
+            || ! in_array($requested, User::subtreeUserIds($actor), true)
+        ) {
+            throw ValidationException::withMessages([
+                'owner_seller_id' => [__('services.kyc_access_denied')],
+            ]);
+        }
+
+        return $requested;
     }
 
     public function verify(AccountKycVerification $verification, User $actor): AccountKycVerification

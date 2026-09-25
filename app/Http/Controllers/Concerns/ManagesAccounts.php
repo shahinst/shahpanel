@@ -330,26 +330,6 @@ trait ManagesAccounts
         ]);
     }
 
-    protected function packagesForAccountCreate(Request $request): \Illuminate\Support\Collection
-    {
-        $seller = $request->filled('owner_seller_id')
-            ? User::query()->find((int) $request->input('owner_seller_id'))
-            : ($request->user()->role === \App\Enums\UserRole::Seller ? $request->user() : null);
-
-        if ($seller === null && $request->user()->role === \App\Enums\UserRole::Agent) {
-            $seller = $request->user();
-        }
-
-        if ($seller === null) {
-            return collect();
-        }
-
-        return app(UserPackageAssignmentService::class)
-            ->assignedPackagesQuery($seller)
-            ->when(app(PackageCategoryService::class)->isAvailable(), fn ($query) => $query->with('category'))
-            ->get(['id', 'name', 'package_category_id']);
-    }
-
     public function clientOptions(Request $request, EndUserService $endUserService): JsonResponse
     {
         $this->authorize('create', Account::class);
@@ -374,17 +354,11 @@ trait ManagesAccounts
 
     protected function resolveClientOwner(Request $request): User
     {
-        if ($request->filled('owner_seller_id')) {
-            $seller = User::query()->findOrFail((int) $request->input('owner_seller_id'));
-
-            if ($request->user()->role === \App\Enums\UserRole::Agent) {
-                $this->authorize('view', $seller);
-            }
-
-            return $seller;
-        }
-
-        return $request->user();
+        // پیش‌تر فقط نماینده بررسی می‌شد و بازدیدکننده‌ی فروشنده کلاً از authorize
+        // رد می‌شد؛ یعنی هر فروشنده با owner_seller_id یک تنانت دیگر، فهرست کامل
+        // مشتریان نهایی و قیمت عمده‌ی بسته‌های آن تنانت (حتی یک نماینده) را
+        // می‌گرفت. حالا هر نقشی جز ادمین به زیردرخت خودش محدود است.
+        return $this->resolveOwnerSellerForActor($request, $request->input('owner_seller_id'));
     }
 
     protected function assertPackageAllowedForSeller(User $seller, Package $package): void
@@ -406,11 +380,55 @@ trait ManagesAccounts
      */
     protected function resolvePreviewBuyer(Request $request, array $validated): User
     {
-        if (isset($validated['owner_seller_id'])) {
-            return User::query()->findOrFail((int) $validated['owner_seller_id']);
+        // کل خروجی پیش‌نمایش برای همین خریدار محاسبه می‌شود و قیمت عمده، حاشیه سود
+        // نماینده، درصد markup و سهم درآمد ادمین را برمی‌گرداند؛ findOrFail بدون
+        // محدوده اجازه می‌داد هر نماینده/فروشنده با پیمایش شناسه‌ی کاربر و دوره،
+        // کل جدول قیمت و حاشیه سود رقیب را بازسازی کند.
+        return $this->resolveOwnerSellerForActor($request, $validated['owner_seller_id'] ?? null);
+    }
+
+    /**
+     * شناسه‌ی درخواستیِ «مالک/فروشنده» را به یک کاربر مجاز برای همین بازدیدکننده
+     * ترجمه می‌کند. ادمین تنها نقشی است که جست‌وجوی بدون محدوده برایش لازم و مجاز
+     * است (فرم ساخت اکانت ادمین روی هر نماینده/فروشنده‌ای کار می‌کند). نماینده فقط
+     * زیردرخت خودش را می‌بیند و فروشنده هیچ دلیل مشروعی برای اقدام به نام دیگری
+     * ندارد، پس کل درخواستش رد می‌شود. جایگزینیِ خاموشِ خریدار انجام نمی‌شود چون
+     * یک فروش واقعی را اشتباه قیمت‌گذاری می‌کرد.
+     */
+    protected function resolveOwnerSellerForActor(Request $request, mixed $requestedId): User
+    {
+        $actor = $request->user();
+
+        if ($requestedId === null || $requestedId === '' || (int) $requestedId === (int) $actor->id) {
+            return $actor;
         }
 
-        return $request->user();
+        $requestedId = (int) $requestedId;
+
+        if ($actor->role === \App\Enums\UserRole::Admin) {
+            return User::query()->findOrFail($requestedId);
+        }
+
+        if ($actor->role !== \App\Enums\UserRole::Agent) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'owner_seller_id' => [__('accounts.owner_seller_not_allowed')],
+            ]);
+        }
+
+        $target = User::query()
+            ->whereIn('id', User::subtreeUserIds($actor))
+            ->find($requestedId);
+
+        if ($target === null) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'owner_seller_id' => [__('accounts.owner_seller_not_allowed')],
+            ]);
+        }
+
+        // بررسی سیاست هم نگه داشته می‌شود تا محدودیت نقش‌ها (UserPolicy::view) ضعیف نشود.
+        $this->authorize('view', $target);
+
+        return $target;
     }
 
     protected function updateAccountViaService(

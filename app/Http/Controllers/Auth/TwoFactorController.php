@@ -20,10 +20,8 @@ class TwoFactorController extends Controller
 
     public function showChallenge(Request $request): View|RedirectResponse
     {
-        $pending = $request->session()->get('two_factor_login');
-
-        if (! is_array($pending) || empty($pending['user_id'])) {
-            return redirect()->route('login');
+        if ($this->pendingLogin($request) === null) {
+            return $this->challengeExpiredResponse();
         }
 
         return view('auth.two-factor-challenge', [
@@ -33,10 +31,10 @@ class TwoFactorController extends Controller
 
     public function verifyChallenge(Request $request): RedirectResponse|\Symfony\Component\HttpFoundation\Response
     {
-        $pending = $request->session()->get('two_factor_login');
+        $pending = $this->pendingLogin($request);
 
-        if (! is_array($pending) || empty($pending['user_id'])) {
-            return redirect()->route('login');
+        if ($pending === null) {
+            return $this->challengeExpiredResponse();
         }
 
         $request->validate([
@@ -71,6 +69,32 @@ class TwoFactorController extends Controller
         $request->session()->forget('url.intended');
 
         return redirect()->route($this->dashboardRoute($user->role));
+    }
+
+    /**
+     * چالش نیمه‌کارهٔ دو مرحله‌ای نباید تا پایان عمر نشست (۱۲۰ دقیقه) زنده بماند؛
+     * روی رایانهٔ اشتراکی نفر بعدی می‌توانست ورودِ رهاشده را کامل کند. چالشِ
+     * منقضی دقیقاً مثل چالشِ ناموجود رفتار می‌کند: کلید سشن پاک و کاربر برمی‌گردد.
+     *
+     * @return array<string, mixed>|null
+     */
+    protected function pendingLogin(Request $request): ?array
+    {
+        $pending = $request->session()->get('two_factor_login');
+
+        if (! is_array($pending) || empty($pending['user_id'])
+            || now()->timestamp > (int) ($pending['expires'] ?? 0)) {
+            $request->session()->forget('two_factor_login');
+
+            return null;
+        }
+
+        return $pending;
+    }
+
+    protected function challengeExpiredResponse(): RedirectResponse
+    {
+        return redirect()->route('login')->withErrors(['username' => __('auth.failed')]);
     }
 
     protected function dashboardRoute(UserRole $role): string

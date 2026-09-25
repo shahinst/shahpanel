@@ -217,11 +217,17 @@ class SupportTicketService
     protected function defaultAssignee(User $requester, ?int $departmentId): ?User
     {
         if ($departmentId) {
-            $department = SupportDepartment::query()->find($departmentId);
+            // find() هیچ بررسی مالکیتی نداشت؛ یک دپارتمان بیگانه باعث می‌شد مسئول
+            // تیکت، نماینده‌ی تنانت دیگری شود و با canAccess به محتوای آن دسترسی
+            // بگیرد. departmentsFor همان مرز تنانت است، پس این سرویس با فراخوان‌های
+            // آینده هم قابل سوءاستفاده نمی‌ماند.
+            $department = $this->departmentsFor($requester)->firstWhere('id', $departmentId);
 
-            if ($department) {
-                return $department->owner;
+            if ($department === null) {
+                throw new InvalidArgumentException(__('tickets.department_not_allowed'));
             }
+
+            return $department->owner;
         }
 
         return match ($requester->role) {

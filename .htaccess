@@ -3,6 +3,21 @@
     Header set X-Robots-Tag "noindex, nofollow, noarchive, nosnippet"
 </IfModule>
 
+# در چیدمان اشتراکی (cPanel) ریشهٔ مخزن خودش docroot است، پس .env و
+# composer.lock و artisan فایل‌های واقعی‌اند: قاعدهٔ front-controller پایین‌تر
+# فقط وقتی بازنویسی می‌کند که مسیر یک فایل واقعی نباشد، بنابراین Apache آن‌ها را
+# بی‌کم‌وکاست به مهاجم می‌داد (APP_KEY، اطلاعات پایگاه‌داده، MAINTAIN_TOKEN).
+# این بلوک بیرون از mod_rewrite است تا با نبودن آن ماژول هم محافظت سر جایش بماند.
+<FilesMatch "(?i)(^\.|^(composer\.(json|lock)|artisan|package(-lock)?\.json|yarn\.lock|phpunit\.xml(\.dist)?|pint\.json|vite\.config\.js)$|\.(env|sh|sql|sqlite|log|bak|swp)$)">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes
@@ -13,8 +28,21 @@
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
+    # هر جزء مسیر که با نقطه شروع شود (.env، .git/config، .ssh) مسدود است؛
+    # .well-known باز می‌ماند تا صدور/تمدید گواهی نشکند.
+    RewriteRule (?:^|/)\.(?!well-known/) - [F,L]
+
+    # فایل‌های افشاکنندهٔ وابستگی‌ها/نسخه‌ها و اسکریپت‌های عملیاتی؛ مثل بالا،
+    # چون فایل واقعی‌اند هرگز به index.php نمی‌رسند.
+    RewriteRule ^(composer\.json|composer\.lock|artisan|package\.json|package-lock\.json)$ - [F,L]
+    RewriteRule \.sh$ - [F,L]
+
     # Block sensitive directories
-    RewriteRule ^(app|bootstrap|config|database|resources|routes|vendor)(/|$) - [F,L]
+    RewriteRule ^(app|bootstrap|config|database|resources|routes|vendor|tools|scripts|ops|docs)(/|$) - [F,L]
+
+    # لاگ‌ها و کش فریم‌ورک (sanaei.log مسیر مخفی پنل و توکن‌های اشتراک را دارد)
+    # باید مسدود بمانند حتی اگر public/storage اشتباهاً به ریشهٔ storage لینک شود.
+    RewriteRule ^storage/(logs|framework)(/|$) - [F,L]
 
     RewriteRule ^build/(.*)$ public/build/$1 [L,QSA]
     RewriteRule ^fonts/(.*)$ public/fonts/$1 [L,QSA]

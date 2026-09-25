@@ -308,4 +308,5 @@ TEXT,
     'copy_anyconnect_config' => 'کپی اطلاعات اتصال',
     'copy_anyconnect_config_copied' => 'کپی شد',
     'copy_anyconnect_config_failed' => 'کپی ناموفق بود',
+    'owner_seller_not_allowed' => 'انتخاب این مالک برای شما مجاز نیست.',
 ];

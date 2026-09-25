@@ -94,6 +94,7 @@ return [
     'accounts_pushed' => 'Применено аккаунтов: :pushed (с ошибкой: :failed).',
     'traffic_synced' => 'Трафик синхронизирован с сервера.',
     'web_base_path' => 'Базовый веб-путь (webBasePath)',
+    'web_base_path_invalid' => 'Базовый веб-путь может содержать только буквы, цифры и символы . _ ~ - /.',
     'panel_username' => 'Имя пользователя панели',
     'panel_password' => 'Пароль панели',
     'mikrotik_username' => 'Имя пользователя RouterOS',

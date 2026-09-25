@@ -36,41 +36,12 @@ class BlockLegacyPortalPaths
 
 
 
-        $paths = PortalPaths::all();
-
-        $roleKey = $segment;
-
-        $newSlug = $paths[$roleKey] ?? $segment;
-
-
-
-        $remainder = $request->path();
-
-        if (str_starts_with($remainder, $segment.'/')) {
-
-            $remainder = substr($remainder, strlen($segment) + 1);
-
-        } elseif ($remainder === $segment) {
-
-            $remainder = '';
-
-        }
-
-
-
-        $target = '/'.$newSlug.($remainder !== '' ? '/'.$remainder : '');
-
-
-
-        if ($request->getQueryString()) {
-
-            $target .= '?'.$request->getQueryString();
-
-        }
-
-
-
-        return redirect($target, 301);
+        // این میدل‌ور «مسدود» می‌کند، نه «هدایت». نسخهٔ قبلی مسیر تصادفی ادمین را
+        // با یک 301 به درخواست‌کننده تحویل می‌داد؛ یعنی هر کسی با زدن /admin
+        // اسلاگ مخفی را می‌گرفت و تمام فایدهٔ تصادفی بودنش از بین می‌رفت.
+        // امروز این کد اجرا نمی‌شود (مسیر قدیمی به هیچ route ی نمی‌خورد) ولی
+        // اگر روزی به پشتهٔ عمومی منتقل شود نباید چیزی لو بدهد.
+        abort(404);
 
     }
 

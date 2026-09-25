@@ -94,6 +94,7 @@ return [
     'accounts_pushed' => '已应用 :pushed 个账号（失败 :failed 个）。',
     'traffic_synced' => '已从服务器同步流量。',
     'web_base_path' => 'Web 基础路径（webBasePath）',
+    'web_base_path_invalid' => 'Web 基础路径只能包含字母、数字以及字符 . _ ~ - /。',
     'panel_username' => '面板用户名',
     'panel_password' => '面板密码',
     'mikrotik_username' => 'RouterOS 用户名',

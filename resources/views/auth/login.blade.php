@@ -76,9 +76,10 @@
     }
 
     function applyCaptcha(data, clearInput) {
-        if (data && data.display) {
-            displayEl.textContent = data.display;
-            displayEl.classList.remove('login-captcha-loading');
+        /* پاسخ کپچا در JSON نیست؛ فقط نشانه‌گذاری SVG ساخته‌شدهٔ سرور رندر می‌شود. */
+        if (data && data.svg) {
+            displayEl.innerHTML = data.svg;
+            displayEl.classList.remove('login-captcha-loading', 'text-danger');
             displayEl.setAttribute('data-ready', '1');
         }
         if (data && data.token) {

@@ -18,7 +18,7 @@ final class LoginCaptchaService
     private const SESSION_KEY = 'login_captcha';
 
     /**
-     * @return array{token: string, display: string, svg: string}
+     * @return array{token: string, svg: string}
      */
     public function issue(Request $request): array
     {
@@ -34,9 +34,11 @@ final class LoginCaptchaService
             'expires' => now()->addMinutes($this->ttlMinutes())->timestamp,
         ]);
 
+        // پاسخ کپچا هرگز از سرور بیرون نمی‌رود؛ فقط تصویر SVG و توکن. پیش از این
+        // متن کد کنار توکن به مرورگر می‌رفت و هر اسکریپتی می‌توانست با یک
+        // درخواست GET کد را بخواند و بدون هیچ OCR وارد شود.
         return [
             'token' => $token,
-            'display' => $this->toDisplayString($code),
             'svg' => $svg,
         ];
     }
@@ -126,11 +128,6 @@ final class LoginCaptchaService
         return $code;
     }
 
-    public function toDisplayString(string $code): string
-    {
-        return $code;
-    }
-
     public function renderSvg(string $code): string
     {
         $chars = str_split($code);
@@ -158,7 +155,15 @@ final class LoginCaptchaService
             $x = 24 + ($index * 32);
             $y = 38 + random_int(-4, 4);
             $rotate = random_int(-18, 18);
-            $fill = sprintf('#%06x', random_int(0x1a1a2e, 0x4a5568));
+            // رنگ باید کانال‌به‌کانال تیره ساخته شود؛ یک بازهٔ ۲۴بیتی یکجا
+            // مقادیری مثل #2affff هم تولید می‌کرد که روی پلاک روشن دیده نمی‌شد
+            // و کاربر واقعی را از ورود بازمی‌داشت.
+            $fill = sprintf(
+                '#%02x%02x%02x',
+                random_int(0x1a, 0x4a),
+                random_int(0x1a, 0x55),
+                random_int(0x2e, 0x68)
+            );
             $text .= sprintf(
                 '<text x="%d" y="%d" fill="%s" font-family="Tahoma,Arial,sans-serif" font-size="26" font-weight="700" transform="rotate(%d %d %d)" direction="ltr">%s</text>',
                 $x,
@@ -172,7 +177,7 @@ final class LoginCaptchaService
         }
 
         return sprintf(
-            '<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d" viewBox="0 0 %d %d" role="img" aria-label="%s"><rect width="100%%" height="100%%" fill="#f8fafc" rx="8"/>%s%s</svg>',
+            '<svg xmlns="http://www.w3.org/2000/svg" width="%d" height="%d" viewBox="0 0 %d %d" style="max-width:100%%;height:auto" role="img" aria-label="%s"><rect width="100%%" height="100%%" fill="#f8fafc" rx="8"/>%s%s</svg>',
             $width,
             $height,
             $width,

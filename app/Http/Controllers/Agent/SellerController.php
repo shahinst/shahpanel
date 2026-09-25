@@ -130,6 +130,10 @@ class SellerController extends Controller
 
             if (! empty($validated['password'])) {
                 $validated['password'] = Hash::make($validated['password']);
+                // رمز که عوض شد، توکن‌های API همان کاربر هم باید بمیرند: وقتی ادمین
+                // رمز یک حساب لو رفته را ریست می‌کند، توکن ربات آن حساب همچنان
+                // کار می‌کرد و مهاجم دسترسی‌اش را حفظ می‌کرد.
+                app(\App\Services\ApiTokenService::class)->revokeAllForUser($seller, 'password_reset_by_staff');
             } else {
                 unset($validated['password']);
             }

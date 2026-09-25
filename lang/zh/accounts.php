@@ -308,4 +308,5 @@ TEXT,
     'copy_anyconnect_config' => '复制连接信息',
     'copy_anyconnect_config_copied' => '已复制',
     'copy_anyconnect_config_failed' => '无法复制',
+    'owner_seller_not_allowed' => '您无权代表该所有者进行操作。',
 ];

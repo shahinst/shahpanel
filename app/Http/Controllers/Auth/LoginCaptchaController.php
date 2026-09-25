@@ -13,9 +13,10 @@ class LoginCaptchaController extends Controller
     {
         $payload = $captcha->issue($request);
 
+        // فقط تصویر و توکن به کلاینت می‌رود؛ خودِ پاسخ کپچا سمت سرور (HMAC در
+        // سشن) می‌ماند تا این نقطه به یک سرویس «کد را به من بگو» تبدیل نشود.
         return response()->json([
             'token' => $payload['token'],
-            'display' => $payload['display'],
             'svg' => $payload['svg'],
         ]);
     }

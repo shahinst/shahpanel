@@ -21,11 +21,20 @@ class PortalIconController extends Controller
             abort(404);
         }
 
+        $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+
+        // این مسیر بیرون از هر گروه احراز هویت است و روی مبدأ خودِ پنل پاسخ
+        // می‌دهد. یک SVG می‌تواند <script> داشته باشد، پس آیکون‌های SVGِ قدیمی
+        // که پیش‌تر ذخیره شده‌اند روی دیسک می‌مانند اما دیگر سرو نمی‌شوند.
+        if ($extension === 'svg') {
+            abort(404);
+        }
+
         $absolute = Storage::disk('public')->path($path);
-        $mime = match (strtolower(pathinfo($filename, PATHINFO_EXTENSION))) {
+        $mime = match ($extension) {
             'jpg', 'jpeg' => 'image/jpeg',
             'webp' => 'image/webp',
-            'svg' => 'image/svg+xml',
+            'gif' => 'image/gif',
             'ico' => 'image/x-icon',
             default => 'image/png',
         };
@@ -33,6 +42,11 @@ class PortalIconController extends Controller
         return response()->file($absolute, [
             'Content-Type' => $mime,
             'Cache-Control' => 'public, max-age=604800, immutable',
+            // nosniff جلوی تفسیر یک بایت‌آرایهٔ دستکاری‌شده به‌عنوان HTML را
+            // می‌گیرد و CSP حتی اگر فایلی از گذشته اسکریپت داشته باشد اجرای آن
+            // را روی مبدأ پنل ممنوع می‌کند.
+            'X-Content-Type-Options' => 'nosniff',
+            'Content-Security-Policy' => "default-src 'none'; style-src 'unsafe-inline'",
         ]);
     }
 }

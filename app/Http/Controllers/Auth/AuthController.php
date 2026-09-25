@@ -114,9 +114,13 @@ class AuthController extends Controller
             }
 
             if ($this->twoFactor->isEnabled($authenticated)) {
+                // عمر نشست ۱۲۰ دقیقه است؛ بدون این انقضا یک چالش نیمه‌کاره روی
+                // رایانهٔ اشتراکی دو ساعت قابل تکمیل می‌ماند. کدِ TOTP هر ۳۰ ثانیه
+                // عوض می‌شود، پس ۵ دقیقه برای یک ورود واقعی کافی است.
                 $request->session()->put('two_factor_login', [
                     'user_id' => $authenticated->id,
                     'remember' => $request->boolean('remember'),
+                    'expires' => now()->addMinutes(5)->timestamp,
                 ]);
 
                 Auth::logout();
@@ -172,10 +176,12 @@ class AuthController extends Controller
 
     public function logout(Request $request, ?string $portal = null): RedirectResponse
     {
+        // «خروج» همیشه باید خروج کامل باشد. اگر در حالت جانشینی هستیم اول آن را
+        // ترک می‌کنیم (تا چیزی از نشست جانشینی باقی نماند) و بعد نشست حساب اصلی
+        // را هم می‌بندیم؛ پیش از این ادمین/نماینده‌ای که روی دستگاه مشتری خروج
+        // زده بود، با دسترسی کامل و بی‌خبر وارد باقی می‌ماند.
         if ($this->impersonation->isImpersonating()) {
-            $result = $this->impersonation->leave();
-
-            return redirect()->to($result['returnUrl']);
+            $this->impersonation->leave();
         }
 
         Auth::logout();

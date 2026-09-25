@@ -142,7 +142,26 @@ class AccountRefundService
                 $totalHours,
                 $ledger
             ): void {
-                $this->financialPlanService->restoreForAccount((int) $account->id, $refundRatio);
+                // Re-fetch the account under a row lock INSIDE the transaction. The guard at the
+                // top of this method runs before any work begins, so two concurrent refunds can
+                // both pass it: each would credit the owner and claw the money back from wallets
+                // that include the Admin's infinite one, paying out one purchase twice. Locking
+                // here serialises the two callers and the loser sees refunded_at already set.
+                $account = Account::query()->whereKey($account->id)->lockForUpdate()->firstOrFail();
+
+                if ($account->refunded_at !== null) {
+                    throw new \InvalidArgumentException(__('accounts.already_refunded'));
+                }
+
+                // The locked row is a fresh model instance, so the relations the rest of this
+                // closure relies on (package currency, server for the remote disable) have to be
+                // loaded on it and not only on the caller's copy.
+                $account->loadMissing(['ownerSeller.parent', 'package', 'packageDuration', 'server']);
+
+                // Scope the plan-credit restore to the invoice being refunded: an unscoped
+                // restore would hand back the plan credit consumed by every other renewal of
+                // this account as well.
+                $this->financialPlanService->restoreForAccount((int) $account->id, $refundRatio, (int) $invoice->id);
 
                 $this->accountService->deactivateRemoteForRefund($account);
 
@@ -224,6 +243,9 @@ class AccountRefundService
                     'refund_amount' => $refundAmount,
                     'owner_refund_amount' => $ownerRefundAmount,
                     'refund_ratio' => $refundRatio,
+                    // Recorded so reactivate() can re-consume plan credit for exactly the
+                    // invoice this refund restored, instead of the whole account history.
+                    'invoice_id' => (int) $invoice->id,
                     'owner_id' => (int) $owner->id,
                     'owner_role' => $owner->role->value,
                     'performed_by_id' => (int) $performedBy->id,
@@ -310,6 +332,7 @@ class AccountRefundService
         }
 
         $refundRatio = $this->lastRefundRatio($account);
+        $refundInvoiceId = $this->lastRefundInvoiceId($account);
 
         DB::transaction(function () use (
             $account,
@@ -317,9 +340,27 @@ class AccountRefundService
             $owner,
             $ledger,
             $ownerRefundAmount,
-            $refundRatio
+            $refundRatio,
+            $refundInvoiceId
         ): void {
-            $this->financialPlanService->reapplyForAccount((int) $account->id, $refundRatio);
+            // Same race as refund(): the refunded_at check at the top of this method happens
+            // before any wallet movement, so two concurrent reactivations both pass it and the
+            // owner is debited twice for a single refund. Re-fetch under a row lock here so the
+            // second caller waits and then finds refunded_at already cleared.
+            $account = Account::query()->whereKey($account->id)->lockForUpdate()->firstOrFail();
+
+            if ($account->refunded_at === null) {
+                throw new \InvalidArgumentException(__('accounts.not_refunded'));
+            }
+
+            // Relations must be re-loaded on the locked instance: the rest of this closure reads
+            // the package currency and the server, and mutates this row.
+            $account->loadMissing(['ownerSeller.parent', 'package', 'packageDuration', 'server']);
+
+            // Mirror of the scoped restore in refund(): only the invoice that was refunded gets
+            // its plan credit consumed again, otherwise reactivation would silently burn the
+            // plan credit of the account's other renewals.
+            $this->financialPlanService->reapplyForAccount((int) $account->id, $refundRatio, $refundInvoiceId);
 
             $context = [
                 'related_account_id' => $account->id,
@@ -504,6 +545,26 @@ class AccountRefundService
         }
 
         return bcdiv($refundAmount, $price, 4);
+    }
+
+    /**
+     * Invoice the latest refund was calculated from, so reactivation re-consumes plan credit for
+     * exactly the usages that refund restored. Null for refunds recorded before the invoice id
+     * was stamped into the log — those restored every usage of the account, so reversing them
+     * unscoped stays symmetric.
+     */
+    protected function lastRefundInvoiceId(Account $account): ?int
+    {
+        $log = ActivityLog::query()
+            ->where('action', 'account.refunded')
+            ->where('entity_id', $account->id)
+            ->orderByDesc('id')
+            ->first();
+
+        $payload = is_array($log?->payload) ? $log->payload : [];
+        $invoiceId = (int) ($payload['invoice_id'] ?? 0);
+
+        return $invoiceId > 0 ? $invoiceId : null;
     }
 
     protected function resolveLedgerCurrency(?Transaction $transaction = null, ?Account $account = null, ?Invoice $invoice = null): string

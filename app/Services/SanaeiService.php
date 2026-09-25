@@ -57,7 +57,10 @@ class SanaeiService
                 'server_id' => $server->id,
                 'host' => $server->host,
                 'port' => $server->port,
-                'web_base_path' => $server->web_base_path,
+                // web_base_path تنها ابزار مخفی‌سازیِ پنل 3x-ui است؛ نوشتن مقدارش
+                // در لاگ همان چیزی را لو می‌دهد که SanaeiPanelClient عمداً پنهان
+                // می‌کند.
+                'has_web_base_path' => filled($server->web_base_path),
                 'error' => $exception->getMessage(),
             ]);
 
@@ -1322,11 +1325,23 @@ class SanaeiService
 
         Log::channel('sanaei')->warning('Subscription fetch returned no config links', [
             'server_id' => $server->id,
-            'sub_id' => $subId,
-            'candidates' => $candidates,
+            'sub_id' => self::maskSubId($subId),
+            'candidates' => array_map(
+                static fn (string $url): string => SanaeiPanelClient::redactUrl($url),
+                $candidates
+            ),
         ]);
 
         return $this->subscriptionLinksCache[$cacheKey] = [];
+    }
+
+    /**
+     * subId خودش توکنِ لینک اشتراک است؛ برای همبستگی سطرهای لاگ چند نویسهٔ اول
+     * کافی است و نوشتن کاملش یعنی گذاشتن یک اعتبارنامهٔ زندهٔ کاربر در فایل لاگ.
+     */
+    protected static function maskSubId(string $subId): string
+    {
+        return $subId === '' ? '' : Str::limit($subId, 6, '…');
     }
 
     /**
@@ -1405,9 +1420,9 @@ class SanaeiService
             if (! $response->successful()) {
                 Log::channel('sanaei')->warning('Subscription fetch failed', [
                     'server_id' => $server->id,
-                    'sub_id' => $subId,
+                    'sub_id' => self::maskSubId($subId),
                     'status' => $response->status(),
-                    'url' => $subUrl,
+                    'url' => SanaeiPanelClient::redactUrl($subUrl),
                 ]);
 
                 return [];
@@ -1425,11 +1440,13 @@ class SanaeiService
             }
 
             if ($links === []) {
+                // body_prefix حذف شد: بدنهٔ اشتراک شامل لینک‌های vless/vmess با
+                // UUID و رمز واقعی کاربر است و لاگ جای نگه‌داشتن آن نیست.
                 Log::channel('sanaei')->warning('Subscription body had no parseable links', [
                     'server_id' => $server->id,
-                    'sub_id' => $subId,
-                    'url' => $subUrl,
-                    'body_prefix' => substr(trim($body), 0, 120),
+                    'sub_id' => self::maskSubId($subId),
+                    'url' => SanaeiPanelClient::redactUrl($subUrl),
+                    'body_length' => strlen($body),
                 ]);
             }
 
@@ -1437,8 +1454,8 @@ class SanaeiService
         } catch (\Throwable $exception) {
             Log::channel('sanaei')->warning('Subscription fetch error', [
                 'server_id' => $server->id,
-                'sub_id' => $subId,
-                'url' => $subUrl,
+                'sub_id' => self::maskSubId($subId),
+                'url' => SanaeiPanelClient::redactUrl($subUrl),
                 'error' => $exception->getMessage(),
             ]);
 

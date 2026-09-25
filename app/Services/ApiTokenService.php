@@ -7,6 +7,7 @@ use App\Enums\UserStatus;
 use App\Models\ApiToken;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -138,6 +139,10 @@ class ApiTokenService
     /**
      * Issue a token. The plaintext is returned once and never stored.
      *
+     * Pass $parent when the request that mints this token is itself
+     * authenticated by a token (POST /api/v1/auth/tokens). The new token is
+     * then bounded by that one and can never reach further.
+     *
      * @param  list<string>|null  $abilities
      * @return array{token: ApiToken, plain_text: string}
      */
@@ -148,12 +153,26 @@ class ApiTokenService
         ?Carbon $expiresAt = null,
         ?string $allowedIps = null,
         int $rateLimitPerMinute = 120,
+        ?ApiToken $parent = null,
     ): array {
         $this->assertUserMayHoldToken($user);
 
         // Filtered against the holder's role, so a hand-crafted request cannot
         // store an ability that role could never exercise.
         $abilities = $this->normaliseAbilities($abilities, $user->role);
+
+        // Escalation this closes: a token scoped to catalog:read could mint a
+        // token with *more* rights than itself — asking for an ability it did
+        // not hold left the list empty, an empty list meant "unrestricted", and
+        // the child walked away with full access, its own IP allowlist and a
+        // ten-year life that outlived revoking the parent. A child is now never
+        // wider than its parent in any of the three dimensions that matter:
+        // abilities, reachable addresses, lifetime.
+        if ($parent !== null) {
+            $abilities = $this->boundedByParent($abilities, $parent);
+            $allowedIps = $this->inheritedAllowedIps($allowedIps, $parent);
+            $expiresAt = $this->cappedExpiry($expiresAt, $parent);
+        }
 
         $plain = static::PREFIX.'_'.Str::random(48);
 
@@ -223,6 +242,34 @@ class ApiTokenService
         return $token;
     }
 
+    /**
+     * Revoke every live token of one user, e.g. after a password change.
+     *
+     * A token lives up to 30 days on its own, so without this a stolen bearer
+     * survived the very reaction a victim has — resetting their password — and
+     * a token minted before two-factor was switched on kept skipping it.
+     *
+     * The reason is only logged: api_tokens has no column for it, and adding
+     * one is a migration this change does not need.
+     */
+    public function revokeAllForUser(User $user, string $reason): int
+    {
+        $revoked = ApiToken::query()
+            ->where('user_id', $user->getKey())
+            ->whereNull('revoked_at')
+            ->update(['revoked_at' => now()]);
+
+        if ($revoked > 0) {
+            Log::info('API tokens revoked', [
+                'user_id' => $user->getKey(),
+                'reason' => $reason,
+                'count' => $revoked,
+            ]);
+        }
+
+        return $revoked;
+    }
+
     /** Record usage without racing other in-flight requests on the counter. */
     public function markUsed(ApiToken $token, ?string $ip): void
     {
@@ -260,8 +307,14 @@ class ApiTokenService
      * time by the role middleware — an unrestricted seller token gets 403 on
      * the agent-only routes exactly like a scoped one.
      *
+     * An explicit list that survives nothing is refused rather than turned into
+     * null: that fallback was the root of the escalation described in issue(),
+     * because "ask for an ability you may not have" answered "unrestricted".
+     *
      * @param  list<string>|null  $abilities
      * @return list<string>|null
+     *
+     * @throws ValidationException
      */
     protected function normaliseAbilities(?array $abilities, ?UserRole $role = null): ?array
     {
@@ -270,12 +323,92 @@ class ApiTokenService
         }
 
         $known = static::allAbilities($role);
+        // Group wildcards ("accounts:*") are documented in docs/API.md and are
+        // understood by ApiToken::can(), so they must survive the filter.
+        $groups = array_keys(static::abilityCatalog($role));
 
         $clean = array_values(array_unique(array_filter(
             $abilities,
-            static fn ($ability): bool => is_string($ability) && in_array($ability, $known, true),
+            static fn ($ability): bool => is_string($ability) && (
+                in_array($ability, $known, true)
+                || (str_ends_with($ability, ':*') && in_array(substr($ability, 0, -2), $groups, true))
+            ),
         )));
 
-        return $clean === [] ? null : $clean;
+        if ($clean === []) {
+            throw ValidationException::withMessages([
+                'abilities' => __('api.validation_failed'),
+            ]);
+        }
+
+        return $clean;
+    }
+
+    /**
+     * The abilities a child token may keep: the request, intersected with what
+     * the parent itself holds. Only an unrestricted parent may grant anything.
+     *
+     * @param  list<string>|null  $abilities
+     * @return list<string>|null
+     *
+     * @throws ValidationException
+     */
+    protected function boundedByParent(?array $abilities, ApiToken $parent): ?array
+    {
+        $parentAbilities = $parent->abilities;
+
+        if ($parentAbilities === null || $parentAbilities === [] || in_array('*', $parentAbilities, true)) {
+            return $abilities;
+        }
+
+        // "Give me everything" from a scoped parent means "give me exactly what
+        // the parent has" — never null, which would mean unrestricted.
+        if ($abilities === null) {
+            return array_values(array_unique(array_filter(
+                $parentAbilities,
+                static fn ($ability): bool => is_string($ability) && $ability !== '',
+            )));
+        }
+
+        $granted = array_values(array_filter(
+            $abilities,
+            static fn (string $ability): bool => $parent->can($ability),
+        ));
+
+        if ($granted === []) {
+            throw ValidationException::withMessages([
+                'abilities' => __('api.ability_missing', ['ability' => implode(', ', $abilities)]),
+            ]);
+        }
+
+        return $granted;
+    }
+
+    /**
+     * A child must not be reachable from more addresses than its parent.
+     *
+     * Exact CIDR intersection is not worth the complexity here, so a parent
+     * that has an allowlist hands its own list down; a narrower list for the
+     * child can still be set from the panel, where there is no parent token.
+     */
+    protected function inheritedAllowedIps(?string $allowedIps, ApiToken $parent): ?string
+    {
+        $parentIps = trim((string) $parent->allowed_ips);
+
+        return $parentIps !== '' ? $parentIps : $allowedIps;
+    }
+
+    /** A child expires no later than its parent, so the chain really does end. */
+    protected function cappedExpiry(?Carbon $expiresAt, ApiToken $parent): ?Carbon
+    {
+        $parentExpiry = $parent->expires_at;
+
+        if ($parentExpiry === null) {
+            return $expiresAt;
+        }
+
+        return $expiresAt === null || $expiresAt->greaterThan($parentExpiry)
+            ? $parentExpiry->copy()
+            : $expiresAt;
     }
 }

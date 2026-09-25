@@ -366,8 +366,16 @@ final class CiscoAnyconnectClient
             throw new RemoteProvisionException(__('services.cisco_invalid_command_value'));
         }
 
-        if ($value === '' || preg_match('/[\s"\\\\]/', $value) === 1) {
-            return '"'.str_replace(['\\', '"'], ['\\\\', '\\"'], $value).'"';
+        // The ASA CLI parser has no backslash escaping: `\\` and `\"` are stored
+        // literally, so the password written to the device stops matching the one
+        // the panel shows the customer and they simply cannot log in. Failing
+        // loudly beats silently provisioning an unusable account.
+        if (preg_match('/["\\\\]/', $value) === 1) {
+            throw new RemoteProvisionException(__('services.cisco_invalid_command_value'));
+        }
+
+        if ($value === '' || preg_match('/\s/', $value) === 1) {
+            return '"'.$value.'"';
         }
 
         return $value;

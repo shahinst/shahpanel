@@ -30,7 +30,9 @@ class PortalCustomizationController extends Controller
             'app_categories' => ['nullable', 'array'],
             'app_categories.*.name' => ['nullable', 'string', 'max:120'],
             'app_categories.*.sort' => ['nullable', 'integer', 'min:0', 'max:999'],
-            'app_categories.*.icon_source_url' => ['nullable', 'string', 'max:500'],
+            // SSRF: این مقدار مستقیم به دانلودکنندهٔ آیکون می‌رسد، پس باید یک نشانی
+            // واقعی http/https باشد تا file://، gopher:// و شبه‌نشانی‌ها رد شوند.
+            'app_categories.*.icon_source_url' => ['nullable', 'string', 'url:http,https', 'max:500'],
             'app_categories.*.icon_url' => ['nullable', 'string', 'max:500'],
             'app_categories.*.apps' => ['nullable', 'array'],
             'app_categories.*.apps.*.name' => ['nullable', 'string', 'max:120'],

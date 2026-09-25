@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\ActivityLog;
+use App\Services\ImpersonationService;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -32,6 +33,11 @@ class LogActivity
             return $response;
         }
 
+        // در حالت جانشینی، user() همان کاربرِ جانشین‌شده است. بدون ثبت شناسهٔ
+        // جانشین، کارِ یک نماینده داخل نشست فروشنده تنها به نام فروشنده ثبت
+        // می‌شد و ردّ حساب واقعی از بین می‌رفت.
+        $impersonatorId = $request->session()->get(ImpersonationService::SESSION_IMPERSONATOR_ID);
+
         try {
             ActivityLog::query()->create([
                 'user_id' => $user->id,
@@ -43,6 +49,7 @@ class LogActivity
                 'payload' => [
                     'route' => $request->route()?->getName(),
                     'input' => $request->except($this->except),
+                    'impersonator_id' => $impersonatorId === null ? null : (int) $impersonatorId,
                 ],
                 'created_at' => now(),
             ]);

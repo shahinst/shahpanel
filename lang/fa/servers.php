@@ -94,6 +94,7 @@ return [
     'accounts_pushed' => ':pushed اکانت اعمال شد (:failed خطا).',
     'traffic_synced' => 'سینک حجم از سرور انجام شد.',
     'web_base_path' => 'مسیر پایه وب (webBasePath)',
+    'web_base_path_invalid' => 'مسیر پایه وب فقط می‌تواند حرف، عدد و نویسه‌های . _ ~ - / داشته باشد.',
     'panel_username' => 'نام کاربری پنل',
     'panel_password' => 'رمز پنل',
     'mikrotik_username' => 'نام کاربری RouterOS',

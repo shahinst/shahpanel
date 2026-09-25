@@ -94,6 +94,7 @@ return [
     'accounts_pushed' => ':pushed accounts applied (:failed failed).',
     'traffic_synced' => 'Data was synced from the server.',
     'web_base_path' => 'Web base path (webBasePath)',
+    'web_base_path_invalid' => 'The web base path may contain only letters, digits and the characters . _ ~ - /.',
     'panel_username' => 'Panel username',
     'panel_password' => 'Panel password',
     'mikrotik_username' => 'RouterOS username',

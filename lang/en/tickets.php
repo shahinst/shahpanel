@@ -44,4 +44,5 @@ return [
     'status_resolved' => 'Resolved',
     'status_closed' => 'Closed',
     'migration_hint' => 'Run the database migration to enable tickets.',
+    'department_not_allowed' => 'This department is not available to you.',
 ];

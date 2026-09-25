@@ -16,6 +16,7 @@ return [
     'login_throttled' => '失败次数过多，请在 :seconds 秒后重试。',
     'two_factor_not_supported' => '该账户已启用两步验证，而机器人协议无法传递验证码。请为机器人使用未开启两步验证的独立账户。',
     'rate_limited' => '已达到请求上限，请在 :seconds 秒后重试。',
+    'ability_missing' => '该令牌缺少此请求所需的权限（:ability）。',
 
     'unknown_status' => '未知的状态筛选条件。',
     'username_taken' => '同名用户已存在。',
