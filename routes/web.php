@@ -255,7 +255,8 @@ Route::prefix($adminPath)->name('admin.')->middleware($adminMiddleware)->group(f
     Route::post('accounts/{account}/renew', [AdminAccountController::class, 'renew'])->middleware('throttle:money-actions')->name('accounts.renew');
     Route::post('accounts/{account}/disable', [AdminAccountController::class, 'disable'])->name('accounts.disable');
     Route::post('accounts/{account}/enable', [AdminAccountController::class, 'enable'])->name('accounts.enable');
-    Route::get('accounts/{account}/portal-link', [AdminAccountController::class, 'issuePortalLink'])->name('accounts.portal-link');
+    Route::get('accounts/{account}/portal-link', [AdminAccountController::class, 'openPortalLink'])->name('accounts.portal-link');
+    Route::post('accounts/{account}/portal-link/regenerate', [AdminAccountController::class, 'regeneratePortalLink'])->middleware('throttle:money-actions')->name('accounts.portal-link.regenerate');
     Route::get('accounts/{account}/config', [AdminAccountController::class, 'showConfig'])->name('accounts.config');
     Route::get('accounts/{account}/config/download', [AdminAccountController::class, 'downloadConfig'])->name('accounts.config.download');
     Route::get('accounts/{account}/config/qr', [AdminAccountController::class, 'downloadQr'])->name('accounts.config.qr');
@@ -441,7 +442,8 @@ Route::prefix($agentPath)->name('agent.')->middleware(['auth', 'role:agent', 'lo
     Route::post('accounts/{account}/renew', [AgentAccountController::class, 'renew'])->middleware('throttle:money-actions')->name('accounts.renew');
     Route::post('accounts/{account}/disable', [AgentAccountController::class, 'disable'])->name('accounts.disable');
     Route::post('accounts/{account}/enable', [AgentAccountController::class, 'enable'])->name('accounts.enable');
-    Route::get('accounts/{account}/portal-link', [AgentAccountController::class, 'issuePortalLink'])->name('accounts.portal-link');
+    Route::get('accounts/{account}/portal-link', [AgentAccountController::class, 'openPortalLink'])->name('accounts.portal-link');
+    Route::post('accounts/{account}/portal-link/regenerate', [AgentAccountController::class, 'regeneratePortalLink'])->middleware('throttle:money-actions')->name('accounts.portal-link.regenerate');
     Route::get('accounts/{account}/config', [AgentAccountController::class, 'showConfig'])->name('accounts.config');
     Route::get('accounts/{account}/config/download', [AgentAccountController::class, 'downloadConfig'])->name('accounts.config.download');
     Route::get('accounts/{account}/config/qr', [AgentAccountController::class, 'downloadQr'])->name('accounts.config.qr');
@@ -547,7 +549,8 @@ Route::prefix($sellerPath)->name('seller.')->middleware(['auth', 'role:seller', 
     Route::post('accounts/{account}/disable', [SellerAccountController::class, 'disable'])->name('accounts.disable');
     Route::post('accounts/{account}/enable', [SellerAccountController::class, 'enable'])->name('accounts.enable');
     Route::post('accounts/{account}/refund', [SellerAccountController::class, 'refund'])->middleware('throttle:money-actions')->name('accounts.refund');
-    Route::get('accounts/{account}/portal-link', [SellerAccountController::class, 'issuePortalLink'])->name('accounts.portal-link');
+    Route::get('accounts/{account}/portal-link', [SellerAccountController::class, 'openPortalLink'])->name('accounts.portal-link');
+    Route::post('accounts/{account}/portal-link/regenerate', [SellerAccountController::class, 'regeneratePortalLink'])->middleware('throttle:money-actions')->name('accounts.portal-link.regenerate');
     Route::get('accounts/{account}/config', [SellerAccountController::class, 'showConfig'])->name('accounts.config');
     Route::get('accounts/{account}/config/download', [SellerAccountController::class, 'downloadConfig'])->name('accounts.config.download');
     Route::get('accounts/{account}/config/qr', [SellerAccountController::class, 'downloadQr'])->name('accounts.config.qr');

@@ -53,7 +53,35 @@ class PortalLinkService
         return $this->isActive($account) ? $account->portal_token_expires_at : null;
     }
 
-    public function issue(Account $account): string
+    /**
+     * مسیر «همان لینک قبلی»: تا وقتی توکن فعلی زنده است دقیقاً همان نشانی
+     * برگردانده می‌شود. دلیلش رفتار واقعی نماینده‌هاست: نماینده لینک را یک بار
+     * به مشتری می‌دهد و مشتری همان را نگه می‌دارد تا مصرفش را ببیند؛ اگر هر
+     * بار دیدن یا فرستادن لینک توکن را عوض کند، لینکِ دست مشتری همان لحظه
+     * می‌مُرد و مشتری مجبور می‌شد باز هم لینک تازه بخواهد. فقط وقتی توکن
+     * منقضی شده (یا هرگز صادر نشده) باشد توکن نو ساخته می‌شود.
+     *
+     * هر جای پنل که لینک را فقط «نشان می‌دهد» یا «می‌فرستد» باید همین متد را
+     * صدا بزند، نه regenerate().
+     */
+    public function ensure(Account $account): string
+    {
+        $active = $this->publicUrlIfActive($account);
+
+        if ($active !== null) {
+            return $active;
+        }
+
+        return $this->regenerate($account);
+    }
+
+    /**
+     * چرخش عمدی توکن. این کار لینک قبلی را همان لحظه بی‌اعتبار می‌کند، پس فقط
+     * وقتی صدا زده می‌شود که خودِ نماینده دکمهٔ «ساخت لینک تازه» را زده باشد
+     * (مثلاً مشتری می‌گوید لینکش لو رفته). نام متد عمداً صریح است تا مخرب
+     * بودنش در هر محل فراخوانی پیدا باشد و کسی آن را در مسیر نمایشی نگذارد.
+     */
+    public function regenerate(Account $account): string
     {
         $account->update([
             'portal_token' => Str::random((int) config('shahpanel.portal_token_length', 32)),

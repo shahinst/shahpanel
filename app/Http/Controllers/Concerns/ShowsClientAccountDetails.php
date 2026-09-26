@@ -51,6 +51,9 @@ trait ShowsClientAccountDetails
             'portalIssueUrl' => \Route::has($panel.'.accounts.portal-link')
                 ? route($panel.'.accounts.portal-link', $account)
                 : null,
+            'portalRegenerateUrl' => \Route::has($panel.'.accounts.portal-link.regenerate')
+                ? route($panel.'.accounts.portal-link.regenerate', $account)
+                : null,
             'portalActiveUrl' => $portalLinks->publicUrlIfActive($account),
             'portalLinkTtlMinutes' => $portalLinks->ttlMinutes(),
             'portalLinkTtlLabel' => $portalLinks->ttlLabel(),

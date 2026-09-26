@@ -122,7 +122,11 @@ trait ManagesAccountLoginSms
                 return $redirect->with('error', __('accounts.send_login_info_already_sent'));
             }
 
-            app(PortalLinkService::class)->issue($account);
+            // پیامک همان لینک فعلی را می‌برد: ممکن است نماینده پیش از
+            // ارسال پیامک، همین لینک را دستی به مشتری داده باشد؛ صدور توکن تازه
+            // همان لینک را می‌کشت. ensure تنها وقتی لینک منقضی یا صادرنشده
+            // باشد توکن نو می‌سازد، پس پیامک هرگز لینک مرده نمی‌برد.
+            app(PortalLinkService::class)->ensure($account);
             $account->refresh();
             $result = $smsIrService->sendAccountLoginInfo($validated['mobile'], $account);
             $messageId = $result['messageId'];

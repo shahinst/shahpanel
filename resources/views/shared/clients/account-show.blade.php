@@ -408,13 +408,27 @@
                     <a href="{{ $portalIssueUrl }}" target="_blank" rel="noopener" class="btn btn-outline-info w-100 mb-2">
                         <i class="bx bx-link-external"></i> {{ __('menu.portal_link') }}
                     </a>
-                    <p class="text-muted small mb-0">{{ __('accounts.portal_link_sms_ttl_hint', ['duration' => $portalLinkTtlLabel]) }}</p>
+                    <p class="text-muted small mb-0">{{ __('accounts.portal_link_lifetime_hint', ['duration' => $portalLinkTtlLabel]) }}</p>
                     @if ($portalActiveUrl ?? null)
                         <p class="text-muted small mt-2 mb-1">{{ __('accounts.portal_link_current_active') }}</p>
                         <code dir="ltr" class="small d-block text-break">{{ $portalActiveUrl }}</code>
                         @if ($portalActiveExpiresAt ?? null)
                             <p class="text-muted small mt-1 mb-0">{{ __('accounts.portal_link_expires_at', ['time' => jalali_date($portalActiveExpiresAt, 'Y/m/d H:i')]) }}</p>
                         @endif
+                    @endif
+                    {{-- چرخاندن لینک یک کار عمدی است و لینکی را که مشتری دارد
+                         می‌کشد؛ پس دکمه جداست، تأیید می‌خواهد و فقط به کسی نشان داده
+                         می‌شود که مجوز تغییر اکانت را دارد — همان مجوزی که خاموش/روشن
+                         کردن اکانت می‌خواهد. --}}
+                    @if (($portalRegenerateUrl ?? null) && (auth()->user()?->can('update', $account) ?? false))
+                        <hr class="my-3">
+                        <p class="text-muted small mb-2">{{ __('accounts.portal_link_regenerate_hint') }}</p>
+                        <form method="POST" action="{{ $portalRegenerateUrl }}" onsubmit="return confirm('{{ __('accounts.portal_link_regenerate_confirm') }}')">
+                            @csrf
+                            <button type="submit" class="btn btn-outline-warning w-100">
+                                <i class="bx bx-refresh"></i> {{ __('accounts.portal_link_regenerate') }}
+                            </button>
+                        </form>
                     @endif
                 </div>
             </div>
@@ -424,7 +438,7 @@
                 <div class="card-body">
                     <a href="{{ $portalActiveUrl }}" target="_blank" rel="noopener" class="btn btn-outline-info w-100 mb-2">{{ __('menu.portal_link') }}</a>
                     <code dir="ltr" class="small d-block text-break mb-2">{{ $portalActiveUrl }}</code>
-                    <p class="text-muted small mb-0">{{ __('accounts.portal_link_sms_ttl_hint', ['duration' => $portalLinkTtlLabel]) }}</p>
+                    <p class="text-muted small mb-0">{{ __('accounts.portal_link_lifetime_hint', ['duration' => $portalLinkTtlLabel]) }}</p>
                     @if ($portalActiveExpiresAt ?? null)
                         <p class="text-muted small mt-1 mb-0">{{ __('accounts.portal_link_expires_at', ['time' => jalali_date($portalActiveExpiresAt, 'Y/m/d H:i')]) }}</p>
                     @endif

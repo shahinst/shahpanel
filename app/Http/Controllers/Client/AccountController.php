@@ -34,8 +34,11 @@ class AccountController extends Controller
 
         $detail = $detailService->build($account, $request->user());
         $portalLinks = app(PortalLinkService::class);
+        // این صفحه فقط لینک را نشان می‌دهد؛ اگر باز شدن صفحه توکن را عوض کند،
+        // لینکی که مشتری قبلاً ذخیره کرده از کار می‌افتد؛ پس همان لینک فعلی
+        // برگردانده می‌شود و فقط پس از انقضا لینک تازه صادر می‌شود.
         $portalActiveUrl = filled($account->portal_token)
-            ? $portalLinks->issue($account)
+            ? $portalLinks->ensure($account)
             : null;
 
         if ($detail['isPpp'] ?? false) {
@@ -50,6 +53,7 @@ class AccountController extends Controller
             'backUrl' => route('client.accounts.index'),
             'renewFormRoute' => null,
             'portalIssueUrl' => null,
+            'portalRegenerateUrl' => null,
             'portalActiveUrl' => $portalActiveUrl,
             'portalLinkTtlMinutes' => $portalLinks->ttlMinutes(),
             'portalLinkTtlLabel' => $portalLinks->ttlLabel(),

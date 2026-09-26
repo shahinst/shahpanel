@@ -137,6 +137,9 @@ trait ManagesSimplifiedStaffAccounts
             'portalIssueUrl' => \Route::has($prefix.'.accounts.portal-link')
                 ? route($prefix.'.accounts.portal-link', $account)
                 : null,
+            'portalRegenerateUrl' => \Route::has($prefix.'.accounts.portal-link.regenerate')
+                ? route($prefix.'.accounts.portal-link.regenerate', $account)
+                : null,
             'portalActiveUrl' => $portalLinks->publicUrlIfActive($account),
             'portalLinkTtlMinutes' => $portalLinks->ttlMinutes(),
             'portalLinkTtlLabel' => $portalLinks->ttlLabel(),
