@@ -116,19 +116,47 @@
         @endif
     </section>
 
-    @if ($isSanaei && ($sanaei['subscription_link'] || $sanaei['subscription_qr']))
+    @php
+        // همان آرایه‌ای که کنترلر فقط پس از حل شدن کپچا می‌سازد؛ پس این جعبه‌ها
+        // هم مثل جعبهٔ سابسکرایب برای بازدیدکنندهٔ بی‌کپچا هرگز رندر نمی‌شوند.
+        $portalConfigLinks = $sanaei['config_links'] ?? [];
+        $portalHasSubscription = (bool) $sanaei['subscription_link'] || (bool) $sanaei['subscription_qr'];
+    @endphp
+
+    @if ($isSanaei && ($portalHasSubscription || $portalConfigLinks !== []))
         <section class="portal-card">
-            <h2 class="portal-card__title">{{ __('accounts.portal_subscription') }}</h2>
+            <h2 class="portal-card__title">{{ __('accounts.connection_links') }}</h2>
+            {{-- portal-qr-grid از قبل دو ستونه است و تا امروز فقط یک ستونش پر
+                 می‌شد؛ لینک مستقیم در ستون دوم می‌نشیند و زیر ۵۲۰ پیکسل هر دو
+                 خودبه‌خود زیر هم می‌روند. --}}
             <div class="portal-qr-grid">
-                <div class="portal-qr-box">
-                    @if ($sanaei['subscription_qr'])
-                        <img src="data:image/png;base64,{{ $sanaei['subscription_qr'] }}" alt="{{ __('accounts.portal_sub_qr') }}">
-                    @endif
-                    @if ($sanaei['subscription_link'])
-                        <input type="text" class="portal-link" id="sanaei-sub-link" value="{{ $sanaei['subscription_link'] }}" readonly>
-                        <button type="button" class="portal-copy-btn" data-copy-target="sanaei-sub-link">{{ __('accounts.portal_copy') }}</button>
-                    @endif
-                </div>
+                @if ($portalHasSubscription)
+                    <div class="portal-qr-box">
+                        <p style="margin:0 0 .5rem;font-size:.82rem;font-weight:600;text-align:center;color:var(--portal-muted)">{{ __('accounts.subscription_link') }}</p>
+                        @if ($sanaei['subscription_qr'])
+                            <img src="data:image/png;base64,{{ $sanaei['subscription_qr'] }}" alt="{{ __('accounts.portal_sub_qr') }}">
+                        @endif
+                        @if ($sanaei['subscription_link'])
+                            <input type="text" class="portal-link" id="sanaei-sub-link" value="{{ $sanaei['subscription_link'] }}" readonly>
+                            <button type="button" class="portal-copy-btn" data-copy-target="sanaei-sub-link">{{ __('accounts.portal_copy') }}</button>
+                        @endif
+                    </div>
+                @endif
+                @forelse ($portalConfigLinks as $configLink)
+                    <div class="portal-qr-box">
+                        <p style="margin:0 0 .5rem;font-size:.82rem;font-weight:600;text-align:center;color:var(--portal-muted)">{{ $configLink['remark'] }}</p>
+                        <img src="data:image/png;base64,{{ $configLink['qr'] }}" alt="{{ __('accounts.portal_config_qr') }}">
+                        <input type="text" class="portal-link" id="portal-config-link-{{ $loop->index }}" value="{{ $configLink['uri'] }}" readonly>
+                        <button type="button" class="portal-copy-btn" data-copy-target="portal-config-link-{{ $loop->index }}">{{ __('accounts.portal_copy') }}</button>
+                    </div>
+                @empty
+                    {{-- کش اشتراک چند لحظه بعد از ساخت اکانت پر می‌شود؛ تا آن وقت
+                         جای QR را با یک توضیح پر می‌کنیم، نه با جعبهٔ خالی. --}}
+                    <div class="portal-qr-box">
+                        <p style="margin:0 0 .5rem;font-size:.82rem;font-weight:600;text-align:center;color:var(--portal-muted)">{{ __('accounts.direct_config_link') }}</p>
+                        <p class="portal-empty">{{ __('accounts.config_link_not_ready') }}</p>
+                    </div>
+                @endforelse
             </div>
         </section>
     @elseif ($isSanaei)

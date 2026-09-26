@@ -102,6 +102,7 @@ return [
     'pending_charges' => 'Top-up requests pending',
     'view_all_accounts' => 'View all accounts',
     'copy_card' => 'Copy card number',
+    'copy_link' => 'Copy link',
     'copied' => 'Copied',
     'card_holder' => 'Card holder',
     'buy_first_account_hint' => 'You do not have a VPN account yet — choose a package from the storefront.',

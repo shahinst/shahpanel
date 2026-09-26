@@ -62,7 +62,7 @@ class ClientAccountDetailService
 
         $panelV2ray = $account->service_type->isPanelV2ray()
             ? $this->sanaeiPortalService->portalAssets($account)
-            : ['subscription_link' => null, 'subscription_qr' => null];
+            : ['subscription_link' => null, 'subscription_qr' => null, 'config_links' => []];
 
         $purchaseInvoice = $account->invoices
             ->first(fn (Invoice $invoice): bool => $invoice->type === InvoiceType::NewAccount);

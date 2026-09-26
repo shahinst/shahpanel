@@ -284,23 +284,70 @@
         @endif
 
 
-        @if ($isPanelV2ray && ($panelV2ray['subscription_link'] || $panelV2ray['subscription_qr']))
-            <div class="panel-modern-card mb-3">
-                <div class="card-head"><h3><i class="bx bx-link"></i> {{ __('accounts.portal_subscription') }}</h3></div>
-                <div class="card-body">
-                    @if ($panelV2ray['subscription_qr'])
-                        <div class="text-center mb-3">
-                            <img src="data:image/png;base64,{{ $panelV2ray['subscription_qr'] }}" alt="QR" class="img-fluid" style="max-width: 260px;">
+        {{-- دو جعبه در کنار هم: نشانی سابسکرایب و لینک مستقیم کانفیگ. بخشی از
+             کلاینت‌ها سابسکرایب را نمی‌فهمند و فقط با URI مستقیم وصل می‌شوند، پس
+             هر دو باید همین‌جا با QR و دکمهٔ کپی جداگانه در دسترس باشند. --}}
+        @if ($isPanelV2ray)
+            @php
+                $subscriptionLink = $panelV2ray['subscription_link'] ?? null;
+                $subscriptionQr = $panelV2ray['subscription_qr'] ?? null;
+                $configLinks = $panelV2ray['config_links'] ?? [];
+                $hasSubscriptionBox = (bool) $subscriptionLink || (bool) $subscriptionQr;
+                // اگر جعبهٔ سابسکرایب نباشد، جعبهٔ کانفیگ تمام عرض را می‌گیرد تا
+                // نیمهٔ خالیِ کنارش صفحه را شکسته نشان ندهد. روی موبایل هر دو
+                // ستون col-md-6 خودبه‌خود زیر هم می‌روند.
+                $configBoxClass = $hasSubscriptionBox ? 'col-md-6' : 'col-12';
+            @endphp
+            <div class="row g-3 mb-3">
+                @if ($hasSubscriptionBox)
+                    <div class="col-md-6">
+                        <div class="panel-modern-card h-100 mb-0">
+                            <div class="card-head"><h3><i class="bx bx-link"></i> {{ __('accounts.portal_subscription') }}</h3></div>
+                            <div class="card-body">
+                                @if ($subscriptionQr)
+                                    <div class="text-center mb-3">
+                                        <img src="data:image/png;base64,{{ $subscriptionQr }}" alt="{{ __('accounts.portal_sub_qr') }}" class="img-fluid" style="max-width: 220px;">
+                                    </div>
+                                @endif
+                                @if ($subscriptionLink)
+                                    <label class="form-label small text-muted" for="sub-link-input">{{ __('accounts.subscription_link') }}</label>
+                                    <div class="input-group mb-2">
+                                        <input type="text" class="form-control" dir="ltr" readonly value="{{ $subscriptionLink }}" id="sub-link-input">
+                                        <button type="button" class="btn btn-outline-secondary" onclick="navigator.clipboard.writeText(document.getElementById('sub-link-input').value)">{{ __('clients.copy_link') }}</button>
+                                    </div>
+                                    <a href="{{ $subscriptionLink }}" target="_blank" rel="noopener" class="btn btn-sm btn-primary">{{ __('accounts.open_subscription') }}</a>
+                                @endif
+                            </div>
                         </div>
-                    @endif
-                    @if ($panelV2ray['subscription_link'])
-                        <label class="form-label small text-muted">{{ __('accounts.subscription_link') }}</label>
-                        <div class="input-group mb-2">
-                            <input type="text" class="form-control" dir="ltr" readonly value="{{ $panelV2ray['subscription_link'] }}" id="sub-link-input">
-                            <button type="button" class="btn btn-outline-secondary" onclick="navigator.clipboard.writeText(document.getElementById('sub-link-input').value)">{{ __('clients.copy_card') }}</button>
+                    </div>
+                @endif
+
+                <div class="{{ $configBoxClass }}">
+                    <div class="panel-modern-card h-100 mb-0">
+                        <div class="card-head"><h3><i class="bx bx-qr-scan"></i> {{ __('accounts.direct_config_link') }}</h3></div>
+                        <div class="card-body">
+                            {{-- اکانت چند-اینباندی چند لینک دارد؛ هرکدام با نام خودش،
+                                 QR خودش و دکمهٔ کپی خودش پشت سر هم می‌آید تا با سه
+                                 لینک هم چیزی ناقص به نظر نرسد. --}}
+                            @forelse ($configLinks as $configLink)
+                                <div class="@if ($loop->last) mb-0 @else mb-3 pb-3 border-bottom @endif">
+                                    <div class="small text-muted text-center mb-2 text-break">{{ $configLink['remark'] }}</div>
+                                    <div class="text-center mb-2">
+                                        <img src="data:image/png;base64,{{ $configLink['qr'] }}" alt="{{ __('accounts.portal_config_qr') }}" class="img-fluid" style="max-width: 220px;">
+                                    </div>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" dir="ltr" readonly value="{{ $configLink['uri'] }}" id="config-link-input-{{ $loop->index }}">
+                                        <button type="button" class="btn btn-outline-secondary" onclick="navigator.clipboard.writeText(document.getElementById('config-link-input-{{ $loop->index }}').value)">{{ __('clients.copy_link') }}</button>
+                                    </div>
+                                </div>
+                            @empty
+                                {{-- کش اشتراک را RefreshSubscriptionCacheJob کمی بعد از
+                                     ساخت اکانت پر می‌کند؛ تا آن لحظه جعبهٔ خالی یا QR
+                                     خراب نشان نمی‌دهیم. --}}
+                                <p class="text-muted small mb-0">{{ __('accounts.config_link_not_ready') }}</p>
+                            @endforelse
                         </div>
-                        <a href="{{ $panelV2ray['subscription_link'] }}" target="_blank" rel="noopener" class="btn btn-sm btn-primary">{{ __('accounts.open_subscription') }}</a>
-                    @endif
+                    </div>
                 </div>
             </div>
         @endif

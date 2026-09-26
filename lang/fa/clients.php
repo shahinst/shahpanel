@@ -102,6 +102,7 @@ return [
     'pending_charges' => 'درخواست شارژ در انتظار',
     'view_all_accounts' => 'مشاهده همه اکانت‌ها',
     'copy_card' => 'کپی شماره کارت',
+    'copy_link' => 'کپی لینک',
     'copied' => 'کپی شد',
     'card_holder' => 'دارنده کارت',
     'buy_first_account_hint' => 'هنوز اکانت VPN ندارید — از فروشگاه یک پکیج انتخاب کنید.',

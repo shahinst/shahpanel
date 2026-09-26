@@ -51,16 +51,20 @@ class SanaeiPortalService
     }
 
     /**
-     * @return array{subscription_link: ?string, subscription_qr: ?string}
+     * @return array{subscription_link: ?string, subscription_qr: ?string, config_links: list<array{uri: string, remark: string, qr: string}>}
      */
     public function portalAssets(Account $account): array
     {
+        // لینک‌های مستقیم در هر سه مسیر خروجی یکسان‌اند، پس یک‌بار ساخته می‌شوند.
+        $configLinks = $this->configLinks($account);
+
         $stored = $this->storedSubscriptionLink($account);
 
         if ($stored !== null) {
             return [
                 'subscription_link' => $stored,
                 'subscription_qr' => $this->qrBase64($stored),
+                'config_links' => $configLinks,
             ];
         }
 
@@ -68,6 +72,7 @@ class SanaeiPortalService
             return [
                 'subscription_link' => null,
                 'subscription_qr' => null,
+                'config_links' => $configLinks,
             ];
         }
 
@@ -79,7 +84,65 @@ class SanaeiPortalService
         return [
             'subscription_link' => $subscriptionLink,
             'subscription_qr' => $subscriptionLink !== null ? $this->qrBase64($subscriptionLink) : null,
+            'config_links' => $configLinks,
         ];
+    }
+
+    /**
+     * لینک‌های مستقیم کانفیگ (vless/vmess/trojan/ss) همراه با QR هرکدام.
+     *
+     * چرا لازم است: بخشی از کلاینت‌ها نشانی سابسکرایب را نمی‌فهمند و فقط با
+     * URI مستقیم وصل می‌شوند؛ بدون این جعبه، پشتیبانی باید دستی لینک بفرستد.
+     *
+     * چرا بر اساس طرح (scheme) فیلتر می‌شود: SubscriptionFeedService::links()
+     * وقتی کشِ محتوا خالی باشد نشانی سابسکرایبِ ذخیره‌شده را برمی‌گرداند؛ همان
+     * چیزی که در جعبهٔ سابسکرایب نشسته است و تکرارش در جعبهٔ «لینک مستقیم» فقط
+     * کاربر را گمراه می‌کند. پس فقط خطوطی می‌مانند که واقعاً URI کانفیگ‌اند و
+     * تا پر شدن کش (کار RefreshSubscriptionCacheJob) فهرست خالی می‌ماند.
+     *
+     * چرا با app() و نه تزریق در سازنده: SubscriptionFeedService خودش همین
+     * سرویس را در سازنده می‌گیرد و تزریق دوطرفه کانتینر را در حلقه می‌اندازد.
+     *
+     * @return list<array{uri: string, remark: string, qr: string}>
+     */
+    public function configLinks(Account $account): array
+    {
+        $links = [];
+
+        foreach (app(SubscriptionFeedService::class)->links($account) as $line) {
+            $uri = trim((string) $line);
+            $scheme = strtolower((string) strstr($uri, '://', true));
+
+            if (! in_array($scheme, ['vless', 'vmess', 'trojan', 'ss'], true)) {
+                continue;
+            }
+
+            $links[] = [
+                'uri' => $uri,
+                'remark' => $this->configLinkRemark($uri, $scheme),
+                'qr' => $this->qrBase64($uri),
+            ];
+        }
+
+        return $links;
+    }
+
+    /**
+     * نامی که کنار هر QR چاپ می‌شود. یک اکانت سنایی با دو اینباند دو لینک دارد
+     * و بدون این نام معلوم نیست کدام QR مال کدام سرویس است. اگر پنل نامی
+     * نگذاشته باشد نام طرح جای خالی را پر می‌کند تا برچسب خالی چاپ نشود.
+     */
+    protected function configLinkRemark(string $uri, string $scheme): string
+    {
+        if ($scheme === 'vmess') {
+            // بدنهٔ vmess:// یک JSON کدشده با base64 است و نام در کلید ps می‌نشیند.
+            $payload = json_decode((string) base64_decode(substr($uri, 8), true), true);
+            $remark = is_array($payload) ? trim((string) ($payload['ps'] ?? '')) : '';
+        } else {
+            $remark = trim(rawurldecode((string) (parse_url($uri, PHP_URL_FRAGMENT) ?? '')));
+        }
+
+        return $remark !== '' ? $remark : strtoupper($scheme);
     }
 
     protected function backfillSubId(Account $account): void

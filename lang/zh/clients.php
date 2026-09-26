@@ -102,6 +102,7 @@ return [
     'pending_charges' => '待处理的充值申请',
     'view_all_accounts' => '查看全部账号',
     'copy_card' => '复制卡号',
+    'copy_link' => '复制链接',
     'copied' => '已复制',
     'card_holder' => '持卡人',
     'buy_first_account_hint' => '您还没有 VPN 账号 —— 请从商店中选择一个套餐。',
