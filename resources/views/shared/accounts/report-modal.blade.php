@@ -47,7 +47,10 @@
         'lifetime_logged' => __('accounts.admin_report_lifetime_logged'),
         'lifetime_logged_hint' => __('accounts.admin_report_lifetime_logged_hint'),
     ];
-    $reportBaseUrl = $reportBaseUrl ?? url('/'.$reportPrefix.'/accounts');
+    // $reportPrefix نام نقش است (admin/agent/seller) نه بخشی از آدرس.
+    // مسیر پنل مدیر موقع نصب تصادفی می‌شود، پس باید از روی نقش حل شود
+    // وگرنه آدرس /admin/... ساخته می‌شود که هیچ مسیری با آن مطابقت ندارد.
+    $reportBaseUrl = $reportBaseUrl ?? url('/'.\App\Support\PortalPaths::slug($reportPrefix).'/accounts');
 @endphp
 
 <div class="modal admin-account-report-modal" id="admin-account-report-modal" tabindex="-1" role="dialog" aria-labelledby="admin-account-report-title" hidden>
