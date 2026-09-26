@@ -27,7 +27,7 @@
             <div class="row g-3">
                 <div class="col-md-5">
                     <x-form.group label="{{ __('ui.expiry_alert_days_label') }}"
-                                  hint="{{ __('ui.expiry_alert_days_hint', [':min' => persian_digits(T::MIN_DAYS), ':max' => persian_digits(T::MAX_DAYS), ':default' => persian_digits(T::DEFAULT_DAYS)]) }}">
+                                  hint="{{ __('ui.expiry_alert_days_hint', ['min' => persian_digits(T::MIN_DAYS), 'max' => persian_digits(T::MAX_DAYS), 'default' => persian_digits(T::DEFAULT_DAYS)]) }}">
                         <input type="number" name="days" dir="ltr" class="form-control"
                                min="{{ T::MIN_DAYS }}" max="{{ T::MAX_DAYS }}" step="1" required
                                value="{{ old('days', $days) }}">
@@ -37,7 +37,7 @@
 
                 <div class="col-md-5">
                     <x-form.group label="{{ __('ui.volume_alert_mb_label') }}"
-                                  hint="{{ __('ui.volume_alert_mb_hint', [':min' => persian_digits(T::MIN_VOLUME_MB), ':max' => persian_digits(T::MAX_VOLUME_MB), ':default' => persian_digits(T::DEFAULT_VOLUME_MB)]) }}">
+                                  hint="{{ __('ui.volume_alert_mb_hint', ['min' => persian_digits(T::MIN_VOLUME_MB), 'max' => persian_digits(T::MAX_VOLUME_MB), 'default' => persian_digits(T::DEFAULT_VOLUME_MB)]) }}">
                         <input type="number" name="volume_mb" dir="ltr" class="form-control"
                                min="{{ T::MIN_VOLUME_MB }}" max="{{ T::MAX_VOLUME_MB }}" step="1" required
                                value="{{ old('volume_mb', $volumeMb) }}">

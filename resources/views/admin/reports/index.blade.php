@@ -37,7 +37,7 @@
                 <a href="{{ route('admin.reports.index') }}" class="btn btn-outline-secondary btn-sm">{{ __('ui.last_30_days') }}</a>
             </div>
             <div class="col-md-3 text-md-end">
-                <span class="text-muted small">{{ __('ui.range_from_to', [':from' => jalali_date($from,'Y/m/d'), ':to' => jalali_date($to,'Y/m/d')]) }}</span>
+                <span class="text-muted small">{{ __('ui.range_from_to', ['from' => jalali_date($from,'Y/m/d'), 'to' => jalali_date($to,'Y/m/d')]) }}</span>
             </div>
         </form>
     </div>
@@ -47,20 +47,20 @@
 <h5 class="text-muted mb-2"><i class="bx bx-calendar"></i> {{ __('ui.reports_period_performance') }}</h5>
 <div class="row">
     <x-stat-card title="{{ __('ui.reports_total_revenue') }}" :value="format_toman($period['revenueTotal'])" icon="bx-wallet" color="success"
-                 :hint="__('ui.reports_revenue_hint', [':new' => format_toman($period['revenueNew']), ':renewal' => format_toman($period['revenueRenewal'])])" />
+                 :hint="__('ui.reports_revenue_hint', ['new' => format_toman($period['revenueNew']), 'renewal' => format_toman($period['revenueRenewal'])])" />
     <x-stat-card title="{{ __('ui.reports_new_accounts') }}" :value="persian_digits($period['newAccounts'])" icon="bx-plus-circle" color="primary"
-                 :hint="__('ui.reports_renewals_in_period', [':count' => persian_digits($period['countRenewalInvoices'])])" />
+                 :hint="__('ui.reports_renewals_in_period', ['count' => persian_digits($period['countRenewalInvoices'])])" />
     <x-stat-card title="{{ __('ui.reports_wallet_deposits') }}" :value="format_toman($period['deposits'])" icon="bx-credit-card" color="warning"
                  :hint="__('ui.reports_deposits_hint')" />
     <x-stat-card title="{{ __('ui.reports_refunds') }}" :value="persian_digits($period['refundsCount'])" icon="bx-undo" color="danger"
-                 :hint="__('ui.amount_x', [':amount' => format_toman($period['refundsAmount'])])" />
+                 :hint="__('ui.amount_x', ['amount' => format_toman($period['refundsAmount'])])" />
 </div>
 <div class="row">
     <x-stat-card title="{{ __('ui.reports_new_agents') }}" :value="persian_digits($period['newAgents'])" icon="bx-user-pin" color="primary" />
     <x-stat-card title="{{ __('ui.reports_new_sellers') }}" :value="persian_digits($period['newSellers'])" icon="bx-user" color="primary" />
     <x-stat-card title="{{ __('ui.reports_new_clients') }}" :value="persian_digits($period['newClients'])" icon="bx-group" color="primary" />
     <x-stat-card title="{{ __('ui.reports_admin_revenue') }}" :value="format_toman($period['adminRevenue'])" icon="bx-trending-up" color="success"
-                 :hint="__('ui.reports_agent_margin_hint', [':amount' => format_toman($period['agentMargin'])])" />
+                 :hint="__('ui.reports_agent_margin_hint', ['amount' => format_toman($period['agentMargin'])])" />
 </div>
 
 {{-- ============ Trends ============ --}}
@@ -80,7 +80,7 @@
 </div>
 
 {{-- ============ Current account state ============ --}}
-<h5 class="text-muted mb-2 mt-2"><i class="bx bx-server"></i> {{ __('ui.reports_current_account_state', [':total' => persian_digits($state['totalAccounts'])]) }}</h5>
+<h5 class="text-muted mb-2 mt-2"><i class="bx bx-server"></i> {{ __('ui.reports_current_account_state', ['total' => persian_digits($state['totalAccounts'])]) }}</h5>
 <div class="row">
     <div class="col-lg-6">
         <div class="card h-100">
@@ -96,8 +96,8 @@
                     @endforeach
                 </table>
                 <div class="mt-3 d-flex gap-3 flex-wrap">
-                    <span class="small">⏳ {{ __('ui.reports_expiring_soon', [':days' => persian_digits($state['thresholdDays'])]) }} <strong class="text-danger">{{ persian_digits($state['expiringSoon']) }}</strong></span>
-                    <span class="small">📉 {{ __('ui.reports_low_volume', [':size' => format_data_size($state['thresholdBytes'])]) }} <strong class="text-warning">{{ persian_digits($state['lowVolume']) }}</strong></span>
+                    <span class="small">⏳ {{ __('ui.reports_expiring_soon', ['days' => persian_digits($state['thresholdDays'])]) }} <strong class="text-danger">{{ persian_digits($state['expiringSoon']) }}</strong></span>
+                    <span class="small">📉 {{ __('ui.reports_low_volume', ['size' => format_data_size($state['thresholdBytes'])]) }} <strong class="text-warning">{{ persian_digits($state['lowVolume']) }}</strong></span>
                 </div>
             </div>
         </div>
@@ -154,9 +154,9 @@
 <h5 class="text-muted mb-2 mt-2"><i class="bx bx-group"></i> {{ __('ui.reports_agents_and_sellers') }}</h5>
 <div class="row">
     <x-stat-card title="{{ __('ui.agents_plural') }}" :value="persian_digits($users['totalAgents'])" icon="bx-user-pin" color="primary"
-                 :hint="__('ui.total_balance_x', [':amount' => format_toman($users['walletAgents'])])" />
+                 :hint="__('ui.total_balance_x', ['amount' => format_toman($users['walletAgents'])])" />
     <x-stat-card title="{{ __('ui.sellers_plural') }}" :value="persian_digits($users['totalSellers'])" icon="bx-user" color="primary"
-                 :hint="__('ui.total_balance_x', [':amount' => format_toman($users['walletSellers'])])" />
+                 :hint="__('ui.total_balance_x', ['amount' => format_toman($users['walletSellers'])])" />
     <x-stat-card title="{{ __('ui.clients_plural') }}" :value="persian_digits($users['totalClients'])" icon="bx-group" color="primary" />
     <x-stat-card title="{{ __('ui.reports_total_wallet_balance') }}" :value="format_toman(bcadd((string)$users['walletAgents'], (string)$users['walletSellers'], 2))" icon="bx-wallet" color="success" />
 </div>

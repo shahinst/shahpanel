@@ -6,6 +6,7 @@
     "license": "proprietary",
     "require": {
         "php": "^8.2",
+        "ext-zip": "*",
         "barryvdh/laravel-dompdf": "^3.1",
         "endroid/qr-code": "^5.0",
         "evilfreelancer/routeros-api-php": "^1.7",

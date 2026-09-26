@@ -143,8 +143,8 @@
     >
     <p class="help-block text-muted small mb-0">{{ __('accounts.service_username_hint') }}</p>
 </x-form.group>
-<x-form.group :label="__('ui.x_of_client', [':field' => __('auth.email')])">
-    <input name="client_email" type="email" value="{{ old('client_email', $account->client_email) }}" class="form-control">
+<x-form.group :label="__('ui.x_of_client', ['field' => __('auth.email')])">
+    <input name="client_email" type="text" value="{{ old('client_email', $account->client_email) }}" class="form-control">
 </x-form.group>
 @else
 @php

@@ -291,6 +291,7 @@ Route::prefix($adminPath)->name('admin.')->middleware($adminMiddleware)->group(f
     Route::post('settings/server-backups/telegram', [AdminServerBackupController::class, 'updateTelegram'])->name('settings.server-backups.telegram');
     Route::post('settings/server-backups/telegram/test', [AdminServerBackupController::class, 'testTelegram'])->name('settings.server-backups.telegram-test');
     Route::post('settings/server-backups/schedule', [AdminServerBackupController::class, 'updateSchedule'])->name('settings.server-backups.schedule');
+    Route::post('settings/server-backups/database-schedule', [AdminServerBackupController::class, 'updateDatabaseSchedule'])->name('settings.server-backups.database-schedule');
     Route::get('settings/server-backups/{serverBackup}', [AdminServerBackupController::class, 'show'])->name('settings.server-backups.show');
 
     Route::get('modules', [AdminModuleController::class, 'index'])->name('modules.index');

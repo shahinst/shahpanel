@@ -22,6 +22,13 @@ class ServerBackupTelegramNotifier
     private const API_BASE = 'https://api.telegram.org/bot';
 
     /**
+     * The panel database has no server row and therefore no name to slugify, so
+     * its hashtag is fixed. It stays ASCII because Telegram only accepts
+     * [A-Za-z0-9_] in a hashtag.
+     */
+    public const DATABASE_HASHTAG = '#panel_database';
+
+    /**
      * Telegram's own hard limit for documents uploaded by a bot. Anything above
      * it is rejected no matter how long we wait, so it is checked locally
      * instead of being discovered after a 50 MB upload.
@@ -62,6 +69,10 @@ class ServerBackupTelegramNotifier
         foreach ($results as $result) {
             $path = (string) ($result['zip_path'] ?? '');
 
+            // هر سه حالتِ «فایلی نمی‌رود» — بک‌آپ ناموفق، آرشیوِ بزرگ‌تر از سقف
+            // تلگرام، و فایلی که سر وقت ارسال روی دیسک نیست — پیش از این حلقه در
+            // همان گزارش با دلیل و مسیر دقیق نوشته شده‌اند (serverLines)، وگرنه
+            // این continue بی‌صدا می‌شد و ادمین فقط می‌دید پیام آمده و فایل نه.
             if (! $result['ok'] || $result['too_large'] || $path === '' || ! is_file($path)) {
                 continue;
             }
@@ -73,7 +84,8 @@ class ServerBackupTelegramNotifier
             );
 
             if (! $delivered) {
-                $undelivered[] = (string) $result['server_name'];
+                // مسیر روی دیسک همراه نام سرور می‌رود تا ادمین بتواند دستی برش دارد.
+                $undelivered[] = (string) $result['server_name'].' → '.$path;
             }
         }
 
@@ -83,6 +95,49 @@ class ServerBackupTelegramNotifier
             $this->sendMessage('⚠️ '.e(__('server_backups.tg_upload_failed', [
                 'servers' => implode(' | ', $undelivered),
             ])));
+        }
+
+        return $sent;
+    }
+
+    /**
+     * The panel's own database backup. Deliberately its own message and its own
+     * schedule: the admin switches it on separately from the servers, so a
+     * database dump must never be hidden inside a server report (or suppressed
+     * because no server happened to be due at the same minute).
+     *
+     * @param  array{
+     *     ok: bool,
+     *     error: ?string,
+     *     database: string,
+     *     driver: string,
+     *     bytes: int,
+     *     zip_path: ?string,
+     *     zip_filename: ?string,
+     *     too_large: bool
+     * }  $result
+     */
+    public function sendDatabaseBackup(string $slot, array $result): bool
+    {
+        // گزارش مثل سرورها *قبل* از فایل می‌رود: اگر تلگرام سندِ ده‌ها مگابایتی را
+        // رد کند، وضعیت و مسیر فایل باید رسیده باشد.
+        $sent = $this->sendMessage($this->buildDatabaseReport($slot, $result));
+
+        $path = (string) ($result['zip_path'] ?? '');
+
+        // دلیلِ هر یک از این حالت‌ها در همان گزارش بالا آمده است.
+        if (! $result['ok'] || $result['too_large'] || $path === '' || ! is_file($path)) {
+            return $sent;
+        }
+
+        $delivered = $this->sendDocument(
+            $path,
+            (string) ($result['zip_filename'] ?? basename($path)),
+            $this->buildDatabaseCaption($result),
+        );
+
+        if (! $delivered) {
+            $this->sendMessage('⚠️ '.e(__('server_backups.tg_db_upload_failed', ['path' => $path])));
         }
 
         return $sent;
@@ -276,6 +331,19 @@ class ServerBackupTelegramNotifier
             return $lines;
         }
 
+        $path = (string) ($result['zip_path'] ?? '');
+
+        // آرشیو باید همین لحظه روی دیسک باشد، وگرنه چند خط بعد sendDocument
+        // نمی‌تواند بفرستدش. مسیر دقیق در پیام می‌آید چون دلیلِ نبودن فایل
+        // (مجوز، پاک‌شدن، دیسک پر) فقط روی همان سرور قابل بررسی است.
+        if ($path === '' || ! is_file($path)) {
+            $lines[] = '🚫 '.e(__('server_backups.tg_line_file_missing', [
+                'path' => $path !== '' ? $path : __('server_backups.tg_unknown_path'),
+            ]));
+
+            return $lines;
+        }
+
         $lines[] = '📎 '.e((string) ($result['zip_filename'] ?? ''));
 
         return $lines;
@@ -290,6 +358,86 @@ class ServerBackupTelegramNotifier
 
         return '📦 '.e($name)."\n"
             .'🏷 '.e($this->hashtag((int) ($result['server_id'] ?? 0), $name))."\n"
+            .'💾 '.e(format_data_size((int) ($result['bytes'] ?? 0)))."\n"
+            .'📅 '.e($this->stamp());
+    }
+
+    /**
+     * Same shape as the server report — status, what was backed up, size, exact
+     * date and time, a hashtag and one emoji per line — so both messages read
+     * the same in the admin's chat history.
+     *
+     * @param  array<string, mixed>  $result
+     */
+    protected function buildDatabaseReport(string $slot, array $result): string
+    {
+        $ok = (bool) ($result['ok'] ?? false);
+
+        $lines = [
+            '<b>'.e(($ok ? '✅ ' : '❌ ').__($ok
+                ? 'server_backups.tg_db_title_success'
+                : 'server_backups.tg_db_title_failed')).'</b>',
+            '',
+            '🕒 '.e(__('server_backups.tg_line_slot', [
+                'time' => persian_digits($slot),
+                'timezone' => (string) config('app.timezone'),
+            ])),
+            '📅 '.e(__('server_backups.tg_line_datetime', ['datetime' => $this->stamp()])),
+            '🗄 '.e(__('server_backups.tg_db_line_database', [
+                'name' => (string) ($result['database'] ?? ''),
+            ])),
+            '🔖 '.e(__('server_backups.tg_db_line_driver', [
+                'driver' => (string) ($result['driver'] ?? ''),
+            ])),
+            '🏷 '.e(self::DATABASE_HASHTAG),
+        ];
+
+        if (! $ok) {
+            $reason = $this->trim((string) ($result['error'] ?? ''));
+
+            $lines[] = '⚠️ '.e(__('server_backups.tg_line_error', [
+                'message' => $reason !== '' ? $reason : __('server_backups.tg_unknown_error'),
+            ]));
+
+            return implode("\n", $lines);
+        }
+
+        $lines[] = '💾 '.e(__('server_backups.tg_line_size', [
+            'size' => format_data_size((int) ($result['bytes'] ?? 0)),
+        ]));
+
+        $path = (string) ($result['zip_path'] ?? '');
+
+        if ((bool) ($result['too_large'] ?? false)) {
+            $lines[] = '🚫 '.e(__('server_backups.tg_line_too_large', [
+                'limit' => format_data_size($this->maxDocumentBytes()),
+                'path' => $path,
+            ]));
+
+            return implode("\n", $lines);
+        }
+
+        // بی‌صدا رد کردنِ فایلِ نبوده همان چیزی بود که ادمین از آن شکایت داشت.
+        if ($path === '' || ! is_file($path)) {
+            $lines[] = '🚫 '.e(__('server_backups.tg_db_line_file_missing', [
+                'path' => $path !== '' ? $path : __('server_backups.tg_unknown_path'),
+            ]));
+
+            return implode("\n", $lines);
+        }
+
+        $lines[] = '📎 '.e((string) ($result['zip_filename'] ?? ''));
+
+        return implode("\n", $lines);
+    }
+
+    /**
+     * @param  array<string, mixed>  $result
+     */
+    protected function buildDatabaseCaption(array $result): string
+    {
+        return '🗄 '.e((string) ($result['database'] ?? ''))."\n"
+            .'🏷 '.e(self::DATABASE_HASHTAG)."\n"
             .'💾 '.e(format_data_size((int) ($result['bytes'] ?? 0)))."\n"
             .'📅 '.e($this->stamp());
     }

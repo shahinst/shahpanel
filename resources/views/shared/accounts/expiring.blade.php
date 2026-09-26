@@ -9,7 +9,7 @@
 
 @include('partials.panel-page-hero', [
     'title' => __('ui.expiring_accounts_title'),
-    'subtitle' => __('ui.expiring_accounts_subtitle', [':days' => persian_digits($thresholdDays), ':size' => $thresholdLabel]),
+    'subtitle' => __('ui.expiring_accounts_subtitle', ['days' => persian_digits($thresholdDays), 'size' => $thresholdLabel]),
     'icon' => 'bx-time-five',
 ])
 
@@ -111,11 +111,11 @@
                                 @if ($account->expiry_at && $expiringSoon)
                                     <span class="badge bg-danger">
                                         @if ($daysLeft >= 1)
-                                            {{ __('ui.days_left', [':count' => persian_digits($daysLeft)]) }}
+                                            {{ __('ui.days_left', ['count' => persian_digits($daysLeft)]) }}
                                         @elseif ($hoursLeft >= 1)
-                                            {{ __('ui.hours_left', [':count' => persian_digits($hoursLeft)]) }}
+                                            {{ __('ui.hours_left', ['count' => persian_digits($hoursLeft)]) }}
                                         @else
-                                            {{ __('ui.minutes_left', [':count' => persian_digits(max(1, $minutesLeft))]) }}
+                                            {{ __('ui.minutes_left', ['count' => persian_digits(max(1, $minutesLeft))]) }}
                                         @endif
                                     </span>
                                 @endif

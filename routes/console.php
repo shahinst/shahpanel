@@ -235,6 +235,44 @@ Schedule::call(function (): void {
     \App\Jobs\SendServerBackupToTelegramJob::dispatch($dueServerIds, $slot);
 })->everyMinute()->name('server_backup.telegram');
 
+/*
+|--------------------------------------------------------------------------
+| Panel database backup → Telegram. Same every-minute shape as the server
+| entry above, but a schedule of its own: its own on/off flag, its own
+| times and its own lock key, so switching one off never touches the other
+| and a minute that is due for both fires both.
+|--------------------------------------------------------------------------
+*/
+
+Schedule::call(function (): void {
+    // تنظیمات در جدول settings است؛ بین دیپلوی و مایگریشن اولیه ممکن است نباشد.
+    if (! Schema::hasTable('settings')) {
+        return;
+    }
+
+    if (! \App\Support\ServerBackupTelegramSettings::isDatabaseReady()) {
+        return;
+    }
+
+    // ساعت‌ها به وقت پنل (config('app.timezone')) ذخیره شده‌اند و now() هم با
+    // همان تایم‌زون ساخته می‌شود، پس مقایسهٔ رشته‌ای درست است.
+    $now = now();
+    $slot = $now->format('H:i');
+
+    if (! in_array($slot, \App\Support\ServerBackupTelegramSettings::databaseTimes(), true)) {
+        return;
+    }
+
+    // کلید قفل از کلید سرورها جداست: اگر هر دو زمان‌بندی روی یک دقیقه باشند،
+    // هیچ‌کدام نباید دیگری را بی‌صدا رد کند. قفل اتمیک هم جلوی اجرای دوبارهٔ
+    // schedule:run در همان دقیقه (کرون تکراری یا اجرای دستی) را می‌گیرد.
+    if (! Cache::add('database_backup.telegram:'.$now->format('Y-m-d').':'.$slot, 1, now()->addMinutes(10))) {
+        return;
+    }
+
+    \App\Jobs\SendDatabaseBackupToTelegramJob::dispatch($slot);
+})->everyMinute()->name('database_backup.telegram');
+
 Schedule::command('firewall prune')->everyFifteenMinutes()->withoutOverlapping();
 Schedule::command('firewall resync')->hourly()->withoutOverlapping();
 Schedule::command('firewall:sync-country-data')->weeklyOn(1, '03:30')->withoutOverlapping();

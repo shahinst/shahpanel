@@ -551,6 +551,28 @@ The panel can back your servers up and send the zip to you on Telegram on a sche
 - Server backups work for **MikroTik, Pasarguard and Remnawave**. Sanaei, Cisco and OpenConnect servers are not in that list.
 - A Telegram outage never stops the backup being taken; the file stays on the server and only the delivery failure is logged.
 
+### ⏰ Where do I change the backup time?
+
+In the panel, everywhere. You never edit a cron file on the server.
+
+1. **Settings → Server backups**: the "Backup schedule" block for servers, and the "Panel database backup schedule" block for the panel's own database.
+2. The format is 24-hour `HH:MM`, several values separated by a comma or a space — for example `03:30, 15:00`. Persian digits and the Persian comma are accepted too: `۰۳:۳۰، ۱۵:۰۰`.
+3. Times are in the **panel timezone** (`APP_TIMEZONE`, `Asia/Tehran` by default), not UTC.
+
+**Two independent schedules:**
+
+- **Server backups:** enabled per server, each server with its own times.
+- **Panel database backup:** one on/off switch and one list of times for the whole panel. Turning one on or off does not touch the other, and if both are set to the same time you get two separate messages.
+
+**If nothing arrives at all, check the panel cron first.** The installer creates exactly one system cron entry; everything else is scheduled inside the panel:
+
+```bash
+cat /etc/cron.d/shahpanel-scheduler   # must run artisan schedule:run every minute
+systemctl status cron                 # the cron service must be running
+```
+
+Inside the panel, **Dashboard → System health** shows the last time `schedule:run` fired. If that timestamp is not recent, no schedule is running.
+
 ## 🌐 Tunnel address for configs
 
 If the panel reaches the foreign server directly but your users must connect through a tunnel or relay, keep the two addresses apart.

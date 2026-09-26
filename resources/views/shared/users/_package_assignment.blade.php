@@ -93,7 +93,7 @@
                                     @if ($sellerPriceRange !== null && $spRow)
                                         <div class="row g-2 align-items-end">
                                             <div class="col-12 col-md-4">
-                                                <label class="form-label small mb-1">{{ __('ui.this_seller_price_label', [':currency' => $packageCurrency->label()]) }}</label>
+                                                <label class="form-label small mb-1">{{ __('ui.this_seller_price_label', ['currency' => $packageCurrency->label()]) }}</label>
                                                 <input type="number" step="1" min="{{ (int) round($spRow['floor']) }}" max="{{ (int) round($spRow['ceil']) }}" dir="ltr"
                                                        class="form-control form-control-sm rsp-input" data-pkg="{{ $package->id }}"
                                                        data-currency-symbol="{{ $packageCurrency->symbol() }}"

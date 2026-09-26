@@ -61,7 +61,7 @@
             .'<polygon points="'.$area.'" fill="'.$color.'" fill-opacity=".12"/>'
             .'<polyline points="'.$line.'" fill="none" stroke="'.$color.'" stroke-width="2"/>'
             .$dots
-            .'<text x="'.$pad.'" y="'.($pad - 6).'" font-size="9" fill="currentColor" fill-opacity=".6">'.e(__('ui.max_x', [':value' => $maxLbl])).'</text>'
+            .'<text x="'.$pad.'" y="'.($pad - 6).'" font-size="9" fill="currentColor" fill-opacity=".6">'.e(__('ui.max_x', ['value' => $maxLbl])).'</text>'
             .$hitCols($labels, $vals, $currency, $iw, $ih)
             .'</svg>';
     };
@@ -82,7 +82,7 @@
         }
         return '<svg viewBox="0 0 '.$W.' '.$H.'" width="100%" preserveAspectRatio="none" style="color:#889;overflow:visible;">'
             .$grid($ih).$bars
-            .'<text x="'.$pad.'" y="'.($pad - 6).'" font-size="9" fill="currentColor" fill-opacity=".6">'.e(__('ui.max_x', [':value' => format_money($max, $currency)])).'</text>'
+            .'<text x="'.$pad.'" y="'.($pad - 6).'" font-size="9" fill="currentColor" fill-opacity=".6">'.e(__('ui.max_x', ['value' => format_money($max, $currency)])).'</text>'
             .$hitCols($labels, $vals, $currency, $iw, $ih)
             .'</svg>';
     };
@@ -114,7 +114,7 @@
                 <a href="{{ route($panel.'.reports.index') }}" class="btn btn-outline-secondary btn-sm">{{ __('ui.last_30_days') }}</a>
             </div>
             <div class="col-md-3 text-md-end">
-                <span class="text-muted small">{{ __('ui.range_from_to', [':from' => jalali_date($from,'Y/m/d'), ':to' => jalali_date($to,'Y/m/d')]) }}</span>
+                <span class="text-muted small">{{ __('ui.range_from_to', ['from' => jalali_date($from,'Y/m/d'), 'to' => jalali_date($to,'Y/m/d')]) }}</span>
             </div>
         </form>
     </div>
@@ -154,7 +154,7 @@
 </div>
 
 {{-- ============ Current account state ============ --}}
-<h5 class="text-muted mb-2 mt-2"><i class="bx bx-list-ul"></i> {{ __('ui.reports_current_account_state_scoped', [':scope' => $scope==='admin' ? __('ui.whole_system') : __('ui.your_accounts'), ':total' => persian_digits($state['totalAccounts'])]) }}</h5>
+<h5 class="text-muted mb-2 mt-2"><i class="bx bx-list-ul"></i> {{ __('ui.reports_current_account_state_scoped', ['scope' => $scope==='admin' ? __('ui.whole_system') : __('ui.your_accounts'), 'total' => persian_digits($state['totalAccounts'])]) }}</h5>
 <div class="row">
     <div class="col-lg-6">
         <div class="card h-100">
@@ -170,8 +170,8 @@
                     @endforeach
                 </table>
                 <div class="mt-3 d-flex gap-3 flex-wrap">
-                    <span class="small">⏳ {{ __('ui.reports_expiring_soon', [':days' => persian_digits($state['thresholdDays'])]) }} <strong class="text-danger">{{ persian_digits($state['expiringSoon']) }}</strong></span>
-                    <span class="small">📉 {{ __('ui.reports_low_volume', [':size' => format_data_size($state['thresholdBytes'])]) }} <strong class="text-warning">{{ persian_digits($state['lowVolume']) }}</strong></span>
+                    <span class="small">⏳ {{ __('ui.reports_expiring_soon', ['days' => persian_digits($state['thresholdDays'])]) }} <strong class="text-danger">{{ persian_digits($state['expiringSoon']) }}</strong></span>
+                    <span class="small">📉 {{ __('ui.reports_low_volume', ['size' => format_data_size($state['thresholdBytes'])]) }} <strong class="text-warning">{{ persian_digits($state['lowVolume']) }}</strong></span>
                 </div>
             </div>
         </div>
@@ -233,7 +233,7 @@
 <h5 class="text-muted mb-2 mt-2"><i class="bx bx-user"></i> {{ $scope==='admin' ? __('ui.sellers_plural') : __('ui.your_sellers') }}</h5>
 <div class="row">
     <x-stat-card title="{{ __('ui.sellers_count') }}" :value="persian_digits($resellers['sellersCount'])" icon="bx-user" color="primary"
-                 :hint="__('ui.total_wallet_balance_x', [':amount' => (collect($resellers['walletSellers'])->map(fn (string $amount, string $code): string => format_money($amount, $code))->implode(' + ') ?: format_money('0', \App\Enums\MoneyCurrency::default()))])" />
+                 :hint="__('ui.total_wallet_balance_x', ['amount' => (collect($resellers['walletSellers'])->map(fn (string $amount, string $code): string => format_money($amount, $code))->implode(' + ') ?: format_money('0', \App\Enums\MoneyCurrency::default()))])" />
 </div>
 <div class="row">
     <div class="col-lg-6">

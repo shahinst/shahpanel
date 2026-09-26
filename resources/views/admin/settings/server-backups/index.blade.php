@@ -84,6 +84,22 @@
                 {{ __('server_backups.schedule_timezone_hint', ['timezone' => $panelTimezone ?? config('app.timezone')]) }}
             </p>
 
+            {{-- ادمین‌ها نمی‌دانستند ساعت بک‌آپ را کجا عوض کنند و سراغ crontab سرور
+                 می‌رفتند؛ پس همین بالای فیلدهای ساعت صریح نوشته می‌شود که همه‌چیز
+                 در پنل تنظیم می‌شود و تنها ردیف کرونِ لازم کدام است. --}}
+            <div class="alert alert-info small mb-3">
+                <div class="mb-1">
+                    <i class="bx bx-info-circle align-middle"></i>
+                    {{ __('server_backups.schedule_cron_note', ['timezone' => $panelTimezone ?? config('app.timezone')]) }}
+                </div>
+                <div class="text-muted">
+                    {{ __('server_backups.schedule_cron_verify', [
+                        'entry' => '/etc/cron.d/shahpanel-scheduler',
+                        'command' => 'php artisan schedule:run',
+                    ]) }}
+                </div>
+            </div>
+
             @if (empty($scheduleReady))
                 <div class="alert alert-warning mb-0">
                     {{ __('server_backups.migration_required') }}
@@ -146,6 +162,38 @@
                     @endif
                 </form>
             @endif
+        </div>
+    </div>
+
+    {{-- زمان‌بندی دیتابیس پنل: کارت جدا، فرم جدا و کلید جدا، چون ادمین باید
+         بتواند بک‌آپ سرورها و بک‌آپ دیتابیس را مستقل روشن/خاموش کند. --}}
+    <div class="panel-modern-card mb-4">
+        <div class="card-head"><h3 class="h6 mb-0">{{ __('server_backups.database_schedule_heading') }}</h3></div>
+        <div class="card-body">
+            <p class="text-muted small mb-1">{{ __('server_backups.database_schedule_intro') }}</p>
+            <p class="text-muted small">
+                <i class="bx bx-time-five align-middle"></i>
+                {{ __('server_backups.schedule_timezone_hint', ['timezone' => $panelTimezone ?? config('app.timezone')]) }}
+            </p>
+
+            <form method="POST" action="{{ route('admin.settings.server-backups.database-schedule') }}">
+                @csrf
+                <div class="row">
+                    <x-form.group :label="__('server_backups.database_schedule_times')" for="database_schedule_times" :hint="__('server_backups.database_schedule_times_hint')">
+                        <input type="text" dir="ltr" class="form-control" id="database_schedule_times" name="database_schedule_times"
+                               value="{{ old('database_schedule_times', $databaseScheduleTimes ?? '') }}"
+                               placeholder="{{ __('server_backups.schedule_times_placeholder') }}">
+                    </x-form.group>
+
+                    <x-form.checkbox name="database_schedule_enabled"
+                                     :label="__('server_backups.database_schedule_enabled')"
+                                     :checked="old('database_schedule_enabled', $databaseScheduleEnabled ?? false)"
+                                     :hint="__('server_backups.database_schedule_enabled_hint')"
+                                     :hiddenZero="true" />
+                </div>
+
+                <x-button type="submit"><i class="bx bx-save"></i> {{ __('server_backups.database_schedule_save') }}</x-button>
+            </form>
         </div>
     </div>
 

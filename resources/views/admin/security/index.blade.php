@@ -145,7 +145,7 @@
                     <li>{{ __('ui.security_l7_firewall') }}</li>
                     <li>{{ __('ui.security_headers') }}</li>
                     <li>{{ __('ui.security_legacy_redirect') }}</li>
-                    <li>{{ __('ui.security_impersonation', [':minutes' => (int) config('shahpanel.impersonation_ttl_minutes', 3)]) }}</li>
+                    <li>{{ __('ui.security_impersonation', ['minutes' => (int) config('shahpanel.impersonation_ttl_minutes', 3)]) }}</li>
                     @if (! ($htaccessPending ?? true))
                         <li class="text-success">{{ __('security.htaccess_all_applied') }}</li>
                     @endif

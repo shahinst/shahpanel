@@ -111,7 +111,7 @@ document.addEventListener('DOMContentLoaded', function () {
 <x-form.group :label="__('auth.password')">
     <input name="password" type="password" {{ $user ? '' : 'required' }} class="form-control">
 </x-form.group>
-<x-form.group :label="__('ui.confirm_x', [':field' => __('auth.password')])">
+<x-form.group :label="__('ui.confirm_x', ['field' => __('auth.password')])">
     <input name="password_confirmation" type="password" class="form-control">
 </x-form.group>
 <x-form.group :label="__('app.status')">

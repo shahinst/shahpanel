@@ -70,6 +70,10 @@ class ServerBackupController extends Controller
             'telegramChatId' => ServerBackupTelegramSettings::chatId(),
             'scheduleReady' => Schema::hasColumn('servers', 'backup_times'),
             'panelTimezone' => (string) config('app.timezone'),
+            // زمان‌بندی دیتابیس پنل در جدول settings است، پس به ستون تازه و
+            // مایگریشن وابسته نیست و حتی وقتی جدول بک‌آپ‌ها نیست هم قابل تنظیم است.
+            'databaseScheduleEnabled' => ServerBackupTelegramSettings::isDatabaseEnabled(),
+            'databaseScheduleTimes' => implode(', ', ServerBackupTelegramSettings::databaseTimes()),
         ];
     }
 
@@ -156,6 +160,37 @@ class ServerBackupController extends Controller
             $redirect->with('error', __('server_backups.schedule_invalid_times', [
                 'name' => implode(', ', $rejected),
             ]));
+        }
+
+        return $redirect;
+    }
+
+    /**
+     * زمان‌بندی بک‌آپ دیتابیسِ خودِ پنل — جدا از سرورها، با کلید و ساعت‌های خودش،
+     * ولی با همان پارسر ساعت (Server::normalizeBackupTimes) تا قالب ورودی و
+     * پذیرش ارقام فارسی در هر دو فرم یکی باشد.
+     */
+    public function updateDatabaseSchedule(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'database_schedule_times' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $times = ServerBackupTelegramSettings::setDatabaseTimes((string) $request->input('database_schedule_times', ''));
+        $wantsEnabled = $request->boolean('database_schedule_enabled');
+
+        // فعال‌بودن بدون ساعت معتبر یعنی بک‌آپی که هرگز اجرا نمی‌شود؛ پس خاموشش
+        // می‌کنیم و صریح به ادمین می‌گوییم ورودی‌اش پذیرفته نشد.
+        $rejected = $wantsEnabled && $times === [];
+
+        ServerBackupTelegramSettings::setDatabaseEnabled($rejected ? false : $wantsEnabled);
+
+        $redirect = redirect()
+            ->route('admin.settings.server-backups.index')
+            ->with('success', __('server_backups.database_schedule_saved'));
+
+        if ($rejected) {
+            $redirect->with('error', __('server_backups.database_schedule_invalid_times'));
         }
 
         return $redirect;

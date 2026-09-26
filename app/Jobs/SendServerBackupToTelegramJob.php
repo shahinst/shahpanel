@@ -32,18 +32,25 @@ class SendServerBackupToTelegramJob implements ShouldQueue
     public int $tries = 1;
 
     /**
+     * صف این عدد را فقط از *ویژگی* می‌خواند: پی‌لود با
+     * `'timeout' => $job->timeout ?? null` ساخته می‌شود و متدی به نام timeout()
+     * را هرگز صدا نمی‌زند. تا وقتی این مقدار متد بود، کارگر سقف پیش‌فرض خودش
+     * (۶۰ ثانیه، چون routes/console.php به queue:work سوئیچ --timeout نمی‌دهد) را
+     * اعمال می‌کرد و کار را وسط آپلود با SIGALRM می‌کشت؛ گزارش که عمداً پیش از
+     * فایل فرستاده می‌شود می‌رسید و خودِ فایل هیچ‌وقت نمی‌رسید.
+     */
+    public int $timeout = 900;
+
+    /**
      * @param  list<int>  $serverIds
      * @param  string  $slot  ساعت زمان‌بندی‌شده به شکل HH:MM (وقت پنل)
      */
     public function __construct(
         public array $serverIds,
         public string $slot,
-    ) {}
-
-    public function timeout(): int
-    {
+    ) {
         // فرصت کافی برای SFTP چند سرور + آپلود چند ده مگابایت به تلگرام.
-        return max(600, (int) config('shahpanel.server_backup.timeout_seconds', 300) * 3);
+        $this->timeout = max(600, (int) config('shahpanel.server_backup.timeout_seconds', 300) * 3);
     }
 
     public function handle(
