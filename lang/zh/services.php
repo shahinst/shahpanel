@@ -172,6 +172,7 @@ return [
     'sanaei_web_base_path_hint' => '如果您在面板中设置了 webBasePath，请在服务器表单的“Web 基础路径”中填写该值。',
     'sanaei_html_instead_of_api' => 'Sanaei 面板返回的是网页而不是 API 响应 —— 面板会话已过期，或“Web 基础路径”填写有误。',
     'sanaei_api_request_failed' => '无法向 Sanaei 面板发送 API 请求。',
+    'sanaei_getdb_http_failed' => 'Sanaei 面板拒绝提供其数据库（HTTP :status）—— 请检查面板用户名/密码，以及该账号是否为管理员。',
     'sanaei_login_failed_http' => 'Sanaei 登录失败：HTTP :status —— URL：:url',
     'sanaei_login_path_missing' => '未找到 /login 路径；请检查 webBasePath。',
     'sanaei_login_failed' => 'Sanaei 登录失败：:reason',

@@ -121,6 +121,9 @@ return [
         // Hard ceiling for the URL/prefix fallback fan-out on one mutation.
         'max_post_attempts' => (int) env('SANAEI_MAX_POST_ATTEMPTS', 12),
         'operation_deadline_seconds' => (int) env('SANAEI_OPERATION_DEADLINE', 45),
+        // getDb streams the whole panel database in one response, so it gets
+        // its own (much longer) ceiling instead of the short API timeout.
+        'database_download_timeout_seconds' => (int) env('SANAEI_DB_DOWNLOAD_TIMEOUT', 180),
     ],
 
     'pasarguard' => [

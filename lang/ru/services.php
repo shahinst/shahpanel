@@ -172,6 +172,7 @@ return [
     'sanaei_web_base_path_hint' => 'Если в панели задан webBasePath, укажите его в поле «базовый веб-путь» в форме сервера.',
     'sanaei_html_instead_of_api' => 'Панель Sanaei вернула веб-страницу вместо ответа API — сессия панели истекла или неверно указан «базовый веб-путь».',
     'sanaei_api_request_failed' => 'Не удалось отправить запрос к API панели Sanaei.',
+    'sanaei_getdb_http_failed' => 'Панель Sanaei не отдала свою базу данных (HTTP :status) — проверьте логин/пароль панели и права администратора.',
     'sanaei_login_failed_http' => 'Не удалось войти в Sanaei: HTTP :status — URL: :url',
     'sanaei_login_path_missing' => 'Путь /login не найден; проверьте webBasePath.',
     'sanaei_login_failed' => 'Не удалось войти в Sanaei: :reason',

@@ -13,16 +13,26 @@ use Throwable;
 
 class ServerBackupService
 {
+    /**
+     * فرمت‌هایی که خروجی‌شان فایلِ خام است، نه بخش‌های JSON: بک‌آپ بومی میکروتیک
+     * و دیتابیس SQLite پنل ثنایی. این‌ها در manifest زیر files می‌نشینند و اگر
+     * هیچ فایلی تولید نشود، بک‌آپ ناموفق است.
+     *
+     * @var list<string>
+     */
+    public const FILE_FORMATS = ['mikrotik_native', 'sanaei_database'];
+
     /** @var list<ServerBackupCollector> */
     protected array $collectors;
 
     public function __construct(
         protected ServerBackupStorage $storage,
         MikrotikServerBackupCollector $mikrotik,
+        SanaeiServerBackupCollector $sanaei,
         PasarguardServerBackupCollector $pasarguard,
         RemnawaveServerBackupCollector $remnawave,
     ) {
-        $this->collectors = [$mikrotik, $pasarguard, $remnawave];
+        $this->collectors = [$mikrotik, $sanaei, $pasarguard, $remnawave];
     }
 
     public function supports(Server $server): bool
@@ -55,9 +65,9 @@ class ServerBackupService
             $files = $result['files'] ?? [];
             $errors = $result['errors'] ?? [];
 
-            if ($format === 'mikrotik_native') {
+            if (in_array($format, self::FILE_FORMATS, true)) {
                 if ($files === []) {
-                    throw new \RuntimeException(__('server_backups.mikrotik_backup_empty'));
+                    throw new \RuntimeException(__('server_backups.backup_file_empty'));
                 }
 
                 $manifestFiles = $this->storage->registerFiles($paths['absolute'], is_array($files) ? $files : []);
@@ -102,7 +112,7 @@ class ServerBackupService
 
             $this->storage->writeJson($paths['absolute'].DIRECTORY_SEPARATOR.'manifest.json', $manifest);
 
-            $status = $format === 'mikrotik_native'
+            $status = in_array($format, self::FILE_FORMATS, true)
                 ? ($manifestFiles !== [] ? ServerBackupStatus::Completed : ServerBackupStatus::Failed)
                 : (($errors === [] || $sections !== [])
                     ? ServerBackupStatus::Completed
@@ -151,6 +161,7 @@ class ServerBackupService
             ->where('is_active', true)
             ->whereIn('type', [
                 ServerType::Mikrotik,
+                ServerType::Sanaei,
                 ServerType::Pasarguard,
                 ServerType::Remnawave,
             ])

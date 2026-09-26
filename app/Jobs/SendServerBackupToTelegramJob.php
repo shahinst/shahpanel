@@ -160,7 +160,8 @@ class SendServerBackupToTelegramJob implements ShouldQueue
 
     /**
      * What was actually captured — section names for the JSON panels, file
-     * labels for the MikroTik native backup.
+     * names for the file-based providers (MikroTik's native backup, the Sanaei
+     * panel database).
      *
      * @return list<string>
      */
@@ -168,7 +169,7 @@ class SendServerBackupToTelegramJob implements ShouldQueue
     {
         $manifest = is_array($backup->manifest) ? $backup->manifest : [];
 
-        if (($manifest['format'] ?? '') === 'mikrotik_native') {
+        if (in_array($manifest['format'] ?? '', ServerBackupService::FILE_FORMATS, true)) {
             return $backup->backupFileNames();
         }
 

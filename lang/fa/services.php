@@ -172,6 +172,7 @@ return [
     'sanaei_web_base_path_hint' => 'اگر در پنل webBasePath تنظیم کرده‌اید، «مسیر پایه وب» را در فرم سرور وارد کنید.',
     'sanaei_html_instead_of_api' => 'پنل Sanaei به‌جای پاسخ API یک صفحه وب برگرداند — نشست پنل منقضی شده یا «مسیر پایه وب» نادرست است.',
     'sanaei_api_request_failed' => 'درخواست API به پنل Sanaei ارسال نشد.',
+    'sanaei_getdb_http_failed' => 'پنل Sanaei دیتابیس خود را تحویل نداد (HTTP :status) — نام کاربری/گذرواژهٔ پنل و دسترسی ادمین بودن آن را بررسی کنید.',
     'sanaei_login_failed_http' => 'ورود Sanaei ناموفق: HTTP :status — آدرس: :url',
     'sanaei_login_path_missing' => 'مسیر /login یافت نشد؛ webBasePath را بررسی کنید.',
     'sanaei_login_failed' => 'ورود Sanaei ناموفق: :reason',

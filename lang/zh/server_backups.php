@@ -2,10 +2,10 @@
 
 return [
     'page_title' => '服务器备份',
-    'intro' => '通过 API 只读操作 —— 不会更改服务器或面板上的任何内容。对于 MikroTik，会使用服务器上设置的 SSH 端口，通过 SFTP 获取原生备份文件（.backup）。PasarGuard 和 Remnawave 以 JSON 形式存储。备份只能在面板中查看，无法下载。',
+    'intro' => '通过 API 只读操作 —— 不会更改服务器或面板上的任何内容。对于 MikroTik，会使用服务器上设置的 SSH 端口，通过 SFTP 获取原生备份文件（.backup）。对于 Sanaei（3x-ui），会通过面板 API 下载面板自身的 SQLite 数据库文件。PasarGuard 和 Remnawave 以 JSON 形式存储。备份只能在面板中查看，无法下载。',
     'servers_heading' => '可备份的服务器',
     'history_heading' => '备份历史',
-    'no_servers' => '未找到启用的 MikroTik / PasarGuard / Remnawave 服务器。',
+    'no_servers' => '未找到启用的 MikroTik / 3x-ui / PasarGuard / Remnawave 服务器。',
     'no_backups' => '尚未记录任何备份。',
     'no_sections' => '此备份中未存储任何分区。',
     'section_unreadable' => '无法读取此分区。',
@@ -125,4 +125,9 @@ return [
     'database_schedule_invalid_times' => '为数据库备份填写的时间无效，因此该计划保持关闭。',
     'schedule_cron_note' => '时间在面板中设定，使用面板时区（:timezone），而不是 UTC。修改备份时间完全不需要改动 crontab 或 Linux 服务器上的任何计划任务。',
     'schedule_cron_verify' => '面板只需要一条由安装程序创建的系统 cron 记录：:entry，它每分钟执行 :command。若缺少该记录或 cron 服务已停止，所有计划都不会执行；可在“仪表盘 → 系统健康”中查看其状态。',
+
+    'sanaei_database_hint' => '此备份就是 Sanaei（3x-ui）面板自身的 SQLite 数据库文件，直接从面板下载；inbound 列表、客户端、主机和设置全部都在这一个文件里。',
+    'sanaei_getdb_unavailable' => '该 Sanaei（3x-ui）面板没有提供数据库下载路径，此版本过旧，无法备份。已尝试的路径：:routes',
+    'sanaei_database_write_failed' => '面板数据库文件未能完整写入磁盘 —— 可能是磁盘已满，或目录不可写：:path',
+    'backup_file_empty' => '未能从该服务器下载到任何文件，因此没有生成备份。',
 ];

@@ -535,7 +535,7 @@ class Server extends Model
 
     public function supportsRemoteBackup(): bool
     {
-        return $this->isMikrotik() || $this->isPasarguard() || $this->isRemnawave();
+        return $this->isMikrotik() || $this->isSanaei() || $this->isPasarguard() || $this->isRemnawave();
     }
 
     public function backups(): HasMany

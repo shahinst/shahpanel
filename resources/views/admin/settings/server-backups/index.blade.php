@@ -288,7 +288,7 @@
                                 <td>{{ persian_digits($backup->id) }}</td>
                                 <td>{{ $backup->server?->name ?? '—' }}</td>
                                 <td>{{ $backup->status->label() }}</td>
-                                <td>{{ persian_digits((int) (($backup->manifest['format'] ?? '') === 'mikrotik_native'
+                                <td>{{ persian_digits((int) (in_array($backup->manifest['format'] ?? '', \App\Services\ServerBackup\ServerBackupService::FILE_FORMATS, true)
                                     ? ($backup->manifest['file_count'] ?? 0)
                                     : ($backup->manifest['section_count'] ?? 0))) }}</td>
                                 <td class="small">{{ $backup->triggeredBy?->username ?? '—' }}</td>

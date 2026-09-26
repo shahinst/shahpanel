@@ -172,6 +172,7 @@ return [
     'sanaei_web_base_path_hint' => 'If you set a webBasePath in the panel, enter it as the "web base path" on the server form.',
     'sanaei_html_instead_of_api' => 'The Sanaei panel returned a web page instead of an API response — the panel session has expired or the "web base path" is wrong.',
     'sanaei_api_request_failed' => 'The API request to the Sanaei panel could not be sent.',
+    'sanaei_getdb_http_failed' => 'The Sanaei panel refused to hand over its database (HTTP :status) — check the panel username/password and that the account is an admin.',
     'sanaei_login_failed_http' => 'Sanaei login failed: HTTP :status — URL: :url',
     'sanaei_login_path_missing' => 'The /login path was not found; check the webBasePath.',
     'sanaei_login_failed' => 'Sanaei login failed: :reason',

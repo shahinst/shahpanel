@@ -548,7 +548,7 @@ sudo grep -i marzban /var/www/shahpanel/storage/logs/laravel-*.log | tail -20
 - 消息包含每台服务器的状态、备份内容、文件大小、精确日期时间，以及**每台服务器独立的话题标签**，便于在 Telegram 中搜索。
 - **备份失败也会发送消息**并说明原因。沉默是最糟的结果，因为你会以为备份在正常运行。
 - Telegram 不接受超过 **50 MB** 的文件。这种情况下仍会发送状态消息，并给出**服务器上的文件路径**。
-- 服务器备份支持 **MikroTik、Pasarguard 和 Remnawave**。Sanaei、Cisco 和 OpenConnect 不在此列。
+- 服务器备份支持 **MikroTik、Sanaei（3x-ui）、Pasarguard 和 Remnawave**。Sanaei 的备份就是面板自身的 SQLite 数据库文件，直接从面板下载。Cisco 和 OpenConnect 不在此列。
 - Telegram 故障绝不会影响备份的生成；文件仍保存在服务器上，只有发送失败会记入日志。
 
 ### ⏰ 在哪里修改备份时间？

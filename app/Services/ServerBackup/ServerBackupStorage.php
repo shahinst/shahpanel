@@ -86,7 +86,7 @@ class ServerBackupStorage
     }
 
     /**
-     * @param  list<array{name: string, label: string, file: string, bytes: int}>  $files
+     * @param  list<array{name: string, label: string, file: string, bytes: int, type?: string}>  $files
      * @return array<string, array{file: string, label: string, count: null, bytes: int, type: string}>
      */
     public function registerFiles(string $absoluteBackupDir, array $files): array
@@ -112,7 +112,9 @@ class ServerBackupStorage
                 'label' => (string) ($file['label'] ?? $relativeFile),
                 'count' => null,
                 'bytes' => (int) ($file['bytes'] ?? 0),
-                'type' => 'mikrotik_backup',
+                // هر کالکتورِ فایل‌محور نوع خودش را اعلام می‌کند (mikrotik_backup،
+                // sanaei_database)، وگرنه اسم میکروتیک روی فایل بقیه می‌نشست.
+                'type' => (string) ($file['type'] ?? 'file'),
             ];
         }
 

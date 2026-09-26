@@ -24,6 +24,17 @@ final class SanaeiPanelClient
     /** @var array<string, array{0: string, 1: bool}> */
     protected static array $resolvedPostRouteByServer = [];
 
+    /** @var array<int, string> */
+    protected static array $resolvedDbRouteByServer = [];
+
+    /**
+     * Every x-ui / 3x-ui panel database is a SQLite file and therefore starts
+     * with this 15-byte magic. A panel that answers getDb with its login page,
+     * an HTML error page or an empty body fails the check and is never saved as
+     * a backup.
+     */
+    public const DATABASE_MAGIC = 'SQLite format 3';
+
     /** @var list<array<string, mixed>> */
     protected array $debugLog = [];
 
@@ -510,6 +521,144 @@ final class SanaeiPanelClient
         }
 
         return $this->postPathAttempts([$legacyPath], $legacyPayload);
+    }
+
+    /**
+     * Raw bytes of the panel's own SQLite database (x-ui.db), or null when this
+     * build exposes no database-download route at all.
+     *
+     * 3x-ui v3.8.5 serves the file from /panel/api/server/getDb; older x-ui /
+     * 3x-ui builds expose the same handler at /server/getDb, without the API
+     * prefix. Candidates are probed in that order and the first body carrying
+     * the SQLite magic wins - a 404/405 only means "try the next one".
+     *
+     * /panel/api/backuptotgbot exists too, but it makes x-ui push the file to
+     * its own Telegram bot. The file is fetched here instead, so it lands in the
+     * operator's configured chat together with the panel's own report.
+     */
+    public function downloadDatabase(): ?string
+    {
+        // getDb یک مسیر تحت نشستِ پنل است، پس اگر نام‌کاربری/گذرواژه داریم همان
+        // نشست کوکی‌دار ساخته می‌شود و در غیر این صورت authenticate() سراغ توکن
+        // می‌رود. اگر هیچ‌کدام نبود، همین authenticate() دلیل روشن پرتاب می‌کند.
+        $this->ensureSessionForMutation();
+        $this->authenticate();
+
+        return $this->attemptDatabaseDownload(true);
+    }
+
+    /**
+     * Probe order: /panel/api/server/getDb and the other API prefixes this
+     * client already knows, then the bare /server/getDb of older x-ui builds.
+     *
+     * @return list<string>
+     */
+    public function databaseUrlCandidates(): array
+    {
+        $urls = $this->apiUrlCandidatesFor('/server/getDb');
+
+        // ساخت‌های قدیمی x-ui این هندلر را بدون پیشوند API سرو می‌کنند، پس این
+        // گزینه آخر از همه امتحان می‌شود تا پنل‌های جدید مسیر درست خودشان را
+        // اول بگیرند.
+        $urls[] = $this->url()->route('/server/getDb');
+
+        return array_values(array_unique($urls));
+    }
+
+    /**
+     * @param  bool  $allowSessionRetry  یک بار اجازهٔ ورود مجدد، وقتی پنل به‌جای
+     *                                   فایل صفحهٔ ورود خودش را برگرداند
+     */
+    protected function attemptDatabaseDownload(bool $allowSessionRetry): ?string
+    {
+        $serverId = $this->server->id;
+        $timeout = max(30, (int) config('shahpanel.sanaei.database_download_timeout_seconds', 180));
+
+        $candidates = $this->databaseUrlCandidates();
+
+        // مسیری که قبلاً برای همین سرور جواب داده اول امتحان می‌شود تا بک‌آپ
+        // شبانه هر شب کل فهرست را نکوبد — همان کاری که attemptPostRoutes با
+        // resolvedPostRouteByServer می‌کند.
+        if (isset(self::$resolvedDbRouteByServer[$serverId])) {
+            array_unshift($candidates, self::$resolvedDbRouteByServer[$serverId]);
+            $candidates = array_values(array_unique($candidates));
+        }
+
+        $sawWebPage = false;
+        $lastFailureStatus = null;
+
+        foreach ($candidates as $url) {
+            $response = $this->getAttachment($url, $timeout);
+            $body = (string) $response->body();
+
+            // بدنه دودویی است و هیچ‌وقت در لاگ نمی‌آید — فقط طولش.
+            $this->logStep('db_download_attempt', [
+                'url' => $url,
+                'status' => $response->status(),
+                'bytes' => strlen($body),
+            ]);
+
+            if (in_array($response->status(), [404, 405], true)) {
+                continue;
+            }
+
+            if ($response->successful() && str_starts_with($body, self::DATABASE_MAGIC)) {
+                self::$resolvedDbRouteByServer[$serverId] = $url;
+
+                return $body;
+            }
+
+            // پاسخ ۲۰۰ بدون امضای SQLite یعنی پنل صفحهٔ ورود (یا یک خطای HTML)
+            // داده است. ذخیرهٔ این بدنه به‌جای دیتابیس، دقیقاً همان «بک‌آپِ
+            // خرابِ بی‌صدا»یی است که نباید ساخته شود.
+            if ($response->successful()) {
+                $sawWebPage = true;
+
+                continue;
+            }
+
+            // ۴۰۱/۴۰۳/۵۰۰ یعنی مسیر هست ولی فایل را نداد؛ نگه داشته می‌شود تا
+            // اگر هیچ گزینهٔ دیگری هم جواب نداد، دلیلش گزارش شود.
+            $lastFailureStatus = $response->status();
+        }
+
+        unset(self::$resolvedDbRouteByServer[$serverId]);
+
+        if ($sawWebPage && $allowSessionRetry) {
+            $this->refreshStaleSession();
+
+            return $this->attemptDatabaseDownload(false);
+        }
+
+        if ($sawWebPage) {
+            throw new RemoteConnectionException(__('services.sanaei_html_instead_of_api'));
+        }
+
+        if ($lastFailureStatus !== null) {
+            throw new RemoteConnectionException(__('services.sanaei_getdb_http_failed', [
+                'status' => $lastFailureStatus,
+            ]));
+        }
+
+        return null;
+    }
+
+    /**
+     * A GET whose body is a file attachment rather than JSON. http() and
+     * applyApiAuthHeaders() both ask for application/json, so an "any type"
+     * Accept is added on top; the body is then read only with body() and never
+     * with json() or a UTF-8 string helper, so the SQLite bytes arrive intact.
+     */
+    protected function getAttachment(string $url, int $timeout): Response
+    {
+        $client = $this->applyApiAuthHeaders($this->http($timeout))
+            ->withHeaders(['Accept' => '*/*']);
+
+        try {
+            return $client->get($url);
+        } catch (ConnectionException $exception) {
+            throw new RemoteConnectionException($this->friendlyConnectionError($exception->getMessage()), 0, $exception);
+        }
     }
 
     /**

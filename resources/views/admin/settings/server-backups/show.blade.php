@@ -29,8 +29,10 @@
         <div class="alert alert-warning small">{{ nl2br(e($backup->error)) }}</div>
     @endif
 
-    @if (($manifest['format'] ?? '') === 'mikrotik_native' && $backupFiles !== [])
-        <p class="text-muted small mb-3">{{ __('server_backups.mikrotik_native_hint') }}</p>
+    @if (in_array($manifest['format'] ?? '', \App\Services\ServerBackup\ServerBackupService::FILE_FORMATS, true) && $backupFiles !== [])
+        <p class="text-muted small mb-3">{{ ($manifest['format'] ?? '') === 'sanaei_database'
+            ? __('server_backups.sanaei_database_hint')
+            : __('server_backups.mikrotik_native_hint') }}</p>
         <div class="table-responsive">
             <table class="table table-sm">
                 <thead>
@@ -42,10 +44,11 @@
                 </thead>
                 <tbody>
                     @foreach ($backupFiles as $fileKey => $fileInfo)
+                        @php $fileExtension = pathinfo((string) ($fileInfo['file'] ?? ''), PATHINFO_EXTENSION); @endphp
                         <tr>
                             <td><code dir="ltr">{{ $fileInfo['label'] ?? $fileInfo['file'] ?? $fileKey }}</code></td>
                             <td>{{ persian_digits(format_data_size((int) ($fileInfo['bytes'] ?? 0))) }}</td>
-                            <td><code>.backup</code></td>
+                            <td><code dir="ltr">{{ $fileExtension !== '' ? '.'.$fileExtension : '—' }}</code></td>
                         </tr>
                     @endforeach
                 </tbody>

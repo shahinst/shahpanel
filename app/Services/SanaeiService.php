@@ -2027,7 +2027,7 @@ class SanaeiService
         return decode_panel_json_field($raw, []);
     }
 
-    protected function client(Server $server): SanaeiPanelClient
+    public function client(Server $server): SanaeiPanelClient
     {
         if ($server->isRemnawave()) {
             throw new InvalidArgumentException(

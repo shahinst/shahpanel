@@ -13,7 +13,7 @@ interface ServerBackupCollector
      * @return array{
      *     format?: string,
      *     sections: array<string, mixed>,
-     *     files?: list<array{name: string, label: string, file: string, bytes: int}>,
+     *     files?: list<array{name: string, label: string, file: string, bytes: int, type?: string}>,
      *     errors: list<array{section: string, message: string}>
      * }
      */

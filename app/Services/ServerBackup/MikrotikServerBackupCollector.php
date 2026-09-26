@@ -30,6 +30,7 @@ class MikrotikServerBackupCollector implements ServerBackupCollector
                 'label' => $result['filename'],
                 'file' => $filename,
                 'bytes' => $result['bytes'],
+                'type' => 'mikrotik_backup',
             ]],
             'errors' => [],
         ];

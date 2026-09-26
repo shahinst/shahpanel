@@ -2,10 +2,10 @@
 
 return [
     'page_title' => 'Server backups',
-    'intro' => 'Read-only via API — nothing on the server or panel is changed. For MikroTik the native backup file (.backup) is fetched over SFTP using the SSH port set on the server. PasarGuard and Remnawave are stored as JSON. Backups can only be viewed in the panel; they cannot be downloaded.',
+    'intro' => 'Read-only via API — nothing on the server or panel is changed. For MikroTik the native backup file (.backup) is fetched over SFTP using the SSH port set on the server. For Sanaei (3x-ui) the SQLite database file of the panel itself is downloaded from the panel API. PasarGuard and Remnawave are stored as JSON. Backups can only be viewed in the panel; they cannot be downloaded.',
     'servers_heading' => 'Servers that can be backed up',
     'history_heading' => 'Backup history',
-    'no_servers' => 'No active MikroTik / PasarGuard / Remnawave server found.',
+    'no_servers' => 'No active MikroTik / 3x-ui / PasarGuard / Remnawave server found.',
     'no_backups' => 'No backup has been recorded yet.',
     'no_sections' => 'No section was stored in this backup.',
     'section_unreadable' => 'This section could not be read.',
@@ -125,4 +125,9 @@ return [
     'database_schedule_invalid_times' => 'The times entered for the database backup were not valid, so this schedule stayed off.',
     'schedule_cron_note' => 'The times are set here in the panel and are in the panel timezone (:timezone), not UTC. Changing a backup time never requires touching crontab or any scheduling on the Linux server.',
     'schedule_cron_verify' => 'The panel needs exactly one system cron entry, which the installer created: :entry, running :command every minute. Without it, or with the cron service stopped, no schedule fires at all; its state is shown under Dashboard → System health.',
+
+    'sanaei_database_hint' => 'This backup is the Sanaei (3x-ui) panel\'s own SQLite database file, downloaded from the panel; the inbound list, clients, hosts and settings all live inside that single file.',
+    'sanaei_getdb_unavailable' => 'The Sanaei (3x-ui) panel exposes no database download route, so this build is too old to back up. Paths tried: :routes',
+    'sanaei_database_write_failed' => 'Writing the panel database file to disk did not finish — the disk is probably full, or the folder is not writable: :path',
+    'backup_file_empty' => 'No file could be downloaded from this server, so no backup was produced.',
 ];

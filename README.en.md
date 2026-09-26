@@ -548,7 +548,7 @@ The panel can back your servers up and send the zip to you on Telegram on a sche
 - The message carries each server's status, what was backed up, the file size, the exact date and time, and a **separate hashtag per server** so you can search for it in Telegram.
 - **A failed backup still sends a message** naming the reason. Silence is the worst outcome, because you would assume backups are running.
 - Telegram refuses files over **50 MB**. In that case the status message still arrives and names the **path of the file on the server** so you can collect it manually.
-- Server backups work for **MikroTik, Pasarguard and Remnawave**. Sanaei, Cisco and OpenConnect servers are not in that list.
+- Server backups work for **MikroTik, Sanaei (3x-ui), Pasarguard and Remnawave**. A Sanaei backup is the panel's own SQLite database file, downloaded from the panel. Cisco and OpenConnect servers are not in that list.
 - A Telegram outage never stops the backup being taken; the file stays on the server and only the delivery failure is logged.
 
 ### ⏰ Where do I change the backup time?
