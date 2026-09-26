@@ -47,6 +47,7 @@ trait ManagesAccountLoginSms
                 'previewMessage' => $previewMessage,
                 'portalUrl' => null,
                 'portalLinkTtlMinutes' => app(PortalLinkService::class)->ttlMinutes(),
+                'portalLinkTtlLabel' => app(PortalLinkService::class)->ttlLabel(),
             ]);
         } catch (\Throwable $exception) {
             if ($exception instanceof \Illuminate\Auth\Access\AuthorizationException) {
@@ -191,7 +192,7 @@ trait ManagesAccountLoginSms
             $message = SmsSettings::accountLoginMessage();
             $param = SmsSettings::verifyLoginParameterName();
             $placeholder = __('accounts.portal_link_preview_placeholder', [
-                'minutes' => persian_digits(app(PortalLinkService::class)->ttlMinutes()),
+                'duration' => app(PortalLinkService::class)->ttlLabel(),
             ]);
 
             return str_replace(
@@ -203,7 +204,7 @@ trait ManagesAccountLoginSms
             report($exception);
 
             return __('accounts.portal_link_preview_placeholder', [
-                'minutes' => persian_digits(app(PortalLinkService::class)->ttlMinutes()),
+                'duration' => app(PortalLinkService::class)->ttlLabel(),
             ]);
         }
     }

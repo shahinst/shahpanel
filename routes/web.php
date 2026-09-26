@@ -121,7 +121,17 @@ Route::prefix('{portal}')->where(['portal' => $loginPortals])->group(function ()
 });
 
 Route::middleware('noindex')->group(function (): void {
-    Route::get('/portal/{token}', [ClientPortalController::class, 'show'])->name('portal.show');
+    // صفحهٔ مشتری تا حل شدن کپچا هیچ داده‌ای نمی‌دهد. خودِ این مسیر هم سقف نرخ
+    // دارد چون هر بار باز شدنِ حل‌نشده‌اش یک کپچای تازه صادر می‌کند.
+    Route::get('/portal/{token}', [ClientPortalController::class, 'show'])
+        ->middleware('throttle:portal-captcha')
+        ->name('portal.show');
+    Route::get('/portal/{token}/captcha', [ClientPortalController::class, 'captcha'])
+        ->middleware('throttle:portal-captcha')
+        ->name('portal.captcha');
+    Route::post('/portal/{token}/verify', [ClientPortalController::class, 'verify'])
+        ->middleware('throttle:portal-captcha-verify')
+        ->name('portal.verify');
     Route::get('/portal/{token}/stats', [ClientPortalController::class, 'stats'])
         ->middleware('throttle:portal-stats')
         ->name('portal.stats');
@@ -325,6 +335,7 @@ Route::prefix($adminPath)->name('admin.')->middleware($adminMiddleware)->group(f
     Route::get('security', [AdminSecurityController::class, 'index'])->name('security.index');
     Route::put('security/paths', [AdminSecurityController::class, 'updatePaths'])->name('security.paths.update');
     Route::put('security/firewall', [AdminSecurityController::class, 'updateFirewall'])->name('security.firewall.update');
+    Route::put('security/portal-link', [AdminSecurityController::class, 'updatePortalLink'])->name('security.portal-link.update');
     Route::post('security/htaccess/{role}', [AdminSecurityController::class, 'applyHtaccessBasicAuth'])->name('security.htaccess.apply');
     Route::post('users/{user}/two-factor/disable', [AdminSecurityController::class, 'disableUserTwoFactor'])->name('users.two-factor.disable');
 

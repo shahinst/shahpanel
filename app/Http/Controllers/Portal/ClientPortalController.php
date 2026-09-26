@@ -9,12 +9,15 @@ use App\Models\Account;
 use App\Models\ClientPortalView;
 use App\Models\Invoice;
 use App\Services\AccountService;
+use App\Services\LoginCaptchaService;
 use App\Services\PortalPanelTrafficService;
 use App\Services\PortalLinkService;
 use App\Services\SanaeiPortalService;
 use App\Services\SyncService;
 use App\Services\WireGuardConfigService;
+use App\Support\PortalCaptchaGate;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -31,6 +34,12 @@ class ClientPortalController extends Controller
         SyncService $syncService
     ): View {
         $account = $this->findAccount($token);
+
+        // کپچا دروازهٔ «داده» است نه دروازهٔ «نمایش»: تا جواب درست نیامده باشد
+        // هیچ چیزی از حساب ساخته نمی‌شود، پس نه در سورس صفحه هست و نه در اسکریپت.
+        if (! PortalCaptchaGate::isSolved($request, $token)) {
+            return $this->challengeView($request, $token);
+        }
 
         ClientPortalView::query()->create([
             'account_id' => $account->id,
@@ -83,9 +92,10 @@ class ClientPortalController extends Controller
         ));
     }
 
-    public function downloadConfig(string $token, WireGuardConfigService $configService): Response
+    public function downloadConfig(Request $request, string $token, WireGuardConfigService $configService): Response
     {
         $account = $this->findAccount($token);
+        $this->assertCaptchaSolved($request, $token);
         abort_unless($account->service_type === ServiceType::Wireguard, 404);
 
         $config = $configService->buildConfig($account);
@@ -96,20 +106,76 @@ class ClientPortalController extends Controller
         ]);
     }
 
-    public function downloadQr(string $token, WireGuardConfigService $configService): Response
+    public function downloadQr(Request $request, string $token, WireGuardConfigService $configService): Response
     {
         $account = $this->findAccount($token);
+        $this->assertCaptchaSolved($request, $token);
         abort_unless($account->service_type === ServiceType::Wireguard, 404);
 
         return $configService->qrDownloadResponse($account);
     }
 
-    public function stats(string $token, SyncService $syncService): JsonResponse
+    public function stats(Request $request, string $token, SyncService $syncService): JsonResponse
     {
         $account = $this->findAccount($token);
+
+        // آمار مصرف هم دادهٔ حساب است؛ بدون کپچا پاسخی نمی‌گیرد.
+        if (! PortalCaptchaGate::isSolved($request, $token)) {
+            return response()->json(['message' => __('accounts.portal_captcha_required')], 403);
+        }
+
         $snapshot = $this->buildPortalSnapshot($account, $syncService, syncOnOpen: true);
 
         return response()->json($snapshot);
+    }
+
+    /** کپچای تازه برای دکمهٔ «تصویر دیگر» صفحهٔ مشتری. */
+    public function captcha(Request $request, string $token, LoginCaptchaService $captcha): JsonResponse
+    {
+        // توکن نامعتبر یا منقضی حتی کپچا هم نمی‌گیرد.
+        $this->findAccount($token);
+
+        return response()->json($captcha->issue($request));
+    }
+
+    /**
+     * بررسی جواب کپچا. اعتبارسنجی کامل سمت سرور است و توکن کپچا یک‌بارمصرف
+     * (pull از سشن)؛ پس جواب درست را نمی‌شود دوباره فرستاد. بعد از تأیید هم
+     * ریدایرکت می‌کنیم تا داده در یک درخواست *بعدی* برسد.
+     */
+    public function verify(Request $request, string $token, LoginCaptchaService $captcha): RedirectResponse
+    {
+        $this->findAccount($token);
+
+        $captcha->assertValid(
+            $request,
+            $request->input('captcha'),
+            $request->input('captcha_token'),
+        );
+
+        PortalCaptchaGate::markSolved($request, $token);
+
+        return redirect()->route('portal.show', $token);
+    }
+
+    /**
+     * صفحهٔ کپچا: هیچ متغیری از حساب به این ویو نمی‌رود — نه نام کاربری، نه
+     * لینک اشتراک، نه کانفیگ.
+     */
+    protected function challengeView(Request $request, string $token): View
+    {
+        return view('portal.challenge', [
+            'portalToken' => $token,
+            'captcha' => app(LoginCaptchaService::class)->issue($request),
+        ]);
+    }
+
+    /** دانلودها هم پشت همین دروازه‌اند، وگرنه کپچا دور زدنی بود. */
+    protected function assertCaptchaSolved(Request $request, string $token): void
+    {
+        if (! PortalCaptchaGate::isSolved($request, $token)) {
+            throw new HttpResponseException(redirect()->route('portal.show', $token));
+        }
     }
 
     /**

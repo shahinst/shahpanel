@@ -58,6 +58,51 @@
             </div>
         </div>
 
+        {{-- عمر لینک صفحهٔ مشتری. تا وقتی ادمین اینجا چیزی ذخیره نکند، همان مقدار
+             پیش‌فرض config برقرار است و رفتار نصب‌های قبلی عوض نمی‌شود. --}}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">{{ __('security.portal_link_ttl_title') }}</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ route('admin.security.portal-link.update') }}">
+                    @csrf
+                    @method('PUT')
+
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label" for="portal_link_ttl_amount">{{ __('security.portal_link_ttl_label') }}</label>
+                            <input type="number" min="1" step="1" inputmode="numeric"
+                                   class="form-control @error('portal_link_ttl_amount') is-invalid @enderror"
+                                   id="portal_link_ttl_amount" name="portal_link_ttl_amount" dir="ltr"
+                                   value="{{ old('portal_link_ttl_amount', $portalLinkTtlAmount ?? 5) }}" required>
+                            @error('portal_link_ttl_amount')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label" for="portal_link_ttl_unit">{{ __('security.portal_link_ttl_unit') }}</label>
+                            <select class="form-select @error('portal_link_ttl_unit') is-invalid @enderror"
+                                    id="portal_link_ttl_unit" name="portal_link_ttl_unit" required>
+                                @foreach (array_keys(\App\Support\PortalLinkSettings::UNITS) as $unitOption)
+                                    <option value="{{ $unitOption }}" @selected(old('portal_link_ttl_unit', $portalLinkTtlUnit ?? 'minutes') === $unitOption)>
+                                        {{ __('security.portal_link_ttl_unit_'.$unitOption) }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('portal_link_ttl_unit')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ __('security.portal_link_ttl_current') }}</label>
+                            <p class="form-control-plaintext mb-0">{{ \App\Support\PortalLinkSettings::describe((int) ($portalLinkTtlMinutes ?? 5)) }}</p>
+                        </div>
+                    </div>
+
+                    <small class="text-muted d-block mt-2">{{ __('security.portal_link_ttl_hint', ['days' => persian_digits(intdiv(\App\Support\PortalLinkSettings::MAX_TTL_MINUTES, 1440))]) }}</small>
+
+                    <button type="submit" class="btn btn-primary mt-3">{{ __('app.save') }}</button>
+                </form>
+            </div>
+        </div>
+
         @if ($htaccessPending)
             <div class="card mb-4">
                 <div class="card-header">
@@ -142,6 +187,7 @@
                     <li>{{ __('ui.security_rate_limit_login') }}</li>
                     <li>{{ __('ui.security_rate_limit_2fa') }}</li>
                     <li>{{ __('ui.security_rate_limit_client_portal') }}</li>
+                    <li>{{ __('security.portal_captcha_protected') }}</li>
                     <li>{{ __('ui.security_l7_firewall') }}</li>
                     <li>{{ __('ui.security_headers') }}</li>
                     <li>{{ __('ui.security_legacy_redirect') }}</li>

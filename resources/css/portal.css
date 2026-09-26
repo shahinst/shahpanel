@@ -460,3 +460,133 @@ body.portal-body {
     color: var(--portal-muted);
     line-height: 1.75;
 }
+
+/* Captcha gate — the customer page renders nothing else until it is solved */
+
+.portal-captcha-card {
+    text-align: center;
+    padding: 1.75rem 1.25rem;
+}
+
+.portal-captcha-icon {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 1rem;
+    border-radius: 50%;
+    background: #e0e7ff;
+    color: #4338ca;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+}
+
+.portal-captcha-title {
+    margin: 0 0 0.75rem;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.portal-captcha-text {
+    margin: 0;
+    color: var(--portal-muted);
+    line-height: 1.75;
+    font-size: 0.88rem;
+}
+
+.portal-captcha-form {
+    margin-top: 1.25rem;
+    text-align: start;
+}
+
+.portal-captcha-row {
+    display: flex;
+    align-items: stretch;
+    gap: 0.5rem;
+}
+
+.portal-captcha-image {
+    flex: 1 1 auto;
+    min-height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    border: 1px solid var(--portal-border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.portal-captcha-image svg {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+.portal-captcha-loading {
+    color: var(--portal-muted);
+    font-size: 0.8rem;
+}
+
+.portal-captcha-refresh {
+    flex: 0 0 auto;
+    width: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--portal-border);
+    border-radius: 8px;
+    background: var(--portal-surface);
+    color: var(--portal-text);
+    cursor: pointer;
+}
+
+.portal-captcha-refresh:disabled {
+    opacity: 0.55;
+}
+
+.portal-captcha-label {
+    display: block;
+    margin: 0.9rem 0 0.35rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.portal-captcha-input {
+    width: 100%;
+    padding: 0.7rem 0.75rem;
+    font-family: inherit;
+    font-size: 1.05rem;
+    letter-spacing: 0.15em;
+    text-align: center;
+    direction: ltr;
+    background: #fff;
+    color: var(--portal-text);
+    border: 1px solid var(--portal-border);
+    border-radius: 8px;
+}
+
+.portal-captcha-input:focus {
+    outline: 2px solid var(--portal-accent);
+    outline-offset: 1px;
+}
+
+.portal-captcha-error {
+    margin: 0.5rem 0 0;
+    color: #b91c1c;
+    font-size: 0.82rem;
+}
+
+.portal-captcha-hint {
+    margin: 0.5rem 0 0;
+    color: var(--portal-muted);
+    font-size: 0.78rem;
+}
+
+.portal-captcha-submit {
+    width: 100%;
+    margin-top: 1rem;
+    padding: 0.75rem;
+    font-size: 0.95rem;
+    cursor: pointer;
+}

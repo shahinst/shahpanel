@@ -53,6 +53,8 @@ trait ShowsClientAccountDetails
                 : null,
             'portalActiveUrl' => $portalLinks->publicUrlIfActive($account),
             'portalLinkTtlMinutes' => $portalLinks->ttlMinutes(),
+            'portalLinkTtlLabel' => $portalLinks->ttlLabel(),
+            'portalActiveExpiresAt' => $portalLinks->expiresAtIfActive($account),
             'viewerIsClient' => false,
         ]));
     }

@@ -350,6 +350,10 @@
             </div>
         @endif
 
+        {{-- عمر لینک از تنظیمات پنل می‌آید؛ این پیش‌فرض فقط برای فراخوان‌هایی است
+             که برچسب را پاس نمی‌دهند تا متن نیمه‌کاره چاپ نشود. --}}
+        @php($portalLinkTtlLabel = $portalLinkTtlLabel ?? \App\Support\PortalLinkSettings::describe((int) ($portalLinkTtlMinutes ?? 5)))
+
         @if (! ($viewerIsClient ?? false) && ($portalIssueUrl ?? null))
             <div class="panel-modern-card mb-3">
                 <div class="card-head"><h3><i class="bx bx-link-external"></i> {{ __('menu.portal_link') }}</h3></div>
@@ -357,10 +361,13 @@
                     <a href="{{ $portalIssueUrl }}" target="_blank" rel="noopener" class="btn btn-outline-info w-100 mb-2">
                         <i class="bx bx-link-external"></i> {{ __('menu.portal_link') }}
                     </a>
-                    <p class="text-muted small mb-0">{{ __('accounts.portal_link_sms_ttl_hint', ['minutes' => persian_digits($portalLinkTtlMinutes ?? 5)]) }}</p>
+                    <p class="text-muted small mb-0">{{ __('accounts.portal_link_sms_ttl_hint', ['duration' => $portalLinkTtlLabel]) }}</p>
                     @if ($portalActiveUrl ?? null)
                         <p class="text-muted small mt-2 mb-1">{{ __('accounts.portal_link_current_active') }}</p>
                         <code dir="ltr" class="small d-block text-break">{{ $portalActiveUrl }}</code>
+                        @if ($portalActiveExpiresAt ?? null)
+                            <p class="text-muted small mt-1 mb-0">{{ __('accounts.portal_link_expires_at', ['time' => jalali_date($portalActiveExpiresAt, 'Y/m/d H:i')]) }}</p>
+                        @endif
                     @endif
                 </div>
             </div>
@@ -370,7 +377,10 @@
                 <div class="card-body">
                     <a href="{{ $portalActiveUrl }}" target="_blank" rel="noopener" class="btn btn-outline-info w-100 mb-2">{{ __('menu.portal_link') }}</a>
                     <code dir="ltr" class="small d-block text-break mb-2">{{ $portalActiveUrl }}</code>
-                    <p class="text-muted small mb-0">{{ __('accounts.portal_link_sms_ttl_hint', ['minutes' => persian_digits($portalLinkTtlMinutes ?? 5)]) }}</p>
+                    <p class="text-muted small mb-0">{{ __('accounts.portal_link_sms_ttl_hint', ['duration' => $portalLinkTtlLabel]) }}</p>
+                    @if ($portalActiveExpiresAt ?? null)
+                        <p class="text-muted small mt-1 mb-0">{{ __('accounts.portal_link_expires_at', ['time' => jalali_date($portalActiveExpiresAt, 'Y/m/d H:i')]) }}</p>
+                    @endif
                 </div>
             </div>
         @endif

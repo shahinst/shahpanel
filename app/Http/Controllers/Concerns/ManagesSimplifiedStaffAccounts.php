@@ -139,6 +139,8 @@ trait ManagesSimplifiedStaffAccounts
                 : null,
             'portalActiveUrl' => $portalLinks->publicUrlIfActive($account),
             'portalLinkTtlMinutes' => $portalLinks->ttlMinutes(),
+            'portalLinkTtlLabel' => $portalLinks->ttlLabel(),
+            'portalActiveExpiresAt' => $portalLinks->expiresAtIfActive($account),
             'viewerIsClient' => false,
             'kycVerification' => $account->kycVerification,
             'viewerIsAdmin' => $prefix === 'admin',

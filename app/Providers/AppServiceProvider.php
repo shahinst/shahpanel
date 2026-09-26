@@ -128,6 +128,18 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(60)->by($request->route('token').'|'.$request->ip());
         });
 
+        // کپچای صفحهٔ مشتری: کلید «توکن پورتال + آی‌پی» است تا تلاش انبوه روی یک
+        // لینک، بقیهٔ مشتری‌ها را قطع نکند و حدس زدن کپچا هم بی‌صرفه شود. نام
+        // محدودکننده جدا است چون سقف عددی درون‌خطی همهٔ مسیرها را در یک سبد
+        // می‌ریزد.
+        RateLimiter::for('portal-captcha', function (Request $request) {
+            return Limit::perMinute(30)->by($request->route('token').'|'.$request->ip());
+        });
+
+        RateLimiter::for('portal-captcha-verify', function (Request $request) {
+            return Limit::perMinute(10)->by($request->route('token').'|'.$request->ip());
+        });
+
         RateLimiter::for('client-panel', function (Request $request) {
             return Limit::perMinute(120)->by($request->user()?->id ?: $request->ip());
         });

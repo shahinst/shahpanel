@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\HtaccessBasicAuthService;
+use App\Services\PortalLinkService;
 use App\Services\TwoFactorService;
+use App\Support\PortalLinkSettings;
 use App\Support\PortalPaths;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -36,11 +38,14 @@ class SecurityController extends Controller
 
         $firewallEnabled = true;
         $adminIpWhitelist = '';
+        // پیش‌فرض همان ثابت config است تا اگر جدول تنظیمات در دسترس نبود صفحه بالا بیاید.
+        $portalLinkTtlMinutes = max(1, (int) config('shahpanel.portal_link_ttl_minutes', 5));
 
         try {
             if (\Illuminate\Support\Facades\Schema::hasTable('settings')) {
                 $firewallEnabled = Setting::getValue('firewall_enabled', '1') === '1';
                 $adminIpWhitelist = (string) Setting::getValue('admin_ip_whitelist', '');
+                $portalLinkTtlMinutes = app(PortalLinkService::class)->ttlMinutes();
             }
         } catch (\Throwable) {
             // Keep defaults when DB is unavailable.
@@ -53,7 +58,42 @@ class SecurityController extends Controller
             'htaccessPending' => $htaccessPending,
             'firewallEnabled' => $firewallEnabled,
             'adminIpWhitelist' => $adminIpWhitelist,
+            'portalLinkTtlMinutes' => $portalLinkTtlMinutes,
+            'portalLinkTtlAmount' => PortalLinkSettings::amountFor($portalLinkTtlMinutes),
+            'portalLinkTtlUnit' => PortalLinkSettings::unitFor($portalLinkTtlMinutes),
         ]);
+    }
+
+    /**
+     * عمر لینک پورتال مشتری. ادمین عدد و واحد را می‌دهد ولی همیشه «دقیقه» ذخیره
+     * می‌شود؛ واحد فقط راحتی فرم است و بقیهٔ کد یک عدد دقیقه می‌بیند.
+     */
+    public function updatePortalLink(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'portal_link_ttl_amount' => ['required', 'integer', 'min:1', 'max:'.PortalLinkSettings::MAX_TTL_MINUTES],
+            'portal_link_ttl_unit' => ['required', 'string', 'in:'.implode(',', array_keys(PortalLinkSettings::UNITS))],
+        ]);
+
+        $minutes = PortalLinkSettings::minutesFor(
+            (int) $validated['portal_link_ttl_amount'],
+            $validated['portal_link_ttl_unit'],
+        );
+
+        // سقف روی «دقیقهٔ نهایی» است، پس ۴۰۰ روز هم از همین‌جا رد می‌شود.
+        if ($minutes === null) {
+            return back()->withInput()->withErrors([
+                'portal_link_ttl_amount' => __('security.portal_link_ttl_invalid', [
+                    'days' => persian_digits(intdiv(PortalLinkSettings::MAX_TTL_MINUTES, PortalLinkSettings::UNITS['days'])),
+                ]),
+            ]);
+        }
+
+        PortalLinkSettings::setTtlMinutes($minutes);
+
+        return redirect()
+            ->route('admin.security.index')
+            ->with('success', __('app.saved'));
     }
 
     public function updateFirewall(Request $request): RedirectResponse

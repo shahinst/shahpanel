@@ -52,6 +52,8 @@ class AccountController extends Controller
             'portalIssueUrl' => null,
             'portalActiveUrl' => $portalActiveUrl,
             'portalLinkTtlMinutes' => $portalLinks->ttlMinutes(),
+            'portalLinkTtlLabel' => $portalLinks->ttlLabel(),
+            'portalActiveExpiresAt' => $portalLinks->expiresAtIfActive($account),
             'viewerIsClient' => true,
         ]));
     }

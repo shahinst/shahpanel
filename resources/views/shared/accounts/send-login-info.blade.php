@@ -29,8 +29,8 @@
     <div class="mb-3 small">
         <span class="text-muted d-block">{{ __('accounts.send_login_info_preview') }}</span>
         <pre class="bg-light p-2 rounded mb-1" style="white-space: pre-wrap;">{{ $previewMessage }}</pre>
-        @if (! empty($portalLinkTtlMinutes))
-            <p class="text-muted mb-0">{{ __('accounts.portal_link_sms_ttl_hint', ['minutes' => persian_digits($portalLinkTtlMinutes)]) }}</p>
+        @if (! empty($portalLinkTtlLabel))
+            <p class="text-muted mb-0">{{ __('accounts.portal_link_sms_ttl_hint', ['duration' => $portalLinkTtlLabel]) }}</p>
         @endif
     </div>
 

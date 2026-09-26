@@ -42,6 +42,10 @@ return [
 
     'portal_link_ttl_minutes' => (int) env('PORTAL_LINK_TTL_MINUTES', 5),
 
+    // عمر «کپچای حل‌شده»ی صفحهٔ مشتری در سشن. کوتاه است تا لینک لو رفته دیرتر
+    // به کار مهاجم بیاید، و بلند است تا مشتری با هر رفرش دوباره کپچا نبیند.
+    'portal_captcha_session_minutes' => (int) env('PORTAL_CAPTCHA_SESSION_MINUTES', 60),
+
     /*
     |--------------------------------------------------------------------------
     | Traffic sync
