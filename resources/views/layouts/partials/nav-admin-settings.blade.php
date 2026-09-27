@@ -21,6 +21,12 @@
         module_active('migrate')
             ? array('route' => 'admin.migrate.index', 'section' => 'settings_migrate', 'label' => __('menu.migrate'), 'icon' => 'bx-transfer-alt')
             : null,
+        // مدیریت مدیران پنل زیرمجموعهٔ تنظیمات است، ولی برخلاف بقیهٔ آیتم‌ها
+        // با دسترسی بخش باز نمی‌شود: فقط مدیر اصلی آن را می‌بیند و فقط او هم
+        // به مسیرش راه دارد (کلید super_only در config/admin_sections.php).
+        is_super_admin()
+            ? array('route' => 'admin.administrators.index', 'section' => 'settings', 'label' => __('admins.menu_label'), 'icon' => 'bx-shield-quarter')
+            : null,
     ], fn ($link): bool => is_array($link)
         && Route::has($link['route'])
         && admin_section_allowed($link['section'])));

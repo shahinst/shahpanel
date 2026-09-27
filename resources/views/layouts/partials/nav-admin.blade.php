@@ -48,16 +48,6 @@
         :active="$isActive" />
 @endforeach
 
-{{-- مدیریت مدیران پنل: فقط مدیر اصلی این آیتم را می‌بیند و فقط او هم به
-    مسیرش راه دارد (کلید super_only در config/admin_sections.php). --}}
-@if (is_super_admin())
-    <x-sidebar-item
-        :href="route('admin.administrators.index')"
-        :label="__('admins.menu_label')"
-        icon="bx-shield-quarter"
-        :active="request()->routeIs('admin.administrators.*')" />
-@endif
-
 @include('layouts.partials.nav-accounts', ['panel' => $panel])
 
 @include('layouts.partials.nav-financial', ['panel' => $panel])
