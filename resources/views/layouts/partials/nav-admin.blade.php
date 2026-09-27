@@ -1,16 +1,16 @@
 @php
     $panel = 'admin';
     $mainLinks = [
-        ['route' => 'admin.dashboard', 'label' => __('menu.dashboard'), 'icon' => 'bx-home-alt'],
-        ['route' => 'admin.users.index', 'label' => __('menu.agents'), 'icon' => 'bx-user-pin'],
-        ['route' => 'admin.sellers.index', 'label' => __('menu.sellers'), 'icon' => 'bx-user'],
-        ['route' => 'admin.clients.index', 'label' => __('menu.clients'), 'icon' => 'bx-group'],
-        ['route' => 'admin.packages.index', 'label' => __('menu.packages'), 'icon' => 'bx-package', 'also_active' => ['admin.package-categories.*']],
-        ['route' => 'admin.packages.pricing', 'label' => __('ui.menu_pricing'), 'icon' => 'bx-purchase-tag'],
-        module_active('tunneling') ? ['route' => 'admin.tunneling.index', 'label' => __('menu.tunneling'), 'icon' => 'bx-git-branch', 'also_active' => ['admin.tunneling.*']] : null,
+        ['route' => 'admin.dashboard', 'section' => 'dashboard', 'label' => __('menu.dashboard'), 'icon' => 'bx-home-alt'],
+        ['route' => 'admin.users.index', 'section' => 'agents', 'label' => __('menu.agents'), 'icon' => 'bx-user-pin'],
+        ['route' => 'admin.sellers.index', 'section' => 'sellers', 'label' => __('menu.sellers'), 'icon' => 'bx-user'],
+        ['route' => 'admin.clients.index', 'section' => 'clients', 'label' => __('menu.clients'), 'icon' => 'bx-group'],
+        ['route' => 'admin.packages.index', 'section' => 'packages', 'label' => __('menu.packages'), 'icon' => 'bx-package', 'also_active' => ['admin.package-categories.*']],
+        ['route' => 'admin.packages.pricing', 'section' => 'packages', 'label' => __('ui.menu_pricing'), 'icon' => 'bx-purchase-tag'],
+        module_active('tunneling') ? ['route' => 'admin.tunneling.index', 'section' => 'tunneling', 'label' => __('menu.tunneling'), 'icon' => 'bx-git-branch', 'also_active' => ['admin.tunneling.*']] : null,
     ];
     $bottomLinks = [
-        ['route' => 'admin.reports.index', 'label' => __('menu.reports'), 'icon' => 'bx-bar-chart-alt-2'],
+        ['route' => 'admin.reports.index', 'section' => 'reports', 'label' => __('menu.reports'), 'icon' => 'bx-bar-chart-alt-2'],
     ];
 
     // A module-gated entry is null while its module is off, so the filter has to
@@ -18,11 +18,15 @@
     // makes the whole admin menu throw as soon as a module is deactivated.
     $mainLinks = array_values(array_filter(
         $mainLinks,
-        fn ($link): bool => is_array($link) && \Illuminate\Support\Facades\Route::has($link['route'])
+        fn ($link): bool => is_array($link)
+            && \Illuminate\Support\Facades\Route::has($link['route'])
+            && admin_section_allowed($link['section'])
     ));
     $bottomLinks = array_values(array_filter(
         $bottomLinks,
-        fn ($link): bool => is_array($link) && \Illuminate\Support\Facades\Route::has($link['route'])
+        fn ($link): bool => is_array($link)
+            && \Illuminate\Support\Facades\Route::has($link['route'])
+            && admin_section_allowed($link['section'])
     ));
 @endphp
 
@@ -43,6 +47,16 @@
         :icon="$link['icon']"
         :active="$isActive" />
 @endforeach
+
+{{-- مدیریت مدیران پنل: فقط مدیر اصلی این آیتم را می‌بیند و فقط او هم به
+    مسیرش راه دارد (کلید super_only در config/admin_sections.php). --}}
+@if (is_super_admin())
+    <x-sidebar-item
+        :href="route('admin.administrators.index')"
+        :label="__('admins.menu_label')"
+        icon="bx-shield-quarter"
+        :active="request()->routeIs('admin.administrators.*')" />
+@endif
 
 @include('layouts.partials.nav-accounts', ['panel' => $panel])
 

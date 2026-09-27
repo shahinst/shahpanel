@@ -11,33 +11,41 @@
 
     $financialLinks = array_values(array_filter([
         Route::has("{$panel}.accounting.index")
-            ? ['route' => "{$panel}.accounting.index", 'label' => __('menu.accounting'), 'icon' => 'bx-calculator']
+            ? ['route' => "{$panel}.accounting.index", 'section' => 'financial_accounting', 'label' => __('menu.accounting'), 'icon' => 'bx-calculator']
             : null,
         $panel === 'admin' && Route::has('admin.financial-plan-templates.index')
-            ? ['route' => 'admin.financial-plan-templates.index', 'label' => __('financial_plans.menu_templates'), 'icon' => 'bx-layer']
+            ? ['route' => 'admin.financial-plan-templates.index', 'section' => 'financial_plan_templates', 'label' => __('financial_plans.menu_templates'), 'icon' => 'bx-layer']
             : null,
         $panel === 'admin' && Route::has('admin.agent-financial-plans.index')
-            ? ['route' => 'admin.agent-financial-plans.index', 'label' => __('financial_plans.menu_purchases'), 'icon' => 'bx-transfer']
+            ? ['route' => 'admin.agent-financial-plans.index', 'section' => 'financial_agent_plans', 'label' => __('financial_plans.menu_purchases'), 'icon' => 'bx-transfer']
             : null,
         $panel === 'agent' && Route::has('agent.financial-plans.index')
-            ? ['route' => 'agent.financial-plans.index', 'label' => __('financial_plans.menu_agent_plans'), 'icon' => 'bx-wallet-alt']
+            ? ['route' => 'agent.financial-plans.index', 'section' => 'financial', 'label' => __('financial_plans.menu_agent_plans'), 'icon' => 'bx-wallet-alt']
             : null,
         $showCorrectionMenu && Route::has("{$panel}.accounting.corrections")
-            ? ['route' => "{$panel}.accounting.corrections", 'label' => __('accounting_corrections.menu_label'), 'icon' => 'bx-error-circle']
+            ? ['route' => "{$panel}.accounting.corrections", 'section' => 'financial_accounting', 'label' => __('accounting_corrections.menu_label'), 'icon' => 'bx-error-circle']
             : null,
         Route::has("{$panel}.payment-requests.index")
-            ? ['route' => "{$panel}.payment-requests.index", 'label' => __('menu.payment_requests'), 'icon' => 'bx-money']
+            ? ['route' => "{$panel}.payment-requests.index", 'section' => 'financial_payment_requests', 'label' => __('menu.payment_requests'), 'icon' => 'bx-money']
             : null,
         Route::has("{$panel}.wallet.top-up.create") && module_active('payments')
-            ? ['route' => "{$panel}.wallet.top-up.create", 'label' => __('payment_gateways.menu_top_up'), 'icon' => 'bx-bitcoin']
+            ? ['route' => "{$panel}.wallet.top-up.create", 'section' => 'financial', 'label' => __('payment_gateways.menu_top_up'), 'icon' => 'bx-bitcoin']
             : null,
         Route::has("{$panel}.invoices.index")
-            ? ['route' => "{$panel}.invoices.index", 'label' => __('menu.invoices'), 'icon' => 'bx-file']
+            ? ['route' => "{$panel}.invoices.index", 'section' => 'financial', 'label' => __('menu.invoices'), 'icon' => 'bx-file']
             : null,
         Route::has("{$panel}.client-pricing.edit")
-            ? ['route' => "{$panel}.client-pricing.edit", 'label' => __('clients.display_pricing'), 'icon' => 'bx-purchase-tag']
+            ? ['route' => "{$panel}.client-pricing.edit", 'section' => 'financial_client_pricing', 'label' => __('clients.display_pricing'), 'icon' => 'bx-purchase-tag']
             : null,
     ]));
+
+    // بخش‌هایی که ادمینِ محدودشده اجازه‌شان را ندارد از منو حذف می‌شوند تا
+    // ظاهر منو با چیزی که admin.section اجازه می‌دهد یکی باشد. برای نماینده و
+    // فروشنده این تابع همیشه true است، پس منوی آن‌ها دست‌نخورده می‌ماند.
+    $financialLinks = array_values(array_filter(
+        $financialLinks,
+        fn (array $link): bool => admin_section_allowed($link['section'] ?? 'financial')
+    ));
 
     $financialOpen = request()->routeIs("{$panel}.accounting.*")
         || request()->routeIs("{$panel}.payment-requests.*")
@@ -49,7 +57,7 @@
         || request()->routeIs('agent.financial-plans.*');
 @endphp
 
-@if ($financialLinks !== [])
+@if ($financialLinks !== [] && admin_section_allowed('financial'))
     <li class="vp-nav__group" aria-expanded="{{ $financialOpen ? 'true' : 'false' }}">
         <button type="button" @class(['vp-nav__link', 'is-active' => $financialOpen])>
             <i class="bx bx-wallet vp-nav__icon"></i>

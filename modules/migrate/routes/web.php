@@ -16,6 +16,9 @@ $adminMiddleware = ['auth', 'role:admin', 'log.activity'];
 if (class_exists(\App\Http\Middleware\RestrictAdminByIp::class)) {
     $adminMiddleware[] = 'admin.ip';
 }
+// همان چیدمانی که routes/web.php دارد: دسترسی بخش‌به‌بخش باید روی مسیرهای
+// ماژول هم اعمال شود، وگرنه یک ادمینِ محدودشده می‌توانست همین بخش را باز کند.
+$adminMiddleware[] = 'admin.section';
 
 Route::prefix(PortalPaths::slug('admin'))->name('admin.')->middleware($adminMiddleware)->group(function (): void {
     Route::get('migrate', [AdminMigrateController::class, 'index'])->name('migrate.index');

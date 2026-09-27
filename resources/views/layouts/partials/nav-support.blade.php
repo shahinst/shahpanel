@@ -5,17 +5,22 @@
 
     $supportLinks = array_values(array_filter([
         Route::has("{$panel}.tickets.index")
-            ? ['route' => "{$panel}.tickets.index", 'label' => __('tickets.page_title'), 'icon' => 'bx-support']
+            ? ['route' => "{$panel}.tickets.index", 'section' => 'support_tickets', 'label' => __('tickets.page_title'), 'icon' => 'bx-support']
             : null,
         $showDepartments && Route::has("{$panel}.tickets.departments.index")
-            ? ['route' => "{$panel}.tickets.departments.index", 'label' => __('tickets.departments'), 'icon' => 'bx-folder']
+            ? ['route' => "{$panel}.tickets.departments.index", 'section' => 'support_departments', 'label' => __('tickets.departments'), 'icon' => 'bx-folder']
             : null,
     ]));
+
+    $supportLinks = array_values(array_filter(
+        $supportLinks,
+        fn (array $link): bool => admin_section_allowed($link['section'])
+    ));
 
     $supportOpen = request()->routeIs("{$panel}.tickets.*");
 @endphp
 
-@if ($supportLinks !== [])
+@if ($supportLinks !== [] && admin_section_allowed('support'))
     <li class="vp-nav__group" aria-expanded="{{ $supportOpen ? 'true' : 'false' }}">
         <button type="button" @class(['vp-nav__link', 'is-active' => $supportOpen])>
             <i class="bx bx-headphone vp-nav__icon"></i>

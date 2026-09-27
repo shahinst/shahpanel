@@ -227,7 +227,9 @@ class AccountController extends Controller
                 \App\Support\AccountNameValidator::rules(\App\Support\AccountNameValidator::REMOTE_MAX, required: true),
                 [Rule::unique('accounts', 'remote_username')->ignore($account->id)],
             ),
-            'client_email' => ['nullable', 'email', 'max:255'],
+            // «ایمیل مشتری» در واقع برچسب کلاینت روی پنل است (مثل fatemeh-iq81gdq9-1-up7b)
+            // و نه نشانی ایمیل؛ قاعدهٔ email همین برچسب‌های واقعی را رد می‌کرد.
+            'client_email' => ['nullable', 'string', 'max:255'],
             'display_label' => ['nullable', 'string', 'max:255'],
             'server_id' => ['nullable', 'exists:servers,id'],
             'status' => ['required', Rule::enum(\App\Enums\AccountStatus::class)],

@@ -84,6 +84,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'marzban.auth' => \App\Http\Middleware\MarzbanAuthenticate::class,
             'marzban.throttle' => \App\Http\Middleware\MarzbanThrottle::class,
             'ip.guard' => \App\Http\Middleware\BlockBruteForcedIps::class,
+            // دسترسی بخش‌به‌بخشِ ادمین. جدا از role:admin است: آن نقش را
+            // می‌سنجد و این یکی اینکه همان ادمین اجازهٔ همین بخش را دارد یا نه.
+            'admin.section' => \App\Http\Middleware\EnsureAdminSectionAccess::class,
         ];
 
         if (class_exists(\App\Http\Middleware\RestrictAdminByIp::class)) {

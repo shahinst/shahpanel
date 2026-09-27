@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Concerns;
 
+use App\Jobs\RefreshSubscriptionCacheJob;
 use App\Models\Account;
 use App\Services\PortalLinkService;
 use Illuminate\Http\RedirectResponse;
@@ -42,5 +43,32 @@ trait ManagesPortalLinks
         $portalLinks->regenerate($account);
 
         return back()->with('success', __('accounts.portal_link_regenerated'));
+    }
+
+    /**
+     * ساخت دوبارهٔ کش کانفیگ به‌خواست پشتیبانی. این کش خودش پر می‌شود (ساخت،
+     * تمدید، درون‌ریزی و زمان‌بندِ هر پنج دقیقه)، ولی وقتی مشتری پشت خط است
+     * نمی‌توان منتظر دور بعدی صف ماند — تا آن لحظه جعبهٔ «لینک مستقیم کانفیگ»
+     * خالی می‌ماند و همین شکایتِ اکانت‌های درون‌ریزی‌شده از سنایی بود.
+     *
+     * چرا dispatchSync و نه dispatch: نتیجه باید در همان بازگشتِ صفحه دیده شود؛
+     * با صف، تا اجرای بعدیِ queue:work تا یک دقیقه فاصله است و کاربر فکر می‌کند
+     * دکمه کار نکرده. مجوز update است چون به پنل راه دور درخواست می‌زند.
+     */
+    public function refreshConfigCache(Account $account): RedirectResponse
+    {
+        $this->authorize('update', $account);
+
+        if ($account->isRefunded() || ! $account->service_type->isPanelV2ray()) {
+            abort(404);
+        }
+
+        RefreshSubscriptionCacheJob::dispatchSync($account->id);
+
+        // کار هرگز استثنا نمی‌اندازد و در بدترین حالت کش قبلی را دست‌نخورده
+        // می‌گذارد، پس تنها راه فهمیدن نتیجه خواندن دوبارهٔ ردیف است.
+        return filled($account->fresh()?->subscription_cache)
+            ? back()->with('success', __('accounts.config_refresh_done'))
+            : back()->with('warning', __('accounts.config_refresh_empty'));
     }
 }

@@ -35,6 +35,9 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(ImpersonationService::class);
+        // singleton تا «مدیر اصلی کیست» در هر درخواست یک بار از دیتابیس
+        // پرسیده شود؛ منو برای هر آیتم این سرویس را صدا می‌زند.
+        $this->app->singleton(\App\Services\AdminSectionAccessService::class);
         $this->app->singleton(PaymentGatewayManager::class);
     }
 

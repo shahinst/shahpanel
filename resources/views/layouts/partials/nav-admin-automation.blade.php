@@ -2,20 +2,21 @@
     use Illuminate\Support\Facades\Route;
 
     $automationLinks = [
-        ['route' => 'admin.automation.pricing', 'label' => __('menu.automation_pricing'), 'icon' => 'bx-purchase-tag'],
-        ['route' => 'admin.automation.expiring', 'label' => __('ui.expiring_threshold_title'), 'icon' => 'bx-time-five'],
-        ['route' => 'admin.automation.portal', 'label' => __('menu.automation_portal'), 'icon' => 'bx-mobile-alt'],
-        ['route' => 'admin.automation.index', 'label' => __('menu.automation_cron'), 'icon' => 'bx-time-five'],
-        ['route' => 'admin.settings.logs', 'label' => __('menu.settings_logs'), 'icon' => 'bx-file-find'],
-        ['route' => 'admin.settings.server-backups.index', 'label' => __('menu.settings_server_backups'), 'icon' => 'bx-cloud-download'],
-        ['route' => 'admin.broadcasts.index', 'label' => __('menu.broadcasts'), 'icon' => 'bx-broadcast'],
-        ['route' => 'admin.client-payment-card.edit', 'label' => __('clients.payment_card_settings'), 'icon' => 'bx-credit-card'],
-        ['route' => 'admin.maintenance.index', 'label' => __('menu.maintenance'), 'icon' => 'bx-data'],
+        ['route' => 'admin.automation.pricing', 'section' => 'automation_pricing', 'label' => __('menu.automation_pricing'), 'icon' => 'bx-purchase-tag'],
+        ['route' => 'admin.automation.expiring', 'section' => 'automation', 'label' => __('ui.expiring_threshold_title'), 'icon' => 'bx-time-five'],
+        ['route' => 'admin.automation.portal', 'section' => 'automation_portal', 'label' => __('menu.automation_portal'), 'icon' => 'bx-mobile-alt'],
+        ['route' => 'admin.automation.index', 'section' => 'automation_cron', 'label' => __('menu.automation_cron'), 'icon' => 'bx-time-five'],
+        ['route' => 'admin.settings.logs', 'section' => 'automation_logs', 'label' => __('menu.settings_logs'), 'icon' => 'bx-file-find'],
+        ['route' => 'admin.settings.server-backups.index', 'section' => 'automation_server_backups', 'label' => __('menu.settings_server_backups'), 'icon' => 'bx-cloud-download'],
+        ['route' => 'admin.broadcasts.index', 'section' => 'automation_broadcasts', 'label' => __('menu.broadcasts'), 'icon' => 'bx-broadcast'],
+        ['route' => 'admin.client-payment-card.edit', 'section' => 'automation_payment_card', 'label' => __('clients.payment_card_settings'), 'icon' => 'bx-credit-card'],
+        ['route' => 'admin.maintenance.index', 'section' => 'automation_maintenance', 'label' => __('menu.maintenance'), 'icon' => 'bx-data'],
     ];
 
     $automationLinks = array_values(array_filter(
         $automationLinks,
         fn (array $link): bool => Route::has($link['route'])
+            && admin_section_allowed($link['section'])
     ));
 
     $automationOpen = request()->routeIs('admin.automation.*')
@@ -28,7 +29,7 @@
         || request()->routeIs('admin.maintenance.*');
 @endphp
 
-@if ($automationLinks !== [])
+@if ($automationLinks !== [] && admin_section_allowed('automation'))
     <li class="vp-nav__group" aria-expanded="{{ $automationOpen ? 'true' : 'false' }}">
         <button type="button" @class(['vp-nav__link', 'is-active' => $automationOpen])>
             <i class="bx bx-bot vp-nav__icon"></i>

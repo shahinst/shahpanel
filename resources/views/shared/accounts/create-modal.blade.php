@@ -22,7 +22,7 @@
                     @if ($isAgent && $accountOwners->isNotEmpty())
                     <div class="mb-3">
                         <label class="form-label">{{ __('accounts.owner') }}</label>
-                        <select name="owner_seller_id" id="staff-owner-id" class="form-control" required>
+                        <select name="owner_seller_id" id="staff-owner-id" class="form-select" required>
                             @foreach ($accountOwners as $owner)
                                 <option value="{{ $owner->id }}" @selected(old('owner_seller_id', auth()->id()) == $owner->id)>
                                     {{ $owner->full_name ?: $owner->username }} ({{ $owner->role->label() }})
@@ -54,21 +54,21 @@
 
                     <div class="mb-3" id="staff-client-select-wrap" @if($clientMode !== 'existing') hidden @endif>
                         <label class="form-label" for="staff-client-user-id">{{ __('clients.select_existing_client') }}</label>
-                        <select name="client_user_id" id="staff-client-user-id" class="form-control">
+                        <select name="client_user_id" id="staff-client-user-id" class="form-select">
                             <option value="">—</option>
                         </select>
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label" for="staff-package-id">{{ __('accounts.package') }}</label>
-                        <select name="package_id" id="staff-package-id" class="form-control" required>
+                        <select name="package_id" id="staff-package-id" class="form-select" required>
                             <option value="">—</option>
                         </select>
                     </div>
 
                     <div id="staff-duration-wrap" class="mb-3" hidden>
                         <label class="form-label" for="staff-duration-id">{{ __('packages.select_duration') }}</label>
-                        <select name="package_duration_id" id="staff-duration-id" class="form-control" required disabled>
+                        <select name="package_duration_id" id="staff-duration-id" class="form-select" required disabled>
                             <option value="">—</option>
                         </select>
                         <p class="form-text text-muted mb-0 mt-1" id="staff-fixed-duration-hint"></p>

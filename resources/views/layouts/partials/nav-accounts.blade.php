@@ -10,20 +10,21 @@
         && Route::has("{$panel}.accounts.anyconnect");
 
     $accountLinks = [
-        ['route' => "{$panel}.accounts.wireguard", 'label' => __('menu.accounts_wireguard'), 'icon' => 'bx-shield-quarter'],
-        ['route' => "{$panel}.accounts.ppp", 'label' => __('menu.accounts_ppp'), 'icon' => 'bx-plug'],
-        ['route' => "{$panel}.accounts.v2ray", 'label' => __('menu.accounts_v2ray'), 'icon' => 'bx-rocket'],
-        ['route' => "{$panel}.accounts.anyconnect", 'label' => __('menu.accounts_anyconnect'), 'icon' => 'bx-network-chart'],
-        ['route' => "{$panel}.accounts.expiring", 'label' => __('ui.expiring_accounts_title'), 'icon' => 'bx-time-five'],
+        ['route' => "{$panel}.accounts.wireguard", 'section' => 'accounts_wireguard', 'label' => __('menu.accounts_wireguard'), 'icon' => 'bx-shield-quarter'],
+        ['route' => "{$panel}.accounts.ppp", 'section' => 'accounts_ppp', 'label' => __('menu.accounts_ppp'), 'icon' => 'bx-plug'],
+        ['route' => "{$panel}.accounts.v2ray", 'section' => 'accounts_v2ray', 'label' => __('menu.accounts_v2ray'), 'icon' => 'bx-rocket'],
+        ['route' => "{$panel}.accounts.anyconnect", 'section' => 'accounts_anyconnect', 'label' => __('menu.accounts_anyconnect'), 'icon' => 'bx-network-chart'],
+        ['route' => "{$panel}.accounts.expiring", 'section' => 'accounts', 'label' => __('ui.expiring_accounts_title'), 'icon' => 'bx-time-five'],
     ];
 
     $accountLinks = array_values(array_filter(
         $accountLinks,
         fn (array $link): bool => Route::has($link['route'])
+            && admin_section_allowed($link['section'])
     ));
 @endphp
 
-@if ($hasCategories)
+@if ($hasCategories && $accountLinks !== [] && admin_section_allowed('accounts'))
     <li class="vp-nav__group" aria-expanded="{{ $accountsOpen ? 'true' : 'false' }}">
         <button type="button" @class(['vp-nav__link', 'is-active' => $accountsOpen])>
             <i class="bx bx-group vp-nav__icon"></i>
@@ -41,7 +42,7 @@
             @endforeach
         </ul>
     </li>
-@elseif (Route::has("{$panel}.accounts.index"))
+@elseif (Route::has("{$panel}.accounts.index") && admin_section_allowed('accounts'))
     <li>
         <a href="{{ route("{$panel}.accounts.index") }}" @class(['vp-nav__link', 'is-active' => $accountsOpen])>
             <i class="bx bx-group vp-nav__icon"></i>

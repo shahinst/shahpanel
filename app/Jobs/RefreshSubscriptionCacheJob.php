@@ -89,7 +89,7 @@ class RefreshSubscriptionCacheJob implements ShouldBeUnique, ShouldQueue
         // TLS می‌دهد. آن متد چند نشانی و چند طرح را امتحان می‌کند و همان چیزی را
         // برمی‌گرداند که کلاینت می‌بیند.
         if ($account->service_type->isSanaei()) {
-            $lines = $this->fetchSanaeiLines($account, $sanaeiService);
+            $lines = $this->fetchSanaeiLines($account, $sanaeiService, $shareLinkBuilder);
 
             if ($lines !== null) {
                 $this->storeBody($account, $lines);
@@ -138,11 +138,29 @@ class RefreshSubscriptionCacheJob implements ShouldBeUnique, ShouldQueue
      * باید سراغ GET مستقیم رفت؛ رشتهٔ خالی هرگز برنمی‌گردد چون ذخیرهٔ بدنهٔ
      * خالی یعنی پاک کردن کانفیگ‌های کلاینت.
      */
-    protected function fetchSanaeiLines(Account $account, SanaeiService $sanaeiService): ?string
-    {
-        $subId = (string) ($account->sanaei_sub_id ?? '');
+    protected function fetchSanaeiLines(
+        Account $account,
+        SanaeiService $sanaeiService,
+        SanaeiShareLinkBuilder $shareLinkBuilder
+    ): ?string {
+        if ($account->server === null) {
+            return null;
+        }
 
-        if ($subId === '' || $account->server === null) {
+        // چرا resolveSubId و نه خواندن مستقیم ستون: اکانت‌های درون‌ریزی‌شده از پنل
+        // سنایی ستون sanaei_sub_id را خالی دارند و خواندن مستقیم باعث می‌شد این
+        // کار بی‌صدا برگردد، کش هرگز پر نشود و مشتری فقط لینک سابسکرایب ببیند.
+        $subId = $shareLinkBuilder->resolveSubId($account);
+
+        if ($subId === null) {
+            // بی‌صدا برنگرد: تنها نشانهٔ بیرونی این حالت «نبودن لینک کانفیگ» است و
+            // پشتیبانی بدون این خط هیچ سرنخی برای دنبال کردنش ندارد.
+            Log::channel('sanaei')->warning('Subscription cache: unresolved Sanaei sub id', [
+                'account_id' => $account->id,
+                'server_id' => $account->server_id,
+                'client_email' => $account->client_email,
+            ]);
+
             return null;
         }
 
@@ -168,8 +186,7 @@ class RefreshSubscriptionCacheJob implements ShouldBeUnique, ShouldQueue
             }
         }
 
-        return $lines === [] ? null : implode("
-", $lines);
+        return $lines === [] ? null : implode("\n", $lines);
     }
 
     /**

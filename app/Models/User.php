@@ -53,6 +53,11 @@ class User extends Authenticatable
             'role' => UserRole::class,
             'status' => UserStatus::class,
             'enabled_currencies' => 'array',
+            // عمداً در $fillable نیست: تنها جایی که نوشته می‌شود
+            // Admin\AdministratorController است و آن هم صریح مقدار می‌دهد. اگر
+            // fillable بود، هر فرمی که آرایهٔ ورودی را دست‌نخورده به update
+            // می‌دهد می‌توانست دسترسی‌ها را عوض کند.
+            'admin_section_permissions' => 'array',
             'daily_server_change_limit' => 'integer',
             'broadcast_banner_watermark_id' => 'integer',
             'password' => 'hashed',

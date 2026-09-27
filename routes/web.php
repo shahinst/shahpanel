@@ -28,6 +28,7 @@ use App\Http\Controllers\Admin\PaymentGatewayController as AdminPaymentGatewayCo
 use App\Http\Controllers\Admin\GatewayPaymentController as AdminGatewayPaymentController;
 use App\Http\Controllers\Admin\GiftAccountController as AdminGiftAccountController;
 use App\Http\Controllers\Admin\GiftRewardController as AdminGiftRewardController;
+use App\Http\Controllers\Admin\AdministratorController as AdminAdministratorController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\ClientController as AdminClientController;
 use App\Http\Controllers\Agent\ClientController as AgentClientController;
@@ -84,6 +85,11 @@ $adminMiddleware = ['auth', 'role:admin', 'log.activity'];
 if (class_exists(\App\Http\Middleware\RestrictAdminByIp::class)) {
     $adminMiddleware[] = 'admin.ip';
 }
+// دسترسی بخش‌به‌بخش. یک‌جا روی کل گروه ادمین می‌نشیند تا هیچ مسیری — نه
+// امروز و نه فردا — از سد جا نماند. برای ادمینِ بدون محدودیت (همهٔ
+// ادمین‌های موجود) بی‌اثر است. توجه: modules/*/routes/web.php همین آرایه را
+// دوباره می‌سازند، پس هر تغییری اینجا باید آنجا هم بیاید.
+$adminMiddleware[] = 'admin.section';
 
 // Language switch. Public on purpose: the login page needs it too, and a
 // signed-in user also gets the choice saved to their account.
@@ -188,9 +194,21 @@ Route::prefix($adminPath)->name('admin.')->middleware($adminMiddleware)->group(f
     Route::get('dashboard/system-health', [AdminDashboardController::class, 'systemHealth'])->name('dashboard.system-health');
     Route::get('dashboard/server-stats', [AdminDashboardController::class, 'serverStats'])->name('dashboard.server-stats');
 
+    // مدیریت ادمین‌ها. فقط «مدیر اصلی» (config/admin_sections.php کلید
+    // super_only) به این مسیرها می‌رسد؛ اینجا جایی است که دسترسی بقیه تعیین
+    // می‌شود، پس یک ادمین محدودشده نباید حتی صفحه‌اش را ببیند.
+    Route::get('administrators', [AdminAdministratorController::class, 'index'])->name('administrators.index');
+    Route::get('administrators/create', [AdminAdministratorController::class, 'create'])->name('administrators.create');
+    Route::post('administrators', [AdminAdministratorController::class, 'store'])->name('administrators.store');
+    Route::get('administrators/{user}/edit', [AdminAdministratorController::class, 'edit'])->name('administrators.edit');
+    Route::put('administrators/{user}', [AdminAdministratorController::class, 'update'])->name('administrators.update');
+    Route::delete('administrators/{user}', [AdminAdministratorController::class, 'destroy'])->name('administrators.destroy');
+
     Route::resource('users', AdminUserController::class)->except(['show']);
     Route::resource('sellers', AdminSellerController::class)->except(['show'])->parameters(['sellers' => 'seller']);
-    Route::post('sellers/{seller}', [AdminSellerController::class, 'update']);
+    // نام‌گذاری شد تا میدل‌ور admin.section بتواند این مسیر را به بخش
+    // «فروشندگان» نسبت بدهد؛ مسیر بی‌نام به هیچ بخشی نمی‌خورد و بسته می‌ماند.
+    Route::post('sellers/{seller}', [AdminSellerController::class, 'update'])->name('sellers.update-post');
     Route::post('sellers/{seller}/promote', [AdminSellerController::class, 'promote'])->name('sellers.promote');
 
     Route::get('clients', [AdminClientController::class, 'index'])->name('clients.index');
@@ -257,6 +275,7 @@ Route::prefix($adminPath)->name('admin.')->middleware($adminMiddleware)->group(f
     Route::post('accounts/{account}/enable', [AdminAccountController::class, 'enable'])->name('accounts.enable');
     Route::get('accounts/{account}/portal-link', [AdminAccountController::class, 'openPortalLink'])->name('accounts.portal-link');
     Route::post('accounts/{account}/portal-link/regenerate', [AdminAccountController::class, 'regeneratePortalLink'])->middleware('throttle:money-actions')->name('accounts.portal-link.regenerate');
+    Route::post('accounts/{account}/config-cache/refresh', [AdminAccountController::class, 'refreshConfigCache'])->middleware('throttle:money-actions')->name('accounts.config-cache.refresh');
     Route::get('accounts/{account}/config', [AdminAccountController::class, 'showConfig'])->name('accounts.config');
     Route::get('accounts/{account}/config/download', [AdminAccountController::class, 'downloadConfig'])->name('accounts.config.download');
     Route::get('accounts/{account}/config/qr', [AdminAccountController::class, 'downloadQr'])->name('accounts.config.qr');
@@ -444,6 +463,7 @@ Route::prefix($agentPath)->name('agent.')->middleware(['auth', 'role:agent', 'lo
     Route::post('accounts/{account}/enable', [AgentAccountController::class, 'enable'])->name('accounts.enable');
     Route::get('accounts/{account}/portal-link', [AgentAccountController::class, 'openPortalLink'])->name('accounts.portal-link');
     Route::post('accounts/{account}/portal-link/regenerate', [AgentAccountController::class, 'regeneratePortalLink'])->middleware('throttle:money-actions')->name('accounts.portal-link.regenerate');
+    Route::post('accounts/{account}/config-cache/refresh', [AgentAccountController::class, 'refreshConfigCache'])->middleware('throttle:money-actions')->name('accounts.config-cache.refresh');
     Route::get('accounts/{account}/config', [AgentAccountController::class, 'showConfig'])->name('accounts.config');
     Route::get('accounts/{account}/config/download', [AgentAccountController::class, 'downloadConfig'])->name('accounts.config.download');
     Route::get('accounts/{account}/config/qr', [AgentAccountController::class, 'downloadQr'])->name('accounts.config.qr');
@@ -551,6 +571,7 @@ Route::prefix($sellerPath)->name('seller.')->middleware(['auth', 'role:seller', 
     Route::post('accounts/{account}/refund', [SellerAccountController::class, 'refund'])->middleware('throttle:money-actions')->name('accounts.refund');
     Route::get('accounts/{account}/portal-link', [SellerAccountController::class, 'openPortalLink'])->name('accounts.portal-link');
     Route::post('accounts/{account}/portal-link/regenerate', [SellerAccountController::class, 'regeneratePortalLink'])->middleware('throttle:money-actions')->name('accounts.portal-link.regenerate');
+    Route::post('accounts/{account}/config-cache/refresh', [SellerAccountController::class, 'refreshConfigCache'])->middleware('throttle:money-actions')->name('accounts.config-cache.refresh');
     Route::get('accounts/{account}/config', [SellerAccountController::class, 'showConfig'])->name('accounts.config');
     Route::get('accounts/{account}/config/download', [SellerAccountController::class, 'downloadConfig'])->name('accounts.config.download');
     Route::get('accounts/{account}/config/qr', [SellerAccountController::class, 'downloadQr'])->name('accounts.config.qr');

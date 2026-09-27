@@ -54,6 +54,11 @@ trait ShowsClientAccountDetails
             'portalRegenerateUrl' => \Route::has($panel.'.accounts.portal-link.regenerate')
                 ? route($panel.'.accounts.portal-link.regenerate', $account)
                 : null,
+            // فقط پنل‌های V2Ray کش اشتراک دارند؛ برای وایرگارد و PPP این دکمه
+            // بی‌معنا است و نباید ساخته شود.
+            'configRefreshUrl' => $account->service_type->isPanelV2ray() && \Route::has($panel.'.accounts.config-cache.refresh')
+                ? route($panel.'.accounts.config-cache.refresh', $account)
+                : null,
             'portalActiveUrl' => $portalLinks->publicUrlIfActive($account),
             'portalLinkTtlMinutes' => $portalLinks->ttlMinutes(),
             'portalLinkTtlLabel' => $portalLinks->ttlLabel(),

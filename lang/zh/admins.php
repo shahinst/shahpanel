@@ -1,0 +1,25 @@
+<?php
+
+return [
+    'menu_label' => '面板管理员',
+    'page_title' => '面板管理员',
+    'create' => '新建管理员',
+    'edit' => '编辑管理员',
+    'list_empty' => '尚未创建其他管理员。',
+    'super_admin' => '主管理员',
+    'super_admin_hint' => '这是面板所有者的帐号。它始终保留对所有板块的访问权限：权限无法被缩减，帐号也无法被删除，因此任何人都不会被锁在自己的面板之外。',
+    'access_title' => '板块访问权限',
+    'access_hint' => '每个板块对应主菜单中的一项，子板块就是该项下的子菜单。',
+    'access_full' => '可访问全部板块',
+    'access_limited' => '仅所选板块',
+    'access_limited_hint' => '只勾选板块而不勾选任何子板块时，将授予该板块的全部子板块。子板块需要其父板块，系统会自动加上。',
+    'access_full_badge' => '完全访问',
+    'access_limited_badge' => '受限',
+    'dashboard_always' => '仪表盘是每位管理员的着陆页，始终保持开放。',
+    'sections_required' => '受限管理员至少需要选择一个板块。',
+    'section_forbidden' => '您没有访问该板块的权限。',
+    'cannot_delete_super' => '主管理员帐号无法删除。',
+    'cannot_delete_self' => '您无法删除自己的帐号。',
+    'delete_confirm' => '要删除该管理员吗？',
+    'sections_count' => '允许的板块',
+];

@@ -160,22 +160,59 @@ class SanaeiShareLinkBuilder
             return null;
         }
 
+        $subId = $this->resolveSubId($account);
+
+        if ($subId === null) {
+            return null;
+        }
+
         try {
-            $subId = trim((string) ($account->sanaei_sub_id ?? ''));
-
-            if ($subId === '') {
-                $client = $this->resolveClient($account, $server);
-                $subId = (string) ($this->sanaeiService->extractSubId($client) ?? '');
-            }
-
-            if ($subId === '') {
-                return null;
-            }
-
             return $this->sanaeiService->buildSubscriptionLink($server, $subId);
         } catch (\Throwable) {
             return null;
         }
+    }
+
+    /**
+     * subId اکانت سنایی؛ اگر ستون خالی باشد از پنل پرسیده و همان‌جا ذخیره می‌شود.
+     *
+     * چرا ذخیره لازم است: اکانت‌هایی که از پنل سنایی درون‌ریزی شده‌اند این ستون
+     * را خالی دارند. مصرف‌کننده‌ای که فقط ستون را می‌خواند (پر کردن کش اشتراک)
+     * بی‌صدا بیرون می‌زد و مشتری هیچ‌وقت لینک مستقیم کانفیگ نمی‌دید. با نوشتن
+     * نتیجه، هزینهٔ تماس اضافه با پنل فقط یک‌بار پرداخت می‌شود.
+     *
+     * تنها جای حل subId در کل برنامه همین متد است تا پیاده‌سازی دومی شکل نگیرد.
+     */
+    public function resolveSubId(Account $account): ?string
+    {
+        $stored = trim((string) ($account->sanaei_sub_id ?? ''));
+
+        if ($stored !== '') {
+            return $stored;
+        }
+
+        $account->loadMissing('server');
+        $server = $account->server;
+
+        if ($server === null || ! $account->sanaei_client_uuid) {
+            return null;
+        }
+
+        try {
+            $subId = trim((string) ($this->sanaeiService->extractSubId(
+                $this->resolveClient($account, $server)
+            ) ?? ''));
+        } catch (\Throwable) {
+            return null;
+        }
+
+        if ($subId === '') {
+            return null;
+        }
+
+        $account->forceFill(['sanaei_sub_id' => $subId])->save();
+
+        return $subId;
     }
 
     /**

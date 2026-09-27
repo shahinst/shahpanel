@@ -66,7 +66,11 @@
             return $isStaffPanel;
         }
 
-        return isset($item['route']) && \Illuminate\Support\Facades\Route::has($item['route']);
+        // ادمینِ محدودشده نباید میان‌بری به بخشی ببیند که بازکردنش ۴۰۳ می‌دهد.
+        // برای بقیهٔ نقش‌ها این تابع همیشه true است.
+        return isset($item['route'])
+            && \Illuminate\Support\Facades\Route::has($item['route'])
+            && admin_route_allowed($item['route']);
     })->values();
 
     $kpiCards = collect([
@@ -174,7 +178,7 @@
     </div>
 </div>
 
-@if (($stats['pending_payments'] ?? 0) > 0 && \Illuminate\Support\Facades\Route::has($paymentRoute))
+@if (($stats['pending_payments'] ?? 0) > 0 && \Illuminate\Support\Facades\Route::has($paymentRoute) && admin_route_allowed($paymentRoute))
     <div class="panel-pending-banner">
         <div>
             <i class="bx bx-error-circle align-middle text-warning"></i>

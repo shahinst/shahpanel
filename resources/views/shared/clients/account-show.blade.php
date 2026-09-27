@@ -346,6 +346,19 @@
                                      خراب نشان نمی‌دهیم. --}}
                                 <p class="text-muted small mb-0">{{ __('accounts.config_link_not_ready') }}</p>
                             @endforelse
+
+                            {{-- راه اجبارِ پشتیبانی: اکانت درون‌ریزی‌شده از پنل
+                                 سنایی تا پر شدن کش هیچ کانفیگی ندارد و مشتریِ
+                                 پشت خط نمی‌تواند منتظر دور بعدی زمان‌بند بماند.
+                                 این فرم کار را همان‌جا و همگام اجرا می‌کند. --}}
+                            @if (($configRefreshUrl ?? null) && (auth()->user()?->can('update', $account) ?? false))
+                                <form method="POST" action="{{ $configRefreshUrl }}" class="mt-3">
+                                    @csrf
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bx bx-refresh"></i> {{ __('accounts.config_refresh') }}
+                                    </button>
+                                </form>
+                            @endif
                         </div>
                     </div>
                 </div>

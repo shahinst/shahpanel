@@ -1,0 +1,25 @@
+<?php
+
+return [
+    'menu_label' => 'Panel administrators',
+    'page_title' => 'Panel administrators',
+    'create' => 'New administrator',
+    'edit' => 'Edit administrator',
+    'list_empty' => 'No other administrator has been created yet.',
+    'super_admin' => 'Main administrator',
+    'super_admin_hint' => 'This is the panel owner account. It always keeps access to every section: its permissions cannot be narrowed and the account cannot be deleted, so nobody can ever be locked out of their own panel.',
+    'access_title' => 'Section access',
+    'access_hint' => 'Every section is one entry of the main menu, and the sub-sections are that entry submenu items.',
+    'access_full' => 'Full access to every section',
+    'access_limited' => 'Only the selected sections',
+    'access_limited_hint' => 'Selecting a section without ticking any sub-section grants all of its sub-sections. A sub-section also needs its parent section, which is added automatically.',
+    'access_full_badge' => 'Full access',
+    'access_limited_badge' => 'Restricted',
+    'dashboard_always' => 'The dashboard is every administrator landing page and always stays open.',
+    'sections_required' => 'Pick at least one section for a restricted administrator.',
+    'section_forbidden' => 'You do not have access to this section.',
+    'cannot_delete_super' => 'The main administrator account cannot be deleted.',
+    'cannot_delete_self' => 'You cannot delete your own account.',
+    'delete_confirm' => 'Delete this administrator?',
+    'sections_count' => 'Allowed sections',
+];

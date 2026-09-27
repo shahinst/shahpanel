@@ -5,6 +5,7 @@ namespace App\Services\Pasarguard;
 use App\Enums\AccountStatus;
 use App\Enums\ServiceType;
 use App\Enums\UserRole;
+use App\Jobs\RefreshSubscriptionCacheJob;
 use App\Models\Account;
 use App\Models\Package;
 use App\Models\Server;
@@ -201,6 +202,7 @@ class PasarguardClientImportService
                         'status' => $status,
                         'last_sync_at' => now(),
                     ]);
+                    RefreshSubscriptionCacheJob::dispatchFor($existing);
                     $updated++;
                     $lines[] = "«{$username}» بروزرسانی شد.";
                 } else {
@@ -211,7 +213,7 @@ class PasarguardClientImportService
                 continue;
             }
 
-            Account::query()->create([
+            $account = Account::query()->create([
                 'owner_seller_id' => $sellerId,
                 'owner_agent_id' => $agentId,
                 'package_id' => $package?->id,
@@ -229,6 +231,12 @@ class PasarguardClientImportService
                 'status' => $status,
                 'last_sync_at' => now(),
             ]);
+
+            // اکانت ساخته‌شده توسط خود شاه‌پنل این کار را از AccountService می‌گیرد؛
+            // مسیر درون‌ریزی از آن رد نمی‌شود، پس بدون این خط کش اشتراک پر نمی‌شد و
+            // جعبهٔ «لینک مستقیم کانفیگ» برای مشتری خالی می‌ماند.
+            RefreshSubscriptionCacheJob::dispatchFor($account);
+
             $created++;
             $lines[] = "«{$username}» وارد شد.";
         }

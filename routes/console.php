@@ -164,9 +164,17 @@ Schedule::call(function (): void {
 
     \App\Models\Account::query()
         ->whereIn('service_type', $panelTypes)
-        // بدون توکن اشتراک هیچ‌کس نمی‌تواند /sub را صدا بزند، پس کش‌کردنش فقط
-        // مصرف بی‌خودِ پنل است؛ لحظه‌ای که توکن صادر شود ردیف واجد شرط می‌شود.
-        ->whereNotNull('subscription_token')
+        // برای ردیفی که یک‌بار کش شده، بدون توکن اشتراک هیچ‌کس نمی‌تواند /sub را
+        // صدا بزند و تازه‌سازی دوره‌ای‌اش فقط مصرف بی‌خودِ پنل است.
+        //
+        // ولی ردیفی که هرگز کش نشده باید حتی بی‌توکن هم برداشته شود: اکانت‌های
+        // درون‌ریزی‌شده از پنل سنایی توکن ندارند (توکن فقط وقتی کسی لینک پورتال
+        // را ببیند صادر می‌شود) و جعبهٔ «لینک مستقیم کانفیگ» پیش از پر شدن کش
+        // خالی است، پس با شرط قبلی هیچ‌وقت انتخاب نمی‌شدند و مشتری تا ابد
+        // کانفیگ نمی‌دید.
+        ->where(fn ($query) => $query
+            ->whereNotNull('subscription_token')
+            ->orWhereNull('subscription_cached_at'))
         ->where('status', \App\Enums\AccountStatus::Active)
         ->where(fn ($query) => $query
             ->whereNull('expiry_at')

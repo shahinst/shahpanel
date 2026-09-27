@@ -140,6 +140,11 @@ trait ManagesSimplifiedStaffAccounts
             'portalRegenerateUrl' => \Route::has($prefix.'.accounts.portal-link.regenerate')
                 ? route($prefix.'.accounts.portal-link.regenerate', $account)
                 : null,
+            // فقط پنل‌های V2Ray کش اشتراک دارند؛ برای وایرگارد و PPP این دکمه
+            // بی‌معنا است و نباید ساخته شود.
+            'configRefreshUrl' => $account->service_type->isPanelV2ray() && \Route::has($prefix.'.accounts.config-cache.refresh')
+                ? route($prefix.'.accounts.config-cache.refresh', $account)
+                : null,
             'portalActiveUrl' => $portalLinks->publicUrlIfActive($account),
             'portalLinkTtlMinutes' => $portalLinks->ttlMinutes(),
             'portalLinkTtlLabel' => $portalLinks->ttlLabel(),

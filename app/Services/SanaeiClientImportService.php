@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Enums\AccountStatus;
 use App\Enums\ServiceType;
 use App\Enums\UserRole;
+use App\Jobs\RefreshSubscriptionCacheJob;
 use App\Models\Account;
 use App\Models\Package;
 use App\Models\Server;
@@ -191,12 +192,17 @@ class SanaeiClientImportService
                         'owner_seller_id' => $sellerId,
                         'owner_agent_id' => $agentId,
                         'package_id' => $packageId,
+                        // subId همان چیزی است که لینک اشتراک/کانفیگ با آن ساخته
+                        // می‌شود؛ اگر ردیف قدیمی آن را ندارد همین‌جا پر می‌شود تا
+                        // کار پر کردن کش لازم نباشد دوباره از پنل بپرسد.
+                        'sanaei_sub_id' => $existing->sanaei_sub_id ?: ($remote['sub_id'] ?? null),
                         'data_limit_bytes' => $remote['data_limit_bytes'],
                         'data_used_bytes' => $remote['data_used_bytes'],
                         'expiry_at' => $remote['expiry_at'],
                         'status' => ($remote['enable'] ?? true) ? AccountStatus::Active : AccountStatus::Disabled,
                         'last_sync_at' => now(),
                     ]);
+                    RefreshSubscriptionCacheJob::dispatchFor($existing);
                     $updated++;
                     $lines[] = "مالک «{$remote['email']}» بروزرسانی شد.";
                 } else {
@@ -209,7 +215,7 @@ class SanaeiClientImportService
 
             $username = $this->uniqueUsername($serviceType, $remote['email'], $uuid);
 
-            Account::query()->create([
+            $account = Account::query()->create([
                 'owner_seller_id' => $sellerId,
                 'owner_agent_id' => $agentId,
                 'package_id' => $packageId,
@@ -220,6 +226,10 @@ class SanaeiClientImportService
                 'remote_password_enc' => null,
                 'sanaei_inbound_id' => $inboundId,
                 'sanaei_client_uuid' => $uuid,
+                // پنل subId هر کلاینت را در همان فهرست اینباند می‌دهد؛ اگر این‌جا
+                // ذخیره نشود اکانت درون‌ریزی‌شده هیچ لینک کانفیگی نشان نمی‌دهد،
+                // چون ساختن نشانی اشتراک روی سنایی فقط با subId ممکن است.
+                'sanaei_sub_id' => $remote['sub_id'] ?? null,
                 'client_email' => $remote['email'],
                 'portal_token' => Str::random((int) config('shahpanel.portal_token_length', 32)),
                 'data_limit_bytes' => $remote['data_limit_bytes'],
@@ -228,6 +238,11 @@ class SanaeiClientImportService
                 'status' => ($remote['enable'] ?? true) ? AccountStatus::Active : AccountStatus::Disabled,
                 'last_sync_at' => now(),
             ]);
+
+            // اکانتی که شاه‌پنل خودش می‌سازد این کار را از AccountService می‌گیرد؛
+            // مسیر درون‌ریزی از آن رد نمی‌شود، پس بدون این خط کش اشتراک این
+            // اکانت‌ها هرگز پر نمی‌شد و مشتری «اطلاعات کانفیگ» نمی‌دید.
+            RefreshSubscriptionCacheJob::dispatchFor($account);
 
             $created++;
             $lines[] = "«{$remote['email']}» وارد شد.";

@@ -41,7 +41,9 @@ trait ManagesAccounts
                 AccountNameValidator::rules(AccountNameValidator::REMOTE_MAX),
                 [Rule::unique('accounts', 'remote_username')->ignore($accountId)],
             ),
-            'client_email' => ['nullable', 'email', 'max:255'],
+            // «ایمیل مشتری» در واقع برچسب کلاینت روی پنل است (مثل fatemeh-iq81gdq9-1-up7b)
+            // و نه نشانی ایمیل؛ قاعدهٔ email همین برچسب‌های واقعی را رد می‌کرد.
+            'client_email' => ['nullable', 'string', 'max:255'],
             'client_mode' => ['required', Rule::in(['new', 'existing'])],
             'client_user_id' => ['required_if:client_mode,existing', 'nullable', 'integer', 'exists:users,id'],
             'client_username' => ['required_if:client_mode,new', 'nullable', 'string', 'max:50', 'alpha_dash'],
@@ -61,7 +63,9 @@ trait ManagesAccounts
                 AccountNameValidator::rules(AccountNameValidator::REMOTE_MAX, required: true),
                 [Rule::unique('accounts', 'remote_username')->ignore($account->id)],
             ),
-            'client_email' => ['nullable', 'email', 'max:255'],
+            // «ایمیل مشتری» در واقع برچسب کلاینت روی پنل است (مثل fatemeh-iq81gdq9-1-up7b)
+            // و نه نشانی ایمیل؛ قاعدهٔ email همین برچسب‌های واقعی را رد می‌کرد.
+            'client_email' => ['nullable', 'string', 'max:255'],
             'server_id' => ['nullable', 'exists:servers,id'],
             'status' => ['required', Rule::enum(\App\Enums\AccountStatus::class)],
         ];

@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\Account;
 use App\Services\Sanaei\SanaeiShareLinkBuilder;
-use App\Services\SanaeiService;
 use Endroid\QrCode\Builder\Builder;
 use Endroid\QrCode\Encoding\Encoding;
 use Endroid\QrCode\ErrorCorrectionLevel;
@@ -14,7 +13,6 @@ class SanaeiPortalService
 {
     public function __construct(
         protected SanaeiShareLinkBuilder $shareLinkBuilder,
-        protected SanaeiService $sanaeiService,
         protected ClientAddressRewriter $clientAddressRewriter,
     ) {}
 
@@ -76,9 +74,11 @@ class SanaeiPortalService
             ];
         }
 
-        $this->backfillSubId($account);
-
-        // نسخهٔ کاربرمحور: همین لینک در پورتال و QR به دست کاربر می‌رسد.
+        // نسخهٔ کاربرمحور: همین لینک در پورتال و QR به دست کاربر می‌رسد. حل و
+        // ذخیرهٔ subId هم داخل همین مسیر انجام می‌شود
+        // (SanaeiShareLinkBuilder::resolveSubId) تا نسخهٔ دومی از آن منطق این‌جا
+        // نگه‌داری نشود؛ قبلاً این‌جا یک backfill موازی داشتیم که فقط پورتال را
+        // درست می‌کرد و کارِ پر کردن کش را دست‌خالی می‌گذاشت.
         $subscriptionLink = $this->shareLinkBuilder->clientSubscriptionLinkForAccount($account);
 
         return [
@@ -143,39 +143,6 @@ class SanaeiPortalService
         }
 
         return $remark !== '' ? $remark : strtoupper($scheme);
-    }
-
-    protected function backfillSubId(Account $account): void
-    {
-        if (filled($account->sanaei_sub_id) || ! $account->sanaei_client_uuid) {
-            return;
-        }
-
-        $account->loadMissing('server');
-        $server = $account->server;
-
-        if ($server === null) {
-            return;
-        }
-
-        try {
-            $email = trim((string) ($account->client_email ?? $account->remote_username ?? ''));
-            $client = $email !== ''
-                ? $this->sanaeiService->resolvePanelClient(
-                    $server,
-                    $email,
-                    (string) $account->sanaei_client_uuid,
-                    $account->sanaei_inbound_id ?: null
-                )
-                : null;
-            $subId = $this->sanaeiService->extractSubId($client);
-
-            if ($subId !== null) {
-                $account->forceFill(['sanaei_sub_id' => $subId])->save();
-            }
-        } catch (\Throwable) {
-            // Portal still attempts manual link build.
-        }
     }
 
     public function qrBase64(string $content): string

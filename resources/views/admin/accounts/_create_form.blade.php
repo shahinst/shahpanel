@@ -7,7 +7,7 @@
 @endphp
 
 <x-form.group label="{{ __('ui.account_owner_label') }}" hint="{{ __('ui.account_owner_hint_admin') }}">
-    <select name="owner_seller_id" id="admin-owner-id" required class="form-control">
+    <select name="owner_seller_id" id="admin-owner-id" required class="form-select">
         @foreach ($accountOwners as $owner)
             <option value="{{ $owner->id }}" @selected(old('owner_seller_id', $accountOwners->first()?->id) == $owner->id)>
                 {{ $owner->full_name }} ({{ $owner->role->label() }})
@@ -28,7 +28,7 @@
 @endphp
 
 <x-form.group label="{{ __('accounts.package') }}">
-    <select name="package_id" id="admin-package-id" required class="form-control">
+    <select name="package_id" id="admin-package-id" required class="form-select">
         <option value="">—</option>
         @foreach ($accountPackageGroups as $group)
             @if (! empty($group['label']))
@@ -47,7 +47,7 @@
 </x-form.group>
 
 <x-form.group :label="__('packages.select_duration')" :hint="__('packages.select_duration_hint')">
-    <select name="package_duration_id" id="admin-duration-id" required class="form-control">
+    <select name="package_duration_id" id="admin-duration-id" required class="form-select">
         <option value="">—</option>
     </select>
 </x-form.group>
@@ -63,7 +63,7 @@
 ])
 
 <x-form.group label="{{ __('accounts.server') }}" hint="{{ __('ui.server_auto_hint') }}">
-    <select name="server_id" id="admin-server-id" class="form-control">
+    <select name="server_id" id="admin-server-id" class="form-select">
         <option value="">{{ __('gift_accounts.server_auto') }}</option>
     </select>
 </x-form.group>
@@ -94,7 +94,7 @@
 
 <div id="admin-existing-client-fields" @if($clientMode !== 'existing') hidden @endif>
     <x-form.group :label="__('clients.select_existing_client')">
-        <select name="client_user_id" id="admin-client-user-id" class="form-control">
+        <select name="client_user_id" id="admin-client-user-id" class="form-select">
             <option value="">—</option>
         </select>
         <p class="form-text text-muted mb-0 mt-1" id="admin-client-list-empty" hidden>{{ __('clients.no_clients_yet') }}</p>

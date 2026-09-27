@@ -879,3 +879,74 @@ if (! function_exists('discount_pricing_enabled')) {
         }
     }
 }
+
+if (! function_exists('admin_section_allowed')) {
+    /**
+     * آیا کاربر فعلی اجازهٔ دیدن این بخش منو را دارد؟
+     *
+     * فقط برای هم‌راست‌کردن منو با واقعیت است؛ سدّ اصلی میدل‌ور admin.section
+     * است. برای نماینده/فروشنده/مشتری همیشه true برمی‌گرداند (این لایه فقط
+     * ادمین را محدود می‌کند) و در صورت خطا هم true، چون منو هرگز نباید ۵۰۰ شود
+     * و پنهان‌نشدنِ یک آیتم دسترسی واقعی نمی‌دهد.
+     */
+    function admin_section_allowed(string $key): bool
+    {
+        try {
+            $user = auth()->user();
+
+            if (! $user instanceof \App\Models\User) {
+                return true;
+            }
+
+            return app(\App\Services\AdminSectionAccessService::class)->canAccessSection($user, $key);
+        } catch (\Throwable) {
+            return true;
+        }
+    }
+}
+
+if (! function_exists('is_super_admin')) {
+    /**
+     * «مدیر اصلی» = کم‌ترین id میان ادمین‌ها (حسابِ صاحب پنل که نصب‌کننده ساخته).
+     * توضیح کاملِ دلیلِ این انتخاب در App\Services\AdminSectionAccessService است.
+     */
+    function is_super_admin(?\App\Models\User $user = null): bool
+    {
+        try {
+            $user ??= auth()->user();
+
+            if (! $user instanceof \App\Models\User) {
+                return false;
+            }
+
+            return app(\App\Services\AdminSectionAccessService::class)->isSuperAdmin($user);
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+}
+
+if (! function_exists('admin_route_allowed')) {
+    /**
+     * آیا کاربر فعلی اجازهٔ بازکردن این مسیر نام‌دار را دارد؟
+     *
+     * برای فهرست‌هایی است که با نام مسیر ساخته می‌شوند (میان‌برهای داشبورد) و
+     * کلید بخش را در دست ندارند. همان منطقِ میدل‌ور admin.section را می‌پرسد،
+     * پس دکمه‌ای که ۴۰۳ می‌دهد از اول نمایش داده نمی‌شود. مثل خواهرش فقط ظاهری
+     * است و در صورت خطا true برمی‌گرداند تا داشبورد هرگز ۵۰۰ نشود.
+     */
+    function admin_route_allowed(string $routeName): bool
+    {
+        try {
+            $user = auth()->user();
+
+            if (! $user instanceof \App\Models\User) {
+                return true;
+            }
+
+            return app(\App\Services\AdminSectionAccessService::class)->canAccessRoute($user, $routeName);
+        } catch (\Throwable) {
+            return true;
+        }
+    }
+}

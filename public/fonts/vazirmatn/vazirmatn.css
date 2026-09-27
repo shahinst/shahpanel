@@ -1,8 +1,11 @@
+/* font-display: swap و نه block؛ با block فایرفاکس تا پایان بارگیری فونت متن را نامرئی
+   می‌کشد و متن ویجت‌های بومی مثل <select> را بعد از آمدن فونت دوباره رنگ نمی‌زند،
+   پس مشتری یک کادر خالی می‌دید. */
 @font-face {
     font-family: 'Vazirmatn';
     font-style: normal;
     font-weight: 400;
-    font-display: block;
+    font-display: swap;
     src: url('./Vazirmatn-Regular.woff2') format('woff2');
 }
 
@@ -10,7 +13,7 @@
     font-family: 'Vazirmatn';
     font-style: normal;
     font-weight: 500;
-    font-display: block;
+    font-display: swap;
     src: url('./Vazirmatn-Medium.woff2') format('woff2');
 }
 
@@ -18,6 +21,6 @@
     font-family: 'Vazirmatn';
     font-style: normal;
     font-weight: 700;
-    font-display: block;
+    font-display: swap;
     src: url('./Vazirmatn-Bold.woff2') format('woff2');
 }
