@@ -3,8 +3,10 @@
 namespace App\Jobs;
 
 use App\Models\Account;
+use App\Models\Server;
 use App\Services\Sanaei\SanaeiShareLinkBuilder;
 use App\Services\SanaeiService;
+use App\Support\SubscriptionCacheOutcome;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -13,6 +15,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Throwable;
 
 /**
@@ -26,6 +29,11 @@ use Throwable;
  * نباید کشِ قبلی را پاک کند. اگر کش موجود خالی شود، کانفیگ‌های یک مشتری
  * پول‌داده از اپلیکیشنش محو می‌شود؛ ماندنِ محتوای کمی قدیمی بی‌نهایت بهتر از
  * تحویل بدنهٔ خالی است. فقط پاسخ موفق و ناخالی جایگزین می‌شود.
+ *
+ * هر مسیرِ شکست یک دلیلِ مشخص برمی‌گرداند (SubscriptionCacheOutcome) تا فراخوانِ
+ * همگام — دکمهٔ «خواندن دوبارهٔ کانفیگ از پنل» — عین همان اتفاق را به کاربر
+ * بگوید. پیش از این همه‌چیز زیر یک پیام مبهم پنهان می‌شد و روی سرور واقعی،
+ * سرورِ خاموش‌شده در پنل هم همان پیام را می‌داد که پنلِ خراب.
  */
 class RefreshSubscriptionCacheJob implements ShouldBeUnique, ShouldQueue
 {
@@ -75,12 +83,58 @@ class RefreshSubscriptionCacheJob implements ShouldBeUnique, ShouldQueue
         }
     }
 
+    /**
+     * مسیر صف: نتیجه دور ریخته می‌شود چون کسی آن‌طرف نیست که ببیندش و دلیل
+     * شکست همان‌جا در refresh() لاگ شده است.
+     */
     public function handle(SanaeiShareLinkBuilder $shareLinkBuilder, SanaeiService $sanaeiService): void
+    {
+        $this->refresh($shareLinkBuilder, $sanaeiService);
+    }
+
+    /**
+     * اجرای همین‌جا و همین‌لحظه، با نتیجهٔ خوانا — برای دکمهٔ پشتیبانی.
+     *
+     * چرا این و نه dispatchSync: dispatchSync کار را از صفِ sync می‌گذراند و صف
+     * نمونهٔ تازه‌ای از payload می‌سازد؛ پس نه مقدار بازگشتی handle() به فراخوان
+     * می‌رسد و نه هیچ خاصیتی که روی نمونهٔ ساختهٔ خودش بنشیند. برای گفتن «چرا
+     * نشد» باید همین پروسه نتیجه را در دست بگیرد.
+     */
+    public static function runNowFor(Account $account): SubscriptionCacheOutcome
+    {
+        return (new self($account->id))->refresh(
+            app(SanaeiShareLinkBuilder::class),
+            app(SanaeiService::class),
+        );
+    }
+
+    /**
+     * همان کار handle()، ولی می‌گوید چه شد. هیچ شکستی به نوشتن در کش نمی‌رسد؛
+     * فقط شاخهٔ موفق storeBody را صدا می‌زند.
+     */
+    public function refresh(SanaeiShareLinkBuilder $shareLinkBuilder, SanaeiService $sanaeiService): SubscriptionCacheOutcome
     {
         $account = Account::query()->with('server')->find($this->accountId);
 
         if ($account === null || ! $account->service_type->isPanelV2ray()) {
-            return;
+            return SubscriptionCacheOutcome::failed(SubscriptionCacheOutcome::NOT_APPLICABLE);
+        }
+
+        $server = $account->server;
+
+        if ($server === null) {
+            return SubscriptionCacheOutcome::failed(SubscriptionCacheOutcome::SERVER_MISSING);
+        }
+
+        // سرورِ خاموش در پنل: پیش از هر تماس شبکه‌ای برمی‌گردیم. روی سرور واقعی
+        // تمام شکست‌های سنایی همین یک حالت بود و چون هیچ‌جا اعلام نمی‌شد،
+        // پشتیبانی دنبال خرابیِ پنل می‌گشت. تماس با سرور خاموش هم بی‌معناست:
+        // اکانت‌هایش روی پنل هم سرویس نمی‌دهند.
+        if (! $server->is_active) {
+            return SubscriptionCacheOutcome::failed(
+                SubscriptionCacheOutcome::SERVER_DISABLED,
+                (string) $server->name,
+            );
         }
 
         // سنایی اول از مسیر چندکاندیدای خودِ SanaeiService می‌آید. یک GET ساده
@@ -89,35 +143,58 @@ class RefreshSubscriptionCacheJob implements ShouldBeUnique, ShouldQueue
         // TLS می‌دهد. آن متد چند نشانی و چند طرح را امتحان می‌کند و همان چیزی را
         // برمی‌گرداند که کلاینت می‌بیند.
         if ($account->service_type->isSanaei()) {
-            $lines = $this->fetchSanaeiLines($account, $sanaeiService, $shareLinkBuilder);
+            $lines = $this->fetchSanaeiLines($account, $server, $sanaeiService, $shareLinkBuilder);
 
             if ($lines !== null) {
                 $this->storeBody($account, $lines);
 
-                return;
+                return SubscriptionCacheOutcome::fetched($lines);
             }
         }
 
         $url = $this->resolveRemoteUrl($account, $shareLinkBuilder);
 
         if ($url === null) {
-            Log::warning('Subscription cache: no remote subscription URL', [
+            Log::channel(self::logChannelFor($account))->warning('Subscription cache: no remote subscription URL', [
                 'account_id' => $account->id,
                 'server_id' => $account->server_id,
                 'service_type' => $account->service_type->value,
             ]);
 
-            return;
+            // دو راهِ مختلف به این نقطه می‌رسد و اپراتور باید بداند کدام: سنایی
+            // یعنی subId حل نشد، پاسارگارد/رمناویو یعنی ستون نشانی اشتراک خالی
+            // است. یک پیام مشترک، هر دو را به بیراهه می‌فرستاد.
+            return SubscriptionCacheOutcome::failed($account->service_type->isSanaei()
+                ? SubscriptionCacheOutcome::NO_SUB_ID
+                : SubscriptionCacheOutcome::NO_SUBSCRIPTION_URL);
         }
 
-        $body = $this->fetchBody($account, $url);
+        $outcome = $this->fetchBody($account, $url);
 
-        if ($body === null) {
-            // کش قبلی دست‌نخورده می‌ماند؛ دلیل شکست در fetchBody لاگ شده است.
-            return;
+        if (! $outcome->succeeded()) {
+            // کش قبلی دست‌نخورده می‌ماند و دلیل شکست با خودِ نتیجه بالا می‌رود.
+            return $outcome;
         }
 
-        $this->storeBody($account, $body);
+        $this->storeBody($account, (string) $outcome->body);
+
+        return $outcome;
+    }
+
+    /**
+     * کانال لاگِ همان پنل. سرنخ‌های مسیر سنایی در sanaei.log می‌نشیند و
+     * نوشتن رویدادهای پاسارگارد/رمناویو در همان فایل، اپراتور را گمراه می‌کرد —
+     * همان‌طور که پیامِ قبلیِ دکمه، همه را به sanaei.log حواله می‌داد.
+     *
+     * فقط برای اکانت پنلِ v2ray صدا زده می‌شود (شرط isPanelV2ray بالای کار).
+     */
+    public static function logChannelFor(Account $account): string
+    {
+        return match (true) {
+            $account->service_type->isSanaei() => 'sanaei',
+            $account->service_type->isPasarguard() => 'pasarguard',
+            default => 'remnawave',
+        };
     }
 
     /**
@@ -137,16 +214,16 @@ class RefreshSubscriptionCacheJob implements ShouldBeUnique, ShouldQueue
      * فهرست کانفیگ سنایی از مسیر چندکاندیدای SanaeiService. null یعنی نشد و
      * باید سراغ GET مستقیم رفت؛ رشتهٔ خالی هرگز برنمی‌گردد چون ذخیرهٔ بدنهٔ
      * خالی یعنی پاک کردن کانفیگ‌های کلاینت.
+     *
+     * دلیلِ شکست را برنمی‌گرداند چون شکستش پایانی نیست: GET مستقیم بعد از آن
+     * ممکن است جواب بدهد و دلیلِ نهایی از همان مسیر می‌آید.
      */
     protected function fetchSanaeiLines(
         Account $account,
+        Server $server,
         SanaeiService $sanaeiService,
         SanaeiShareLinkBuilder $shareLinkBuilder
     ): ?string {
-        if ($account->server === null) {
-            return null;
-        }
-
         // چرا resolveSubId و نه خواندن مستقیم ستون: اکانت‌های درون‌ریزی‌شده از پنل
         // سنایی ستون sanaei_sub_id را خالی دارند و خواندن مستقیم باعث می‌شد این
         // کار بی‌صدا برگردد، کش هرگز پر نشود و مشتری فقط لینک سابسکرایب ببیند.
@@ -165,9 +242,9 @@ class RefreshSubscriptionCacheJob implements ShouldBeUnique, ShouldQueue
         }
 
         try {
-            $links = $sanaeiService->fetchSubscriptionConfigLinks($account->server, $subId);
+            $links = $sanaeiService->fetchSubscriptionConfigLinks($server, $subId);
         } catch (Throwable $exception) {
-            Log::warning('Subscription cache: Sanaei fetch failed, falling back', [
+            Log::channel('sanaei')->warning('Subscription cache: Sanaei fetch failed, falling back', [
                 'account_id' => $account->id,
                 'server_id' => $account->server_id,
                 'error' => $exception->getMessage(),
@@ -213,9 +290,13 @@ class RefreshSubscriptionCacheJob implements ShouldBeUnique, ShouldQueue
     }
 
     /**
-     * بدنهٔ آمادهٔ ذخیره، یا null برای هر شکلی از شکست. null یعنی «دست به کش نزن».
+     * fetched با بدنهٔ آمادهٔ ذخیره، یا یک شکستِ دلیل‌دار. هر چیزی جز fetched
+     * یعنی «دست به کش نزن».
+     *
+     * متن خطای پنل هم برمی‌گردد (بریده، چون خطاهای cURL بلندند) تا کاربر لازم
+     * نباشد برای فهمیدن «چرا نشد» سراغ فایل لاگ برود.
      */
-    protected function fetchBody(Account $account, string $url): ?string
+    protected function fetchBody(Account $account, string $url): SubscriptionCacheOutcome
     {
         try {
             // withoutVerifying چون پنل‌های 3x-ui معمولاً گواهی self-signed یا
@@ -232,37 +313,43 @@ class RefreshSubscriptionCacheJob implements ShouldBeUnique, ShouldQueue
                 ])
                 ->get($url);
         } catch (Throwable $exception) {
-            Log::warning('Subscription cache: fetch error, keeping previous cache', [
+            Log::channel(self::logChannelFor($account))->warning('Subscription cache: fetch error, keeping previous cache', [
                 'account_id' => $account->id,
                 'server_id' => $account->server_id,
                 'error' => $exception->getMessage(),
             ]);
 
-            return null;
+            return SubscriptionCacheOutcome::failed(
+                SubscriptionCacheOutcome::UNREACHABLE,
+                Str::limit($exception->getMessage(), 160),
+            );
         }
 
         if (! $response->successful()) {
-            Log::warning('Subscription cache: fetch failed, keeping previous cache', [
+            Log::channel(self::logChannelFor($account))->warning('Subscription cache: fetch failed, keeping previous cache', [
                 'account_id' => $account->id,
                 'server_id' => $account->server_id,
                 'status' => $response->status(),
             ]);
 
-            return null;
+            return SubscriptionCacheOutcome::failed(
+                SubscriptionCacheOutcome::UNREACHABLE,
+                'HTTP '.$response->status(),
+            );
         }
 
         $body = $this->normalizeBody($response->body());
 
         if ($body === '') {
-            Log::warning('Subscription cache: empty body, keeping previous cache', [
+            Log::channel(self::logChannelFor($account))->warning('Subscription cache: empty body, keeping previous cache', [
                 'account_id' => $account->id,
                 'server_id' => $account->server_id,
             ]);
 
-            return null;
+            return SubscriptionCacheOutcome::failed(SubscriptionCacheOutcome::EMPTY_BODY);
         }
 
-        return $body;
+        return SubscriptionCacheOutcome::fetched($body);
     }
 
     /**

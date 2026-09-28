@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Concerns;
 use App\Jobs\RefreshSubscriptionCacheJob;
 use App\Models\Account;
 use App\Services\PortalLinkService;
+use App\Support\SubscriptionCacheOutcome;
 use Illuminate\Http\RedirectResponse;
 
 trait ManagesPortalLinks
@@ -51,9 +52,9 @@ trait ManagesPortalLinks
      * نمی‌توان منتظر دور بعدی صف ماند — تا آن لحظه جعبهٔ «لینک مستقیم کانفیگ»
      * خالی می‌ماند و همین شکایتِ اکانت‌های درون‌ریزی‌شده از سنایی بود.
      *
-     * چرا dispatchSync و نه dispatch: نتیجه باید در همان بازگشتِ صفحه دیده شود؛
-     * با صف، تا اجرای بعدیِ queue:work تا یک دقیقه فاصله است و کاربر فکر می‌کند
-     * دکمه کار نکرده. مجوز update است چون به پنل راه دور درخواست می‌زند.
+     * چرا همگام و نه dispatch: نتیجه باید در همان بازگشتِ صفحه دیده شود؛ با صف،
+     * تا اجرای بعدیِ queue:work تا یک دقیقه فاصله است و کاربر فکر می‌کند دکمه
+     * کار نکرده. مجوز update است چون به پنل راه دور درخواست می‌زند.
      */
     public function refreshConfigCache(Account $account): RedirectResponse
     {
@@ -63,12 +64,59 @@ trait ManagesPortalLinks
             abort(404);
         }
 
-        RefreshSubscriptionCacheJob::dispatchSync($account->id);
+        $outcome = RefreshSubscriptionCacheJob::runNowFor($account);
 
-        // کار هرگز استثنا نمی‌اندازد و در بدترین حالت کش قبلی را دست‌نخورده
-        // می‌گذارد، پس تنها راه فهمیدن نتیجه خواندن دوبارهٔ ردیف است.
-        return filled($account->fresh()?->subscription_cache)
+        // پیش از این نتیجه از «کش پر است یا نه» حدس زده می‌شد و همین باعث آن
+        // پیام مبهم بود: سرورِ خاموش‌شده در پنل، نشانیِ اشتراکِ خالی و پنلِ
+        // بی‌جواب همه یک جمله می‌گرفتند و همه به یک لاگِ سنایی حواله می‌شدند —
+        // حتی اکانت پاسارگارد و رمناویو. حالا خودِ کار می‌گوید چه شد.
+        return $outcome->succeeded()
             ? back()->with('success', __('accounts.config_refresh_done'))
-            : back()->with('warning', __('accounts.config_refresh_empty'));
+            : back()->with('warning', $this->configRefreshFailureMessage($account, $outcome));
+    }
+
+    /**
+     * دلیلِ شکست به زبان کاربر. هر شاخه یک اتفاق واقعی است و فقط جایی به فایل
+     * لاگ اشاره می‌کند که لاگ چیزی بیش از خودِ پیام داشته باشد؛ برای پنلِ
+     * بی‌جواب، متن خطا داخل همان پیام می‌آید.
+     */
+    protected function configRefreshFailureMessage(Account $account, SubscriptionCacheOutcome $outcome): string
+    {
+        $message = match ($outcome->reason) {
+            SubscriptionCacheOutcome::SERVER_DISABLED => __('accounts.config_refresh_server_disabled', [
+                'server' => filled($outcome->detail) ? $outcome->detail : (string) $account->server_id,
+            ]),
+            SubscriptionCacheOutcome::SERVER_MISSING => __('accounts.config_refresh_server_missing'),
+            SubscriptionCacheOutcome::NO_SUB_ID => __('accounts.config_refresh_no_sub_id', [
+                'log' => $this->configRefreshLogPath($account),
+            ]),
+            SubscriptionCacheOutcome::NO_SUBSCRIPTION_URL => __('accounts.config_refresh_no_url'),
+            SubscriptionCacheOutcome::UNREACHABLE => __('accounts.config_refresh_unreachable', [
+                'error' => filled($outcome->detail) ? $outcome->detail : '—',
+            ]),
+            SubscriptionCacheOutcome::EMPTY_BODY => __('accounts.config_refresh_empty_body', [
+                'log' => $this->configRefreshLogPath($account),
+            ]),
+            default => __('accounts.config_refresh_empty'),
+        };
+
+        // شکست هیچ‌وقت کش را پاک نمی‌کند (قانون سختِ RefreshSubscriptionCacheJob).
+        // اگر کانفیگی از قبل هست همین را هم بگو تا پشتیبانی فکر نکند با فشار دادن
+        // دکمه کانفیگ مشتری را از بین برده است.
+        return filled($account->fresh()?->subscription_cache)
+            ? $message.' '.__('accounts.config_refresh_cache_kept')
+            : $message;
+    }
+
+    /**
+     * نام واقعی فایل لاگِ همان پنل. کانال‌های لاگ daily هستند، پس فایلی به نام
+     * «sanaei.log» هرگز ساخته نمی‌شود و پیام قبلی اپراتور را دنبال نامی
+     * می‌فرستاد که روی سرور وجود نداشت.
+     */
+    protected function configRefreshLogPath(Account $account): string
+    {
+        return 'storage/logs/'
+            .RefreshSubscriptionCacheJob::logChannelFor($account)
+            .'-'.now()->format('Y-m-d').'.log';
     }
 }
