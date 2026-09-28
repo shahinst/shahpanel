@@ -1228,8 +1228,16 @@ class SanaeiService
             }
         }
 
+        // جست‌وجوی inbound قدیمی فقط با UUID تطبیق می‌دهد؛ اگر کلاینت روی پنل
+        // دوباره ساخته شده باشد UUIDاش عوض شده و این مسیر دست خالی برمی‌گردد.
+        // پیش از این همان دست خالی، پاسخ نهایی بود و جست‌وجوی ایمیلی — که همان
+        // کلاینت را پیدا می‌کرد — اصلاً اجرا نمی‌شد.
         if ($legacyInboundId !== null && $legacyInboundId > 0) {
-            return $this->findClientOnInbound($server, $legacyInboundId, $uuid);
+            $client = $this->findClientOnInbound($server, $legacyInboundId, $uuid);
+
+            if ($client !== null) {
+                return $client;
+            }
         }
 
         $found = $this->findClientByEmailInInbounds($server, $email);

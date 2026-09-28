@@ -216,6 +216,106 @@ class SanaeiShareLinkBuilder
     }
 
     /**
+     * کانفیگ‌های اکانت، ساخته‌شده از روی تعریف خودِ inboundها — بدون subId.
+     *
+     * چرا لازم است: مسیر عادی همه‌چیز را به subId گره می‌زند و اکانت‌های قدیمی
+     * (ساخته‌شده روی x-ui، درون‌ریزی‌شده، یا هر کلاینتی که با API و بدون subId
+     * ساخته شده) روی خودِ پنل subId ندارند. برای آن‌ها نشانی اشتراکی وجود ندارد
+     * که خوانده شود و کارِ کش بی‌صدا دست خالی برمی‌گشت، درحالی‌که همان اکانت
+     * روی پنل سالم بود و ترافیکش هم سینک می‌شد. تعریف inbound برای ساختن
+     * کانفیگ کافی است، پس دلیلی ندارد این اکانت‌ها بن‌بست بخورند.
+     *
+     * یک listInbounds و بس: خودِ همین پاسخ، clients هر inbound را هم دارد، پس
+     * نه getInbound جداگانه لازم است نه جست‌وجوی دوباره.
+     *
+     * found را جدا از links برمی‌گرداند چون این دو، دو خرابی کاملاً متفاوت‌اند:
+     * «کلاینت روی پنل نیست» (اکانت روی پنل حذف شده) در برابر «هست ولی
+     * پروتکلش کانفیگ‌یوآرآی ندارد».
+     *
+     * @return array{links: list<string>, found: bool}
+     */
+    public function configLinksFromInbounds(Account $account): array
+    {
+        $account->loadMissing('server');
+        $server = $account->server;
+
+        $uuid = trim((string) ($account->sanaei_client_uuid ?? ''));
+        $email = trim((string) ($account->client_email ?? $account->remote_username ?? ''));
+
+        if ($server === null || ($uuid === '' && $email === '')) {
+            return ['links' => [], 'found' => false];
+        }
+
+        try {
+            $inbounds = $this->sanaeiService->listInbounds($server);
+        } catch (\Throwable) {
+            return ['links' => [], 'found' => false];
+        }
+
+        // پسوند «-i{id}» همان الگوی SanaeiService::inboundClientEmail است: یک
+        // اکانت روی چند inbound ناچار چند ایمیل دارد چون 3x-ui ایمیل را در کل
+        // پنل یکتا می‌داند.
+        $aliasPrefix = $email.'-i';
+        $links = [];
+        $found = false;
+
+        foreach ($inbounds as $inbound) {
+            if (! is_array($inbound)) {
+                continue;
+            }
+
+            $settings = $this->decodeJsonField($inbound, 'settings');
+            $clients = is_array($settings['clients'] ?? null) ? $settings['clients'] : [];
+
+            foreach ($clients as $client) {
+                if (! is_array($client)) {
+                    continue;
+                }
+
+                $clientEmail = trim((string) ($client['email'] ?? ''));
+
+                // ctype_digit جلوی ایمیلی را می‌گیرد که تصادفاً با همین پیشوند
+                // شروع شده ولی ادامه‌اش شمارهٔ inbound نیست.
+                $matchesEmail = $email !== '' && (
+                    $clientEmail === $email
+                    || (str_starts_with($clientEmail, $aliasPrefix) && ctype_digit(substr($clientEmail, strlen($aliasPrefix))))
+                );
+
+                $matchesUuid = $uuid !== ''
+                    && strcasecmp(trim((string) ($client['id'] ?? '')), $uuid) === 0;
+
+                if (! $matchesEmail && ! $matchesUuid) {
+                    continue;
+                }
+
+                $found = true;
+
+                // سازنده‌ها برای نام کانفیگ سراغ تنظیمات و ترافیکِ پنل هم
+                // می‌روند؛ یک inbound که پاسخ نمی‌دهد نباید بقیه را هم ببرد.
+                try {
+                    $link = match (strtolower((string) ($inbound['protocol'] ?? ''))) {
+                        'vmess' => $this->buildVmess($inbound, $client, $server),
+                        'vless' => $this->buildVless($inbound, $client, $server),
+                        'trojan' => $this->buildTrojan($inbound, $client, $server),
+                        default => null,
+                    };
+                } catch (\Throwable) {
+                    $link = null;
+                }
+
+                if ($link !== null) {
+                    $links[] = $link;
+                }
+
+                // هر inbound فقط یک کلاینتِ این اکانت دارد.
+                break;
+            }
+        }
+
+        return ['links' => array_values(array_unique($links)), 'found' => $found];
+    }
+
+    /**
      * همان لینک اشتراک، ولی با نشانی کاربرمحور — این نسخه است که به کاربر
      * نمایش/تحویل داده می‌شود.
      */

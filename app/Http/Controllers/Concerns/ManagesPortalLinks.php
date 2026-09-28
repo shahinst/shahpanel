@@ -90,6 +90,9 @@ trait ManagesPortalLinks
             SubscriptionCacheOutcome::NO_SUB_ID => __('accounts.config_refresh_no_sub_id', [
                 'log' => $this->configRefreshLogPath($account),
             ]),
+            SubscriptionCacheOutcome::CLIENT_NOT_FOUND => __('accounts.config_refresh_client_not_found', [
+                'email' => filled($outcome->detail) ? $outcome->detail : '—',
+            ]),
             SubscriptionCacheOutcome::NO_SUBSCRIPTION_URL => __('accounts.config_refresh_no_url'),
             SubscriptionCacheOutcome::UNREACHABLE => __('accounts.config_refresh_unreachable', [
                 'error' => filled($outcome->detail) ? $outcome->detail : '—',

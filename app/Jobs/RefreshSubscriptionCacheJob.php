@@ -150,6 +150,38 @@ class RefreshSubscriptionCacheJob implements ShouldBeUnique, ShouldQueue
 
                 return SubscriptionCacheOutcome::fetched($lines);
             }
+
+            // مسیر بالا از subId می‌آید و اکانت‌های قدیمی روی پنل subId ندارند
+            // (x-ui، درون‌ریزی‌شده، یا هر کلاینتی که با API بدون subId ساخته شده).
+            // تا پیش از این همان‌جا بن‌بست بود و کاربر پیام «پنل subId نداد»
+            // می‌گرفت، درحالی‌که اکانتش روی پنل زنده بود و ترافیکش هم سینک
+            // می‌شد. تعریف خودِ inbound برای ساختن کانفیگ کافی است، پس قبل از
+            // اعلام شکست از همان‌جا می‌سازیم.
+            $fromInbounds = $shareLinkBuilder->configLinksFromInbounds($account);
+
+            if ($fromInbounds['links'] !== []) {
+                $body = implode("
+", $fromInbounds['links']);
+
+                $this->storeBody($account, $body);
+
+                return SubscriptionCacheOutcome::fetched($body);
+            }
+
+            // نه لینک ساخته شد و نه اصلاً کلاینتی پیدا شد: این دیگر «subId
+            // نداریم» نیست، «اکانت روی پنل نیست» است و کار اپراتور فرق می‌کند.
+            if (! $fromInbounds['found']) {
+                Log::channel('sanaei')->warning('Subscription cache: client missing on panel', [
+                    'account_id' => $account->id,
+                    'server_id' => $account->server_id,
+                    'client_email' => $account->client_email,
+                ]);
+
+                return SubscriptionCacheOutcome::failed(
+                    SubscriptionCacheOutcome::CLIENT_NOT_FOUND,
+                    (string) ($account->client_email ?? $account->remote_username ?? ''),
+                );
+            }
         }
 
         $url = $this->resolveRemoteUrl($account, $shareLinkBuilder);
@@ -230,8 +262,9 @@ class RefreshSubscriptionCacheJob implements ShouldBeUnique, ShouldQueue
         $subId = $shareLinkBuilder->resolveSubId($account);
 
         if ($subId === null) {
-            // بی‌صدا برنگرد: تنها نشانهٔ بیرونی این حالت «نبودن لینک کانفیگ» است و
-            // پشتیبانی بدون این خط هیچ سرنخی برای دنبال کردنش ندارد.
+            // پایانِ راه نیست — refresh() بعد از این از روی تعریف inbound
+            // می‌سازد — ولی همچنان ثبت می‌شود، چون نبودن subId روی پنل یعنی
+            // لینک اشتراکِ آن اکانت هم کار نمی‌کند و ارزش دیدن دارد.
             Log::channel('sanaei')->warning('Subscription cache: unresolved Sanaei sub id', [
                 'account_id' => $account->id,
                 'server_id' => $account->server_id,

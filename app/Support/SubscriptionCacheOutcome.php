@@ -27,8 +27,16 @@ final class SubscriptionCacheOutcome
     /** سرور در پنل خاموش است؛ هیچ درخواستی به پنل فرستاده نشد. */
     public const SERVER_DISABLED = 'server_disabled';
 
-    /** سنایی: subId نه در ستون بود و نه پنل آن را برگرداند. */
+    /** سنایی: subId نه در ستون بود، نه پنل آن را برگرداند و نه از روی inbound چیزی ساخته شد. */
     public const NO_SUB_ID = 'no_sub_id';
+
+    /**
+     * سنایی: هیچ کلاینتی با این ایمیل/UUID روی پنل نیست — یعنی اکانت روی خودِ
+     * پنل حذف یا دستکاری شده. جدا از NO_SUB_ID نگه داشته می‌شود چون کار اپراتور
+     * کاملاً فرق می‌کند: آن‌یکی یعنی «کلاینت هست ولی لینکش را نمی‌دهد» و این‌یکی
+     * یعنی «کلاینتی وجود ندارد». detail همان ایمیلی است که دنبالش گشتیم.
+     */
+    public const CLIENT_NOT_FOUND = 'client_not_found';
 
     /** پاسارگارد/رمناویو: ستون نشانی اشتراک خالی است. */
     public const NO_SUBSCRIPTION_URL = 'no_subscription_url';
