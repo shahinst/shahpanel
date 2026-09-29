@@ -658,6 +658,45 @@ sudo bash update.sh
 
 ---
 
+## 🧹 Полное удаление
+
+Чтобы убрать панель с сервера — насовсем или чтобы поставить её заново с нуля:
+
+```bash
+curl -fsSLO https://raw.githubusercontent.com/shahinst/shahpanel/master/uninstall.sh
+sudo bash uninstall.sh
+```
+
+Скрипт спросит один раз и попросит ввести `REMOVE`, затем **сначала сделает резервную копию** и положит её в `/root/shahpanel-farewell-<дата>.tar.gz` (дамп базы + `.env` + `storage/app`). Это единственное место, где остаются ваши данные; скопируйте файл с сервера прежде всего остального.
+
+Затем удаляются:
+
+| Что | Где |
+|:--|:--|
+| Код панели | `/var/www/shahpanel` |
+| База и её пользователь | `shahpanel` и `shahpanel@127.0.0.1` (а также `@localhost` из старых установок) |
+| Планировщик | `/etc/cron.d/shahpanel-scheduler` |
+| Сайт и сниппеты Nginx | `sites-available`, `sites-enabled`, `snippets/shahpanel-*.conf` |
+| Сертификаты TLS | certbot, acme.sh и `/etc/ssl/shahpanel` |
+| Файрвол | цепочка `PANEL_FW`, ipset-ы `panel_*`, `/usr/local/sbin/panel-firewall`, `/etc/sudoers.d/panel-firewall`, `/var/lib/panel-firewall` |
+| Защитный щит | helper, jail-ы fail2ban и его задание cron |
+| Логи и бэкапы обновлений | `/var/log/shahpanel-*.log`, `/var/backups/shahpanel` |
+
+Параметры:
+
+| Параметр | Что делает |
+|:--|:--|
+| `--yes` | Ничего не спрашивать |
+| `--no-backup` | Не делать резервную копию (данные действительно пропадут) |
+| `--keep-database` | Не трогать базу — следующая установка найдёт те же аккаунты |
+| `--purge-packages` | Удалить и phpMyAdmin, CrowdSec, fail2ban, ClamAV и certbot |
+
+> **Nginx, MySQL и PHP остаются нетронутыми**: от них может зависеть другой сайт на этом же сервере. Если никакой другой нет, команда для их удаления печатается в конце.
+>
+> Ручное удаление `/var/www/shahpanel` — ровно та беда, ради которой написан этот скрипт: база, задание cron, сайт Nginx, правило sudoers и цепочка файрвола остаются на месте, и следующий `install.sh` спотыкается о собственные остатки.
+
+---
+
 ## 🔧 Обслуживание
 
 ### Cron (планировщик)

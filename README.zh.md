@@ -655,6 +655,45 @@ sudo bash update.sh
 
 ---
 
+## 🧹 彻底卸载
+
+要把面板从服务器上移除——无论是永久删除，还是准备从零重装：
+
+```bash
+curl -fsSLO https://raw.githubusercontent.com/shahinst/shahpanel/master/uninstall.sh
+sudo bash uninstall.sh
+```
+
+它会询问一次并要求输入 `REMOVE`，然后**先做备份**，放在 `/root/shahpanel-farewell-<日期>.tar.gz`（数据库转储 + `.env` + `storage/app`）。那个文件是您的数据唯一的去处；请先把它复制到服务器之外。
+
+随后会删除：
+
+| 内容 | 位置 |
+|:--|:--|
+| 面板代码 | `/var/www/shahpanel` |
+| 数据库及其用户 | `shahpanel` 与 `shahpanel@127.0.0.1`（以及旧版安装的 `@localhost`） |
+| 计划任务 | `/etc/cron.d/shahpanel-scheduler` |
+| Nginx 站点与 snippet | `sites-available`、`sites-enabled`、`snippets/shahpanel-*.conf` |
+| TLS 证书 | certbot、acme.sh 和 `/etc/ssl/shahpanel` |
+| 防火墙 | `PANEL_FW` 链、`panel_*` ipset、`/usr/local/sbin/panel-firewall`、`/etc/sudoers.d/panel-firewall`、`/var/lib/panel-firewall` |
+| 安全护盾 | helper、fail2ban jail 及其 cron |
+| 日志与更新备份 | `/var/log/shahpanel-*.log`、`/var/backups/shahpanel` |
+
+可选参数：
+
+| 参数 | 作用 |
+|:--|:--|
+| `--yes` | 不做任何询问 |
+| `--no-backup` | 不做备份（数据真的会消失） |
+| `--keep-database` | 保留数据库，下次安装仍能看到原来的账号 |
+| `--purge-packages` | 同时清除 phpMyAdmin、CrowdSec、fail2ban、ClamAV 和 certbot |
+
+> **Nginx、MySQL 和 PHP 不会被动**，因为同一台服务器上的其他站点可能依赖它们。如果确实没有别的用途，卸载命令会在结束时打印出来。
+>
+> 手动删除 `/var/www/shahpanel` 正是这个脚本存在的原因：数据库、cron、Nginx 站点、sudoers 规则和防火墙链都会留下，下一次 `install.sh` 就会卡在自己的残留上。
+
+---
+
 ## 🔧 维护
 
 ### Cron（计划任务）

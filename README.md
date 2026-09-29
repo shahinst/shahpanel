@@ -659,6 +659,45 @@ sudo bash update.sh
 
 ---
 
+## 🧹 حذف کامل
+
+اگر می‌خواهید پنل را از سرور بردارید — چه برای همیشه، چه برای نصب دوبارهٔ از صفر:
+
+```bash
+curl -fsSLO https://raw.githubusercontent.com/shahinst/shahpanel/master/uninstall.sh
+sudo bash uninstall.sh
+```
+
+یک بار می‌پرسد و `REMOVE` می‌خواهد، بعد **اول بک‌آپ می‌گیرد** و در `/root/shahpanel-farewell-<تاریخ>.tar.gz` می‌گذارد (دامپ دیتابیس + `.env` + `storage/app`). آن فایل تنها جایی است که داده‌هایتان می‌ماند؛ قبل از هر کار دیگری از سرور بیرونش بکشید.
+
+بعد اینها را برمی‌دارد:
+
+| چه چیزی | کجا |
+|:--|:--|
+| کد پنل | `/var/www/shahpanel` |
+| دیتابیس و کاربرش | `shahpanel` و `shahpanel@127.0.0.1` (و `@localhost` نصب‌های قدیمی) |
+| زمان‌بند | `/etc/cron.d/shahpanel-scheduler` |
+| سایت و snippetهای Nginx | `sites-available`، `sites-enabled`، `snippets/shahpanel-*.conf` |
+| گواهی TLS | certbot، acme.sh و `/etc/ssl/shahpanel` |
+| فایروال | زنجیرهٔ `PANEL_FW`، ipsetهای `panel_*`، `/usr/local/sbin/panel-firewall`، `/etc/sudoers.d/panel-firewall`، `/var/lib/panel-firewall` |
+| سپر امنیتی | helper، jailهای fail2ban و کران آن |
+| لاگ‌ها و بک‌آپ‌های آپدیت | `/var/log/shahpanel-*.log`، `/var/backups/shahpanel` |
+
+گزینه‌ها:
+
+| گزینه | کار |
+|:--|:--|
+| `--yes` | بدون سؤال |
+| `--no-backup` | بک‌آپ نگیر (داده‌ها واقعاً از بین می‌روند) |
+| `--keep-database` | دیتابیس را دست نزن؛ نصب بعدی همان اکانت‌ها را می‌بیند |
+| `--purge-packages` | phpMyAdmin، CrowdSec، fail2ban، ClamAV و certbot را هم پاک کن |
+
+> **Nginx، MySQL و PHP دست‌نخورده می‌مانند**، چون ممکن است سایت دیگری روی همین سرور به آن‌ها وابسته باشد. اگر واقعاً چیز دیگری نیست، دستور پاک کردنشان در پایان کار چاپ می‌شود.
+>
+> پاک کردن دستی `/var/www/shahpanel` همان دردسری است که این اسکریپت برایش نوشته شده: دیتابیس، کران، سایت Nginx، قانون sudoers و زنجیرهٔ فایروال سر جایشان می‌مانند و `install.sh` بعدی وسط باقی‌ماندهٔ خودش گیر می‌کند.
+
+---
+
 ## 🔧 نگهداری
 
 ### کران (زمان‌بند)

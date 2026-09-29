@@ -656,6 +656,45 @@ If the backup fails, it **does not touch the code**. If you have modified a file
 
 ---
 
+## 🧹 Complete removal
+
+To take the panel off a server — for good, or to install again from scratch:
+
+```bash
+curl -fsSLO https://raw.githubusercontent.com/shahinst/shahpanel/master/uninstall.sh
+sudo bash uninstall.sh
+```
+
+It asks once and wants `REMOVE` typed back, then **takes a backup first** and leaves it at `/root/shahpanel-farewell-<date>.tar.gz` (database dump + `.env` + `storage/app`). That file is the only place your data still exists; copy it off the server before anything else.
+
+Then it removes:
+
+| What | Where |
+|:--|:--|
+| Panel code | `/var/www/shahpanel` |
+| Database and its user | `shahpanel` and `shahpanel@127.0.0.1` (plus `@localhost` from older installs) |
+| Scheduler | `/etc/cron.d/shahpanel-scheduler` |
+| Nginx site and snippets | `sites-available`, `sites-enabled`, `snippets/shahpanel-*.conf` |
+| TLS certificates | certbot, acme.sh and `/etc/ssl/shahpanel` |
+| Firewall | the `PANEL_FW` chain, `panel_*` ipsets, `/usr/local/sbin/panel-firewall`, `/etc/sudoers.d/panel-firewall`, `/var/lib/panel-firewall` |
+| Security shield | helper, fail2ban jails and its cron entry |
+| Logs and update backups | `/var/log/shahpanel-*.log`, `/var/backups/shahpanel` |
+
+Flags:
+
+| Flag | What it does |
+|:--|:--|
+| `--yes` | Ask nothing |
+| `--no-backup` | Take no backup (the data really is gone) |
+| `--keep-database` | Leave the database alone, so the next install finds the same accounts |
+| `--purge-packages` | Also purge phpMyAdmin, CrowdSec, fail2ban, ClamAV and certbot |
+
+> **Nginx, MySQL and PHP are left untouched**, because another site on the same server may depend on them. If nothing else does, the command to remove them is printed at the end.
+>
+> Deleting `/var/www/shahpanel` by hand is the trouble this script exists for: the database, the cron entry, the Nginx site, the sudoers rule and the firewall chain all stay behind, and the next `install.sh` gets stuck in its own leftovers.
+
+---
+
 ## 🔧 Maintenance
 
 ### Cron (the scheduler)
