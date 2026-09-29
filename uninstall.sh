@@ -357,7 +357,10 @@ else
     info "already gone"
 fi
 
-rm -f /var/log/${APP_NAME}-*.log
+# Every panel log except the one being written right now — the closing page
+# points people at it, so removing it takes away the only account of what
+# just happened.
+find /var/log -maxdepth 1 -name "${APP_NAME}-*.log" ! -name "$(basename "$LOG")" -delete 2>/dev/null
 rm -rf "/var/backups/${APP_NAME}"
 ok "installer logs and update backups removed"
 
