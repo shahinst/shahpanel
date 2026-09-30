@@ -55,7 +55,7 @@
 | 服务器 | 支持的服务 |
 |:--|:--|
 | 🖧 **MikroTik RouterOS** | PPPoE / PPP · WireGuard · OpenVPN · L2TP |
-| 🌐 **Sanaei (3x-ui)** | VMess · VLESS · Trojan |
+| 🌐 **Sanaei (3x-ui)** | VMess · VLESS · Trojan —— 同时支持 2.x 与 3.7 面板；每台服务器的版本会自动识别 |
 | 🛡 **Pasarguard** | 全部 inbound |
 | 🌊 **Remnawave** | Internal Squads —— 兼容 3.x 版本 API |
 | 🔒 **Cisco AnyConnect (ASA)** | 通过设备 REST API 管理 VPN 用户 |

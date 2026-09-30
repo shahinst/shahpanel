@@ -55,7 +55,7 @@
 | Сервер | Поддерживаемые сервисы |
 |:--|:--|
 | 🖧 **MikroTik RouterOS** | PPPoE / PPP · WireGuard · OpenVPN · L2TP |
-| 🌐 **Sanaei (3x-ui)** | VMess · VLESS · Trojan |
+| 🌐 **Sanaei (3x-ui)** | VMess · VLESS · Trojan — работает с панелями 2.x и 3.7; версия каждого сервера определяется автоматически |
 | 🛡 **Pasarguard** | Все inbound |
 | 🌊 **Remnawave** | Internal Squads — совместимо с API версии 3.x |
 | 🔒 **Cisco AnyConnect (ASA)** | Пользователи VPN через REST API устройства |

@@ -544,10 +544,13 @@ class SanaeiService
     }
 
     /**
-     * ساخت کلاینت روی inboundهای هدف — به ازای هر inbound یک کلاینت با ایمیل یکتای خودش.
+     * ساخت کلاینت روی inboundهای هدف.
      *
-     * چرا مسیر /clients/add حذف شد: 3x-ui اصلاً API کلاینت سراسری ندارد و آن
-     * درخواست همیشه 404 می‌شد؛ یک رفت‌وبرگشت بی‌فایده روی هر ساخت.
+     * دو نسل پنل دو قرارداد متفاوت دارند: نسخه‌های قدیمی‌تر ایمیل را در کل پنل
+     * یکتا می‌خواهند و به ازای هر inbound یک کلاینت جدا با ایمیل جانبیِ خودش
+     * می‌سازند؛ نسخهٔ 3.7 یک کلاینت می‌سازد و خودش آن را به چند inbound وصل
+     * می‌کند. نسل سرور یک‌بار از خودش پرسیده می‌شود، پس پنلی که چند سرور با
+     * نسخه‌های مختلف دارد هر کدام را با قرارداد خودش پیش می‌برد.
      *
      * @param  list<int>|null  $inboundIds  inboundهای پکیج؛ null/خالی یعنی همه inboundهای فعال
      * @return array<string, mixed>
@@ -582,6 +585,10 @@ class SanaeiService
             'up' => max(0, $up),
             'down' => max(0, $down),
         ]);
+
+        if ($this->client($server)->supportsGlobalClientApi()) {
+            return $this->createClientForAttachedInbounds($server, $base, $targets);
+        }
 
         $created = 0;
         $failures = [];
@@ -625,6 +632,52 @@ class SanaeiService
         }
 
         return $this->normalizeInboundClient($base);
+    }
+
+    /**
+     * ساخت کلاینت روی پنل 3.7: یک درخواست، یک ایمیل، و پنل خودش کلاینت را به
+     * همهٔ inboundهای هدف وصل می‌کند.
+     *
+     * چرا اینجا ایمیل جانبی «-i{inbound}» ساخته نمی‌شود: آن ترفند پاسخی بود به
+     * محدودیت نسخه‌های قدیمی که ایمیل را در کل پنل یکتا می‌خواستند. در 3.7 همان
+     * یک کلاینت به چند inbound وصل می‌شود؛ ساختن ایمیل‌های جانبی یعنی چند کلاینتِ
+     * مستقل با ترافیک و انقضای جداگانه به‌جای یکی.
+     *
+     * @param  array<string, mixed>  $client
+     * @param  list<int>  $inboundIds
+     * @return array<string, mixed>
+     */
+    protected function createClientForAttachedInbounds(Server $server, array $client, array $inboundIds): array
+    {
+        $response = $this->client($server)->postCreateGlobalClient([
+            'client' => $client,
+            'inboundIds' => array_values($inboundIds),
+        ]);
+
+        if ($this->panelMutationSucceeded($response)) {
+            return $this->normalizeInboundClient($client);
+        }
+
+        // همان دلیل مسیر قدیمی: «تکراری» یعنی کلاینت از قبل هست، و گزارش خطا
+        // اکانتی را که واقعاً ساخته شده «ناموفق» نشان می‌دهد.
+        if ($this->responseReportsDuplicate($response)) {
+            Log::channel('sanaei')->warning('Sanaei client already existed on panel, adopted', [
+                'server_id' => $server->id,
+                'email' => scalar_string($client['email'] ?? ''),
+                'inbound_ids' => array_values($inboundIds),
+                'panel_message' => panel_api_message($response->json('msg') ?? null, ''),
+            ]);
+
+            return $this->normalizeInboundClient($client);
+        }
+
+        $this->assertSuccessful($response, 'create Sanaei client', $server);
+
+        // رسیدن به اینجا یعنی پنل 200 داد ولی success=false — پیام خودش را نشان
+        // می‌دهیم، چون تنها چیزی است که می‌گوید چه ایرادی گرفته.
+        throw new RemoteProvisionException(
+            panel_api_message($response->json('msg') ?? null, __('services.sanaei_client_not_registered'))
+        );
     }
 
     /**
@@ -1044,6 +1097,22 @@ class SanaeiService
             throw new RemoteProvisionException(__('services.sanaei_client_not_found', ['email' => $baseEmail]));
         }
 
+        // روی 3.7 همان یک کلاینت به چند inbound وصل است و پنل تغییر را خودش به
+        // همه می‌برد، پس findAccountClients به ازای هر inbound یک ردیف با ایمیل
+        // یکسان برمی‌گرداند. تکرار درخواست برای هر ردیف نه‌تنها بی‌فایده است، بلکه
+        // ردیف‌های غیراصلی up/down را صفر می‌کنند و مصرفی را که همان لحظه نوشته
+        // شد پاک می‌کنند.
+        //
+        // شرط یکسان بودن ایمیل‌ها لازم است: پنلی که از نسخهٔ قدیمی ارتقا داده شده
+        // اکانت‌های قبلی‌اش را همان‌طور نگه می‌دارد — چند کلاینت مستقل با ایمیل‌های
+        // جانبی. آن‌ها هنوز باید یکی‌یکی به‌روز شوند، وگرنه فقط اولی تغییر می‌کند و
+        // بقیه با حجم و انقضای قدیمی روی سرور می‌مانند.
+        if ($this->accountUsesOneSharedClient($clients) && $this->client($server)->supportsGlobalClientApi()) {
+            $this->updateClient($server, $clients[0]['email'], $uuid, $changes, $clients[0]['inbound_id']);
+
+            return;
+        }
+
         $primaryInboundId = $primaryInboundId !== null && $primaryInboundId > 0
             ? $primaryInboundId
             : $clients[0]['inbound_id'];
@@ -1105,6 +1174,14 @@ class SanaeiService
             return;
         }
 
+        // روی 3.7 یک حذف، کلاینت را از همهٔ inboundها برمی‌دارد — به شرط آنکه
+        // واقعاً یک کلاینت مشترک باشد و نه چند کلاینت جامانده از نسخهٔ قدیمی.
+        if ($this->accountUsesOneSharedClient($clients) && $this->client($server)->supportsGlobalClientApi()) {
+            $this->deleteClient($server, $clients[0]['email'], $uuid, $clients[0]['inbound_id']);
+
+            return;
+        }
+
         $failures = [];
 
         foreach ($clients as $entry) {
@@ -1120,6 +1197,25 @@ class SanaeiService
         }
 
         $this->assertNoInboundFailures($server, $baseEmail, 'delete', $failures, count($clients));
+    }
+
+    /**
+     * آیا این اکانت روی پنل یک کلاینتِ مشترک است که به چند inbound وصل شده، یا
+     * چند کلاینت مستقل با ایمیل‌های جداگانه؟
+     *
+     * تنها در حالت اول می‌توان با یک درخواست همه inboundها را با هم تغییر داد.
+     *
+     * @param  list<array{inbound_id: int, email: string}>  $clients
+     */
+    protected function accountUsesOneSharedClient(array $clients): bool
+    {
+        $emails = [];
+
+        foreach ($clients as $entry) {
+            $emails[mb_strtolower($entry['email'])] = true;
+        }
+
+        return count($emails) === 1;
     }
 
     /**
@@ -2006,6 +2102,19 @@ class SanaeiService
             $client['subId'] = trim(scalar_string($client['sub_id']));
         } elseif (isset($client['SubID'])) {
             $client['subId'] = trim(scalar_string($client['SubID']));
+        }
+
+        // 3.7 numbers its client rows: "id" became the row number and the
+        // credential moved to "uuid". Everything downstream reads the
+        // credential from "id", so a row carrying both is rewritten here, at
+        // the one door panel clients come through. Without it the share-link
+        // builder would happily stamp a row number into a vless:// URI.
+        if (isset($client['uuid'])) {
+            $uuid = trim(scalar_string($client['uuid']));
+
+            if ($uuid !== '') {
+                $client['id'] = $uuid;
+            }
         }
 
         if (isset($client['id'])) {

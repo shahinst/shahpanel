@@ -55,7 +55,7 @@
 | سرور | سرویس‌های پشتیبانی‌شده |
 |:--|:--|
 | 🖧 **MikroTik RouterOS** | PPPoE / PPP · WireGuard · OpenVPN · L2TP |
-| 🌐 **Sanaei (3x-ui)** | VMess · VLESS · Trojan |
+| 🌐 **Sanaei (3x-ui)** | VMess · VLESS · Trojan — سازگار با نسخه‌های ۲.x و ۳.۷؛ نسخهٔ هر سرور خودکار تشخیص داده می‌شود |
 | 🛡 **Pasarguard** | همه‌ی inboundها |
 | 🌊 **Remnawave** | Internal Squads — سازگار با API نسخه ۳.x |
 | 🔒 **Cisco AnyConnect (ASA)** | کاربران VPN از طریق REST API دستگاه |

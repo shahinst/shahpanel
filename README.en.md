@@ -55,7 +55,7 @@ The panel talks to your servers directly and **creates, renews, limits and close
 | Server | Supported services |
 |:--|:--|
 | 🖧 **MikroTik RouterOS** | PPPoE / PPP · WireGuard · OpenVPN · L2TP |
-| 🌐 **Sanaei (3x-ui)** | VMess · VLESS · Trojan |
+| 🌐 **Sanaei (3x-ui)** | VMess · VLESS · Trojan — works with both the 2.x and 3.7 panels; each server's generation is detected automatically |
 | 🛡 **Pasarguard** | All inbounds |
 | 🌊 **Remnawave** | Internal Squads — compatible with the v3.x API |
 | 🔒 **Cisco AnyConnect (ASA)** | VPN users via the device REST API |

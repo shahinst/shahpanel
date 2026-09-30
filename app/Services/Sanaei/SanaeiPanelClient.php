@@ -27,6 +27,9 @@ final class SanaeiPanelClient
     /** @var array<int, string> */
     protected static array $resolvedDbRouteByServer = [];
 
+    /** @var array<int, bool> */
+    protected static array $globalClientApiByServer = [];
+
     /**
      * Every x-ui / 3x-ui panel database is a SQLite file and therefore starts
      * with this 15-byte magic. A panel that answers getDb with its login page,
@@ -80,7 +83,7 @@ final class SanaeiPanelClient
 
             $this->authenticate();
             $this->logStep('authenticated', [
-                'method' => ($this->sessionAuthForced || $this->hasPanelCredentials() || ! $this->server->api_token_enc)
+                'method' => ($this->sessionAuthForced || ! $this->server->api_token_enc)
                     ? 'session'
                     : 'bearer',
             ]);
@@ -97,6 +100,7 @@ final class SanaeiPanelClient
                 'inbound_count' => is_array($inbounds) ? count($inbounds) : 0,
                 'panel_url' => $this->url()->displayAddress(),
                 'api_prefix' => $prefix,
+                'global_clients' => $this->supportsGlobalClientApi(),
                 'debug' => $this->debugLog,
             ];
 
@@ -195,6 +199,42 @@ final class SanaeiPanelClient
             __('services.sanaei_api_not_found', ['list' => implode(', ', $candidates)])
             .($this->server->web_base_path ? '' : ' — '.__('services.sanaei_web_base_path_hint'))
         );
+    }
+
+    /**
+     * Whether this panel speaks the rewritten client API that arrived with
+     * 3x-ui 3.7, where one client carries one email and the panel attaches it
+     * to several inbounds itself.
+     *
+     * The generation is asked of each server separately and remembered per
+     * server id, because one installation may hold a mix of releases and every
+     * server has to be driven by its own contract. The probe asks for the
+     * client-group list: it belongs to the same family of routes as
+     * clients/add, and it answers in a few dozen bytes where clients/list would
+     * hand back every client on the panel to settle a yes or no.
+     *
+     * Anything that does not answer plainly counts as no, which leaves the
+     * server on the older per-inbound routes it already worked with.
+     */
+    public function supportsGlobalClientApi(): bool
+    {
+        if (array_key_exists($this->server->id, self::$globalClientApiByServer)) {
+            return self::$globalClientApiByServer[$this->server->id];
+        }
+
+        try {
+            $supported = $this->responseIsPanelApiJson(
+                $this->apiGet($this->resolveApiPrefix(), '/clients/groups')
+            );
+        } catch (\Throwable $exception) {
+            $this->logStep('client_api_probe_failed', ['error' => $exception->getMessage()]);
+
+            $supported = false;
+        }
+
+        $this->logStep('client_api_generation', ['global_clients' => $supported]);
+
+        return self::$globalClientApiByServer[$this->server->id] = $supported;
     }
 
     public function apiGet(string $prefix, string $path): Response
