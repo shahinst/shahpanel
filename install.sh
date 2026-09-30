@@ -589,7 +589,25 @@ server {
     listen 80 default_server;
     listen [::]:80 default_server;
     server_name _;
-    return 301 https://\$host\$request_uri;
+
+    # Let's Encrypt validates over plain HTTP. Redirecting this one path along
+    # with everything else sent the check to port 443, and a bare IP there has
+    # no host name to present — networks that reset such connections made the
+    # certificate fail for a reason that had nothing to do with the panel. The
+    # renewal every few days takes this path too, so it has to stay.
+    #
+    # The redirect has to live in its own location: a "return" written directly
+    # in the server block runs before nginx picks a location, so it would swallow
+    # the challenge path as well.
+    location ^~ /.well-known/acme-challenge/ {
+        root ${APP_DIR}/public;
+        default_type "text/plain";
+        try_files \$uri =404;
+    }
+
+    location / {
+        return 301 https://\$host\$request_uri;
+    }
 }
 
 server {
