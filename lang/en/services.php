@@ -169,6 +169,7 @@ return [
     'remnawave_user_updated_from_db' => 'Remnawave ":username" was updated from the shahpanel database (name, data, expiry).',
     'sanaei_credentials_missing' => 'The Sanaei panel username and password are not configured for server #:id.',
     'sanaei_api_not_found' => 'The Sanaei panel API was not found. Paths tried: :list',
+    'sanaei_api_unauthorized' => 'The Sanaei panel answered at :prefix but refused the request. Check the panel username and password, or the API token, on the server form.',
     'sanaei_web_base_path_hint' => 'If you set a webBasePath in the panel, enter it as the "web base path" on the server form.',
     'sanaei_html_instead_of_api' => 'The Sanaei panel returned a web page instead of an API response — the panel session has expired or the "web base path" is wrong.',
     'sanaei_api_request_failed' => 'The API request to the Sanaei panel could not be sent.',

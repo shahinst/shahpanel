@@ -121,7 +121,13 @@ final class SanaeiPanelClient
 
     public function authenticate(): void
     {
-        if ($this->server->api_token_enc && ! $this->sessionAuthForced && ! $this->hasPanelCredentials()) {
+        // A stored API token is used even when a username and password are also
+        // on file. It used to be the other way round — any server with a login
+        // logged in and ignored its token — and on 3x-ui 3.7 that path is a dead
+        // end: /login answers 403 while the token is accepted everywhere. When a
+        // token does go stale the panel replies with its login page, and
+        // refreshStaleSession() switches to the login for the rest of the run.
+        if ($this->server->api_token_enc && ! $this->sessionAuthForced) {
             $this->resolveReachableUrl();
 
             return;
@@ -147,6 +153,7 @@ final class SanaeiPanelClient
         }
 
         $candidates = $this->apiPrefixCandidates();
+        $refusedPrefix = null;
 
         foreach ($candidates as $prefix) {
             try {
@@ -162,12 +169,26 @@ final class SanaeiPanelClient
 
                     return $prefix;
                 }
+
+                // A 401 or 403 says the route is there and the panel turned us
+                // away; a 404 says the route is not there at all. Reporting both
+                // as "API not found" sends the operator hunting for a routing
+                // problem when the real answer is a wrong token or password.
+                if ($refusedPrefix === null && in_array($response->status(), [401, 403], true)) {
+                    $refusedPrefix = $prefix;
+                }
             } catch (\Throwable $exception) {
                 $this->logStep('api_probe_failed', [
                     'prefix' => $prefix,
                     'error' => $exception->getMessage(),
                 ]);
             }
+        }
+
+        if ($refusedPrefix !== null) {
+            throw new RemoteConnectionException(
+                __('services.sanaei_api_unauthorized', ['prefix' => $refusedPrefix])
+            );
         }
 
         throw new RemoteConnectionException(
@@ -416,6 +437,16 @@ final class SanaeiPanelClient
             return;
         }
 
+        // A token authenticates writes as well as reads, so forcing a login here
+        // would only trade a working token for 3x-ui 3.7's 403 on /login — and
+        // forceSessionAuthentication() latches, so that one call would disable
+        // the token for every later read too.
+        if ($this->server->api_token_enc && ! $this->sessionAuthForced) {
+            $this->resolveReachableUrl();
+
+            return;
+        }
+
         // Reuse the established session. A fresh login per mutation means one
         // panel login per provisioned account, which trips 3x-ui's login-failure
         // ban. The session is refreshed only when the panel proves it is stale.
@@ -472,7 +503,7 @@ final class SanaeiPanelClient
 
     protected function applyApiAuthHeaders(\Illuminate\Http\Client\PendingRequest $client): \Illuminate\Http\Client\PendingRequest
     {
-        if ($this->server->api_token_enc && ! $this->sessionAuthForced && ! $this->hasPanelCredentials()) {
+        if ($this->server->api_token_enc && ! $this->sessionAuthForced) {
             $client = $client->withToken($this->server->api_token_enc);
         } elseif ($this->sessionCookie !== null) {
             $client = $client->withHeaders(['Cookie' => $this->sessionCookie]);

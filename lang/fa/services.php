@@ -169,6 +169,7 @@ return [
     'remnawave_user_updated_from_db' => 'Remnawave «:username» از دیتابیس shahpanel به‌روزرسانی شد (نام، حجم، انقضا).',
     'sanaei_credentials_missing' => 'نام کاربری و رمز پنل Sanaei برای سرور #:id تنظیم نشده است.',
     'sanaei_api_not_found' => 'API پنل Sanaei یافت نشد. مسیرهای امتحان‌شده: :list',
+    'sanaei_api_unauthorized' => 'پنل Sanaei در مسیر :prefix پاسخ داد ولی درخواست را نپذیرفت. نام کاربری و رمز یا توکن API سرور را در فرم سرور بررسی کنید.',
     'sanaei_web_base_path_hint' => 'اگر در پنل webBasePath تنظیم کرده‌اید، «مسیر پایه وب» را در فرم سرور وارد کنید.',
     'sanaei_html_instead_of_api' => 'پنل Sanaei به‌جای پاسخ API یک صفحه وب برگرداند — نشست پنل منقضی شده یا «مسیر پایه وب» نادرست است.',
     'sanaei_api_request_failed' => 'درخواست API به پنل Sanaei ارسال نشد.',

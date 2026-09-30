@@ -169,6 +169,7 @@ return [
     'remnawave_user_updated_from_db' => 'Remnawave“:username”已根据 shahpanel 数据库更新（名称、流量、到期时间）。',
     'sanaei_credentials_missing' => '服务器 #:id 未配置 Sanaei 面板的用户名和密码。',
     'sanaei_api_not_found' => '未找到 Sanaei 面板 API。已尝试的路径：:list',
+    'sanaei_api_unauthorized' => 'Sanaei 面板在 :prefix 路径有响应，但拒绝了该请求。请在服务器表单中检查面板用户名和密码，或 API 令牌。',
     'sanaei_web_base_path_hint' => '如果您在面板中设置了 webBasePath，请在服务器表单的“Web 基础路径”中填写该值。',
     'sanaei_html_instead_of_api' => 'Sanaei 面板返回的是网页而不是 API 响应 —— 面板会话已过期，或“Web 基础路径”填写有误。',
     'sanaei_api_request_failed' => '无法向 Sanaei 面板发送 API 请求。',

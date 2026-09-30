@@ -169,6 +169,7 @@ return [
     'remnawave_user_updated_from_db' => 'Remnawave «:username» обновлён из базы данных shahpanel (название, трафик, срок действия).',
     'sanaei_credentials_missing' => 'Имя пользователя и пароль панели Sanaei не настроены для сервера #:id.',
     'sanaei_api_not_found' => 'API панели Sanaei не найден. Проверенные пути: :list',
+    'sanaei_api_unauthorized' => 'Панель Sanaei ответила по пути :prefix, но отклонила запрос. Проверьте имя пользователя и пароль панели или токен API в форме сервера.',
     'sanaei_web_base_path_hint' => 'Если в панели задан webBasePath, укажите его в поле «базовый веб-путь» в форме сервера.',
     'sanaei_html_instead_of_api' => 'Панель Sanaei вернула веб-страницу вместо ответа API — сессия панели истекла или неверно указан «базовый веб-путь».',
     'sanaei_api_request_failed' => 'Не удалось отправить запрос к API панели Sanaei.',
