@@ -50,6 +50,36 @@ install -m 0644 "$SRC_DIR/files/panel-exclusions.conf" "$MODSEC_DIR/panel-exclus
 install -m 0644 "$SRC_DIR/files/panel-clamav.conf" "$MODSEC_DIR/panel-clamav.conf"
 install -m 0644 "$SRC_DIR/files/panel-danger-log.conf" "$MODSEC_DIR/panel-danger-log.conf"
 
+# The panel's login paths are randomised per installation and can be changed
+# again later from the security settings, so the exclusions file ships with a
+# placeholder and learns the real ones here. Ask the panel, not .env: a path
+# changed from inside the panel is stored in the database and .env keeps its
+# original value. The legacy defaults stay in the list so a panel still using
+# them is covered too.
+PANEL_PATHS="admin agent seller"
+APP_DIR="$(sed -n 's#^\s*root \(/var/www/[^;]*\)/public;#\1#p' "$NGX_SITE" | head -1)"
+
+if [[ -n "$APP_DIR" && -f "$APP_DIR/artisan" ]]; then
+  DISCOVERED="$(cd "$APP_DIR" && sudo -u www-data HOME=/tmp XDG_CONFIG_HOME=/tmp \
+    php -d error_reporting=0 artisan panel:paths --bare 2>/dev/null | tail -1 || true)"
+  if [[ "$DISCOVERED" =~ ^[a-z0-9_-]+([[:space:]][a-z0-9_-]+)*$ ]]; then
+    PANEL_PATHS="$DISCOVERED admin agent seller"
+  else
+    echo "  [!] Could not read the panel's login paths; falling back to the defaults." >&2
+    echo "      Admin forms may answer 403 until this is corrected." >&2
+  fi
+fi
+
+# space separated -> regex alternation, duplicates dropped
+PANEL_PATHS_RX="$(printf '%s\n' $PANEL_PATHS | awk '!seen[$0]++' | paste -sd '|' -)"
+sed -i "s#__PANEL_PATHS__#${PANEL_PATHS_RX}#" "$MODSEC_DIR/panel-exclusions.conf"
+echo "  ModSecurity panel exclusions cover: /${PANEL_PATHS_RX//|//}"
+
+if grep -q '__PANEL_PATHS__' "$MODSEC_DIR/panel-exclusions.conf"; then
+  echo "  [!] placeholder substitution failed in panel-exclusions.conf" >&2
+  exit 1
+fi
+
 # Prefer Debian/Ubuntu package CRS setup (sets tx.crs_setup_version)
 if [[ -f /etc/modsecurity/crs/crs-setup.conf ]]; then
   CRS_SETUP="/etc/modsecurity/crs/crs-setup.conf"
