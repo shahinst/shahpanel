@@ -187,6 +187,9 @@
                 </div>
             @else
                 <p class="portal-empty">{{ __('accounts.portal_wg_unavailable') }}</p>
+                @if (! empty($configError))
+                    <p class="portal-empty">{{ $configError }}</p>
+                @endif
             @endif
         </section>
     @endif

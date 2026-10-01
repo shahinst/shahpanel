@@ -288,6 +288,8 @@ Route::prefix($adminPath)->name('admin.')->middleware($adminMiddleware)->group(f
     Route::post('accounts/{account}/transfer', [AdminAccountController::class, 'storeTransfer'])->name('accounts.transfer');
     Route::post('accounts/{account}/refund', [AdminAccountController::class, 'refund'])->middleware('throttle:money-actions')->name('accounts.refund');
     Route::post('accounts/{account}/reactivate', [AdminAccountController::class, 'reactivate'])->middleware('throttle:money-actions')->name('accounts.reactivate');
+    Route::post('accounts/{account}/wireguard-keys/reissue', [AdminAccountController::class, 'reissueWireguardKeys'])->name('accounts.wireguard-keys.reissue');
+    Route::delete('accounts/bulk', [AdminAccountController::class, 'bulkDestroy'])->name('accounts.bulk-destroy');
     Route::delete('accounts/{account}', [AdminAccountController::class, 'destroy'])->name('accounts.destroy');
 
     Route::get('payment-requests', [AdminPaymentRequestController::class, 'index'])->name('payment-requests.index');

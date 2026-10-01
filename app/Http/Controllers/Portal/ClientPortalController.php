@@ -21,6 +21,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
 use Throwable;
 
@@ -58,6 +59,7 @@ class ClientPortalController extends Controller
 
         $config = null;
         $qrBase64 = null;
+        $configError = null;
         $sanaei = [
             'subscription_link' => null,
             'subscription_qr' => null,
@@ -67,8 +69,20 @@ class ClientPortalController extends Controller
             try {
                 $config = $configService->buildConfig($account);
                 $qrBase64 = base64_encode($configService->buildQrPng($account));
-            } catch (\Throwable) {
-                // config shown only when available
+            } catch (\Throwable $exception) {
+                // The reason is kept and shown. Swallowing it left the customer
+                // with "not available at the moment", which reads as a passing
+                // glitch and sends them back to retry — while the real cause,
+                // most often an account read off the router with no private key
+                // stored, never goes away by itself. It is also logged, because
+                // this page is usually the first place anyone notices.
+                $configError = $exception->getMessage();
+
+                Log::channel('mikrotik')->warning('Portal could not build a WireGuard config', [
+                    'account_id' => $account->id,
+                    'server_id' => $account->server_id,
+                    'error' => $exception->getMessage(),
+                ]);
             }
         } elseif ($account->service_type->isPanelV2ray()) {
             $sanaei = $sanaeiPortalService->portalAssets($account);
@@ -84,6 +98,7 @@ class ClientPortalController extends Controller
             'invoice',
             'config',
             'qrBase64',
+            'configError',
             'sanaei',
             'portalAnnouncements',
             'portalAppCategories',

@@ -26,6 +26,15 @@ class WireGuardConfigService
         $privateKey = $account->wireguard_private_key_enc;
         $address = $account->wireguard_address;
 
+        // A missing private key gets its own message. It is not a flaw in the
+        // account's data but the normal state of every peer read off a router:
+        // WireGuard keeps only the client's public key, so there is nothing to
+        // import. Naming it tells the admin to re-issue the keys instead of
+        // hunting for data that was never on the router.
+        if ($privateKey === null && $address !== null) {
+            throw new RemoteProvisionException(__('services.wireguard_private_key_missing'));
+        }
+
         if ($server === null || $privateKey === null || $address === null || $account->wireguard_public_key === null) {
             throw new RemoteProvisionException(__('services.wireguard_account_incomplete'));
         }

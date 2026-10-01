@@ -1659,6 +1659,13 @@ class MikrotikService
 
         $payload = ['.id' => $peer['.id']];
 
+        // Rotating the key in place keeps the peer's interface, allowed address
+        // and comment exactly as they are; removing and re-adding the peer would
+        // have to rebuild all of that from the panel's own guesses.
+        if (isset($peerData['public_key'])) {
+            $payload['public-key'] = (string) $peerData['public_key'];
+        }
+
         if (isset($peerData['allowed_address'])) {
             $payload['allowed-address'] = (string) $peerData['allowed_address'];
         }

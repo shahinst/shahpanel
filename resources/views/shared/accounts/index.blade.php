@@ -98,6 +98,25 @@
                 </div>
         </form>
 
+                @if ($canBulkDelete ?? false)
+                    {{-- The bar sits outside the table on purpose: every row already
+                         carries its own forms (enable/disable, delete), and a form
+                         wrapped around the table would nest inside them and break
+                         them. The checkboxes are plain inputs that this form
+                         collects on submit. --}}
+                    <div class="d-flex align-items-center gap-2 mb-2" data-bulk-delete-bar hidden>
+                        <form method="POST" action="{{ route('admin.accounts.bulk-destroy') }}" data-bulk-delete-form
+                              onsubmit="return confirm('{{ __('accounts.bulk_delete_confirm') }}');">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn btn-danger btn-sm">
+                                <i class="bx bx-trash"></i> {{ __('accounts.bulk_delete') }}
+                                (<span data-bulk-delete-count>0</span>)
+                            </button>
+                        </form>
+                    </div>
+                @endif
+
                 @php
                     $isV2ray = ($category ?? null) === \App\Enums\AccountCategory::V2ray;
                     $isWireguard = ($category ?? null) === \App\Enums\AccountCategory::Wireguard;
@@ -120,6 +139,12 @@
                     <table class="table table-bordered table-striped table-hover align-middle accounts-table mb-0">
                         <thead class="table-light">
                             <tr>
+                                @if ($canBulkDelete ?? false)
+                                    <th style="width:1%">
+                                        <input type="checkbox" class="form-check-input" data-account-select-all
+                                               title="{{ __('accounts.bulk_select_all') }}">
+                                    </th>
+                                @endif
                                 @foreach ($headers as $header)
                                     <th>{{ $header }}</th>
                                 @endforeach
@@ -128,6 +153,12 @@
                         <tbody>
                             @forelse ($accounts as $account)
                                 <tr>
+                                    @if ($canBulkDelete ?? false)
+                                        <td>
+                                            <input type="checkbox" class="form-check-input" data-account-select
+                                                   value="{{ $account->id }}">
+                                        </td>
+                                    @endif
                                     @if ($showOwnerColumn)
                                         <td>
                                             <strong>{{ $account->ownerSeller?->full_name ?? '—' }}</strong><br>
@@ -173,7 +204,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="{{ count($headers) }}" class="text-center text-muted py-4">
+                                    <td colspan="{{ count($headers) + (($canBulkDelete ?? false) ? 1 : 0) }}" class="text-center text-muted py-4">
                                         {{ __('app.no_results') }}
                                         @can('create', \App\Models\Account::class)
                                             @if ($staffCreateModal ?? false)
@@ -194,6 +225,9 @@
             @endif
 </div>
 @include('shared.accounts.dropdown-script')
+@if ($canBulkDelete ?? false)
+    @include('shared.accounts.bulk-delete-script')
+@endif
 @if ($staffCreateModal ?? false)
     @include('shared.accounts.create-modal', [
         'prefix' => $prefix,

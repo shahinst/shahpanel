@@ -132,6 +132,9 @@ trait ListsAccountsByCategory
                 'prefix' => $this->accountRoutePrefix(),
                 'showOwnerColumn' => $this->shouldShowOwnerColumn(),
                 'showOwnerFilter' => $this->shouldShowOwnerFilter(),
+                // Deleting accounts is the admin's alone (AccountPolicy::delete),
+                // so agents and sellers never get the checkboxes either.
+                'canBulkDelete' => $request->user()?->role === UserRole::Admin,
                 'ownerFilterOptions' => $this->ownerFilterOptions($request),
                 'serverFilterOptions' => $this->serverFilterOptions($category),
             ],

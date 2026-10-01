@@ -31,6 +31,26 @@
 </div>
 @endif
 
+@if ($needsWireguardReissue)
+<div class="mb-3">
+    <x-card>
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div>
+                <h5 class="mb-1"><i class="bx bx-key"></i> {{ __('accounts.wireguard_reissue_title') }}</h5>
+                <p class="text-muted small mb-0">{{ __('accounts.wireguard_reissue_hint') }}</p>
+            </div>
+            <form method="POST" action="{{ route('admin.accounts.wireguard-keys.reissue', $account) }}"
+                  onsubmit="return confirm('{{ __('accounts.wireguard_reissue_confirm') }}');">
+                @csrf
+                <x-button type="submit" variant="warning">
+                    <i class="bx bx-key"></i> {{ __('accounts.wireguard_reissue_action') }}
+                </x-button>
+            </form>
+        </div>
+    </x-card>
+</div>
+@endif
+
 <x-card>
     <form method="POST" action="{{ route('admin.accounts.update', $account) }}">
         @csrf
@@ -45,6 +65,37 @@
             <x-form.group label="{{ __('accounts.display_label') }}" hint="{{ __('accounts.display_label_hint') }}">
                 <input name="display_label" value="{{ old('display_label', $account->display_label) }}" class="form-control" maxlength="255">
             </x-form.group>
+
+            <x-form.group label="{{ __('accounts.owner') }}" hint="{{ __('accounts.reassign_owner_hint') }}">
+                <select name="owner_seller_id" class="form-select">
+                    @foreach ($accountOwners as $owner)
+                        <option value="{{ $owner->id }}"
+                                @selected((int) old('owner_seller_id', $account->owner_seller_id) === (int) $owner->id)>
+                            {{ $owner->full_name }} ({{ $owner->username }}) — {{ $owner->role->label() }}
+                        </option>
+                    @endforeach
+                </select>
+            </x-form.group>
+
+            @if ($account->service_type === \App\Enums\ServiceType::Wireguard)
+            <x-form.group label="{{ __('accounts.speed_limit') }}" hint="{{ __('accounts.speed_limit_hint') }}" wide>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">{{ __('accounts.speed_limit_down') }}</label>
+                        <input type="number" name="speed_limit_down_kbps" class="form-control" min="0" step="1"
+                               dir="ltr" placeholder="{{ __('accounts.speed_limit_unlimited') }}"
+                               value="{{ old('speed_limit_down_kbps', $account->speed_limit_down_kbps) }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ __('accounts.speed_limit_up') }}</label>
+                        <input type="number" name="speed_limit_up_kbps" class="form-control" min="0" step="1"
+                               dir="ltr" placeholder="{{ __('accounts.speed_limit_unlimited') }}"
+                               value="{{ old('speed_limit_up_kbps', $account->speed_limit_up_kbps) }}">
+                    </div>
+                </div>
+                <p class="form-text text-muted small mb-0 mt-2">{{ __('accounts.speed_limit_router_hint') }}</p>
+            </x-form.group>
+            @endif
 
             @if ($purchaseInvoice)
             <x-form.group label="{{ __('accounts.staff_charge') }}" hint="{{ __('accounts.staff_charge_hint') }}">

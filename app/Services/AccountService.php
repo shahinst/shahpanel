@@ -125,12 +125,6 @@ class AccountService
         }
 
         $skipPortalClient = (bool) ($clientData['skip_portal_client'] ?? false);
-        $endUser = null;
-
-        if (! $skipPortalClient) {
-            $endUser = $this->endUserService->resolveForAccount($seller, $clientData);
-            $this->testPackageGuardService->assertClientCanReceiveTest($endUser, $package, $duration);
-        }
 
         try {
             return DB::transaction(function () use (
@@ -143,7 +137,7 @@ class AccountService
                 $buyerCharge,
                 $chargeBreakdown,
                 $economics,
-                $endUser,
+                $skipPortalClient,
                 $clientPortalBilling,
                 $adminPriceOverride,
                 $kycService,
@@ -152,6 +146,18 @@ class AccountService
                 &$account,
                 &$invoice
             ) {
+                // The client record is created inside the transaction so a failed
+                // purchase leaves nothing behind. It used to be created before the
+                // transaction opened, which meant a seller who hit an error ended
+                // up with the client's name and username saved but no account —
+                // and the next attempt collided with the record from the first.
+                $endUser = null;
+
+                if (! $skipPortalClient) {
+                    $endUser = $this->endUserService->resolveForAccount($seller, $clientData);
+                    $this->testPackageGuardService->assertClientCanReceiveTest($endUser, $package, $duration);
+                }
+
                 $account = $this->provisionRemoteAccount($seller, $ownerAgentId, $package, $server, $duration, $clientData, $endUser?->id);
 
                 if ($kycVerification instanceof \App\Models\AccountKycVerification) {
@@ -230,6 +236,52 @@ class AccountService
 
             throw $exception;
         }
+    }
+
+    /**
+     * Hand the account to a different agent or seller.
+     *
+     * Picking the wrong owner while creating an account used to be permanent:
+     * the only way out was deleting the account and building it again on the
+     * server, which cost the customer their config. Ownership is panel-side
+     * bookkeeping — the remote server never hears about it — so it can simply be
+     * corrected.
+     *
+     * The owning agent is recomputed from the new owner's own chain rather than
+     * carried over, because an account owned by a seller under agent A must not
+     * keep pointing at agent B's commission tree.
+     */
+    public function reassignOwner(Account $account, User $newOwner, ?User $actor = null): void
+    {
+        if ((int) $account->owner_seller_id === (int) $newOwner->id) {
+            return;
+        }
+
+        $previousOwnerId = (int) $account->owner_seller_id;
+        $chain = $this->userHierarchyService->resolveCommissionChain($newOwner);
+
+        DB::transaction(function () use ($account, $newOwner, $chain): void {
+            $account->update([
+                'owner_seller_id' => $newOwner->id,
+                'owner_agent_id' => $chain['owner_agent_id'],
+            ]);
+
+            // The customer record was created under the old owner. It moves with
+            // the account, but only when this is its sole account — a customer
+            // with several accounts belongs to whoever still holds the others.
+            $client = $account->clientUser;
+
+            if ($client !== null
+                && Account::query()->where('client_user_id', $client->id)->count() === 1) {
+                $client->update(['parent_id' => $newOwner->id]);
+            }
+        });
+
+        $this->activityLogService->log($actor, 'account.owner_reassigned', $account, [
+            'previous_owner_seller_id' => $previousOwnerId,
+            'owner_seller_id' => $newOwner->id,
+            'owner_agent_id' => $chain['owner_agent_id'],
+        ]);
     }
 
     public function renewAccount(
@@ -746,6 +798,14 @@ class AccountService
         }
 
         if (filled($snapshot->wireguardPublicKey) && ($serviceType === null || $serviceType === ServiceType::Wireguard)) {
+            // صف سرعت اول برداشته می‌شود: نامش از روی اینترفیسِ همین peer ساخته
+            // شده و بعد از حذف peer دیگر راهی برای پیدا کردنش نیست.
+            app(WireguardSpeedLimitService::class)->remove(
+                $server,
+                $snapshot->wireguardPublicKey,
+                (int) $snapshot->accountId,
+            );
+
             $this->mikrotikService->removePeer($server, $snapshot->wireguardPublicKey);
 
             return;

@@ -209,7 +209,20 @@ class AccountController extends Controller
             ->orderByDesc('issued_at')
             ->first();
 
-        return view('admin.accounts.edit', compact('account', 'servers', 'purchaseInvoice'));
+        $accountOwners = User::query()
+            ->whereIn('role', [UserRole::Agent, UserRole::Seller])
+            ->orderBy('full_name')
+            ->get(['id', 'full_name', 'username', 'role']);
+
+        $needsWireguardReissue = app(\App\Services\WireguardKeyReissueService::class)->needsReissue($account);
+
+        return view('admin.accounts.edit', compact(
+            'account',
+            'servers',
+            'purchaseInvoice',
+            'accountOwners',
+            'needsWireguardReissue',
+        ));
     }
 
     public function update(
@@ -219,6 +232,7 @@ class AccountController extends Controller
         AccountTransferService $transferService,
         PackageService $packageService,
         AccountStaffBillingAdjustmentService $billingAdjustmentService,
+        \App\Services\WireguardSpeedLimitService $speedLimitService,
     ): RedirectResponse {
         $this->authorize('update', $account);
 
@@ -232,6 +246,9 @@ class AccountController extends Controller
             'client_email' => ['nullable', 'string', 'max:255'],
             'display_label' => ['nullable', 'string', 'max:255'],
             'server_id' => ['nullable', 'exists:servers,id'],
+            'owner_seller_id' => ['nullable', 'integer', 'exists:users,id'],
+            'speed_limit_up_kbps' => ['nullable', 'integer', 'min:0', 'max:10000000'],
+            'speed_limit_down_kbps' => ['nullable', 'integer', 'min:0', 'max:10000000'],
             'status' => ['required', Rule::enum(\App\Enums\AccountStatus::class)],
             'staff_charge' => ['nullable', 'numeric', 'min:0'],
             'expiry_unlimited' => ['nullable', 'boolean'],
@@ -258,6 +275,16 @@ class AccountController extends Controller
                 'client_email' => $validated['client_email'],
                 'display_label' => $validated['display_label'] ?? $account->display_label,
             ]);
+
+            if (filled($validated['owner_seller_id'] ?? null)) {
+                $accountService->reassignOwner(
+                    $account,
+                    User::query()->findOrFail((int) $validated['owner_seller_id']),
+                    $request->user(),
+                );
+            }
+
+            $this->applySpeedLimitUpdate($request, $account, $validated, $speedLimitService);
 
             // The account's purchase amount is also its fixed renewal price: set
             // it here (0 = free renewals) so the admin sets one number, not two.
@@ -295,6 +322,56 @@ class AccountController extends Controller
         return redirect()
             ->route('admin.accounts.'.$account->service_type->accountCategory()->value)
             ->with('success', __('app.saved'));
+    }
+
+    /**
+     * Write the account's speed ceiling and push it to the router.
+     *
+     * The router is only contacted when the submitted numbers differ from the
+     * stored ones, so editing an expiry date or a label never waits on a
+     * MikroTik. The fields are absent from the form for anything but WireGuard,
+     * which is why a missing key is left alone rather than read as "no limit".
+     *
+     * The queue is written before the column: if the router refuses, the panel
+     * keeps the old numbers and the admin can simply try again. Saving first
+     * would make the retry a no-op — the stored value would already match the
+     * form — and the panel would claim a ceiling the router never got.
+     *
+     * @param  array<string, mixed>  $validated
+     */
+    protected function applySpeedLimitUpdate(
+        Request $request,
+        Account $account,
+        array $validated,
+        \App\Services\WireguardSpeedLimitService $speedLimitService,
+    ): void {
+        if (! $request->has('speed_limit_up_kbps') && ! $request->has('speed_limit_down_kbps')) {
+            return;
+        }
+
+        $up = $this->normalizeSpeedLimit($validated['speed_limit_up_kbps'] ?? null);
+        $down = $this->normalizeSpeedLimit($validated['speed_limit_down_kbps'] ?? null);
+
+        if ($up === $account->speed_limit_up_kbps && $down === $account->speed_limit_down_kbps) {
+            return;
+        }
+
+        $account->speed_limit_up_kbps = $up;
+        $account->speed_limit_down_kbps = $down;
+
+        $speedLimitService->sync($account);
+
+        $account->save();
+    }
+
+    /** An empty field and a zero both mean "no ceiling", which is stored as null. */
+    protected function normalizeSpeedLimit(mixed $value): ?int
+    {
+        if ($value === null || $value === '' || (int) $value <= 0) {
+            return null;
+        }
+
+        return (int) $value;
     }
 
     /**
@@ -367,6 +444,87 @@ class AccountController extends Controller
         }
 
         return $redirect;
+    }
+
+    /**
+     * Delete several accounts in one pass.
+     *
+     * Each account is deleted through the same service the single delete uses,
+     * so every one of them still gets its remote cleanup and its activity log
+     * entry. One account failing does not stop the rest — the admin gets a count
+     * of what went through and the names of what did not, which is more useful
+     * than aborting halfway and leaving them to guess where it stopped.
+     */
+    public function bulkDestroy(Request $request, AccountService $accountService): RedirectResponse
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer', 'exists:accounts,id'],
+        ]);
+
+        $accounts = Account::query()->whereIn('id', $validated['ids'])->get();
+
+        // The ids exist in the table but every one of them is already deleted —
+        // `exists` sees soft-deleted rows and the query does not.
+        if ($accounts->isEmpty()) {
+            return back()->with('warning', __('app.no_results'));
+        }
+
+        $deleted = 0;
+        $failed = [];
+
+        foreach ($accounts as $account) {
+            if ($request->user()->cannot('delete', $account)) {
+                $failed[] = $account->remote_username;
+
+                continue;
+            }
+
+            try {
+                $accountService->deleteAccount($account, $request->user());
+                $deleted++;
+            } catch (\Throwable $exception) {
+                report($exception);
+                $failed[] = $account->remote_username;
+            }
+        }
+
+        $redirect = redirect($this->safeAccountsListRoute($accounts->first()));
+
+        if ($deleted > 0) {
+            $redirect->with('success', __('accounts.bulk_delete_done', ['count' => $deleted]));
+        }
+
+        if ($failed !== []) {
+            $redirect->with('warning', __('accounts.bulk_delete_failed', [
+                'count' => count($failed),
+                'names' => implode('، ', array_slice($failed, 0, 10)),
+            ]));
+        }
+
+        return $redirect;
+    }
+
+    /**
+     * Issue a fresh WireGuard key pair for an account whose private key the
+     * panel does not hold — the case for every account read off a router, since
+     * a WireGuard peer only ever stores the client's public key.
+     */
+    public function reissueWireguardKeys(
+        Account $account,
+        \App\Services\WireguardKeyReissueService $reissueService,
+    ): RedirectResponse {
+        $this->authorize('update', $account);
+
+        try {
+            $reissueService->reissue($account);
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return back()->with('error', $exception->getMessage());
+        }
+
+        return back()->with('success', __('accounts.wireguard_keys_reissued'));
     }
 
     protected function resolveAccountSeller(Request $request, array $validated): User
