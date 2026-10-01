@@ -28,6 +28,25 @@ return [
         '/(?i)(;\s*(shutdown|xp_cmdshell|load_file)\b)/',
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Input paths exempt from the pattern scan (dotted, * allowed).
+    |
+    | A key name alone is too coarse for fields that legitimately carry markup:
+    | the announcement editor exists so the panel owner can write HTML for the
+    | customer page, so <iframe> or onload= there is content, not an attack —
+    | yet the generic scan rejected the whole save with a bare 403 and no hint
+    | which field caused it. That field is not left unguarded: it goes through
+    | PortalCustomizationService::sanitizeAnnouncementHtml(), a DOM walk that
+    | keeps an allowlist of tags and attributes, which is strictly stronger
+    | than a regex. Exempt a path only when something like that owns it.
+    |--------------------------------------------------------------------------
+    */
+
+    'firewall_skip_paths' => [
+        'announcements.*.html',
+    ],
+
     'firewall_skip_keys' => [
         'password',
         'password_confirmation',
