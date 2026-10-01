@@ -17,7 +17,7 @@
     </style>
     @stack('styles')
 </head>
-<body class="portal-body">
+<body class="portal-body @yield('body_class')">
 @yield('portal_content')
 @stack('scripts')
 </body>

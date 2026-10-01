@@ -6,13 +6,18 @@
 
 @section('title', __('accounts.portal_captcha_title'))
 
+{{-- این صفحه تنها چیزی است که مشتری پیش از دیدن اکانتش می‌بیند، پس برعکس
+     بقیهٔ پرتال که فهرستی از کارت‌هاست، یک صفحهٔ تک‌کارتِ وسط‌چین است. کلاس
+     بدنه همین را به CSS می‌گوید. --}}
+@section('body_class', 'portal-body--gate')
+
 @section('portal_content')
 @php
     $captcha = is_array($captcha ?? null) ? $captcha : [];
     $captchaToken = (string) ($captcha['token'] ?? '');
     $captchaSvg = (string) ($captcha['svg'] ?? '');
 @endphp
-<div class="portal-wrap">
+<div class="portal-wrap portal-wrap--gate">
     <section class="portal-card portal-captcha-card">
         <div class="portal-captcha-icon" aria-hidden="true"><i class="bx bx-shield-quarter"></i></div>
         <h1 class="portal-captcha-title">{{ __('accounts.portal_captcha_title') }}</h1>

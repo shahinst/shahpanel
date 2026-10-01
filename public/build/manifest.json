@@ -20,12 +20,12 @@
     "src": "node_modules/boxicons/fonts/boxicons.woff2"
   },
   "resources/css/app.css": {
-    "file": "assets/app-BbGQFSmt.css",
+    "file": "assets/app-KEECMj97.css",
     "src": "resources/css/app.css",
     "isEntry": true
   },
   "resources/css/auth.css": {
-    "file": "assets/auth-BSrPLzLo.css",
+    "file": "assets/auth-B6JUtevm.css",
     "src": "resources/css/auth.css",
     "isEntry": true
   },
@@ -35,7 +35,7 @@
     "isEntry": true
   },
   "resources/css/portal.css": {
-    "file": "assets/portal-BRScuet4.css",
+    "file": "assets/portal-C0LoDObO.css",
     "src": "resources/css/portal.css",
     "isEntry": true
   },

@@ -463,57 +463,120 @@ body.portal-body {
 
 /* Captcha gate — the customer page renders nothing else until it is solved */
 
+/* This is the only page a customer sees before their account, and it used to
+   be a flat white box pinned to the top of a grey screen. The rest of the
+   portal is a list of cards, so it inherited a list layout it never needed:
+   one card, centred, is what this page actually is. Nothing here is driven by
+   account data — the page still has none to show. */
+
+body.portal-body--gate {
+    min-height: 100vh;
+    min-height: 100dvh;
+    background:
+        radial-gradient(900px 480px at 50% -15%, #e2e5ff 0%, rgba(226, 229, 255, 0) 62%),
+        radial-gradient(640px 400px at 110% 108%, #d9edff 0%, rgba(217, 237, 255, 0) 58%),
+        var(--portal-bg);
+    background-attachment: fixed;
+}
+
+.portal-wrap--gate {
+    max-width: 26.5rem;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.9rem;
+}
+
 .portal-captcha-card {
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 0;
+    padding: 2.25rem 1.5rem 1.75rem;
     text-align: center;
-    padding: 1.75rem 1.25rem;
+    border-color: rgba(255, 255, 255, 0.85);
+    border-radius: 20px;
+    box-shadow:
+        0 18px 44px -22px rgba(30, 41, 99, 0.42),
+        0 2px 8px rgba(15, 23, 42, 0.04);
+    animation: portal-captcha-rise 0.45s ease-out both;
+}
+
+/* The coloured hairline is the page's only branding: before the captcha is
+   solved there is deliberately no account name, no logo, no data at all. */
+.portal-captcha-card::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto;
+    height: 4px;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6 48%, #38bdf8);
 }
 
 .portal-captcha-icon {
-    width: 56px;
-    height: 56px;
-    margin: 0 auto 1rem;
+    position: relative;
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 1.15rem;
     border-radius: 50%;
-    background: #e0e7ff;
+    background: linear-gradient(145deg, #eef2ff, #dfe4ff);
     color: #4338ca;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.75rem;
+    font-size: 2rem;
+    box-shadow:
+        0 0 0 1px rgba(99, 102, 241, 0.18),
+        0 10px 20px -12px rgba(67, 56, 202, 0.5);
+}
+
+.portal-captcha-icon::after {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    border: 1px solid rgba(99, 102, 241, 0.16);
 }
 
 .portal-captcha-title {
-    margin: 0 0 0.75rem;
-    font-size: 1.2rem;
-    font-weight: 700;
+    margin: 0 0 0.6rem;
+    font-size: 1.3rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
 }
 
 .portal-captcha-text {
-    margin: 0;
+    margin: 0 auto;
+    max-width: 21rem;
     color: var(--portal-muted);
-    line-height: 1.75;
-    font-size: 0.88rem;
+    line-height: 1.8;
+    font-size: 0.89rem;
 }
 
 .portal-captcha-form {
-    margin-top: 1.25rem;
+    margin-top: 1.5rem;
     text-align: start;
 }
 
 .portal-captcha-row {
     display: flex;
     align-items: stretch;
-    gap: 0.5rem;
+    gap: 0.6rem;
 }
 
 .portal-captcha-image {
     flex: 1 1 auto;
-    min-height: 64px;
+    min-height: 82px;
+    padding: 0.3rem;
     display: flex;
     align-items: center;
     justify-content: center;
+    /* Kept plain white on purpose: the captcha glyphs are already noisy, and a
+       patterned backdrop behind them costs legibility for no visual gain. */
     background: #fff;
-    border: 1px solid var(--portal-border);
-    border-radius: 8px;
+    border: 1px solid #dbe2f0;
+    border-radius: 12px;
+    box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.05);
     overflow: hidden;
 }
 
@@ -534,59 +597,143 @@ body.portal-body {
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid var(--portal-border);
-    border-radius: 8px;
+    border: 1px solid #dbe2f0;
+    border-radius: 12px;
     background: var(--portal-surface);
-    color: var(--portal-text);
+    color: var(--portal-muted);
     cursor: pointer;
+    transition: color 0.15s, border-color 0.15s, background 0.15s, transform 0.15s;
+}
+
+.portal-captcha-refresh:hover {
+    color: var(--portal-accent);
+    border-color: var(--portal-accent);
+    background: #f6f6ff;
+}
+
+.portal-captcha-refresh:active {
+    transform: scale(0.95);
 }
 
 .portal-captcha-refresh:disabled {
-    opacity: 0.55;
+    opacity: 0.6;
+    cursor: default;
+}
+
+/* The script disables the button while a new image is on its way, so the
+   spinner needs no extra class to hook onto. */
+.portal-captcha-refresh:disabled svg {
+    animation: portal-captcha-spin 0.8s linear infinite;
 }
 
 .portal-captcha-label {
     display: block;
-    margin: 0.9rem 0 0.35rem;
+    margin: 1.15rem 0 0.4rem;
     font-size: 0.85rem;
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .portal-captcha-input {
     width: 100%;
-    padding: 0.7rem 0.75rem;
+    padding: 0.85rem 0.9rem;
     font-family: inherit;
-    font-size: 1.05rem;
-    letter-spacing: 0.15em;
+    font-size: 1.3rem;
+    font-weight: 700;
+    letter-spacing: 0.3em;
+    /* The letter-spacing hangs off the last glyph, which pushes the text off
+       centre; the indent puts it back. */
+    text-indent: 0.3em;
     text-align: center;
     direction: ltr;
     background: #fff;
     color: var(--portal-text);
-    border: 1px solid var(--portal-border);
-    border-radius: 8px;
+    border: 1px solid #dbe2f0;
+    border-radius: 12px;
+    transition: border-color 0.15s, box-shadow 0.15s;
 }
 
 .portal-captcha-input:focus {
-    outline: 2px solid var(--portal-accent);
-    outline-offset: 1px;
+    outline: none;
+    border-color: var(--portal-accent);
+    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.14);
 }
 
 .portal-captcha-error {
-    margin: 0.5rem 0 0;
+    margin: 0.7rem 0 0;
+    padding: 0.55rem 0.7rem;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 10px;
     color: #b91c1c;
     font-size: 0.82rem;
+    font-weight: 600;
 }
 
 .portal-captcha-hint {
-    margin: 0.5rem 0 0;
+    margin: 0.6rem 0 0;
     color: var(--portal-muted);
     font-size: 0.78rem;
 }
 
 .portal-captcha-submit {
     width: 100%;
-    margin-top: 1rem;
-    padding: 0.75rem;
-    font-size: 0.95rem;
+    margin-top: 1.15rem;
+    padding: 0.85rem;
+    font-size: 0.97rem;
+    font-weight: 700;
+    border: 0;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #4f46e5, #6d5ae6 55%, #7c6cf0);
+    color: #fff;
     cursor: pointer;
+    box-shadow: 0 12px 22px -14px rgba(79, 70, 229, 0.95);
+    transition: filter 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+
+.portal-captcha-submit:hover {
+    filter: brightness(1.06);
+    box-shadow: 0 16px 26px -14px rgba(79, 70, 229, 1);
+}
+
+.portal-captcha-submit:active {
+    transform: translateY(1px);
+}
+
+.portal-body--gate .portal-footer {
+    margin-top: 0;
+    text-align: center;
+}
+
+@keyframes portal-captcha-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes portal-captcha-rise {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .portal-captcha-card {
+        animation: none;
+    }
+
+    .portal-captcha-refresh,
+    .portal-captcha-input,
+    .portal-captcha-submit {
+        transition: none;
+    }
+
+    .portal-captcha-refresh:disabled svg {
+        animation: none;
+    }
+
+    .portal-captcha-refresh:active,
+    .portal-captcha-submit:active {
+        transform: none;
+    }
 }
