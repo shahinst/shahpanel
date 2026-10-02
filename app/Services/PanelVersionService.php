@@ -109,28 +109,46 @@ class PanelVersionService
             'commits' => [],
             'changelog' => [],
         ];
+        $errors = [];
+
+        // Each source is tried on its own: a host that is filtered or slow from
+        // the server's network (raw.githubusercontent.com often is) must not
+        // sink the whole check.
+        $latestSha = null;
 
         try {
-            $raw = "https://raw.githubusercontent.com/{$repo}/{$branch}";
-            $version = Http::timeout(8)->get("{$raw}/VERSION");
+            $head = $this->http()->withHeaders(['Accept' => 'application/vnd.github+json'])
+                ->get("https://api.github.com/repos/{$repo}/commits/{$branch}");
 
-            if ($version->successful()) {
-                $state['latest_version'] = trim($version->body()) ?: null;
+            if ($head->successful()) {
+                $latestSha = (string) $head->json('sha') ?: null;
+            } else {
+                $errors[] = 'api.github.com: HTTP '.$head->status();
             }
+        } catch (Throwable $exception) {
+            $errors[] = 'api.github.com: '.$exception->getMessage();
+        }
 
-            $changelog = Http::timeout(8)->get("{$raw}/changelog.json");
+        $version = $this->fetchRepoFile($repo, $branch, $latestSha, 'VERSION', $errors);
+        $state['latest_version'] = $version !== null ? (trim($version) ?: null) : null;
 
-            if ($changelog->successful() && is_array($changelog->json('versions'))) {
-                $state['changelog'] = array_values(array_filter($changelog->json('versions'), 'is_array'));
-            }
+        $changelog = $this->fetchRepoFile($repo, $branch, $latestSha, 'changelog.json', $errors);
+        $decoded = $changelog !== null ? json_decode($changelog, true) : null;
 
-            $local = $this->currentCommit();
-            $api = Http::timeout(8)->withHeaders(['Accept' => 'application/vnd.github+json']);
+        if (is_array($decoded['versions'] ?? null)) {
+            $state['changelog'] = array_values(array_filter($decoded['versions'], 'is_array'));
+        }
 
-            if ($local !== null) {
-                $compare = $api->get("https://api.github.com/repos/{$repo}/compare/{$local}...{$branch}");
+        $local = $this->currentCommit();
+        $compared = false;
+
+        if ($local !== null) {
+            try {
+                $compare = $this->http()->withHeaders(['Accept' => 'application/vnd.github+json'])
+                    ->get("https://api.github.com/repos/{$repo}/compare/{$local}...{$branch}");
 
                 if ($compare->successful()) {
+                    $compared = true;
                     $state['ahead_by'] = (int) $compare->json('ahead_by', 0);
                     $commits = array_reverse((array) $compare->json('commits', []));
                     $state['commits'] = array_map(static fn (array $c): array => [
@@ -139,17 +157,20 @@ class PanelVersionService
                         'date' => $c['commit']['committer']['date'] ?? null,
                         'url' => $c['html_url'] ?? null,
                     ], array_slice(array_filter($commits, 'is_array'), 0, 50));
-                    $state['latest_commit'] = substr((string) ($commits[0]['sha'] ?? $local), 0, 7);
+                    $state['latest_commit'] = substr((string) ($commits[0]['sha'] ?? $latestSha ?? $local), 0, 7);
+                } else {
+                    $errors[] = 'compare: HTTP '.$compare->status();
                 }
+            } catch (Throwable $exception) {
+                $errors[] = 'compare: '.$exception->getMessage();
             }
+        }
 
-            if ($state['latest_version'] === null && $state['changelog'] === []) {
-                throw new \RuntimeException('GitHub did not answer');
-            }
-        } catch (Throwable $exception) {
-            Log::info('Panel update check failed', ['error' => $exception->getMessage()]);
+        // The check counts as answered when GitHub told us anything usable.
+        if ($state['latest_version'] === null && $state['changelog'] === [] && ! $compared) {
             $state['ok'] = false;
-            $state['error'] = $exception->getMessage();
+            $state['error'] = $errors === [] ? 'GitHub did not answer' : implode(' | ', array_slice($errors, 0, 4));
+            Log::info('Panel update check failed', ['errors' => $errors]);
         }
 
         // A failed check is retried sooner than a good one.
@@ -157,6 +178,50 @@ class PanelVersionService
         Cache::put(self::CACHE_KEY, $state, now()->addMinutes($minutes + 5));
 
         return $state;
+    }
+
+    /**
+     * A file from the repository's branch, from the first source that answers:
+     * raw.githubusercontent.com, the GitHub contents API, then jsDelivr (pinned
+     * to the latest commit when known, so its cache cannot serve an old file).
+     *
+     * @param  list<string>  $errors
+     */
+    protected function fetchRepoFile(string $repo, string $branch, ?string $sha, string $path, array &$errors): ?string
+    {
+        $sources = [
+            'raw.githubusercontent.com' => ["https://raw.githubusercontent.com/{$repo}/".($sha ?? $branch)."/{$path}", []],
+            'api.github.com/contents' => ["https://api.github.com/repos/{$repo}/contents/{$path}?ref=".($sha ?? $branch), ['Accept' => 'application/vnd.github.raw']],
+            'cdn.jsdelivr.net' => ["https://cdn.jsdelivr.net/gh/{$repo}@".($sha ?? $branch)."/{$path}", []],
+        ];
+
+        foreach ($sources as $name => [$url, $headers]) {
+            try {
+                $response = $this->http()->withHeaders($headers)->get($url);
+
+                if ($response->successful() && $response->body() !== '') {
+                    return $response->body();
+                }
+
+                $errors[] = "{$name} ({$path}): HTTP ".$response->status();
+            } catch (Throwable $exception) {
+                $errors[] = "{$name} ({$path}): ".$exception->getMessage();
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * HTTP client for the check; PANEL_UPDATE_PROXY routes it through a proxy
+     * on servers that cannot reach GitHub directly.
+     */
+    protected function http(): \Illuminate\Http\Client\PendingRequest
+    {
+        $request = Http::timeout(8)->connectTimeout(5)->withUserAgent('ShahPanel/'.$this->current());
+        $proxy = (string) config('shahpanel.update.proxy', '');
+
+        return $proxy !== '' ? $request->withOptions(['proxy' => $proxy]) : $request;
     }
 
     /**
