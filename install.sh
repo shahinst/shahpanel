@@ -511,6 +511,27 @@ else
     warn "scripts/panel-firewall is missing — the panel's firewall page will stay inert."
 fi
 
+# The admin panel's "Update" button runs update.sh through this root-owned
+# launcher. What it runs is a root-owned copy of update.sh outside the
+# checkout, so the web user cannot change the code that runs as root.
+UPD_SRC="$APP_DIR/scripts/shahpanel-update"
+if [[ -f "$UPD_SRC" ]]; then
+    install -d -o root -g root -m 0755 /usr/local/lib/shahpanel
+    sed "s#__APP_DIR__#${APP_DIR}#g" "$UPD_SRC" > /usr/local/sbin/shahpanel-update
+    chown root:root /usr/local/sbin/shahpanel-update
+    chmod 0750 /usr/local/sbin/shahpanel-update
+    install -o root -g root -m 0750 "$APP_DIR/update.sh" /usr/local/lib/shahpanel/update.sh
+    printf 'www-data ALL=(root) NOPASSWD: /usr/local/sbin/shahpanel-update\n' > /etc/sudoers.d/shahpanel-update
+    chmod 0440 /etc/sudoers.d/shahpanel-update
+    if visudo -cf /etc/sudoers.d/shahpanel-update >/dev/null; then
+        install -d -o root -g root -m 0755 "$APP_DIR/public/update-progress"
+        info "Web updater installed."
+    else
+        rm -f /etc/sudoers.d/shahpanel-update
+        warn "The web updater's sudoers rule was rejected; update with: sudo bash update.sh"
+    fi
+fi
+
 # ---------------------------------------------------------------------------
 # step 10 — nginx
 # ---------------------------------------------------------------------------
