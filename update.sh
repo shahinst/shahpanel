@@ -165,6 +165,26 @@ chown -R www-data:www-data storage bootstrap/cache
 chmod -R 775 storage bootstrap/cache
 # The queue worker runs the old code until it is told to stop and respawn.
 sudo -u www-data php artisan queue:restart >/dev/null 2>&1 || true
+# Older installs were written without fastcgi_read_timeout, so a long admin
+# action (syncing every account of a big server) hit nginx's 60-second default
+# and showed a 504. Add it to this panel's site file once; roll back if nginx
+# rejects the result. install.sh keeps the PHP block in a snippet; older
+# hand-made setups may have it directly in the site file.
+for SITE in /etc/nginx/snippets/*.conf /etc/nginx/sites-available/*; do
+    [[ -f "$SITE" ]] || continue
+    grep -q "root ${APP_DIR}/public" "$SITE" || continue
+    grep -q "fastcgi_pass unix:/run/php/" "$SITE" || continue
+    grep -q "fastcgi_read_timeout" "$SITE" && continue
+    cp -a "$SITE" "${SITE}.bak-timeout"
+    sed -i '/fastcgi_pass unix:\/run\/php\//a\    fastcgi_read_timeout 300s;' "$SITE"
+    if nginx -t >/dev/null 2>&1; then
+        systemctl reload nginx && ok "nginx: FastCGI timeout raised in $(basename "$SITE")"
+        rm -f "${SITE}.bak-timeout"
+    else
+        mv -f "${SITE}.bak-timeout" "$SITE"
+        warn "nginx rejected the timeout change in $(basename "$SITE"); left it as it was"
+    fi
+done
 PHPFPM="$(systemctl list-units --type=service --no-legend 'php*-fpm.service' | awk '{print $1}' | head -1)"
 # restart, not reload: a reload keeps the existing workers alive, so OPcache
 # goes on serving the PHP files from before the update and the panel silently

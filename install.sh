@@ -558,6 +558,9 @@ location ~ \.php\$ {
     fastcgi_param SCRIPT_FILENAME \$realpath_root\$fastcgi_script_name;
     fastcgi_param DOCUMENT_ROOT \$realpath_root;
     fastcgi_hide_header X-Powered-By;
+    # Pushing or syncing a few hundred accounts inline can outlast nginx's
+    # 60-second default and end in a 504 while PHP is still working.
+    fastcgi_read_timeout 300s;
 }
 
 location ~* \.(css|js|woff2?|ttf|eot|svg|png|jpe?g|gif|ico)\$ {

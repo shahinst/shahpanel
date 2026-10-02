@@ -17,6 +17,7 @@ use App\Services\ServerOvpnProfileService;
 use App\Services\SyncService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Throwable;
 
 class ServerOperationsController extends Controller
@@ -209,29 +210,20 @@ class ServerOperationsController extends Controller
     ): RedirectResponse {
         $this->authorize('update', $server);
 
-        @set_time_limit(max(120, (int) config('shahpanel.mikrotik.inline_max_seconds', 600)));
-
         $onlyMissing = $request->boolean('only_missing', false);
 
-        try {
+        return $this->runInBackground($server, 'push', function () use ($server, $pushService, $onlyMissing): array {
             $result = $pushService->pushAll($server, $onlyMissing);
-        } catch (\Throwable $exception) {
-            report($exception);
 
-            return redirect()
-                ->route('admin.servers.show', $server)
-                ->with('error', $exception->getMessage());
-        }
-
-        $lines = array_merge($result['lines'], $result['errors']);
-
-        return redirect()
-            ->route('admin.servers.show', $server)
-            ->with($result['failed'] === 0 ? 'success' : 'warning', __('servers.accounts_pushed', [
-                'pushed' => $result['pushed'],
-                'failed' => $result['failed'],
-            ]))
-            ->with('operation_log', $lines);
+            return [
+                'type' => $result['failed'] === 0 ? 'success' : 'warning',
+                'message' => __('servers.accounts_pushed', [
+                    'pushed' => $result['pushed'],
+                    'failed' => $result['failed'],
+                ]),
+                'lines' => array_merge($result['lines'], $result['errors']),
+            ];
+        });
     }
 
     public function syncTraffic(
@@ -240,31 +232,92 @@ class ServerOperationsController extends Controller
     ): RedirectResponse {
         $this->authorize('update', $server);
 
-        @set_time_limit(max(120, (int) config('shahpanel.mikrotik.inline_max_seconds', 600)));
-
-        try {
+        return $this->runInBackground($server, 'traffic', function () use ($server, $syncService): array {
             $log = $syncService->syncServer($server);
-        } catch (\Throwable $exception) {
-            report($exception);
 
+            $lines = [
+                __('backend.server_log_status', ['status' => $log->status->value]),
+                __('backend.server_log_accounts_synced', ['count' => $log->accounts_synced]),
+                __('backend.server_log_errors_count', ['count' => $log->errors_count]),
+            ];
+
+            if ($log->error_details) {
+                $lines[] = $log->error_details;
+            }
+
+            return [
+                'type' => (int) $log->errors_count === 0 ? 'success' : 'warning',
+                'message' => __('servers.traffic_synced'),
+                'lines' => $lines,
+            ];
+        });
+    }
+
+    /**
+     * Run a per-account operation after the response has been sent.
+     *
+     * Pushing or syncing every account talks to the panel once (or more) per
+     * account. On a server with a few hundred accounts that outlasts nginx's
+     * 60-second FastCGI timeout, so the admin got a 504 while the work carried on
+     * unseen. The page now returns at once and the outcome is shown on the server
+     * page when the run finishes.
+     *
+     * @param  callable(): array{type: string, message: string, lines: array<int, string>}  $work
+     */
+    protected function runInBackground(Server $server, string $operation, callable $work): RedirectResponse
+    {
+        $lock = Cache::lock(self::backgroundLockKey($server), 45 * 60);
+
+        if (! $lock->get()) {
             return redirect()
                 ->route('admin.servers.show', $server)
-                ->with('error', $exception->getMessage());
+                ->with('warning', __('servers.background_operation_running'));
         }
-        $lines = [
-            __('backend.server_log_status', ['status' => $log->status->value]),
-            __('backend.server_log_accounts_synced', ['count' => $log->accounts_synced]),
-            __('backend.server_log_errors_count', ['count' => $log->errors_count]),
-        ];
 
-        if ($log->error_details) {
-            $lines[] = $log->error_details;
-        }
+        Cache::put(self::backgroundResultKey($server), [
+            'operation' => $operation,
+            'status' => 'running',
+            'started_at' => now()->toIso8601String(),
+        ], now()->addDay());
+
+        app()->terminating(function () use ($server, $operation, $work, $lock): void {
+            @ignore_user_abort(true);
+            @set_time_limit(max(1800, (int) config('shahpanel.mikrotik.inline_max_seconds', 600)));
+
+            try {
+                $result = $work();
+            } catch (Throwable $exception) {
+                report($exception);
+
+                $result = [
+                    'type' => 'error',
+                    'message' => $exception->getMessage(),
+                    'lines' => [__('backend.server_log_error', ['message' => $exception->getMessage()])],
+                ];
+            } finally {
+                $lock->forceRelease();
+            }
+
+            Cache::put(self::backgroundResultKey($server), array_merge($result, [
+                'operation' => $operation,
+                'status' => 'finished',
+                'finished_at' => now()->toIso8601String(),
+            ]), now()->addDay());
+        });
 
         return redirect()
             ->route('admin.servers.show', $server)
-            ->with('success', __('servers.traffic_synced'))
-            ->with('operation_log', $lines);
+            ->with('success', __('servers.background_operation_started'));
+    }
+
+    public static function backgroundLockKey(Server $server): string
+    {
+        return 'server-background-op-lock.'.$server->id;
+    }
+
+    public static function backgroundResultKey(Server $server): string
+    {
+        return 'server-background-op.'.$server->id;
     }
 
     /**

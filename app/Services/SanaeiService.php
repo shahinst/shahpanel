@@ -28,6 +28,9 @@ class SanaeiService
     /** @var array<string, list<string>> */
     protected array $subscriptionLinksCache = [];
 
+    /** @var array<int, array{at: float, list: array<int, array<string, mixed>>}> */
+    protected array $inboundListMemo = [];
+
     public function login(Server $server): string
     {
         $client = $this->client($server);
@@ -180,6 +183,30 @@ class SanaeiService
         $inbounds = $response->json('obj') ?? $response->json() ?? [];
 
         return is_array($inbounds) ? $inbounds : [];
+    }
+
+    /**
+     * Inbound list reused for a short window. A traffic sync asks for it once per
+     * account to add up the per-inbound aliases; on a 500-client server that was
+     * 500 downloads of the whole panel and pushed the manual sync past nginx's
+     * timeout. Only read-only traffic aggregation uses this -- anything that
+     * changes the panel still calls listInbounds() for a fresh copy.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    protected function recentInboundList(Server $server): array
+    {
+        $key = (int) $server->id;
+        $cached = $this->inboundListMemo[$key] ?? null;
+
+        if ($cached !== null && (microtime(true) - $cached['at']) < 60) {
+            return $cached['list'];
+        }
+
+        $list = $this->listInbounds($server);
+        $this->inboundListMemo[$key] = ['at' => microtime(true), 'list' => $list];
+
+        return $list;
     }
 
     /**
@@ -1277,7 +1304,7 @@ class SanaeiService
         $extraDown = 0;
         $foundAlias = false;
 
-        foreach ($this->listInbounds($server) as $inbound) {
+        foreach ($this->recentInboundList($server) as $inbound) {
             foreach ($this->indexClientStats($inbound) as $email => $row) {
                 if (! str_starts_with((string) $email, $aliasPrefix)) {
                     continue;
