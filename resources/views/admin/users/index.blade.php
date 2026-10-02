@@ -58,6 +58,7 @@
                                         <button type="submit" class="btn btn-sm btn-info">{{ __('security.impersonation_as') }}</button>
                                     </form>
                                 @endcan
+                                @include('shared.users.delete-button', ['deleteUser' => $user, 'deleteRoute' => route('admin.users.destroy', $user)])
                             </td>
                         </tr>
                     @empty
