@@ -235,6 +235,10 @@ trait ManagesWireguardAccountActions
             return back()->with('error', $exception->getMessage());
         }
 
+        if (! empty($result['without_payment'])) {
+            return back()->with('success', __('accounts.refund_without_payment'));
+        }
+
         $currency = $account->package?->moneyCurrency()
             ?? \App\Enums\MoneyCurrency::default();
 
