@@ -22,6 +22,12 @@ Schedule::command('sync:usage')
     ->runInBackground()
     ->after(fn () => Cache::put('system_health.job.sync_usage_at', now()->timestamp, now()->addHours(6)));
 
+// The admin panel's "new version" notice reads this cached result.
+Schedule::command('panel:check-update')
+    ->hourly()
+    ->withoutOverlapping()
+    ->runInBackground();
+
 Schedule::command('accounts:check-expiry')
     ->everyTenMinutes()
     ->withoutOverlapping()

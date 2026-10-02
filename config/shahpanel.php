@@ -40,6 +40,21 @@ return [
 
     'portal_token_length' => 32,
 
+    // Where the panel looks for new versions, and the author's links shown in
+    // the footer and the menu.
+    'update' => [
+        'repository' => env('PANEL_UPDATE_REPOSITORY', 'shahinst/shahpanel'),
+        'branch' => env('PANEL_UPDATE_BRANCH', 'master'),
+        'check_minutes' => (int) env('PANEL_UPDATE_CHECK_MINUTES', 60),
+        'backup_dir' => env('PANEL_BACKUP_DIR', '/var/backups/shahpanel'),
+    ],
+
+    'author_links' => [
+        'github' => 'https://github.com/shahinst/shahpanel',
+        'telegram' => 'https://t.me/shaahinst',
+        'youtube' => 'https://www.youtube.com/@shaahinst',
+    ],
+
     // Upper bound for one bulk account creation (the "create in bulk" button).
     'bulk_account_max' => (int) env('BULK_ACCOUNT_MAX', 50),
 

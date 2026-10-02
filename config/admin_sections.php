@@ -43,6 +43,8 @@ return [
     // می‌توانست دسترسی خودش را گسترش بدهد.
     'super_only' => [
         'administrators.*',
+        // Updating the panel is the owner's call, like managing administrators.
+        'updates.*',
     ],
 
     'sections' => [

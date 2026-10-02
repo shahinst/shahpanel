@@ -3,6 +3,9 @@
 @section('page_title', __('menu.dashboard'))
 
 @section('panel_content')
+@if (($stats['panel'] ?? null) === 'admin')
+    @include('admin.partials.star-prompt')
+@endif
 @php
     $panel = $stats['panel'];
     $charts = $stats['charts'];

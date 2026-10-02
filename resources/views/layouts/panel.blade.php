@@ -45,13 +45,21 @@
                 @endif
 
                 @include('layouts.partials.impersonation-banner')
+                @include('layouts.partials.update-banner')
 
                 @yield('panel_content')
             </div>
         </div>
 
         <footer class="footer">
-            {{ jalali_now('Y') }} © {{ config('app.name') }}
+            @if ($panel !== 'client')
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <span>{{ jalali_now('Y') }} © {{ config('app.name') }}</span>
+                    @include('layouts.partials.author-links', ['variant' => 'footer'])
+                </div>
+            @else
+                {{ jalali_now('Y') }} © {{ config('app.name') }}
+            @endif
         </footer>
     </div>
 </div>
