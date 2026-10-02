@@ -22,14 +22,32 @@ trait ProvidesStaffAccountCreateModal
 
         return [
             'staffCreateModal' => in_array($prefix, ['agent', 'seller'], true),
+            // Bulk creation is offered in every staff panel; the admin, whose single
+            // create is a full page, reaches the same modal only in bulk mode.
+            'staffBulkModal' => in_array($prefix, ['admin', 'agent', 'seller'], true),
             'prefix' => $prefix,
-            'accountOwners' => $prefix === 'agent'
-                ? $this->agentAccountOwnersForCreate($request)
-                : collect(),
+            'accountOwners' => match ($prefix) {
+                'agent' => $this->agentAccountOwnersForCreate($request),
+                'admin' => $this->adminAccountOwnersForCreate(),
+                default => collect(),
+            },
             'openCreateModal' => $request->boolean('create')
                 || old('account_display_name') !== null
                 || session('open_create_modal'),
         ];
+    }
+
+    /**
+     * @return \Illuminate\Support\Collection<int, User>
+     */
+    protected function adminAccountOwnersForCreate(): \Illuminate\Support\Collection
+    {
+        return User::query()
+            ->whereIn('role', [UserRole::Agent, UserRole::Seller])
+            ->orderBy('role')
+            ->orderBy('full_name')
+            ->orderBy('username')
+            ->get(['id', 'full_name', 'username', 'role']);
     }
 
     /**

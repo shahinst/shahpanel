@@ -142,6 +142,18 @@ class EndUserService
     {
         $mode = (string) ($data['client_mode'] ?? 'new');
 
+        if ($mode === 'auto') {
+            // Created here, inside AccountService::createAccount's transaction, so
+            // a purchase that fails takes the client with it. Creating it in the
+            // controller before the transaction left one orphan client behind for
+            // every failed attempt or double click.
+            return $this->createAutoClientForAccount(
+                $owner,
+                $data['client_full_name'] ?? null,
+                filled($data['client_password'] ?? null) ? (string) $data['client_password'] : null,
+            )['user'];
+        }
+
         if ($mode === 'existing') {
             return $this->attachExistingClient(
                 $owner,
@@ -326,11 +338,11 @@ class EndUserService
     /**
      * @return array{user: User, password: string}
      */
-    public function createAutoClientForAccount(User $owner, ?string $displayName = null): array
+    public function createAutoClientForAccount(User $owner, ?string $displayName = null, ?string $password = null): array
     {
         $this->assertCanOwnClients($owner);
 
-        $password = $this->generatePortalPassword();
+        $password ??= $this->generatePortalPassword();
         $username = null;
 
         for ($attempt = 0; $attempt < 20; $attempt++) {

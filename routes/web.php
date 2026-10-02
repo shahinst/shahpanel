@@ -265,6 +265,7 @@ Route::prefix($adminPath)->name('admin.')->middleware($adminMiddleware)->group(f
     Route::post('accounts/kyc/{kycVerification}/verify', [AdminAccountController::class, 'kycVerify'])->name('accounts.kyc.verify');
     Route::post('accounts/kyc/{kycVerification}/request-reset', [AdminAccountController::class, 'kycRequestReset'])->name('accounts.kyc.request-reset');
     Route::get('accounts/create', [AdminAccountController::class, 'create'])->name('accounts.create');
+    Route::post('accounts/bulk-create', [AdminAccountController::class, 'bulkStore'])->name('accounts.bulk-store');
     Route::get('accounts/{account}/report', [AdminAccountController::class, 'report'])->name('accounts.report');
     Route::get('accounts/{account}', [AdminAccountController::class, 'show'])->name('accounts.show');
     Route::post('accounts', [AdminAccountController::class, 'store'])->name('accounts.store');
@@ -457,6 +458,7 @@ Route::prefix($agentPath)->name('agent.')->middleware(['auth', 'role:agent', 'lo
     Route::post('accounts/kyc/{kycVerification}/verify', [AgentAccountController::class, 'kycVerify'])->name('accounts.kyc.verify');
     Route::post('accounts/kyc/{kycVerification}/request-reset', [AgentAccountController::class, 'kycRequestReset'])->name('accounts.kyc.request-reset');
     Route::get('accounts/create', [AgentAccountController::class, 'create'])->name('accounts.create');
+    Route::post('accounts/bulk-create', [AgentAccountController::class, 'bulkStore'])->name('accounts.bulk-store');
     Route::get('accounts/{account}/report', [AgentAccountController::class, 'report'])->name('accounts.report');
     Route::get('accounts/{account}', [AgentAccountController::class, 'show'])->name('accounts.show');
     Route::resource('accounts', AgentAccountController::class)->except(['show', 'index', 'destroy', 'create']);
@@ -564,6 +566,7 @@ Route::prefix($sellerPath)->name('seller.')->middleware(['auth', 'role:seller', 
     Route::post('accounts/kyc/{kycVerification}/verify', [SellerAccountController::class, 'kycVerify'])->name('accounts.kyc.verify');
     Route::post('accounts/kyc/{kycVerification}/request-reset', [SellerAccountController::class, 'kycRequestReset'])->name('accounts.kyc.request-reset');
     Route::get('accounts/create', [SellerAccountController::class, 'create'])->name('accounts.create');
+    Route::post('accounts/bulk-create', [SellerAccountController::class, 'bulkStore'])->name('accounts.bulk-store');
     Route::get('accounts/{account}/report', [SellerAccountController::class, 'report'])->name('accounts.report');
     Route::get('accounts/{account}', [SellerAccountController::class, 'show'])->name('accounts.show');
     Route::resource('accounts', SellerAccountController::class)->except(['show', 'index', 'destroy', 'create']);

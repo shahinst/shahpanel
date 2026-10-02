@@ -24,6 +24,7 @@
     'actions' => view('shared.accounts.partials.create-action', [
         'prefix' => $prefix,
         'staffCreateModal' => $staffCreateModal ?? false,
+        'staffBulkModal' => $staffBulkModal ?? false,
     ])->render(),
 ])
 
@@ -228,7 +229,7 @@
 @if ($canBulkDelete ?? false)
     @include('shared.accounts.bulk-delete-script')
 @endif
-@if ($staffCreateModal ?? false)
+@if (($staffCreateModal ?? false) || ($staffBulkModal ?? false))
     @include('shared.accounts.create-modal', [
         'prefix' => $prefix,
         'accountOwners' => $accountOwners ?? collect(),
