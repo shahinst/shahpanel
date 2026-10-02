@@ -216,12 +216,18 @@ class AccountController extends Controller
 
         $needsWireguardReissue = app(\App\Services\WireguardKeyReissueService::class)->needsReissue($account);
 
+        // Accounts imported from a server arrive without a package or period.
+        $assignablePackages = ($account->package_id === null || $account->package_duration_id === null)
+            ? $this->assignablePackagesFor($account)
+            : collect();
+
         return view('admin.accounts.edit', compact(
             'account',
             'servers',
             'purchaseInvoice',
             'accountOwners',
             'needsWireguardReissue',
+            'assignablePackages',
         ));
     }
 
@@ -236,11 +242,19 @@ class AccountController extends Controller
     ): RedirectResponse {
         $this->authorize('update', $account);
 
+        // A name that came from the router (an imported secret or peer) may hold
+        // characters the panel would not let you type. Keeping it unchanged must
+        // still save; only a new name has to follow the panel's pattern.
+        $usernameUnchanged = (string) $request->input('remote_username') === (string) $account->remote_username;
+
         $validated = $request->validate([
-            'remote_username' => array_merge(
-                \App\Support\AccountNameValidator::rules(\App\Support\AccountNameValidator::REMOTE_MAX, required: true),
-                [Rule::unique('accounts', 'remote_username')->ignore($account->id)],
-            ),
+            'remote_username' => $usernameUnchanged
+                ? ['required', 'string', 'max:255']
+                : array_merge(
+                    \App\Support\AccountNameValidator::rules(\App\Support\AccountNameValidator::REMOTE_MAX, required: true),
+                    [Rule::unique('accounts', 'remote_username')->ignore($account->id)],
+                ),
+            'assign_package_id' => ['nullable', 'integer', 'exists:packages,id'],
             // «ایمیل مشتری» در واقع برچسب کلاینت روی پنل است (مثل fatemeh-iq81gdq9-1-up7b)
             // و نه نشانی ایمیل؛ قاعدهٔ email همین برچسب‌های واقعی را رد می‌کرد.
             'client_email' => ['nullable', 'string', 'max:255'],
@@ -286,6 +300,19 @@ class AccountController extends Controller
 
             $this->applySpeedLimitUpdate($request, $account, $validated, $speedLimitService);
 
+            $packagePushWarning = null;
+
+            if (filled($validated['assign_package_id'] ?? null)) {
+                $assignPackage = $this->assignablePackagesFor($account)
+                    ->firstWhere('id', (int) $validated['assign_package_id']);
+
+                if ($assignPackage === null) {
+                    throw new \InvalidArgumentException(__('accounts.assign_package_invalid'));
+                }
+
+                $packagePushWarning = $accountService->assignPackageTerms($account->fresh(), $assignPackage, $request->user());
+            }
+
             // The account's purchase amount is also its fixed renewal price: set
             // it here (0 = free renewals) so the admin sets one number, not two.
             if (array_key_exists('staff_charge', $validated)
@@ -319,9 +346,30 @@ class AccountController extends Controller
             return back()->withInput()->with('error', $exception->getMessage());
         }
 
-        return redirect()
+        $redirect = redirect()
             ->route('admin.accounts.'.$account->service_type->accountCategory()->value)
             ->with('success', __('app.saved'));
+
+        if (! empty($packagePushWarning)) {
+            $redirect->with('warning', __('accounts.assign_package_push_failed', ['error' => $packagePushWarning]));
+        }
+
+        return $redirect;
+    }
+
+    /**
+     * Active packages of the account's own service type.
+     *
+     * @return \Illuminate\Support\Collection<int, Package>
+     */
+    protected function assignablePackagesFor(Account $account): \Illuminate\Support\Collection
+    {
+        return Package::query()
+            ->active()
+            ->where('service_type', $account->service_type)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
     }
 
     /**

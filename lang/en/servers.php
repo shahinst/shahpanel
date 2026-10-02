@@ -349,4 +349,9 @@ return [
     'background_operation_in_progress' => 'Running… refresh the page in a few minutes to see the result.',
     'background_operation_push' => 'Result of the last account push',
     'background_operation_traffic' => 'Result of the last usage sync',
+    'import_no_packages_for_type' => 'No active package is defined for this service type.',
+    'import_bulk_include_existing' => 'Also change rows that were already imported (their owner/package is updated)',
+    'import_bulk_pick_first' => 'Pick an option from the list above first.',
+    'import_bulk_applied' => 'Applied to :count rows.',
+    'import_bulk_none_changed' => 'No row changed; if every row was already imported, tick "Also change rows that were already imported".',
 ];

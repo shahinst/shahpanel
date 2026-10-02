@@ -77,6 +77,20 @@
                 </select>
             </x-form.group>
 
+            @if (($assignablePackages ?? collect())->isNotEmpty())
+            <x-form.group label="{{ __('accounts.assign_package') }}" hint="{{ __('accounts.assign_package_hint') }}">
+                <select name="assign_package_id" class="form-select">
+                    <option value="">—</option>
+                    @foreach ($assignablePackages as $assignPackage)
+                        <option value="{{ $assignPackage->id }}" @selected((int) old('assign_package_id', $account->package_id) === (int) $assignPackage->id)>
+                            {{ $assignPackage->name }}
+                            ({{ $assignPackage->isUnlimited() ? __('servers.unlimited') : number_format((float) $assignPackage->data_limit_gb, 0).' GB' }})
+                        </option>
+                    @endforeach
+                </select>
+            </x-form.group>
+            @endif
+
             @if ($account->service_type === \App\Enums\ServiceType::Wireguard)
             <x-form.group label="{{ __('accounts.speed_limit') }}" hint="{{ __('accounts.speed_limit_hint') }}" wide>
                 <div class="row g-3">
