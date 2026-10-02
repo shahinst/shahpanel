@@ -1,6 +1,24 @@
 {
     "versions": [
         {
+            "version": "3.1.2",
+            "date": "2026-10-03",
+            "notes": {
+                "fa": [
+                    "پایین منو فقط آیکن‌های گیت‌هاب، تلگرام و یوتیوب وسط‌چین نمایش داده می‌شود و نسخه زیر آن‌ها"
+                ],
+                "en": [
+                    "The bottom of the menu now shows only the GitHub, Telegram and YouTube icons, centred, with the version below them"
+                ],
+                "ru": [
+                    "Внизу меню теперь только значки GitHub, Telegram и YouTube по центру, а под ними версия"
+                ],
+                "zh": [
+                    "菜单底部现在只居中显示 GitHub、Telegram 和 YouTube 图标，下方显示版本号"
+                ]
+            }
+        },
+        {
             "version": "3.1.1",
             "date": "2026-10-03",
             "notes": {
