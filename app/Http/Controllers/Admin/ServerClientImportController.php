@@ -188,6 +188,17 @@ class ServerClientImportController extends Controller
                 ->with('error', __('servers.import_session_expired'));
         }
 
+        // A 300+ client inbound posts three or four fields per row, which runs
+        // past PHP's max_input_vars (1000 by default). PHP then silently drops
+        // the tail of the form, so the last rows arrived without an owner even
+        // though one was picked. The form now sends every row as one JSON field;
+        // the per-row array is kept as a fallback for browsers without script.
+        $rows = $this->decodeAssignmentsJson($request->input('assignments_json'));
+
+        if ($rows !== null) {
+            $request->merge(['assignments' => $rows]);
+        }
+
         $validated = $request->validate([
             'assignments' => ['required', 'array', 'min:1'],
             'assignments.*.uuid' => ['required', 'string'],
@@ -198,18 +209,16 @@ class ServerClientImportController extends Controller
         ]);
 
         $assignments = [];
+        $assignedUuids = [];
 
         foreach ($validated['assignments'] as $row) {
-            if (! empty($row['skip'])) {
+            // A row left without an owner is not an error: it stays in the list so
+            // it can be assigned and imported in a later pass.
+            if (! empty($row['skip']) || empty($row['owner_id'])) {
                 continue;
             }
 
-            if (empty($row['owner_id'])) {
-                return redirect()
-                    ->route('admin.servers.import-clients.assign', $server)
-                    ->withInput()
-                    ->with('error', __('servers.import_owner_required'));
-            }
+            $assignedUuids[(string) $row['uuid']] = true;
 
             $assignments[] = [
                 'uuid' => $row['uuid'],
@@ -259,8 +268,6 @@ class ServerClientImportController extends Controller
                 ->with('error', $exception->getMessage());
         }
 
-        session()->forget($this->sessionKey($server));
-
         $message = __('servers.import_done', [
             'created' => $result['created'] ?? $result['imported'] ?? 0,
             'updated' => $result['updated'],
@@ -268,11 +275,56 @@ class ServerClientImportController extends Controller
         ]);
 
         $log = array_merge($result['lines'] ?? [], $result['errors'] ?? []);
+        $flashType = ($result['errors'] ?? []) === [] ? 'success' : 'warning';
+
+        // Clients that had no owner this time are kept for the next pass, so a
+        // 500-client inbound can be imported in as many rounds as the admin likes.
+        // Rows that already exist in the panel are not carried over: they were
+        // shown only to offer an owner change.
+        $remaining = array_values(array_filter(
+            $sessionData['clients'],
+            fn (array $client): bool => ! isset($assignedUuids[(string) ($client['uuid'] ?? '')])
+                && empty($client['existing_account_id'])
+        ));
+
+        if ($remaining !== []) {
+            session([
+                $this->sessionKey($server) => array_merge($sessionData, [
+                    'clients' => $remaining,
+                    'total' => count($remaining),
+                ]),
+            ]);
+
+            return redirect()
+                ->route('admin.servers.import-clients.assign', $server)
+                ->with($flashType, $message.' '.__('servers.import_remaining_left', ['count' => count($remaining)]))
+                ->with('operation_log', $log);
+        }
+
+        session()->forget($this->sessionKey($server));
 
         return redirect()
             ->route('admin.servers.show', $server)
-            ->with($log === [] || ($result['errors'] ?? []) === [] ? 'success' : 'warning', $message)
+            ->with($flashType, $message)
             ->with('operation_log', $log);
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>|null
+     */
+    protected function decodeAssignmentsJson(mixed $raw): ?array
+    {
+        if (! is_string($raw) || trim($raw) === '') {
+            return null;
+        }
+
+        $decoded = json_decode($raw, true);
+
+        if (! is_array($decoded)) {
+            return null;
+        }
+
+        return array_values(array_filter($decoded, 'is_array'));
     }
 
     protected function sessionKey(Server $server): string
