@@ -204,6 +204,7 @@
         rollbackFailed: @json(__('updates.result_rollback_failed')),
         failed: @json(__('updates.result_failed')),
         lost: @json(__('updates.result_lost')),
+        logUnavailable: @json(__('updates.log_unavailable')),
     };
     const stagePercent = { queued: 2, start: 3, checking: 6, backup: 15, fetch: 28, merge: 38, composer: 58, migrate: 74, caches: 84, verify: 91, restart: 96, done: 100 };
     const btn = document.getElementById('upd-run-btn');
@@ -223,6 +224,7 @@
     let polls = 0;
     let lastChange = Date.now();
     let bestPercent = 0;
+    let logWarned = false;
 
     function openModal() { modal.hidden = false; }
     function closeModal() { modal.hidden = true; }
@@ -253,7 +255,15 @@
         return fetch(logUrl + '?t=' + Date.now(), { headers: { Range: 'bytes=' + logOffset + '-' }, cache: 'no-store' })
             .then(function (r) {
                 if (r.status === 416) return '';
-                if (!r.ok) throw new Error(r.status);
+                if (!r.ok) {
+                    // Say why the console is empty (a firewall refusing the
+                    // file, say) instead of leaving a blank box.
+                    if (!logWarned) {
+                        logWarned = true;
+                        append(labels.logUnavailable.replace(':status', r.status) + '\n');
+                    }
+                    throw new Error(r.status);
+                }
                 return r.text().then(function (t) {
                     // A server that ignores Range sends the whole file.
                     if (r.status === 200 && logOffset > 0) t = t.slice(logOffset);

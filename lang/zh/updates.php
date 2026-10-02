@@ -52,6 +52,7 @@ return [
     'result_rollback_failed' => '更新失败且回滚未完成。错误：:error — 数据库备份：:backup。请查看控制台日志。',
     'result_failed' => '更新未运行（面板没有任何更改）。错误：:error',
     'result_lost' => '已有 20 分钟没有更新的消息。请检查服务器和 /var/log/shahpanel-update.log。',
+    'log_unavailable' => '无法从服务器读取控制台日志（HTTP :status）。更新仍在继续；完整日志在服务器的 /var/log/shahpanel-update.log。',
     'stages' => [
         'queued' => '排队中…',
         'start' => '开始…',

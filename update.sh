@@ -36,6 +36,16 @@ if [[ -z "${APP_DIR:-}" ]]; then
 fi
 # Exported so the copy this script re-executes from (below) keeps the path.
 export APP_DIR
+
+# Started from the panel's Update button, this runs as a systemd unit with no
+# HOME. Without it `git config --global` silently does nothing (so git then
+# refuses the www-data-owned checkout) and composer will not start at all.
+export HOME="${HOME:-/root}"
+[[ -d "$HOME" ]] || export HOME=/root
+
+# Every git call trusts the checkout explicitly. Relying on the global
+# safe.directory entry alone failed whenever that entry could not be written.
+git() { command git -c safe.directory="$APP_DIR" "$@"; }
 REPO="${REPO:-https://github.com/shahinst/shahpanel.git}"
 BRANCH="${BRANCH:-master}"
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/shahpanel}"

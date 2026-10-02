@@ -52,6 +52,7 @@ return [
     'result_rollback_failed' => 'The update failed and the rollback was not complete. Error: :error — database backup: :backup. Check the console log.',
     'result_failed' => 'The update did not run (nothing on the panel was changed). Error: :error',
     'result_lost' => 'There has been no news from the update for 20 minutes. Check the server and /var/log/shahpanel-update.log.',
+    'log_unavailable' => 'The console log could not be read from the server (HTTP :status). The update carries on; the full log is in /var/log/shahpanel-update.log on the server.',
     'stages' => [
         'queued' => 'Queued…',
         'start' => 'Starting…',
