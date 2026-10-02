@@ -2,8 +2,14 @@
     $prefix = $prefix ?? 'agent';
     $accountOwners = $accountOwners ?? collect();
     $isAgent = $prefix === 'agent';
+    $showOwnerSelect = in_array($prefix, ['agent', 'admin'], true);
+    // The admin's single create is a full page; on the admin panel this modal is bulk-only.
+    $bulkOnly = $prefix === 'admin';
     $clientMode = old('client_mode', 'auto');
     $storeUrl = route("{$prefix}.accounts.store");
+    $bulkStoreUrl = \Illuminate\Support\Facades\Route::has("{$prefix}.accounts.bulk-store") ? route("{$prefix}.accounts.bulk-store") : null;
+    $bulkMax = max(2, (int) config('shahpanel.bulk_account_max', 50));
+    $openInBulk = $bulkOnly || old('account_count') !== null;
     $packageOptionsUrl = route("{$prefix}.accounts.package-options");
     $clientOptionsUrl = route("{$prefix}.accounts.client-options");
     $purchasePreviewUrl = route("{$prefix}.accounts.purchase-preview");
@@ -13,13 +19,13 @@
     <div class="modal-dialog staff-create-modal__dialog" role="document">
         <div class="modal-content staff-create-modal__content">
             <div class="modal-header">
-                <h5 class="modal-title" id="staff-create-account-title">{{ __('accounts.create') }}</h5>
+                <h5 class="modal-title" id="staff-create-account-title" data-single-title="{{ __('accounts.create') }}" data-bulk-title="{{ __('accounts.bulk_create') }}">{{ $openInBulk ? __('accounts.bulk_create') : __('accounts.create') }}</h5>
                 <button type="button" class="btn-close staff-create-modal__close" aria-label="{{ __('app.cancel') }}"></button>
             </div>
-            <form method="POST" action="{{ $storeUrl }}" id="staff-create-account-form">
+            <form method="POST" action="{{ $openInBulk && $bulkStoreUrl ? $bulkStoreUrl : $storeUrl }}" id="staff-create-account-form" data-store-url="{{ $storeUrl }}" data-bulk-url="{{ $bulkStoreUrl }}">
                 @csrf
                 <div class="modal-body">
-                    @if ($isAgent && $accountOwners->isNotEmpty())
+                    @if ($showOwnerSelect && $accountOwners->isNotEmpty())
                     <div class="mb-3">
                         <label class="form-label">{{ __('accounts.owner') }}</label>
                         <select name="owner_seller_id" id="staff-owner-id" class="form-select" required>
@@ -34,7 +40,14 @@
 
                     <div class="mb-3">
                         <label class="form-label" for="staff-display-name">{{ __('accounts.display_label') }}</label>
-                        <input type="text" name="account_display_name" id="staff-display-name" class="form-control" required maxlength="255" value="{{ old('account_display_name') }}" placeholder="{{ __('accounts.staff_display_name_placeholder') }}">
+                        <input type="text" name="account_display_name" id="staff-display-name" class="form-control" required maxlength="240" value="{{ old('account_display_name') }}" placeholder="{{ __('accounts.staff_display_name_placeholder') }}">
+                        <p class="form-text text-muted mb-0 mt-1" id="staff-bulk-name-hint" @if(! $openInBulk) hidden @endif>{{ __('accounts.bulk_name_hint') }}</p>
+                    </div>
+
+                    <div class="mb-3" id="staff-bulk-count-wrap" @if(! $openInBulk) hidden @endif>
+                        <label class="form-label" for="staff-account-count">{{ __('accounts.bulk_count') }}</label>
+                        <input type="number" name="account_count" id="staff-account-count" class="form-control" min="2" max="{{ $bulkMax }}" step="1" value="{{ old('account_count', 10) }}" @if(! $openInBulk) disabled @endif>
+                        <p class="form-text text-muted mb-0 mt-1">{{ __('accounts.bulk_count_hint', ['max' => $bulkMax]) }}</p>
                     </div>
 
                     <div class="mb-3">
@@ -50,6 +63,14 @@
                             </div>
                         </div>
                         <p class="form-text text-muted mb-0 mt-2" id="staff-client-auto-hint">{{ __('accounts.staff_client_auto_hint') }}</p>
+                    </div>
+
+                    <div class="mb-3" id="staff-bulk-client-wrap" @if(! $openInBulk || $clientMode === 'existing') hidden @endif>
+                        <label class="form-label d-block">{{ __('accounts.bulk_client_mode') }}</label>
+                        <select name="bulk_client_mode" id="staff-bulk-client-mode" class="form-select" @if(! $openInBulk) disabled @endif>
+                            <option value="shared" @selected(old('bulk_client_mode', 'shared') === 'shared')>{{ __('accounts.bulk_client_shared') }}</option>
+                            <option value="separate" @selected(old('bulk_client_mode') === 'separate')>{{ __('accounts.bulk_client_separate') }}</option>
+                        </select>
                     </div>
 
                     <div class="mb-3" id="staff-client-select-wrap" @if($clientMode !== 'existing') hidden @endif>
@@ -94,6 +115,10 @@
                                 <span class="text-muted">{{ __('accounts.charged_amount') }}</span>
                                 <strong id="staff-pricing-charge" class="text-primary">—</strong>
                             </div>
+                            <div class="staff-create-pricing__row" id="staff-pricing-total-row" hidden>
+                                <span class="text-muted">{{ __('accounts.bulk_total_charge') }}</span>
+                                <strong id="staff-pricing-total" class="text-primary">—</strong>
+                            </div>
                             <p class="mb-0 mt-2 text-danger small" id="staff-pricing-error" hidden></p>
                         </div>
                     </div>
@@ -101,7 +126,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary staff-create-modal__close">{{ __('app.cancel') }}</button>
                     <button type="submit" class="btn btn-primary" id="staff-create-submit">
-                        <i class="bx bx-plus-circle"></i> {{ __('accounts.create') }}
+                        <i class="bx bx-plus-circle"></i> <span id="staff-create-submit-label" data-single="{{ __('accounts.create') }}" data-bulk="{{ __('accounts.bulk_create') }}">{{ $openInBulk ? __('accounts.bulk_create') : __('accounts.create') }}</span>
                     </button>
                 </div>
             </form>
@@ -184,6 +209,52 @@
         return formatMoney(value, { symbol: @json(__('packages.toman')), decimals: 0 });
     }
 
+    const bulkOnly = @json($bulkOnly);
+    const bulkUrl = form.dataset.bulkUrl || '';
+    const singleUrl = form.dataset.storeUrl || '';
+    const titleEl = document.getElementById('staff-create-account-title');
+    const submitLabel = document.getElementById('staff-create-submit-label');
+    const bulkCountWrap = document.getElementById('staff-bulk-count-wrap');
+    const bulkCountInput = document.getElementById('staff-account-count');
+    const bulkNameHint = document.getElementById('staff-bulk-name-hint');
+    const bulkClientWrap = document.getElementById('staff-bulk-client-wrap');
+    const bulkClientSelect = document.getElementById('staff-bulk-client-mode');
+    const pricingTotalRow = document.getElementById('staff-pricing-total-row');
+    const pricingTotal = document.getElementById('staff-pricing-total');
+    let bulkMode = @json($openInBulk);
+    let lastCharge = null;
+    let lastCurrencyMeta = null;
+
+    function setBulkMode(enabled) {
+        bulkMode = bulkOnly ? true : !!enabled;
+        form.action = bulkMode && bulkUrl ? bulkUrl : singleUrl;
+        if (titleEl) titleEl.textContent = bulkMode ? titleEl.dataset.bulkTitle : titleEl.dataset.singleTitle;
+        if (submitLabel) submitLabel.textContent = bulkMode ? submitLabel.dataset.bulk : submitLabel.dataset.single;
+        if (bulkCountWrap) bulkCountWrap.hidden = !bulkMode;
+        if (bulkCountInput) {
+            bulkCountInput.disabled = !bulkMode;
+            if (bulkMode) bulkCountInput.setAttribute('required', 'required');
+            else bulkCountInput.removeAttribute('required');
+        }
+        if (bulkNameHint) bulkNameHint.hidden = !bulkMode;
+        if (bulkClientSelect) bulkClientSelect.disabled = !bulkMode;
+        toggleClientMode();
+        renderTotal();
+    }
+
+    function renderTotal() {
+        if (!pricingTotalRow) return;
+        const count = bulkCountInput ? Number(bulkCountInput.value) : 0;
+        if (!bulkMode || lastCharge === null || !Number.isFinite(count) || count < 2) {
+            pricingTotalRow.hidden = true;
+            return;
+        }
+        pricingTotalRow.hidden = false;
+        pricingTotal.textContent = formatMoney(Number(lastCharge) * count, lastCurrencyMeta);
+    }
+
+    if (bulkCountInput) bulkCountInput.addEventListener('input', renderTotal);
+
     function openModal() {
         modal.hidden = false;
         modal.classList.add('show');
@@ -199,6 +270,7 @@
     document.querySelectorAll('[data-staff-create-account-open]').forEach(function (btn) {
         btn.addEventListener('click', function (event) {
             event.preventDefault();
+            setBulkMode(btn.dataset.bulk === '1');
             openModal();
             loadPackageOptions();
             loadClients();
@@ -229,6 +301,9 @@
         }
         if (clientAutoHint) {
             clientAutoHint.hidden = existing;
+        }
+        if (bulkClientWrap) {
+            bulkClientWrap.hidden = !bulkMode || existing;
         }
     }
 
@@ -286,6 +361,8 @@
     }
 
     function hidePricing() {
+        lastCharge = null;
+        if (pricingTotalRow) pricingTotalRow.hidden = true;
         if (pricingBox) pricingBox.hidden = true;
         if (pricingError) pricingError.hidden = true;
     }
@@ -327,6 +404,9 @@
                 };
                 pricingWholesale.textContent = formatMoney(result.payload.wholesale_price, currencyMeta);
                 pricingCharge.textContent = formatMoney(result.payload.final_charge, currencyMeta);
+                lastCharge = result.payload.final_charge;
+                lastCurrencyMeta = currencyMeta;
+                renderTotal();
             })
             .catch(function () { hidePricing(); });
     }
@@ -415,7 +495,19 @@
     if (clientAuto) clientAuto.addEventListener('change', toggleClientMode);
     if (clientExisting) clientExisting.addEventListener('change', toggleClientMode);
 
-    toggleClientMode();
+    // One click, one purchase: a second click while the first request is in
+    // flight used to send it again. Checked after the other submit listeners
+    // (the KYC check may cancel the submit), hence the deferred look.
+    const submitButton = document.getElementById('staff-create-submit');
+    form.addEventListener('submit', function (event) {
+        setTimeout(function () {
+            if (!event.defaultPrevented && submitButton) {
+                submitButton.disabled = true;
+            }
+        }, 0);
+    });
+
+    setBulkMode(bulkMode);
     if (openOnLoad) {
         openModal();
         loadPackageOptions();

@@ -40,6 +40,9 @@ return [
 
     'portal_token_length' => 32,
 
+    // Upper bound for one bulk account creation (the "create in bulk" button).
+    'bulk_account_max' => (int) env('BULK_ACCOUNT_MAX', 50),
+
     'portal_link_ttl_minutes' => (int) env('PORTAL_LINK_TTL_MINUTES', 5),
 
     // عمر «کپچای حل‌شده»ی صفحهٔ مشتری در سشن. کوتاه است تا لینک لو رفته دیرتر
