@@ -15,6 +15,8 @@ use App\Services\ServerInterfaceSyncService;
 use App\Services\ServerL2tpIpsecService;
 use App\Services\ServerOvpnProfileService;
 use App\Services\SyncService;
+use App\Support\OperationProgress;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -212,8 +214,8 @@ class ServerOperationsController extends Controller
 
         $onlyMissing = $request->boolean('only_missing', false);
 
-        return $this->runInBackground($server, 'push', function () use ($server, $pushService, $onlyMissing): array {
-            $result = $pushService->pushAll($server, $onlyMissing);
+        return $this->runInBackground($server, 'push', function (OperationProgress $progress) use ($server, $pushService, $onlyMissing): array {
+            $result = $pushService->pushAll($server, $onlyMissing, $progress);
 
             return [
                 'type' => $result['failed'] === 0 ? 'success' : 'warning',
@@ -221,7 +223,6 @@ class ServerOperationsController extends Controller
                     'pushed' => $result['pushed'],
                     'failed' => $result['failed'],
                 ]),
-                'lines' => array_merge($result['lines'], $result['errors']),
             ];
         });
     }
@@ -232,25 +233,47 @@ class ServerOperationsController extends Controller
     ): RedirectResponse {
         $this->authorize('update', $server);
 
-        return $this->runInBackground($server, 'traffic', function () use ($server, $syncService): array {
-            $log = $syncService->syncServer($server);
-
-            $lines = [
-                __('backend.server_log_status', ['status' => $log->status->value]),
-                __('backend.server_log_accounts_synced', ['count' => $log->accounts_synced]),
-                __('backend.server_log_errors_count', ['count' => $log->errors_count]),
-            ];
-
-            if ($log->error_details) {
-                $lines[] = $log->error_details;
-            }
+        return $this->runInBackground($server, 'traffic', function (OperationProgress $progress) use ($server, $syncService): array {
+            $log = $syncService->syncServer($server, $progress);
 
             return [
                 'type' => (int) $log->errors_count === 0 ? 'success' : 'warning',
-                'message' => __('servers.traffic_synced'),
-                'lines' => $lines,
+                'message' => __('servers.progress_sync_done', [
+                    'synced' => $log->accounts_synced,
+                    'errors' => $log->errors_count,
+                ]),
             ];
         });
+    }
+
+    /**
+     * Live state of the server's background operation, polled by the console
+     * on the server page. `after` is the last log line the page already has.
+     */
+    public function operationProgress(Request $request, Server $server): JsonResponse
+    {
+        $this->authorize('view', $server);
+
+        $state = Cache::get(self::backgroundResultKey($server));
+
+        // The run releases its lock only after writing its final state, so a
+        // free lock under a "running" state means the worker died mid-run (PHP
+        // restarted, the server rebooted). Say so instead of spinning forever.
+        if (is_array($state) && ($state['status'] ?? '') === 'running') {
+            $probe = Cache::lock(self::backgroundLockKey($server), 5);
+
+            if ($probe->get()) {
+                $probe->release();
+                $state['status'] = 'finished';
+                $state['type'] = 'error';
+                $state['message'] = __('servers.progress_interrupted');
+                Cache::put(self::backgroundResultKey($server), $state, now()->addDay());
+            }
+        }
+
+        $snapshot = OperationProgress::snapshot($state, max(0, (int) $request->query('after', 0)));
+
+        return response()->json(['operation' => $snapshot]);
     }
 
     /**
@@ -258,11 +281,11 @@ class ServerOperationsController extends Controller
      *
      * Pushing or syncing every account talks to the panel once (or more) per
      * account. On a server with a few hundred accounts that outlasts nginx's
-     * 60-second FastCGI timeout, so the admin got a 504 while the work carried on
-     * unseen. The page now returns at once and the outcome is shown on the server
-     * page when the run finishes.
+     * FastCGI timeout, so the page returns at once and the work runs after the
+     * response, reporting every account to an OperationProgress that the server
+     * page polls to draw a live console and progress bar.
      *
-     * @param  callable(): array{type: string, message: string, lines: array<int, string>}  $work
+     * @param  callable(OperationProgress): array{type: string, message: string}  $work
      */
     protected function runInBackground(Server $server, string $operation, callable $work): RedirectResponse
     {
@@ -274,35 +297,22 @@ class ServerOperationsController extends Controller
                 ->with('warning', __('servers.background_operation_running'));
         }
 
-        Cache::put(self::backgroundResultKey($server), [
-            'operation' => $operation,
-            'status' => 'running',
-            'started_at' => now()->toIso8601String(),
-        ], now()->addDay());
+        $progress = new OperationProgress(self::backgroundResultKey($server), $operation);
+        $progress->log(__('servers.progress_queued'));
 
-        app()->terminating(function () use ($server, $operation, $work, $lock): void {
+        app()->terminating(function () use ($progress, $work, $lock): void {
             @ignore_user_abort(true);
             @set_time_limit(max(1800, (int) config('shahpanel.mikrotik.inline_max_seconds', 600)));
 
             try {
-                $result = $work();
+                $result = $work($progress);
+                $progress->finish($result['type'], $result['message']);
             } catch (Throwable $exception) {
                 report($exception);
-
-                $result = [
-                    'type' => 'error',
-                    'message' => $exception->getMessage(),
-                    'lines' => [__('backend.server_log_error', ['message' => $exception->getMessage()])],
-                ];
+                $progress->finish('error', __('backend.server_log_error', ['message' => $exception->getMessage()]));
             } finally {
                 $lock->forceRelease();
             }
-
-            Cache::put(self::backgroundResultKey($server), array_merge($result, [
-                'operation' => $operation,
-                'status' => 'finished',
-                'finished_at' => now()->toIso8601String(),
-            ]), now()->addDay());
         });
 
         return redirect()

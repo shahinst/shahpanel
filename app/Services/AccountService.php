@@ -941,6 +941,24 @@ class AccountService
      *
      * @return array{action: string, message: string}
      */
+    /**
+     * Run a whole-server job with the remote reads it repeats per account
+     * shared across the run (see SanaeiService::batchInboundReads).
+     *
+     * @template T
+     *
+     * @param  callable(): T  $work
+     * @return T
+     */
+    public function withServerBatch(Server $server, callable $work): mixed
+    {
+        if ($server->isSanaei()) {
+            return $this->sanaeiService->batchInboundReads($server, $work);
+        }
+
+        return $work();
+    }
+
     public function pushAccountToServer(Account $account, bool $onlyMissing = false): array
     {
         $account->loadMissing(['server', 'package']);

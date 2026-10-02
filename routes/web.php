@@ -234,6 +234,7 @@ Route::prefix($adminPath)->name('admin.')->middleware($adminMiddleware)->group(f
     Route::post('servers/{server}/push-accounts', [AdminServerOperationsController::class, 'pushAccounts'])->name('servers.push-accounts');
     Route::post('servers/{server}/migrate-sanaei', [AdminServerOperationsController::class, 'migrateSanaeiFrom'])->name('servers.migrate-sanaei');
     Route::post('servers/{server}/sync-traffic', [AdminServerOperationsController::class, 'syncTraffic'])->name('servers.sync-traffic');
+    Route::get('servers/{server}/operation-progress', [AdminServerOperationsController::class, 'operationProgress'])->name('servers.operation-progress');
     Route::post('servers/{server}/wireguard-interfaces', [AdminServerOperationsController::class, 'storeWireguardInterface'])->name('servers.wireguard-interfaces.store');
     Route::put('servers/{server}/wireguard-interfaces/{serverInterface}', [AdminServerOperationsController::class, 'updateWireguardInterface'])->name('servers.wireguard-interfaces.update');
     Route::post('servers/{server}/ppp-profiles', [AdminServerOperationsController::class, 'storePppProfile'])->name('servers.ppp-profiles.store');
