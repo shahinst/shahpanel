@@ -31,6 +31,15 @@ class SanaeiService
     /** @var array<int, array{at: float, list: array<int, array<string, mixed>>}> */
     protected array $inboundListMemo = [];
 
+    /** @var array<int, true> servers currently inside batchInboundReads() */
+    protected array $batchInboundServers = [];
+
+    /** @var array<int, array<int, array<string, mixed>>> */
+    protected array $batchInboundLists = [];
+
+    /** @var array<int, array<string, array<string, mixed>|null>> */
+    protected array $batchGlobalClients = [];
+
     public function login(Server $server): string
     {
         $client = $this->client($server);
@@ -176,13 +185,62 @@ class SanaeiService
 
     public function listInbounds(Server $server): array
     {
+        $serverId = (int) $server->id;
+
+        if (isset($this->batchInboundServers[$serverId], $this->batchInboundLists[$serverId])) {
+            return $this->batchInboundLists[$serverId];
+        }
+
         $prefix = $this->client($server)->resolveApiPrefix();
         $response = $this->apiRequest($server, 'GET', $prefix, '/inbounds/list');
         $this->assertSuccessful($response, 'list Sanaei inbounds');
 
         $inbounds = $response->json('obj') ?? $response->json() ?? [];
+        $inbounds = is_array($inbounds) ? $inbounds : [];
 
-        return is_array($inbounds) ? $inbounds : [];
+        if (isset($this->batchInboundServers[$serverId])) {
+            $this->batchInboundLists[$serverId] = $inbounds;
+        }
+
+        return $inbounds;
+    }
+
+    /**
+     * Run a whole-server job (push every account, sync every account's usage)
+     * against one copy of the inbound list.
+     *
+     * Each account used to download the panel's full inbound list -- every
+     * client of every inbound -- three or four times (choosing inbounds, finding
+     * the client, finding its per-inbound copies, updating it). On a 500-client
+     * server that was ~2000 multi-megabyte downloads and the reason a full push
+     * took ten minutes. Inside this scope the list is fetched once and reused;
+     * it is dropped whenever a client is created or deleted, the only changes
+     * that alter which clients the list holds. Updates only touch the client
+     * being worked on, and every account is handled once per run.
+     *
+     * @template T
+     *
+     * @param  callable(): T  $work
+     * @return T
+     */
+    public function batchInboundReads(Server $server, callable $work): mixed
+    {
+        $serverId = (int) $server->id;
+        $nested = isset($this->batchInboundServers[$serverId]);
+        $this->batchInboundServers[$serverId] = true;
+
+        try {
+            return $work();
+        } finally {
+            if (! $nested) {
+                unset($this->batchInboundServers[$serverId], $this->batchInboundLists[$serverId], $this->batchGlobalClients[$serverId]);
+            }
+        }
+    }
+
+    protected function forgetBatchInbounds(Server $server): void
+    {
+        unset($this->batchInboundLists[(int) $server->id], $this->batchGlobalClients[(int) $server->id]);
     }
 
     /**
@@ -197,6 +255,11 @@ class SanaeiService
     protected function recentInboundList(Server $server): array
     {
         $key = (int) $server->id;
+
+        if (isset($this->batchInboundServers[$key])) {
+            return $this->listInbounds($server);
+        }
+
         $cached = $this->inboundListMemo[$key] ?? null;
 
         if ($cached !== null && (microtime(true) - $cached['at']) < 60) {
@@ -419,6 +482,31 @@ class SanaeiService
             return null;
         }
 
+        $serverId = (int) $server->id;
+
+        // Within a whole-server run the same client is looked up twice per
+        // account (find it, then again inside the update); the answer cannot
+        // have changed in between, so the second lookup is served from memory.
+        if (isset($this->batchInboundServers[$serverId])
+            && array_key_exists($email, $this->batchGlobalClients[$serverId] ?? [])) {
+            return $this->batchGlobalClients[$serverId][$email];
+        }
+
+        $found = $this->fetchGlobalClient($server, $email);
+
+        if (isset($this->batchInboundServers[$serverId])) {
+            $this->batchGlobalClients[$serverId][$email] = $found;
+        }
+
+        return $found;
+    }
+
+    /**
+     * @return array{client: array<string, mixed>, inbound_ids: list<int>}|null
+     */
+    protected function fetchGlobalClient(Server $server, string $email): ?array
+    {
+
         $prefix = $this->client($server)->resolveApiPrefix();
         $encoded = rawurlencode($email);
 
@@ -593,6 +681,30 @@ class SanaeiService
         int $down = 0,
         ?string $subId = null,
         ?array $inboundIds = null,
+    ): array {
+        try {
+            return $this->createClientOnPanel($server, $email, $uuid, $limitIp, $totalGB, $expiryTime, $up, $down, $subId, $inboundIds);
+        } finally {
+            // A new client changes what the inbound list holds.
+            $this->forgetBatchInbounds($server);
+        }
+    }
+
+    /**
+     * @param  list<int>|null  $inboundIds
+     * @return array<string, mixed>
+     */
+    protected function createClientOnPanel(
+        Server $server,
+        string $email,
+        string $uuid,
+        int $limitIp,
+        ?float $totalGB,
+        ?int $expiryTime,
+        int $up,
+        int $down,
+        ?string $subId,
+        ?array $inboundIds,
     ): array {
         $targets = $this->resolveProvisionInboundIds($server, $inboundIds);
         $primaryInboundId = $targets[0];
@@ -912,6 +1024,8 @@ class SanaeiService
             $response = $this->client($server)->postPathAttempts([$path], $payload);
 
             if ($this->panelMutationSucceeded($response)) {
+                unset($this->batchGlobalClients[(int) $server->id][$email], $this->batchGlobalClients[(int) $server->id][$resolvedEmail]);
+
                 return $client;
             }
         }
@@ -928,6 +1042,15 @@ class SanaeiService
     }
 
     public function deleteClient(Server $server, string $email, string $uuid, ?int $legacyInboundId = null): void
+    {
+        try {
+            $this->deleteClientOnPanel($server, $email, $uuid, $legacyInboundId);
+        } finally {
+            $this->forgetBatchInbounds($server);
+        }
+    }
+
+    protected function deleteClientOnPanel(Server $server, string $email, string $uuid, ?int $legacyInboundId): void
     {
         $existing = $this->resolvePanelClient($server, $email, $uuid, $legacyInboundId);
         $resolvedEmail = $existing !== null
@@ -1297,14 +1420,30 @@ class SanaeiService
             return null;
         }
 
-        $primary = $this->getClientTraffics($server, $baseEmail);
+        $inboundList = $this->recentInboundList($server);
+
+        // The inbound list already carries every client's counters (clientStats),
+        // so the per-client traffic request is only needed when it is missing
+        // there -- one request per account was most of a usage sync's time.
+        $primary = null;
+
+        foreach ($inboundList as $inbound) {
+            $row = $this->indexClientStats($inbound)[$baseEmail] ?? null;
+
+            if (is_array($row) && (array_key_exists('up', $row) || array_key_exists('down', $row))) {
+                $primary = $row;
+                break;
+            }
+        }
+
+        $primary ??= $this->getClientTraffics($server, $baseEmail);
 
         $aliasPrefix = $baseEmail.'-i';
         $extraUp = 0;
         $extraDown = 0;
         $foundAlias = false;
 
-        foreach ($this->recentInboundList($server) as $inbound) {
+        foreach ($inboundList as $inbound) {
             foreach ($this->indexClientStats($inbound) as $email => $row) {
                 if (! str_starts_with((string) $email, $aliasPrefix)) {
                     continue;

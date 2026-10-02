@@ -27,6 +27,38 @@ class MikrotikService
      */
     protected array $clientPool = [];
 
+    /** @var array<int, true> servers inside batchPeerReads() */
+    protected array $peerReadBatch = [];
+
+    /** @var array<int, array<int, array<string, mixed>>> */
+    protected array $peerReadCache = [];
+
+    /**
+     * Read every WireGuard peer once for a whole-server usage sync. Looking a
+     * peer up downloads the router's full peer list; doing that per account made
+     * a sync of N peers download the list N times. Only for read-only runs --
+     * anything that adds or removes peers must keep reading the live list.
+     *
+     * @template T
+     *
+     * @param  callable(): T  $work
+     * @return T
+     */
+    public function batchPeerReads(Server $server, callable $work): mixed
+    {
+        $serverId = (int) $server->id;
+        $nested = isset($this->peerReadBatch[$serverId]);
+        $this->peerReadBatch[$serverId] = true;
+
+        try {
+            return $work();
+        } finally {
+            if (! $nested) {
+                unset($this->peerReadBatch[$serverId], $this->peerReadCache[$serverId]);
+            }
+        }
+    }
+
     public function connect(Server $server): Client
     {
         if (isset($this->clientPool[$server->id])) {
@@ -2057,11 +2089,21 @@ class MikrotikService
             return null;
         }
 
-        $results = $this->withRetry(function () use ($server) {
-            $client = $this->connect($server);
+        $serverId = (int) $server->id;
 
-            return $client->query('/interface/wireguard/peers/print')->read();
-        }, 'mikrotik.find_wireguard_peer', ['server_id' => $server->id]);
+        if (isset($this->peerReadBatch[$serverId], $this->peerReadCache[$serverId])) {
+            $results = $this->peerReadCache[$serverId];
+        } else {
+            $results = $this->withRetry(function () use ($server) {
+                $client = $this->connect($server);
+
+                return $client->query('/interface/wireguard/peers/print')->read();
+            }, 'mikrotik.find_wireguard_peer', ['server_id' => $server->id]);
+
+            if (isset($this->peerReadBatch[$serverId])) {
+                $this->peerReadCache[$serverId] = $results;
+            }
+        }
 
         foreach ($results as $row) {
             $candidate = $this->normalizeWireguardKey((string) ($row['public-key'] ?? ''));

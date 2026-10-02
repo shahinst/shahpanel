@@ -8,6 +8,7 @@ use App\Enums\SyncLogStatus;
 use App\Models\Account;
 use App\Models\AccountUsageLog;
 use App\Models\Server;
+use App\Support\OperationProgress;
 use App\Models\ServerSyncLog;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -24,7 +25,7 @@ class SyncService
         protected AccountService $accountService,
     ) {}
 
-    public function syncServer(Server $server): ServerSyncLog
+    public function syncServer(Server $server, ?OperationProgress $progress = null): ServerSyncLog
     {
         $this->finalizeStaleRunningLogs($server);
 
@@ -32,6 +33,7 @@ class SyncService
 
         if (! $lock->get()) {
             Log::warning('Skipping overlapping server sync', ['server_id' => $server->id]);
+            $progress?->log(__('servers.progress_sync_overlap'), 'warn');
 
             $current = ServerSyncLog::query()
                 ->where('server_id', $server->id)
@@ -64,26 +66,53 @@ class SyncService
             $accounts = Account::query()
                 ->where('server_id', $server->id)
                 ->where('status', AccountStatus::Active)
+                ->with('server')
                 ->get();
 
-            foreach ($accounts as $account) {
-                try {
-                    $this->syncAccount($account);
-                    $synced++;
-                } catch (Throwable $exception) {
-                    $errors[] = [
-                        'account_id' => $account->id,
-                        'username' => $account->remote_username,
-                        'error' => $exception->getMessage(),
-                    ];
+            $progress?->begin($accounts->count(), __('servers.progress_sync_start', [
+                'count' => $accounts->count(),
+                'server' => $server->name,
+            ]));
 
-                    Log::error('Account sync failed', [
-                        'server_id' => $server->id,
-                        'account_id' => $account->id,
-                        'error' => $exception->getMessage(),
-                    ]);
+            $work = function () use ($accounts, $server, $progress, &$errors, &$synced): void {
+                foreach ($accounts as $account) {
+                    $label = $account->remote_username ?: ('#'.$account->id);
+                    $started = microtime(true);
+
+                    try {
+                        $fresh = $this->syncAccount($account);
+                        $synced++;
+                        $progress?->advance(__('servers.progress_sync_line', [
+                            'user' => $label,
+                            'used' => format_data_size((int) $fresh->data_used_bytes),
+                            'limit' => $fresh->data_limit_bytes ? format_data_size((int) $fresh->data_limit_bytes) : __('servers.unlimited'),
+                            'seconds' => number_format(microtime(true) - $started, 2),
+                        ]), 'ok');
+                    } catch (Throwable $exception) {
+                        $errors[] = [
+                            'account_id' => $account->id,
+                            'username' => $account->remote_username,
+                            'error' => $exception->getMessage(),
+                        ];
+
+                        $progress?->advance("{$label} — ".__('servers.progress_error').': '.$exception->getMessage(), 'error');
+
+                        Log::error('Account sync failed', [
+                            'server_id' => $server->id,
+                            'account_id' => $account->id,
+                            'error' => $exception->getMessage(),
+                        ]);
+                    }
                 }
-            }
+            };
+
+            // One copy of the panel's inbound list for the whole run instead of
+            // one or more downloads per account.
+            match (true) {
+                $server->isSanaei() => $this->sanaeiService->batchInboundReads($server, $work),
+                $server->isMikrotik() => $this->mikrotikService->batchPeerReads($server, $work),
+                default => $work(),
+            };
 
             $status = match (true) {
                 $errors === [] => SyncLogStatus::Success,
