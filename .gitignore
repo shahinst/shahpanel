@@ -2,6 +2,7 @@
 /node_modules
 /public/hot
 /public/storage
+/public/update-progress
 /storage/*.key
 /vendor
 .phpunit.result.cache

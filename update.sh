@@ -277,7 +277,16 @@ else
   fi
   stage "merge"
   CODE_CHANGED=1
-  run git -c core.hooksPath=/dev/null -c core.fsmonitor=false merge --ff-only FETCH_HEAD
+  if git merge-base --is-ancestor HEAD FETCH_HEAD; then
+    run git -c core.hooksPath=/dev/null -c core.fsmonitor=false merge --ff-only FETCH_HEAD
+  else
+    # The branch's history was rewritten upstream, so a fast-forward is
+    # impossible even though nothing here was changed (the working tree was
+    # checked clean above, and servers never commit). Move to the published
+    # code; a failure later still rolls back to $CURRENT.
+    warn "the published history was rewritten — moving to it instead of fast-forwarding"
+    run git -c core.hooksPath=/dev/null -c core.fsmonitor=false reset --hard FETCH_HEAD
+  fi
 fi
 ok "now at $(git rev-parse --short HEAD)"
 
@@ -336,6 +345,33 @@ stage "verify"
 run sudo -u www-data php artisan --version
 run sudo -u www-data php artisan route:list --path=__shahpanel_healthcheck__ >/dev/null 2>&1 || sudo -u www-data php artisan about --only=environment >/dev/null
 
+
+# Root-side launcher for the panel's "Update" button (scripts/shahpanel-update).
+# The updater it starts is a root-owned copy of this script outside the
+# checkout, so the web user cannot change what runs as root. Files are swapped
+# in with mv, so a copy that is running right now keeps reading its old inode.
+install_web_updater() {
+  local src="$APP_DIR/scripts/shahpanel-update"
+  [[ -f "$src" ]] || return 0
+  install -d -o root -g root -m 0755 /usr/local/lib/shahpanel
+  sed "s#__APP_DIR__#${APP_DIR}#g" "$src" > /usr/local/sbin/.shahpanel-update.new
+  chown root:root /usr/local/sbin/.shahpanel-update.new
+  chmod 0750 /usr/local/sbin/.shahpanel-update.new
+  mv -f /usr/local/sbin/.shahpanel-update.new /usr/local/sbin/shahpanel-update
+  install -o root -g root -m 0750 "$APP_DIR/update.sh" /usr/local/lib/shahpanel/.update.sh.new
+  mv -f /usr/local/lib/shahpanel/.update.sh.new /usr/local/lib/shahpanel/update.sh
+  printf 'www-data ALL=(root) NOPASSWD: /usr/local/sbin/shahpanel-update\n' > /etc/sudoers.d/.shahpanel-update.new
+  chmod 0440 /etc/sudoers.d/.shahpanel-update.new
+  if visudo -cf /etc/sudoers.d/.shahpanel-update.new >/dev/null 2>&1; then
+    mv -f /etc/sudoers.d/.shahpanel-update.new /etc/sudoers.d/shahpanel-update
+    install -d -o root -g root -m 0755 "$APP_DIR/public/update-progress"
+    ok "web updater installed"
+  else
+    rm -f /etc/sudoers.d/.shahpanel-update.new
+    warn "web updater not installed: the sudoers rule was rejected"
+  fi
+}
+install_web_updater
 
 # restart, not reload: a reload keeps the existing workers alive, so OPcache
 # goes on serving the PHP files from before the update and the panel silently
