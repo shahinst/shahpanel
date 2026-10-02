@@ -76,20 +76,33 @@
                     </optgroup>
                 @endif
             </select>
-            <button type="button" id="apply-bulk-owner" class="btn btn-default btn-sm mt-2">{{ __('servers.import_bulk_apply') }}</button>
+            <button type="button" id="apply-bulk-owner" class="btn btn-primary btn-sm mt-2">{{ __('servers.import_bulk_apply') }}</button>
         </div>
-        @if (! empty($packages))
-            <div class="col-md-6">
-                <label class="control-label">{{ __('servers.import_bulk_package') }}</label>
+        <div class="col-md-6">
+            <label class="control-label">{{ __('servers.import_bulk_package') }}</label>
+            @if (! empty($packages))
                 <select id="bulk-package" class="form-control">
                     <option value="">{{ __('servers.import_choose_package') }}</option>
                     @foreach ($packages as $package)
                         <option value="{{ $package['id'] }}">{{ $package['name'] }} ({{ $package['data_limit_label'] }})</option>
                     @endforeach
                 </select>
-                <button type="button" id="apply-bulk-package" class="btn btn-default btn-sm mt-2">{{ __('servers.import_bulk_apply') }}</button>
+                <button type="button" id="apply-bulk-package" class="btn btn-primary btn-sm mt-2">{{ __('servers.import_bulk_apply') }}</button>
+            @else
+                <p class="text-muted mb-0">{{ __('servers.import_no_packages_for_type') }}</p>
+            @endif
+        </div>
+        @if ($assignedCount > 0)
+            <div class="col-12 mt-2">
+                <label class="checkbox-inline">
+                    <input type="checkbox" id="bulk-include-existing">
+                    {{ __('servers.import_bulk_include_existing') }}
+                </label>
             </div>
         @endif
+        <div class="col-12 mt-2">
+            <span id="bulk-apply-feedback" class="text-success small" role="status"></span>
+        </div>
     </div>
 
     <form method="POST" action="{{ route('admin.servers.import-clients.store', $server) }}" id="import-assign-form">
@@ -222,14 +235,52 @@
 document.addEventListener('DOMContentLoaded', function () {
     var bulkSelect = document.getElementById('bulk-owner');
     var applyBtn = document.getElementById('apply-bulk-owner');
+    var includeExisting = document.getElementById('bulk-include-existing');
+    var feedback = document.getElementById('bulk-apply-feedback');
+
+    function say(message, isError) {
+        if (!feedback) return;
+        feedback.textContent = message;
+        feedback.className = (isError ? 'text-danger' : 'text-success') + ' small';
+    }
+
+    // Rows that already exist in the panel render with their selects disabled.
+    // With "include already-imported rows" ticked, bulk apply switches those rows
+    // to "update" so they are reached too -- otherwise a list made only of such
+    // rows made both buttons look dead.
+    function targetRows() {
+        var rows = [];
+        document.querySelectorAll('tr.import-client-row').forEach(function (row) {
+            var toggle = row.querySelector('.update-existing-toggle');
+            if (toggle && !toggle.checked) {
+                if (!includeExisting || !includeExisting.checked) return;
+                toggle.checked = true;
+                toggle.dispatchEvent(new Event('change'));
+            }
+            rows.push(row);
+        });
+        return rows;
+    }
+
+    function applyToRows(selector, value) {
+        var changed = 0;
+        targetRows().forEach(function (row) {
+            var select = row.querySelector(selector);
+            if (!select || select.disabled) return;
+            select.value = value;
+            if (select.value === String(value)) changed++;
+        });
+        return changed;
+    }
 
     if (applyBtn && bulkSelect) {
         applyBtn.addEventListener('click', function () {
             var value = bulkSelect.value;
-            if (!value) return;
-            document.querySelectorAll('.owner-select:not(:disabled)').forEach(function (select) {
-                select.value = value;
-            });
+            if (!value) { say(@json(__('servers.import_bulk_pick_first')), true); return; }
+            var changed = applyToRows('.owner-select', value);
+            say(changed > 0
+                ? @json(__('servers.import_bulk_applied')).replace(':count', changed)
+                : @json(__('servers.import_bulk_none_changed')), changed === 0);
         });
     }
 
@@ -284,10 +335,11 @@ document.addEventListener('DOMContentLoaded', function () {
     if (applyPackageBtn && bulkPackage) {
         applyPackageBtn.addEventListener('click', function () {
             var value = bulkPackage.value;
-            if (!value) return;
-            document.querySelectorAll('.package-select:not(:disabled)').forEach(function (select) {
-                select.value = value;
-            });
+            if (!value) { say(@json(__('servers.import_bulk_pick_first')), true); return; }
+            var changed = applyToRows('.package-select', value);
+            say(changed > 0
+                ? @json(__('servers.import_bulk_applied')).replace(':count', changed)
+                : @json(__('servers.import_bulk_none_changed')), changed === 0);
         });
     }
 });

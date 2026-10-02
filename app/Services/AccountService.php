@@ -557,7 +557,23 @@ class AccountService
         $account = $account->fresh();
 
         if ($syncRemote && $account->server !== null) {
-            $this->pushAccountToServer($account, false);
+            try {
+                $this->pushAccountToServer($account, false);
+            } catch (\Throwable $exception) {
+                // A MikroTik secret or peer has no expiry of its own -- the panel
+                // enforces it (accounts:check-expiry) -- so a failed push must not
+                // throw the new date away. Accounts imported from a router often
+                // cannot be pushed at all (no stored password or WireGuard private
+                // key), which made their expiry impossible to set.
+                if (! $account->server->isMikrotik()) {
+                    throw $exception;
+                }
+
+                Log::warning('Expiry saved; router push skipped', [
+                    'account_id' => $account->id,
+                    'error' => $exception->getMessage(),
+                ]);
+            }
         }
 
         if (
@@ -578,6 +594,63 @@ class AccountService
         }
 
         return $account->fresh();
+    }
+
+    /**
+     * Give an account that has no package (or no period) the terms of one: the
+     * package, its first enabled period, its data cap and -- when the account has
+     * none yet -- an expiry. Used for accounts imported from a server, which
+     * arrive without any of these and so showed "unlimited" with nothing to
+     * renew from.
+     *
+     * Returns the remote push error, if any; the panel-side change is kept.
+     */
+    public function assignPackageTerms(Account $account, Package $package, User $admin): ?string
+    {
+        $account->loadMissing('server');
+
+        $duration = $package->durations()
+            ->where('is_enabled', true)
+            ->orderBy('sort_order')
+            ->first();
+
+        $payload = [
+            'package_id' => $package->id,
+            'package_duration_id' => $duration?->id,
+        ];
+
+        if ($account->expiry_at === null && $duration !== null) {
+            $payload['expiry_at'] = $duration->expiryFromNow();
+        }
+
+        if ($package->data_limit_gb !== null && (float) $package->data_limit_gb > 0) {
+            $payload['data_limit_bytes'] = (int) round((float) $package->data_limit_gb * 1024 * 1024 * 1024);
+            $payload['purchased_data_gb'] = round((float) $package->data_limit_gb, 2);
+        }
+
+        $account->update($payload);
+
+        $this->activityLogService->log($admin, 'account.package_assigned', $account, [
+            'package_id' => $package->id,
+            'package_duration_id' => $duration?->id,
+        ]);
+
+        if ($account->server === null) {
+            return null;
+        }
+
+        try {
+            $this->pushAccountToServer($account->fresh(), false);
+        } catch (\Throwable $exception) {
+            Log::warning('Package assigned; remote push failed', [
+                'account_id' => $account->id,
+                'error' => $exception->getMessage(),
+            ]);
+
+            return $exception->getMessage();
+        }
+
+        return null;
     }
 
     protected function expiryAdjustmentDays(?\Illuminate\Support\Carbon $previous, ?\Illuminate\Support\Carbon $next): ?int

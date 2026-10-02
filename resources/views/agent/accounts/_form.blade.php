@@ -135,7 +135,8 @@
         value="{{ old('remote_username', $account->remote_username) }}"
         required
         class="form-control"
-        pattern="[a-zA-Z0-9_-]+"
+        {{-- A name imported from the router may not fit the pattern; keeping it must still submit. --}}
+        @if (\App\Support\AccountNameValidator::isValid((string) $account->remote_username)) pattern="[a-zA-Z0-9_-]+" @endif
         minlength="1"
         maxlength="255"
         autocomplete="off"
