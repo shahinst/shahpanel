@@ -176,7 +176,7 @@ return [
     'import_choose_inbound' => '— Выберите inbound —',
     'import_fetch_clients' => 'Получить клиентов',
     'import_assign' => 'Назначить продавцу / агенту',
-    'import_assign_hint' => 'Выберите для каждого клиента продавца или агента-владельца и сохраните.',
+    'import_assign_hint' => 'Выберите владельца для каждого клиента, которого нужно импортировать. Строки без владельца не импортируются и остаются в списке на потом.',
     'import_summary' => 'Сводка по inbound',
     'import_client_count' => 'Количество клиентов',
     'import_email' => 'Email / идентификатор',
@@ -209,6 +209,7 @@ return [
     'import_nothing_selected' => 'Не выбран ни один клиент для импорта.',
     'import_sanaei_only' => 'Синхронизация клиентов доступна только для серверов Sanaei.',
     'import_done' => 'Новых аккаунтов: :created, обновлено: :updated, пропущено: :skipped.',
+    'import_remaining_left' => 'Без владельца осталось клиентов: :count — их можно импортировать сейчас или позже.',
     'inbound' => 'Inbound',
     'unlimited' => 'Безлимит',
 
@@ -343,4 +344,9 @@ return [
     'ocserv_username_required' => 'Требуется имя пользователя панели ocserv (например vpnuser).',
     'ocserv_password_required' => 'Требуется пароль панели ocserv / API token.',
 
+    'background_operation_started' => 'Операция запущена в фоне. Результат появится на этой странице после завершения; обновите страницу через несколько минут.',
+    'background_operation_running' => 'На этом сервере уже выполняется другая операция; дождитесь её завершения.',
+    'background_operation_in_progress' => 'Выполняется… обновите страницу через несколько минут, чтобы увидеть результат.',
+    'background_operation_push' => 'Результат последней отправки аккаунтов',
+    'background_operation_traffic' => 'Результат последней синхронизации трафика',
 ];

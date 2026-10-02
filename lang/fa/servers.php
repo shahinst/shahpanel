@@ -176,7 +176,7 @@ return [
     'import_choose_inbound' => '— inbound را انتخاب کنید —',
     'import_fetch_clients' => 'دریافت کلاینت‌ها',
     'import_assign' => 'تخصیص به فروشنده / نماینده',
-    'import_assign_hint' => 'برای هر کلاینت، فروشنده یا نماینده مالک را انتخاب کنید و ذخیره کنید.',
+    'import_assign_hint' => 'برای هر کلاینتی که می‌خواهید وارد شود مالک را انتخاب کنید. ردیف‌های بدون مالک وارد نمی‌شوند و در فهرست می‌مانند تا بعداً وارد شوند.',
     'import_summary' => 'خلاصه inbound',
     'import_client_count' => 'تعداد کلاینت',
     'import_email' => 'ایمیل / شناسه',
@@ -209,6 +209,7 @@ return [
     'import_nothing_selected' => 'هیچ کلاینتی برای وارد کردن انتخاب نشده است.',
     'import_sanaei_only' => 'سینک کلاینت فقط برای سرور Sanaei است.',
     'import_done' => ':created اکانت جدید، :updated بروزرسانی، :skipped رد شد.',
+    'import_remaining_left' => ':count کلاینت بدون مالک باقی مانده‌اند — می‌توانید همین حالا یا بعداً آن‌ها را وارد کنید.',
     'inbound' => 'Inbound',
     'unlimited' => 'نامحدود',
 
@@ -343,4 +344,9 @@ return [
     'ocserv_username_required' => 'نام کاربری پنل ocserv الزامی است (مثلاً vpnuser).',
     'ocserv_password_required' => 'رمز / API token پنل ocserv الزامی است.',
 
+    'background_operation_started' => 'عملیات در پس‌زمینه شروع شد. نتیجه پس از پایان در همین صفحه نمایش داده می‌شود؛ چند دقیقه بعد صفحه را تازه کنید.',
+    'background_operation_running' => 'یک عملیات دیگر روی این سرور در حال اجراست؛ صبر کنید تا تمام شود.',
+    'background_operation_in_progress' => 'در حال اجرا… برای دیدن نتیجه صفحه را چند دقیقه بعد تازه کنید.',
+    'background_operation_push' => 'نتیجه آخرین ارسال اکانت‌ها به سرور',
+    'background_operation_traffic' => 'نتیجه آخرین همگام‌سازی مصرف',
 ];

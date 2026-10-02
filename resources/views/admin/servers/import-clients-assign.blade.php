@@ -92,8 +92,9 @@
         @endif
     </div>
 
-    <form method="POST" action="{{ route('admin.servers.import-clients.store', $server) }}">
+    <form method="POST" action="{{ route('admin.servers.import-clients.store', $server) }}" id="import-assign-form">
         @csrf
+        <input type="hidden" name="assignments_json" id="assignments-json" value="">
         <div class="table-responsive">
             <table class="table table-striped table-bordered">
                 <thead>
@@ -110,10 +111,10 @@
                 </thead>
                 <tbody>
                     @foreach ($payload['clients'] as $index => $client)
-                        <tr @class(['import-client-row--assigned' => $client['is_already_imported'] ?? $client['existing_account_id']])>
+                        <tr @class(['import-client-row', 'import-client-row--assigned' => $client['is_already_imported'] ?? $client['existing_account_id']])>
                             <td>
                                 <code>{{ $client['email'] ?? $client['username'] ?? $client['label'] ?? '—' }}</code>
-                                <input type="hidden" name="assignments[{{ $index }}][uuid]" value="{{ $client['uuid'] }}">
+                                <input type="hidden" name="assignments[{{ $index }}][uuid]" value="{{ $client['uuid'] }}" class="row-uuid">
                             </td>
                             <td>{{ format_data_size($client['data_used_bytes'] ?? 0) }}</td>
                             <td>{{ ! empty($client['data_limit_bytes']) ? format_data_size($client['data_limit_bytes']) : __('servers.unlimited') }}</td>
@@ -248,6 +249,35 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     });
+
+    // Every row is sent as a single JSON field. Posting the table as plain form
+    // fields runs past PHP's max_input_vars on a large inbound, and PHP silently
+    // drops the last rows -- they reached the server with no owner.
+    var form = document.getElementById('import-assign-form');
+    var jsonField = document.getElementById('assignments-json');
+    if (form && jsonField && window.JSON) {
+        form.addEventListener('submit', function () {
+            var rows = [];
+            form.querySelectorAll('tr.import-client-row').forEach(function (row) {
+                var uuidInput = row.querySelector('.row-uuid');
+                if (!uuidInput) return;
+                var owner = row.querySelector('.owner-select');
+                var pkg = row.querySelector('.package-select');
+                var update = row.querySelector('input[name*="[update_existing]"]');
+                var skip = row.querySelector('input[name*="[skip]"]');
+                var item = { uuid: uuidInput.value };
+                if (owner && !owner.disabled && owner.value) item.owner_id = owner.value;
+                if (pkg && !pkg.disabled && pkg.value) item.package_id = pkg.value;
+                if (update && update.checked) item.update_existing = 1;
+                if (skip && skip.checked) item.skip = 1;
+                rows.push(item);
+            });
+            jsonField.value = JSON.stringify(rows);
+            form.querySelectorAll('[name^="assignments["]').forEach(function (field) {
+                field.removeAttribute('name');
+            });
+        });
+    }
 
     var bulkPackage = document.getElementById('bulk-package');
     var applyPackageBtn = document.getElementById('apply-bulk-package');

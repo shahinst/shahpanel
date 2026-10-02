@@ -176,7 +176,7 @@ return [
     'import_choose_inbound' => '— Select an inbound —',
     'import_fetch_clients' => 'Fetch clients',
     'import_assign' => 'Assign to Seller / Agent',
-    'import_assign_hint' => 'Choose the owning Seller or Agent for each client, then save.',
+    'import_assign_hint' => 'Pick an owner for each client you want to import. Rows left without an owner are not imported and stay in the list for a later pass.',
     'import_summary' => 'Inbound summary',
     'import_client_count' => 'Client count',
     'import_email' => 'Email / identifier',
@@ -209,6 +209,7 @@ return [
     'import_nothing_selected' => 'No client has been selected for import.',
     'import_sanaei_only' => 'Client sync is only for Sanaei servers.',
     'import_done' => ':created new accounts, :updated updated, :skipped skipped.',
+    'import_remaining_left' => ':count clients still have no owner — you can import them now or later.',
     'inbound' => 'Inbound',
     'unlimited' => 'Unlimited',
 
@@ -343,4 +344,9 @@ return [
     'ocserv_username_required' => 'The ocserv panel username is required (for example vpnuser).',
     'ocserv_password_required' => 'The ocserv panel password / API token is required.',
 
+    'background_operation_started' => 'The operation started in the background. Its result will appear on this page when it finishes; refresh in a few minutes.',
+    'background_operation_running' => 'Another operation is already running on this server; wait for it to finish.',
+    'background_operation_in_progress' => 'Running… refresh the page in a few minutes to see the result.',
+    'background_operation_push' => 'Result of the last account push',
+    'background_operation_traffic' => 'Result of the last usage sync',
 ];

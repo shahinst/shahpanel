@@ -176,7 +176,7 @@ return [
     'import_choose_inbound' => '— 选择 inbound —',
     'import_fetch_clients' => '获取客户',
     'import_assign' => '分配给销售商 / 代理商',
-    'import_assign_hint' => '为每个客户选择所属的销售商或代理商，然后保存。',
+    'import_assign_hint' => '为要导入的每个客户选择归属人。未设置归属人的行不会导入，并保留在列表中供稍后导入。',
     'import_summary' => 'inbound 摘要',
     'import_client_count' => '客户数量',
     'import_email' => '邮箱 / 标识',
@@ -209,6 +209,7 @@ return [
     'import_nothing_selected' => '未选择要导入的客户。',
     'import_sanaei_only' => '客户同步仅适用于 Sanaei 服务器。',
     'import_done' => '新建 :created 个账号，更新 :updated 个，跳过 :skipped 个。',
+    'import_remaining_left' => '还有 :count 个客户未设置归属人 — 可以现在或稍后导入。',
     'inbound' => 'Inbound',
     'unlimited' => '无限制',
 
@@ -343,4 +344,9 @@ return [
     'ocserv_username_required' => '必须填写 ocserv 面板用户名（例如 vpnuser）。',
     'ocserv_password_required' => '必须填写 ocserv 面板密码 / API token。',
 
+    'background_operation_started' => '操作已在后台开始。完成后结果将显示在此页面；请几分钟后刷新。',
+    'background_operation_running' => '此服务器上已有其他操作正在运行；请等待其完成。',
+    'background_operation_in_progress' => '运行中… 请几分钟后刷新页面查看结果。',
+    'background_operation_push' => '上次推送账号的结果',
+    'background_operation_traffic' => '上次流量同步的结果',
 ];
