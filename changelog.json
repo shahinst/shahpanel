@@ -1,6 +1,32 @@
 {
     "versions": [
         {
+            "version": "3.1.3",
+            "date": "2026-10-03",
+            "notes": {
+                "fa": [
+                    "بررسی نسخه جدید روی سرورهایی که به raw.githubusercontent.com دسترسی ندارند هم کار می‌کند (از GitHub API و jsDelivr استفاده می‌شود)",
+                    "اگر بررسی نسخه شکست بخورد، دلیل دقیق آن در صفحه «بروزرسانی» نمایش داده می‌شود",
+                    "تنظیم اختیاری PANEL_UPDATE_PROXY برای سرورهایی که مستقیم به گیت‌هاب دسترسی ندارند"
+                ],
+                "en": [
+                    "The new-version check now also works on servers that cannot reach raw.githubusercontent.com (it uses the GitHub API and jsDelivr)",
+                    "If the check fails, the exact reason is shown on the Update page",
+                    "Optional PANEL_UPDATE_PROXY setting for servers that cannot reach GitHub directly"
+                ],
+                "ru": [
+                    "Проверка новой версии работает и на серверах без доступа к raw.githubusercontent.com (используются GitHub API и jsDelivr)",
+                    "Если проверка не удалась, точная причина показывается на странице «Обновление»",
+                    "Необязательная настройка PANEL_UPDATE_PROXY для серверов без прямого доступа к GitHub"
+                ],
+                "zh": [
+                    "无法访问 raw.githubusercontent.com 的服务器也能检查新版本（改用 GitHub API 和 jsDelivr）",
+                    "检查失败时，“更新”页面会显示具体原因",
+                    "为无法直接访问 GitHub 的服务器提供可选的 PANEL_UPDATE_PROXY 设置"
+                ]
+            }
+        },
+        {
             "version": "3.1.2",
             "date": "2026-10-03",
             "notes": {

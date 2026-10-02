@@ -47,6 +47,8 @@ return [
         'branch' => env('PANEL_UPDATE_BRANCH', 'master'),
         'check_minutes' => (int) env('PANEL_UPDATE_CHECK_MINUTES', 60),
         'backup_dir' => env('PANEL_BACKUP_DIR', '/var/backups/shahpanel'),
+        // Optional proxy (http://host:port) for servers that cannot reach GitHub directly.
+        'proxy' => env('PANEL_UPDATE_PROXY'),
     ],
 
     'author_links' => [
