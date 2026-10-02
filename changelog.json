@@ -1,6 +1,24 @@
 {
     "versions": [
         {
+            "version": "3.1.1",
+            "date": "2026-10-03",
+            "notes": {
+                "fa": [
+                    "update.sh حالا پوشه نصب پنل را خودش پیدا می‌کند؛ نصب‌هایی که در /var/www/shahpanel نیستند دیگر خطای «not a git checkout» نمی‌دهند"
+                ],
+                "en": [
+                    "update.sh now finds the panel's install folder itself; installs outside /var/www/shahpanel no longer fail with \"not a git checkout\""
+                ],
+                "ru": [
+                    "update.sh теперь сам находит папку установки панели; установки вне /var/www/shahpanel больше не падают с ошибкой «not a git checkout»"
+                ],
+                "zh": [
+                    "update.sh 现在会自动找到面板的安装目录；不在 /var/www/shahpanel 的安装不再报“not a git checkout”错误"
+                ]
+            }
+        },
+        {
             "version": "3.1.0",
             "date": "2026-10-03",
             "notes": {
