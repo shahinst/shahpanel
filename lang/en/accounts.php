@@ -51,6 +51,7 @@ return [
     'not_refunded' => 'This account has not been refunded.',
     'no_refund_ledger' => 'No refund transaction was found for this account.',
     'no_invoice_for_refund' => 'No purchase invoice was found to calculate the refund.',
+    'refund_without_payment' => 'This account was imported from the server and nothing was paid for it in the panel; it has been disabled and marked as refunded with no money moved.',
     'nothing_to_refund' => 'The full period has been used — there is nothing to refund.',
     'same_server' => 'The selected server is the current one.',
     'send_login_info' => 'Send details',

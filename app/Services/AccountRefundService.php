@@ -67,6 +67,14 @@ class AccountRefundService
             ->first();
 
         if ($invoice === null) {
+            // An account imported from a server (Sanaei, MikroTik, Pasarguard) was
+            // never bought through the panel, so it has no invoice and no money to
+            // give back. Refusing outright left the admin unable to close it; it is
+            // now refunded with nothing returned, and reactivate() undoes it.
+            if (! $this->hasPurchaseLedger((int) $account->id)) {
+                return $this->refundWithoutPayment($account, $performedBy, $owner);
+            }
+
             throw new \InvalidArgumentException(__('accounts.no_invoice_for_refund'));
         }
 
@@ -259,6 +267,7 @@ class AccountRefundService
         }
 
         return [
+            'without_payment' => false,
             'refund_amount' => $refundAmount,
             'owner_refund_amount' => $ownerRefundAmount,
             'used_amount' => $usedAmount,
@@ -286,6 +295,10 @@ class AccountRefundService
 
         if ($owner === null) {
             throw new \InvalidArgumentException(__('accounts.refund_owner_missing'));
+        }
+
+        if ($this->lastRefundWasWithoutPayment($account)) {
+            return $this->reactivateWithoutPayment($account, $performedBy, $owner);
         }
 
         $ledger = $this->lastRefundTransactions($account);
@@ -428,6 +441,120 @@ class AccountRefundService
             'owner_refund_amount' => $ownerRefundAmount,
             'owner' => $owner,
         ];
+    }
+
+    /**
+     * @return array{
+     *     without_payment: bool,
+     *     refund_amount: string,
+     *     owner_refund_amount: string,
+     *     used_amount: string,
+     *     days_used: float,
+     *     total_days: float,
+     *     owner: User
+     * }
+     */
+    protected function refundWithoutPayment(Account $account, User $performedBy, User $owner): array
+    {
+        DB::transaction(function () use ($account, $performedBy, $owner): void {
+            $account = Account::query()->whereKey($account->id)->lockForUpdate()->firstOrFail();
+
+            if ($account->refunded_at !== null) {
+                throw new \InvalidArgumentException(__('accounts.already_refunded'));
+            }
+
+            $account->loadMissing(['ownerSeller.parent', 'package', 'packageDuration', 'server']);
+
+            $this->accountService->deactivateRemoteForRefund($account);
+
+            $account->update([
+                'status' => AccountStatus::Disabled,
+                'refunded_at' => now(),
+            ]);
+
+            $this->activityLogService->log($performedBy, 'account.refunded', $account, [
+                'refund_amount' => '0.00',
+                'owner_refund_amount' => '0.00',
+                'refund_ratio' => '0.0000',
+                'invoice_id' => null,
+                'without_payment' => true,
+                'owner_id' => (int) $owner->id,
+                'owner_role' => $owner->role->value,
+                'performed_by_id' => (int) $performedBy->id,
+            ]);
+        });
+
+        return [
+            'without_payment' => true,
+            'refund_amount' => '0.00',
+            'owner_refund_amount' => '0.00',
+            'used_amount' => '0.00',
+            'days_used' => 0.0,
+            'total_days' => 0.0,
+            'owner' => $owner,
+        ];
+    }
+
+    /**
+     * @return array{owner_refund_amount: string, owner: User}
+     */
+    protected function reactivateWithoutPayment(Account $account, User $performedBy, User $owner): array
+    {
+        DB::transaction(function () use ($account, $performedBy, $owner): void {
+            $account = Account::query()->whereKey($account->id)->lockForUpdate()->firstOrFail();
+
+            if ($account->refunded_at === null) {
+                throw new \InvalidArgumentException(__('accounts.not_refunded'));
+            }
+
+            $account->loadMissing(['ownerSeller.parent', 'package', 'packageDuration', 'server']);
+
+            if ($account->isExpired()) {
+                $status = AccountStatus::Expired;
+            } elseif ($account->isQuotaExhausted()) {
+                $status = AccountStatus::Exhausted;
+            } else {
+                $this->accountService->activateRemoteAfterRefund($account);
+                $status = AccountStatus::Active;
+            }
+
+            $account->update([
+                'status' => $status,
+                'refunded_at' => null,
+            ]);
+
+            $this->activityLogService->log($performedBy, 'account.reactivated', $account, [
+                'owner_refund_amount' => '0.00',
+                'without_payment' => true,
+                'owner_id' => (int) $owner->id,
+                'owner_role' => $owner->role->value,
+                'performed_by_id' => (int) $performedBy->id,
+                'status' => $status->value,
+            ]);
+        });
+
+        return [
+            'owner_refund_amount' => '0.00',
+            'owner' => $owner,
+        ];
+    }
+
+    protected function hasPurchaseLedger(int $accountId): bool
+    {
+        return $this->purchaseLedgerForAccount($accountId)->isNotEmpty();
+    }
+
+    protected function lastRefundWasWithoutPayment(Account $account): bool
+    {
+        $log = ActivityLog::query()
+            ->where('action', 'account.refunded')
+            ->where('entity_id', $account->id)
+            ->orderByDesc('id')
+            ->first();
+
+        $payload = is_array($log?->payload) ? $log->payload : [];
+
+        return ! empty($payload['without_payment']);
     }
 
     protected function resolveTransactionType(Transaction $transaction): ?TransactionType
