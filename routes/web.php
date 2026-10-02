@@ -235,6 +235,9 @@ Route::prefix($adminPath)->name('admin.')->middleware($adminMiddleware)->group(f
     Route::post('servers/{server}/migrate-sanaei', [AdminServerOperationsController::class, 'migrateSanaeiFrom'])->name('servers.migrate-sanaei');
     Route::post('servers/{server}/sync-traffic', [AdminServerOperationsController::class, 'syncTraffic'])->name('servers.sync-traffic');
     Route::get('servers/{server}/operation-progress', [AdminServerOperationsController::class, 'operationProgress'])->name('servers.operation-progress');
+    Route::get('updates', [\App\Http\Controllers\Admin\PanelUpdateController::class, 'index'])->name('updates.index');
+    Route::post('updates/check', [\App\Http\Controllers\Admin\PanelUpdateController::class, 'check'])->name('updates.check');
+    Route::post('updates/star-prompt', [\App\Http\Controllers\Admin\PanelUpdateController::class, 'dismissStarPrompt'])->name('updates.star-prompt.dismiss');
     Route::post('servers/{server}/wireguard-interfaces', [AdminServerOperationsController::class, 'storeWireguardInterface'])->name('servers.wireguard-interfaces.store');
     Route::put('servers/{server}/wireguard-interfaces/{serverInterface}', [AdminServerOperationsController::class, 'updateWireguardInterface'])->name('servers.wireguard-interfaces.update');
     Route::post('servers/{server}/ppp-profiles', [AdminServerOperationsController::class, 'storePppProfile'])->name('servers.ppp-profiles.store');

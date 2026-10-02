@@ -27,5 +27,8 @@
             <li class="vp-nav__title">{{ __('menu.main_menu') }}</li>
             @include("layouts.partials.nav-{$panel}")
         </ul>
+        @if ($panel !== 'client')
+            @include('layouts.partials.author-links', ['variant' => 'menu'])
+        @endif
     </div>
 </aside>

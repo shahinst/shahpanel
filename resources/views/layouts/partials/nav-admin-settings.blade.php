@@ -27,6 +27,10 @@
         is_super_admin()
             ? array('route' => 'admin.administrators.index', 'section' => 'settings', 'label' => __('admins.menu_label'), 'icon' => 'bx-shield-quarter')
             : null,
+        // Updating the panel is likewise the owner's alone (super_only).
+        is_super_admin()
+            ? array('route' => 'admin.updates.index', 'section' => 'settings', 'label' => __('updates.menu'), 'icon' => 'bx-cloud-download')
+            : null,
     ], fn ($link): bool => is_array($link)
         && Route::has($link['route'])
         && admin_section_allowed($link['section'])));
@@ -45,7 +49,8 @@
         || request()->routeIs('admin.web-shield.*')
         || request()->routeIs('admin.api-tokens.*')
         || request()->routeIs('admin.servers.*')
-        || request()->routeIs('admin.migrate.*');
+        || request()->routeIs('admin.migrate.*')
+        || request()->routeIs('admin.updates.*');
 @endphp
 
 @if ($settingsLinks !== [] && admin_section_allowed('settings'))

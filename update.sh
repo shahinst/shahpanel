@@ -9,6 +9,17 @@
 # and clears caches. Everything is printed and saved to
 # /var/log/shahpanel-update.log
 #
+# If any step after the backup fails, the update rolls itself back: the code
+# returns to the commit it started from, vendor/ is reinstalled for it, the
+# database is restored from the backup when migrations had started, caches are
+# cleared and PHP is restarted -- so a failed update never leaves the panel
+# half-upgraded.
+#
+# Optional environment:
+#   PANEL_UPDATE_STAMP   backup name stamp (YYYYmmdd-HHMMSS); default: now
+#   PANEL_UPDATE_STATUS  JSON file to keep updated with status/stage/error
+#   PANEL_UPDATE_WEB=1   plain output (no colours)
+#
 set -Eeuo pipefail
 
 APP_DIR="${APP_DIR:-/var/www/shahpanel}"
@@ -16,23 +27,137 @@ REPO="${REPO:-https://github.com/shahinst/shahpanel.git}"
 BRANCH="${BRANCH:-master}"
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/shahpanel}"
 LOG="/var/log/shahpanel-update.log"
+STATUS_FILE="${PANEL_UPDATE_STATUS:-}"
+STAMP="${PANEL_UPDATE_STAMP:-}"
+[[ "$STAMP" =~ ^[0-9]{8}-[0-9]{6}$ ]] || STAMP="$(date +%Y%m%d-%H%M%S)"
 
 export DEBIAN_FRONTEND=noninteractive
 export COMPOSER_ALLOW_SUPERUSER=1
 export COMPOSER_PROCESS_TIMEOUT=600
+export COMPOSER_NO_INTERACTION=1
 
-RED=$'\e[31m'; GRN=$'\e[32m'; YLW=$'\e[33m'; BLU=$'\e[36m'; DIM=$'\e[2m'; BLD=$'\e[1m'; RST=$'\e[0m'
+if [[ -n "${PANEL_UPDATE_WEB:-}" || ! -t 1 ]]; then
+  RED=''; GRN=''; YLW=''; BLU=''; DIM=''; BLD=''; RST=''
+else
+  RED=$'\e[31m'; GRN=$'\e[32m'; YLW=$'\e[33m'; BLU=$'\e[36m'; DIM=$'\e[2m'; BLD=$'\e[1m'; RST=$'\e[0m'
+fi
 
 STEP_NO=0
-step() { STEP_NO=$((STEP_NO+1)); echo -e "\n${BLU}${BLD}[${STEP_NO}/7] $*${RST}"; }
+STAGE="start"
+CURRENT=""
+CURRENT_FULL=""
+DUMP=""
+CODE_CHANGED=0
+VENDOR_TOUCHED=0
+MIGRATE_STARTED=0
+STARTED_AT="$(date -Is)"
+
+step() { STEP_NO=$((STEP_NO+1)); echo -e "\n${BLU}${BLD}[${STEP_NO}/8] $*${RST}"; }
 ok()   { echo -e "  ${GRN}✓${RST} $*"; }
 info() { echo -e "  ${DIM}· $*${RST}"; }
 warn() { echo -e "  ${YLW}!${RST} $*"; }
-die()  { echo -e "\n${RED}✗ FAILED: $*${RST}\n  Full log: ${LOG}\n" >&2; exit 1; }
 
-run() { echo -e "  ${DIM}\$ $*${RST}"; "$@"; }
+LAST_CMD=""
+run() { LAST_CMD="$*"; echo -e "  ${DIM}\$ $*${RST}"; "$@"; }
 
-trap 'die "aborted at line $LINENO (see the error above)"' ERR
+# JSON-quote a string (php is always present on a panel server).
+jstr() { php -r 'echo json_encode($argv[1], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);' -- "$1" 2>/dev/null || printf '""'; }
+
+# Status for the admin page's console; written atomically, readable by nginx.
+write_status() {
+  [[ -n "$STATUS_FILE" ]] || return 0
+  local status="$1" error="${2:-}" tmp
+  tmp="${STATUS_FILE}.tmp"
+  {
+    printf '{"status":%s,"stage":%s,"from":%s,"to":%s,"backup":%s,"error":%s,"started_at":%s,"updated_at":%s}' \
+      "$(jstr "$status")" "$(jstr "$STAGE")" "$(jstr "$CURRENT")" \
+      "$(jstr "$(git -C "$APP_DIR" rev-parse --short HEAD 2>/dev/null || true)")" \
+      "$(jstr "$DUMP")" "$(jstr "$error")" "$(jstr "$STARTED_AT")" "$(jstr "$(date -Is)")"
+  } > "$tmp" 2>/dev/null && chmod 644 "$tmp" && mv -f "$tmp" "$STATUS_FILE"
+}
+
+stage() { STAGE="$1"; write_status running; }
+
+restart_php() {
+  local fpm=""
+  fpm="$(systemctl list-units --type=service --no-legend 'php*-fpm.service' 2>/dev/null | awk '{print $1}' | head -1)" || fpm=""
+  if [[ -n "$fpm" ]]; then
+    systemctl restart "$fpm" && ok "PHP restarted ($fpm)"
+  else
+    warn "no php-fpm service found — restart PHP by hand so it loads the new code"
+  fi
+}
+
+# Put everything back the way it was before this run touched it.
+rollback() {
+  local reason="$1" failed=0
+  set +e
+  trap - ERR
+  echo -e "\n${YLW}${BLD}Rolling back to ${CURRENT:-the previous version}…${RST}"
+  write_status rolling_back "$reason"
+
+  cd "$APP_DIR" || failed=1
+
+  if [[ "$CODE_CHANGED" -eq 1 && -n "$CURRENT_FULL" ]]; then
+    if git reset --hard "$CURRENT_FULL"; then ok "code restored to $CURRENT"; else warn "could not restore the code"; failed=1; fi
+  fi
+
+  if [[ "$VENDOR_TOUCHED" -eq 1 ]]; then
+    if composer install --no-dev --optimize-autoloader --no-interaction; then ok "vendor/ restored"; else warn "could not restore vendor/"; failed=1; fi
+  fi
+
+  if [[ "$MIGRATE_STARTED" -eq 1 && -n "$DUMP" && -s "$DUMP" ]]; then
+    info "restoring the database from $DUMP"
+    # Drop every table first so tables a new migration created do not survive
+    # next to the restored schema (the next update would trip over them).
+    local tables
+    tables="$(mysql -N -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" "$DB_NAME" -e 'SHOW TABLES' 2>/dev/null)"
+    {
+      echo "SET FOREIGN_KEY_CHECKS=0;"
+      while read -r t; do [[ -n "$t" ]] && echo "DROP TABLE IF EXISTS \`$t\`;"; done <<< "$tables"
+      echo "SET FOREIGN_KEY_CHECKS=1;"
+    } | mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" "$DB_NAME" \
+      && gunzip -c "$DUMP" | mysql -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" "$DB_NAME"
+    if [[ $? -eq 0 ]]; then ok "database restored"; else warn "could not restore the database — restore $DUMP by hand"; failed=1; fi
+  fi
+
+  sudo -u www-data php artisan optimize:clear >/dev/null 2>&1 || true
+  chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
+  sudo -u www-data php artisan queue:restart >/dev/null 2>&1 || true
+  restart_php || true
+
+  if [[ "$failed" -eq 0 ]]; then
+    echo -e "\n${YLW}${BLD}Update failed and was rolled back.${RST} The panel is running the previous version."
+    write_status rolled_back "$reason"
+  else
+    echo -e "\n${RED}${BLD}Update failed and the rollback was incomplete.${RST} See the messages above."
+    write_status rollback_failed "$reason"
+  fi
+  echo -e "  ${DIM}reason:${RST} $reason"
+  echo -e "  ${DIM}database backup:${RST} ${DUMP:-none}"
+  echo -e "  ${DIM}full log:${RST} $LOG\n"
+  exit 1
+}
+
+die() {
+  echo -e "\n${RED}✗ FAILED: $*${RST}\n  Full log: ${LOG}\n" >&2
+  # Nothing has been changed before the backup exists, so there is nothing
+  # to undo; after it, every failure is rolled back.
+  if [[ "$CODE_CHANGED" -eq 1 || "$VENDOR_TOUCHED" -eq 1 || "$MIGRATE_STARTED" -eq 1 ]]; then
+    rollback "$*"
+  fi
+  write_status failed "$*"
+  exit 1
+}
+
+on_error() {
+  local code=$? line=$1 cmd=$2
+  # Inside run() the failing command reads as "$@"; name the real one.
+  [[ "$cmd" == '"$@"' && -n "$LAST_CMD" ]] && cmd="$LAST_CMD"
+  die "step \"${STAGE}\" failed: \`${cmd}\` exited with ${code} (line ${line})"
+}
+
+trap 'on_error $LINENO "$BASH_COMMAND"' ERR
 
 [[ $EUID -eq 0 ]] || die "run as root:  sudo bash update.sh"
 [[ -d "$APP_DIR/.git" ]] || die "$APP_DIR is not a git checkout — was the panel installed with install.sh?"
@@ -82,6 +207,8 @@ git config --global --add safe.directory "$APP_DIR" 2>/dev/null || true
 # would otherwise look like local edits forever.
 git config core.fileMode false
 CURRENT="$(git rev-parse --short HEAD)"
+CURRENT_FULL="$(git rev-parse HEAD)"
+stage "checking"
 info "currently at $CURRENT"
 CHANGED="$(git status --porcelain --untracked-files=no)"
 if [[ -n "$CHANGED" ]]; then
@@ -94,6 +221,7 @@ ok "working tree is clean"
 # ── 3) Database backup ───────────────────────────────────────────────────
 # A migration that goes wrong is only recoverable if this exists.
 step "Backing up the database"
+stage "backup"
 mkdir -p "$BACKUP_DIR"
 envval() { grep -E "^$1=" .env | head -1 | cut -d= -f2- | tr -d '"'"'"' '; }
 DB_NAME="$(envval DB_DATABASE)"
@@ -104,11 +232,14 @@ DB_PASS="$(envval DB_PASSWORD)"
 # and is usually denied.
 DB_HOST="$(envval DB_HOST)"; DB_HOST="${DB_HOST:-127.0.0.1}"
 DB_PORT="$(envval DB_PORT)"; DB_PORT="${DB_PORT:-3306}"
-DUMP="$BACKUP_DIR/db-$(date +%Y%m%d-%H%M%S).sql.gz"
+DUMP="$BACKUP_DIR/db-${STAMP}.sql.gz"
+# The password goes through the environment, not the command line, where any
+# local user could read it from ps for the length of the dump.
+export MYSQL_PWD="$DB_PASS"
 # --no-tablespaces: dumping tablespaces needs the PROCESS privilege, which the
 # panel's database user has no reason to hold.
 if mysqldump --single-transaction --quick --no-tablespaces \
-     -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" 2>/dev/null | gzip > "$DUMP"; then
+     -h"$DB_HOST" -P"$DB_PORT" -u"$DB_USER" "$DB_NAME" 2>/dev/null | gzip > "$DUMP"; then
   [[ -s "$DUMP" ]] || { rm -f "$DUMP"; die "database backup came out empty — refusing to continue"; }
   ok "saved $(du -h "$DUMP" | cut -f1) to $DUMP"
 else
@@ -120,9 +251,12 @@ ls -1t "$BACKUP_DIR"/db-*.sql.gz 2>/dev/null | tail -n +11 | xargs -r rm -f
 
 # ── 4) Pull ──────────────────────────────────────────────────────────────
 step "Fetching the latest code"
+stage "fetch"
 # Deliberately NOT through run(): that would echo the token into the log file.
 echo -e "  ${DIM}\$ git fetch https://${GH_TOKEN:+***TOKEN***@}${REPO_PATH} ${BRANCH}${RST}"
-git fetch "$AUTH_URL" "$BRANCH"
+# Hooks and fsmonitor are switched off: this runs as root in a checkout the
+# web user owns, and either would let that user run commands as root.
+git -c core.hooksPath=/dev/null -c core.fsmonitor=false fetch "$AUTH_URL" "$BRANCH"
 BEHIND="$(git rev-list --count HEAD..FETCH_HEAD)"
 # The checkout can already be current while the database is not — someone may
 # have moved the code with git directly, which a rewritten history forces them
@@ -141,12 +275,16 @@ else
     info "removing the untracked bootstrap copy of update.sh"
     rm -f update.sh
   fi
-  run git merge --ff-only FETCH_HEAD
+  stage "merge"
+  CODE_CHANGED=1
+  run git -c core.hooksPath=/dev/null -c core.fsmonitor=false merge --ff-only FETCH_HEAD
 fi
 ok "now at $(git rev-parse --short HEAD)"
 
 # ── 5) Dependencies ──────────────────────────────────────────────────────
 step "Installing PHP dependencies"
+stage "composer"
+VENDOR_TOUCHED=1
 run composer install --no-dev --optimize-autoloader --no-interaction
 ok "vendor/ is up to date"
 
@@ -155,11 +293,14 @@ ok "vendor/ is up to date"
 # storage/framework/cache, and the www-data cron then fails on them every
 # minute with "Failed to open stream: Permission denied".
 step "Running migrations"
+stage "migrate"
+MIGRATE_STARTED=1
 run sudo -u www-data php artisan migrate --force
 ok "schema is up to date"
 
 # ── 7) Caches and permissions ────────────────────────────────────────────
 step "Clearing caches and fixing permissions"
+stage "caches"
 run sudo -u www-data php artisan optimize:clear
 chown -R www-data:www-data storage bootstrap/cache
 chmod -R 775 storage bootstrap/cache
@@ -185,13 +326,26 @@ for SITE in /etc/nginx/snippets/*.conf /etc/nginx/sites-available/*; do
         warn "nginx rejected the timeout change in $(basename "$SITE"); left it as it was"
     fi
 done
-PHPFPM="$(systemctl list-units --type=service --no-legend 'php*-fpm.service' | awk '{print $1}' | head -1)"
+ok "caches cleared"
+
+# ── 8) Health check ──────────────────────────────────
+step "Checking the new version"
+stage "verify"
+# The new code must at least boot: a fatal error here is rolled back now,
+# not discovered by the first visitor.
+run sudo -u www-data php artisan --version
+run sudo -u www-data php artisan route:list --path=__shahpanel_healthcheck__ >/dev/null 2>&1 || sudo -u www-data php artisan about --only=environment >/dev/null
+
+
 # restart, not reload: a reload keeps the existing workers alive, so OPcache
 # goes on serving the PHP files from before the update and the panel silently
 # runs half the old code until something else restarts the service.
-[[ -n "$PHPFPM" ]] && run systemctl restart "$PHPFPM"
-ok "caches cleared, workers signalled to restart"
+stage "restart"
+restart_php
 
+STAGE="done"
+trap - ERR
+write_status success
 echo -e "\n${GRN}${BLD}Update complete.${RST}"
 echo -e "  ${DIM}from${RST} $CURRENT  ${DIM}to${RST} $(git rev-parse --short HEAD)"
 echo -e "  ${DIM}database backup:${RST} $DUMP"

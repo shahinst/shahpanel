@@ -1,0 +1,66 @@
+{
+    "versions": [
+        {
+            "version": "3.0.0",
+            "date": "2026-10-03",
+            "notes": {
+                "fa": [
+                    "نمایش نسخه پنل در فوتر و منو، همراه با لینک گیت‌هاب، تلگرام و یوتیوب سازنده",
+                    "اعلان نسخه جدید بالای پنل ادمین و صفحه «بروزرسانی» با فهرست تغییرات هر نسخه",
+                    "بروزرسانی امن‌تر: اگر هر مرحله‌ای شکست بخورد، کد، پکیج‌ها و دیتابیس خودکار به حالت قبل برمی‌گردند",
+                    "کنسول زنده و نوار پیشرفت ۰ تا ۱۰۰ برای ارسال و همگام‌سازی اکانت‌ها و مصرف",
+                    "ارسال و همگام‌سازی چندین برابر سریع‌تر روی سرورهای ثنایی و وایرگارد میکروتیک",
+                    "ساخت گروهی اکانت (۲ تا ۵۰ اکانت یک‌جا) برای ادمین، نماینده و فروشنده",
+                    "رفع ساخته‌شدن مشتری تکراری هنگام ساخت اکانت توسط فروشنده",
+                    "وارد کردن از روتر: دکمه‌های تخصیص گروهی، اعمال حجم و انقضای پکیج، نوع درست OpenVPN و بازگردانی کاربران وایرگارد",
+                    "تعیین پکیج و تاریخ انقضا برای اکانت‌های واردشده",
+                    "حذف نماینده، فروشنده و مشتری توسط ادمین (با جلوگیری از حذف کاربرِ دارای اکانت یا موجودی)",
+                    "وارد کردن کلاینت‌های ثنایی در چند مرحله؛ رفع خطای «باید مالک مشخص شود» در اینباندهای بزرگ",
+                    "برگشت از خرید برای اکانت‌های واردشده و اکانت‌های با فاکتور صفر"
+                ],
+                "en": [
+                    "Panel version shown in the footer and menu, with the author's GitHub, Telegram and YouTube links",
+                    "New-version notice at the top of the admin panel and an Update page listing what each version adds",
+                    "Safer updates: if any step fails, the code, packages and database are rolled back automatically",
+                    "Live console and a 0–100% progress bar for pushing and syncing accounts and usage",
+                    "Much faster push and sync on Sanaei servers and MikroTik WireGuard",
+                    "Bulk account creation (2–50 accounts at once) for admins, agents and sellers",
+                    "Fixed duplicate customers being created when a seller creates an account",
+                    "Router import: bulk assign buttons, package volume and expiry applied, correct OpenVPN type, WireGuard users restored",
+                    "Set a package and expiry date on imported accounts",
+                    "Admins can delete agents, sellers and clients (refused while the user still has accounts or balance)",
+                    "Import Sanaei clients in several passes; fixed \"an owner must be set\" on large inbounds",
+                    "Refunds for imported accounts and accounts with a zero invoice"
+                ],
+                "ru": [
+                    "Версия панели в подвале и меню, со ссылками автора на GitHub, Telegram и YouTube",
+                    "Уведомление о новой версии вверху панели администратора и страница «Обновление» со списком изменений",
+                    "Более безопасное обновление: при сбое любого шага код, пакеты и база данных автоматически откатываются",
+                    "Живая консоль и индикатор прогресса 0–100% для отправки и синхронизации аккаунтов и трафика",
+                    "Гораздо более быстрые отправка и синхронизация на серверах Sanaei и WireGuard MikroTik",
+                    "Массовое создание аккаунтов (2–50 за раз) для администратора, агента и продавца",
+                    "Исправлено создание дублирующихся клиентов при создании аккаунта продавцом",
+                    "Импорт с роутера: массовое назначение, объём и срок пакета, правильный тип OpenVPN, восстановление пользователей WireGuard",
+                    "Назначение пакета и срока действия импортированным аккаунтам",
+                    "Администратор может удалять агентов, продавцов и клиентов (запрещено, пока есть аккаунты или баланс)",
+                    "Импорт клиентов Sanaei в несколько проходов; исправлена ошибка «нужно указать владельца» на больших inbound",
+                    "Возврат средств для импортированных аккаунтов и аккаунтов с нулевым счётом"
+                ],
+                "zh": [
+                    "页脚和菜单显示面板版本，并附作者的 GitHub、Telegram 和 YouTube 链接",
+                    "管理面板顶部的新版本通知，以及列出各版本新增内容的“更新”页面",
+                    "更安全的更新：任何步骤失败时，代码、依赖和数据库都会自动回滚",
+                    "推送和同步账号及流量时的实时控制台和 0–100% 进度条",
+                    "Sanaei 服务器和 MikroTik WireGuard 的推送与同步大幅提速",
+                    "管理员、代理和销售可批量创建账号（一次 2–50 个）",
+                    "修复销售创建账号时生成重复客户的问题",
+                    "路由器导入：批量分配按钮、应用套餐流量和到期时间、正确的 OpenVPN 类型、恢复 WireGuard 用户",
+                    "为导入的账号设置套餐和到期日期",
+                    "管理员可删除代理、销售和客户（用户仍有账号或余额时拒绝）",
+                    "分多次导入 Sanaei 客户；修复大型入站上“必须设置归属人”的错误",
+                    "支持导入账号和零金额发票账号的退款"
+                ]
+            }
+        }
+    ]
+}
