@@ -45,7 +45,8 @@ class UserPolicy
             return false;
         }
 
-        if (in_array($target->role, [UserRole::Agent, UserRole::Seller], true)) {
+        // Deleting agents, sellers and clients is for the admin only.
+        if (in_array($target->role, [UserRole::Agent, UserRole::Seller, UserRole::Client], true)) {
             return $viewer->role === UserRole::Admin;
         }
 

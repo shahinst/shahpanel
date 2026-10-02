@@ -53,6 +53,7 @@
                                     @csrf
                                     <button type="submit" class="btn btn-sm btn-warning">{{ __('sellers.promote') }}</button>
                                 </form>
+                                @include('shared.users.delete-button', ['deleteUser' => $seller, 'deleteRoute' => route('admin.sellers.destroy', $seller)])
                             </td>
                         </tr>
                     @empty

@@ -179,12 +179,16 @@ class SellerController extends Controller
             ->with('success', __('app.saved'));
     }
 
-    public function destroy(User $seller): RedirectResponse
+    public function destroy(Request $request, User $seller, \App\Services\UserDeletionService $deletionService): RedirectResponse
     {
         $this->authorize('delete', $seller);
         abort_unless($seller->role === UserRole::Seller, 404);
 
-        $seller->delete();
+        try {
+            $deletionService->delete($request->user(), $seller);
+        } catch (\InvalidArgumentException $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
 
         return redirect()
             ->route('admin.sellers.index')

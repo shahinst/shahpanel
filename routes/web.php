@@ -215,6 +215,7 @@ Route::prefix($adminPath)->name('admin.')->middleware($adminMiddleware)->group(f
     Route::get('clients/create', [AdminClientController::class, 'create'])->name('clients.create');
     Route::post('clients', [AdminClientController::class, 'store'])->name('clients.store');
     Route::get('clients/{client}', [AdminClientController::class, 'show'])->name('clients.show');
+    Route::delete('clients/{client}', [AdminClientController::class, 'destroy'])->name('clients.destroy');
     Route::get('clients/{client}/accounts/{account}', [AdminClientController::class, 'showAccount'])->name('clients.accounts.show');
     Route::post('clients/{client}/accounts/{account}/assign', [AdminClientController::class, 'assignAccount'])->name('clients.accounts.assign');
     Route::post('clients/accounts/{account}/reassign', [AdminClientController::class, 'reassignAccount'])->name('clients.accounts.reassign');

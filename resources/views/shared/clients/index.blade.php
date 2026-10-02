@@ -55,6 +55,9 @@
                                 </button>
                             </form>
                         @endcan
+                        @if ($panel === 'admin')
+                            @include('shared.users.delete-button', ['deleteUser' => $client, 'deleteRoute' => route('admin.clients.destroy', $client)])
+                        @endif
                     </td>
                 </tr>
             @empty

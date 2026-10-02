@@ -141,11 +141,16 @@ class UserController extends Controller
             ->with('success', __('app.saved'));
     }
 
-    public function destroy(User $user): RedirectResponse
+    public function destroy(Request $request, User $user, \App\Services\UserDeletionService $deletionService): RedirectResponse
     {
         $this->authorize('delete', $user);
+        abort_unless($user->role === UserRole::Agent, 404);
 
-        $user->delete();
+        try {
+            $deletionService->delete($request->user(), $user);
+        } catch (\InvalidArgumentException $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
 
         return redirect()
             ->route('admin.users.index')
