@@ -86,7 +86,7 @@ class PanelUpdateController extends Controller
 
         return response()->json([
             'token' => $token,
-            'log_url' => asset('update-progress/'.$token.'.log'),
+            'log_url' => asset('update-progress/'.$token.'.txt'),
             'status_url' => asset('update-progress/'.$token.'.json'),
             'backup' => $backupDir.'/db-'.$validated['stamp'].'.sql.gz',
         ]);

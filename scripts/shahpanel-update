@@ -31,7 +31,9 @@ install -d -o root -g root -m 0755 "$OUT"
 # Progress files are only useful while someone is watching.
 find "$OUT" -maxdepth 1 -type f -mmin +1440 -delete 2>/dev/null || true
 
-LOG_FILE="$OUT/$TOKEN.log"
+# .txt, not .log: the OWASP Core Rule Set (ops/modsecurity) refuses requests
+# for .log files, which left the page's console empty.
+LOG_FILE="$OUT/$TOKEN.txt"
 STATUS_FILE="$OUT/$TOKEN.json"
 : > "$LOG_FILE"
 chmod 0644 "$LOG_FILE"
@@ -44,7 +46,7 @@ if ! flock -n 9; then
   printf '{\"status\":\"failed\",\"stage\":\"queued\",\"error\":\"another update is already running\"}' > '$STATUS_FILE'
   exit 1
 fi
-exec env PANEL_UPDATE_WEB=1 PANEL_UPDATE_STAMP='$STAMP' PANEL_UPDATE_STATUS='$STATUS_FILE' APP_DIR='$APP_DIR' bash '$UPDATER' >> '$LOG_FILE' 2>&1 < /dev/null"
+exec env HOME=/root PANEL_UPDATE_WEB=1 PANEL_UPDATE_STAMP='$STAMP' PANEL_UPDATE_STATUS='$STATUS_FILE' APP_DIR='$APP_DIR' bash '$UPDATER' >> '$LOG_FILE' 2>&1 < /dev/null"
 
 if command -v systemd-run >/dev/null 2>&1 && [[ -d /run/systemd/system ]]; then
   # A transient unit of its own: outside php-fpm's cgroup, so restarting PHP

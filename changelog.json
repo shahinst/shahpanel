@@ -1,6 +1,28 @@
 {
     "versions": [
         {
+            "version": "3.1.5",
+            "date": "2026-10-03",
+            "notes": {
+                "fa": [
+                    "رفع خطای «git config core.fileMode false exited with 128» هنگام بروزرسانی با دکمه داخل پنل",
+                    "کنسول بروزرسانی دیگر خالی نمی‌ماند (فایروال ModSecurity فایل گزارش را مسدود می‌کرد)"
+                ],
+                "en": [
+                    "Fixed \"git config core.fileMode false exited with 128\" when updating with the in-panel button",
+                    "The update console no longer stays empty (the ModSecurity firewall was blocking the log file)"
+                ],
+                "ru": [
+                    "Исправлена ошибка «git config core.fileMode false exited with 128» при обновлении кнопкой в панели",
+                    "Консоль обновления больше не остаётся пустой (файрвол ModSecurity блокировал файл журнала)"
+                ],
+                "zh": [
+                    "修复使用面板内按钮更新时出现的“git config core.fileMode false exited with 128”错误",
+                    "更新控制台不再为空（ModSecurity 防火墙曾拦截日志文件）"
+                ]
+            }
+        },
+        {
             "version": "3.1.4",
             "date": "2026-10-03",
             "notes": {
