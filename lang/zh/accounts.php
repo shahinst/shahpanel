@@ -51,6 +51,7 @@ return [
     'not_refunded' => '该账号尚未退款。',
     'no_refund_ledger' => '未找到该账号的退款交易。',
     'no_invoice_for_refund' => '未找到可用于计算退款的购买账单。',
+    'refund_without_payment' => '此账号是从服务器导入的，面板中未为其付款；已将其停用并标记为已退款，未发生资金变动。',
     'nothing_to_refund' => '整个周期已使用完毕 —— 没有可退款的金额。',
     'same_server' => '所选服务器就是当前服务器。',
     'send_login_info' => '发送信息',
