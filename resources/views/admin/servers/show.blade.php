@@ -20,6 +20,40 @@
     ',
 ])
 
+@if (is_array($backgroundOperation ?? null))
+    @php
+        $bgOp = $backgroundOperation;
+        $bgRunning = ($bgOp['status'] ?? '') === 'running';
+        $bgTitle = ($bgOp['operation'] ?? '') === 'traffic' ? __('servers.background_operation_traffic') : __('servers.background_operation_push');
+        $bgTime = $bgOp['finished_at'] ?? $bgOp['started_at'] ?? null;
+    @endphp
+    <div class="panel-modern-card mb-3">
+        <div class="card-head">
+            <h3>{{ $bgTitle }}</h3>
+            @if ($bgTime)
+                <small class="text-muted">{{ jalali_date(\Illuminate\Support\Carbon::parse($bgTime), 'Y/m/d H:i') }}</small>
+            @endif
+        </div>
+        <div class="card-body">
+            @if ($bgRunning)
+                <p class="mb-0"><i class="bx bx-loader-alt bx-spin"></i> {{ __('servers.background_operation_in_progress') }}</p>
+            @else
+                <p class="mb-2 {{ ($bgOp['type'] ?? '') === 'error' ? 'text-danger' : (($bgOp['type'] ?? '') === 'warning' ? 'text-warning' : 'text-success') }}">{{ $bgOp['message'] ?? '' }}</p>
+                @if (! empty($bgOp['lines']))
+                    <details>
+                        <summary>{{ __('servers.operation_log') }}</summary>
+                        <ul class="list-unstyled mb-0 mt-2">
+                            @foreach ((array) $bgOp['lines'] as $line)
+                                <li class="mb-1">{{ (string) $line }}</li>
+                            @endforeach
+                        </ul>
+                    </details>
+                @endif
+            @endif
+        </div>
+    </div>
+@endif
+
 @if (session('operation_log'))
     <div class="panel-modern-card mb-3">
         <div class="card-head"><h3>{{ __('servers.operation_log') }}</h3></div>

@@ -89,7 +89,9 @@ class ServerController extends Controller
                 ->get(['id', 'name', 'host'])
             : collect();
 
-        return view('admin.servers.show', compact('server', 'accountStats', 'interfaces', 'pppProfiles', 'wireguardInterfaces', 'sanaeiServers'));
+        $backgroundOperation = \Illuminate\Support\Facades\Cache::get(ServerOperationsController::backgroundResultKey($server));
+
+        return view('admin.servers.show', compact('server', 'accountStats', 'interfaces', 'pppProfiles', 'wireguardInterfaces', 'sanaeiServers', 'backgroundOperation'));
     }
 
     public function create(): View
