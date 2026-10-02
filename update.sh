@@ -22,7 +22,20 @@
 #
 set -Eeuo pipefail
 
-APP_DIR="${APP_DIR:-/var/www/shahpanel}"
+# Where the panel lives: APP_DIR when given; otherwise the checkout this script
+# sits in (installs outside /var/www/shahpanel used to fail with "not a git
+# checkout" unless APP_DIR was passed by hand); otherwise the default path.
+if [[ -z "${APP_DIR:-}" ]]; then
+  _self="$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || true)"
+  _self_dir="${_self:+$(dirname "$_self")}"
+  if [[ -n "$_self_dir" && -f "$_self_dir/artisan" && -d "$_self_dir/.git" ]]; then
+    APP_DIR="$_self_dir"
+  else
+    APP_DIR="/var/www/shahpanel"
+  fi
+fi
+# Exported so the copy this script re-executes from (below) keeps the path.
+export APP_DIR
 REPO="${REPO:-https://github.com/shahinst/shahpanel.git}"
 BRANCH="${BRANCH:-master}"
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/shahpanel}"
