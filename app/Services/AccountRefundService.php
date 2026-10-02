@@ -81,7 +81,10 @@ class AccountRefundService
         $price = money_string($invoice->total);
 
         if (bccomp($price, '0', 2) <= 0) {
-            throw new \InvalidArgumentException(__('accounts.nothing_to_refund'));
+            // A zero invoice means the current period was given away (an imported
+            // account renewed or adjusted for free), so there is no money to
+            // return; refusing left the admin unable to close the account at all.
+            return $this->refundWithoutPayment($account, $performedBy, $owner);
         }
 
         $duration = $account->packageDuration;
