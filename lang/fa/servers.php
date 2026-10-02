@@ -349,4 +349,9 @@ return [
     'background_operation_in_progress' => 'در حال اجرا… برای دیدن نتیجه صفحه را چند دقیقه بعد تازه کنید.',
     'background_operation_push' => 'نتیجه آخرین ارسال اکانت‌ها به سرور',
     'background_operation_traffic' => 'نتیجه آخرین همگام‌سازی مصرف',
+    'import_no_packages_for_type' => 'برای این نوع سرویس پکیج فعالی تعریف نشده است.',
+    'import_bulk_include_existing' => 'ردیف‌های قبلاً وارد‌شده هم تغییر کنند (مالک/پکیج آن‌ها بروزرسانی می‌شود)',
+    'import_bulk_pick_first' => 'اول از فهرست بالا یک گزینه انتخاب کنید.',
+    'import_bulk_applied' => 'برای :count ردیف اعمال شد.',
+    'import_bulk_none_changed' => 'هیچ ردیفی تغییر نکرد؛ اگر همه ردیف‌ها قبلاً وارد شده‌اند، گزینه «ردیف‌های قبلاً وارد‌شده هم تغییر کنند» را بزنید.',
 ];

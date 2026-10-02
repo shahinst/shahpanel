@@ -349,4 +349,9 @@ return [
     'background_operation_in_progress' => '运行中… 请几分钟后刷新页面查看结果。',
     'background_operation_push' => '上次推送账号的结果',
     'background_operation_traffic' => '上次流量同步的结果',
+    'import_no_packages_for_type' => '此服务类型没有可用的套餐。',
+    'import_bulk_include_existing' => '同时修改已导入的行（更新其归属人/套餐）',
+    'import_bulk_pick_first' => '请先在上方列表中选择一项。',
+    'import_bulk_applied' => '已应用到 :count 行。',
+    'import_bulk_none_changed' => '没有行被修改；如果所有行都已导入，请勾选“同时修改已导入的行”。',
 ];

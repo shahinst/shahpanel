@@ -150,7 +150,12 @@ class MikrotikClientImportService
                 )
                 ->first();
 
-            if ($existing !== null && ! $assignment['update_existing']) {
+            // An account deleted earlier is brought back rather than skipped: the
+            // assign page no longer shows it as "already imported", and its row
+            // still holds the username (unique even across deleted rows).
+            $restoring = $existing !== null && $existing->trashed();
+
+            if ($existing !== null && ! $restoring && ! $assignment['update_existing']) {
                 $skipped++;
                 $lines[] = "«{$client['label']}» از قبل وجود دارد — رد شد.";
                 continue;
@@ -162,9 +167,14 @@ class MikrotikClientImportService
                     ? Package::query()->find($assignment['package_id'])
                     : null;
 
+                // A profile can hold secrets of several services (an OpenVPN secret
+                // under a profile whose router-wide protocol reads L2TP); the
+                // secret's own service decides the account type.
+                $rowServiceType = ServiceType::tryFrom((string) ($client['service_type'] ?? '')) ?? $serviceType;
+
                 $data = [
                     'server_id' => $server->id,
-                    'service_type' => $serviceType,
+                    'service_type' => $rowServiceType,
                     'remote_username' => $client['username'],
                     'owner_seller_id' => $sellerId,
                     'owner_agent_id' => $agentId,
@@ -190,7 +200,17 @@ class MikrotikClientImportService
                     }
                 }
 
+                if ($package !== null) {
+                    $data = array_merge($data, $this->packageTerms($package, $existing));
+                }
+
                 if ($existing !== null) {
+                    if ($restoring) {
+                        $existing->restore();
+                    }
+
+                    // A fresh portal token would break the link the customer already has.
+                    unset($data['portal_token']);
                     $existing->update($data);
                     $updated++;
                     $lines[] = "«{$client['label']}» بروزرسانی شد.";
@@ -219,6 +239,11 @@ class MikrotikClientImportService
             ->where('wireguard_public_key', $publicKey)
             ->with(['ownerSeller', 'ownerAgent', 'package'])
             ->first();
+
+        // A deleted account is offered for import again (it is restored).
+        if ($existing?->trashed()) {
+            $existing = null;
+        }
 
         $username = (string) ($peer['name'] ?? $peer['comment'] ?? 'wg-'.substr($publicKey, 0, 8));
         $owner = $existing?->ownerSeller ?? $existing?->ownerAgent;
@@ -262,7 +287,6 @@ class MikrotikClientImportService
         $secrets = $this->mikrotikService->listPppSecrets($server);
         $protocol = (string) ($profile->protocol ?: 'ppp');
         $serviceType = $this->profileService->mapPppServiceToServiceType($protocol);
-        $packages = $this->packagesFor($serviceType);
 
         $existing = Account::query()
             ->withTrashed()
@@ -285,8 +309,14 @@ class MikrotikClientImportService
             }
 
             $secretService = (string) ($secret['service'] ?? 'any');
-            $rowServiceType = $this->profileService->mapPppServiceToServiceType($secretService);
+            $rowServiceType = $secretService === '' || $secretService === 'any'
+                ? $serviceType
+                : $this->profileService->mapPppServiceToServiceType($secretService);
             $existingAccount = $existing->get($username);
+            // A deleted account is offered for import again (it is restored).
+            if ($existingAccount?->trashed()) {
+                $existingAccount = null;
+            }
             $owner = $existingAccount?->ownerSeller ?? $existingAccount?->ownerAgent;
 
             $clients[] = $this->normalizeImportClientRow([
@@ -311,13 +341,21 @@ class MikrotikClientImportService
             ]);
         }
 
+        // Offer the packages of every service actually present under this profile
+        // (OpenVPN secrets under an "L2TP" profile used to get only L2TP packages).
+        $rowTypes = collect($clients)
+            ->map(fn (array $c) => ServiceType::tryFrom((string) ($c['service_type'] ?? '')))
+            ->filter()
+            ->push($serviceType)
+            ->unique(fn (ServiceType $t) => $t->value);
+
         return [
             'profile_key' => $profile->remote_key,
             'profile_name' => $profile->name,
             'protocol' => $protocol,
             'service_type' => $serviceType->value,
             'clients' => $clients,
-            'packages' => $packages,
+            'packages' => $this->packagesForTypes($rowTypes),
         ];
     }
 
@@ -341,6 +379,58 @@ class MikrotikClientImportService
             ])
             ->values()
             ->all();
+    }
+
+    /**
+     * What the router cannot tell us -- data cap, period and expiry -- taken from
+     * the package the admin picked. A router secret or peer carries no limit or
+     * expiry of its own, so an imported account used to show "unlimited" and had
+     * no period to renew from even though it was sold as a 100 GB package.
+     *
+     * An expiry already in the panel is kept; one is only filled in when missing.
+     *
+     * @return array<string, mixed>
+     */
+    protected function packageTerms(Package $package, ?Account $existing): array
+    {
+        $terms = [];
+
+        $duration = $package->durations()
+            ->where('is_enabled', true)
+            ->orderBy('sort_order')
+            ->first();
+
+        if ($duration !== null) {
+            $terms['package_duration_id'] = $duration->id;
+
+            if ($existing?->expiry_at === null) {
+                $terms['expiry_at'] = $duration->expiryFromNow();
+            }
+        }
+
+        if ($package->data_limit_gb !== null && (float) $package->data_limit_gb > 0) {
+            $terms['data_limit_bytes'] = (int) round((float) $package->data_limit_gb * 1024 * 1024 * 1024);
+            $terms['purchased_data_gb'] = round((float) $package->data_limit_gb, 2);
+        }
+
+        return $terms;
+    }
+
+    /**
+     * @param  iterable<ServiceType>  $serviceTypes
+     * @return list<array<string, mixed>>
+     */
+    protected function packagesForTypes(iterable $serviceTypes): array
+    {
+        $packages = [];
+
+        foreach ($serviceTypes as $type) {
+            foreach ($this->packagesFor($type) as $package) {
+                $packages[$package['id']] = $package;
+            }
+        }
+
+        return array_values($packages);
     }
 
     /**
