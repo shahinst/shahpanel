@@ -93,6 +93,14 @@ return [
             'routes' => ['tunneling.*'],
         ],
 
+        'shahbot' => [
+            'label' => 'shahbot::admin.menu',
+            'icon' => 'bxl-telegram',
+            'probe' => 'shahbot.index',
+            'module' => 'shahbot',
+            'routes' => ['shahbot.*'],
+        ],
+
         'accounts' => [
             'label' => 'menu.accounts',
             'icon' => 'bx-group',

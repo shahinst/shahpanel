@@ -1,6 +1,44 @@
 {
     "versions": [
         {
+            "version": "3.10.0",
+            "date": "2026-10-10",
+            "notes": {
+                "fa": [
+                    "ماژول جدید «ربات فروش تلگرام شاه‌پنل»: فروش خودکار سرویس در تلگرام روی خود پنل، با همان قیمت‌ها، کیف پول‌ها، فاکتورها و کمیسیون‌ها؛ از تنظیمات › ماژول‌ها فعال می‌شود",
+                    "خرید سرویس با دسته‌بندی، پکیج‌های حجمی (انتخاب گیگ)، پیش‌فاکتور، کد تخفیف و پرداخت از کیف پول؛ اکانت تست یک‌باره برای هر کاربر تلگرام",
+                    "سرویس‌های من: وضعیت، مصرف، انقضا، لینک اشتراک با QR، ساخت لینک جدید، تمدید از داخل ربات، تمدید خودکار و صفحهٔ سرویس",
+                    "شارژ کیف پول کارت‌به‌کارت با ارسال عکس رسید و تأیید یا رد مدیر داخل تلگرام یا پنل؛ کد هدیه، زیرمجموعه‌گیری با پاداش درصدی، پشتیبانی تیکتی و آموزش‌ها",
+                    "عضویت اجباری کانال، پذیرش قوانین، دریافت شمارهٔ تلفن، مسدودسازی کاربر، پیام همگانی صف‌بندی‌شده و یادآوری انقضا و اتمام حجم",
+                    "بخش مدیریت اختصاصی در پنل: داشبورد فروش، کاربران، رسیدها، سفارش‌ها، کدهای تخفیف و هدیه، پیام همگانی، تیکت‌ها، آموزش‌ها و تنظیمات کامل (وب‌هوک یا Long polling و پروکسی)"
+                ],
+                "en": [
+                    "New “ShahPanel Telegram sales bot” module: sell services automatically in Telegram on the panel itself, with the same prices, wallets, invoices and commissions; enable it under Settings › Modules",
+                    "Store with categories, per-GB packages, a pro-forma invoice, discount codes and wallet payment; one test account per Telegram user",
+                    "My services: status, usage, expiry, subscription link with QR, new link, renewal from the bot, auto-renew and the service page",
+                    "Card-to-card wallet top-up with a receipt photo, approved or rejected by an admin in Telegram or in the panel; gift codes, referrals with a percentage reward, support tickets and tutorials",
+                    "Required channel membership, rules acceptance, phone number, user blocking, queued broadcasts and expiry / low-data reminders",
+                    "Its own admin section in the panel: sales dashboard, users, receipts, orders, discount and gift codes, broadcasts, tickets, tutorials and full settings (webhook or long polling, proxy)"
+                ],
+                "ru": [
+                    "Новый модуль «Telegram-бот продаж ShahPanel»: автоматическая продажа услуг в Telegram на самой панели с теми же ценами, кошельками, счетами и комиссиями; включается в Настройки › Модули",
+                    "Магазин с категориями, пакетами за ГБ, предварительным счётом, кодами скидок и оплатой из кошелька; один тестовый аккаунт на пользователя Telegram",
+                    "Мои услуги: статус, расход, срок, ссылка подписки с QR, новая ссылка, продление из бота, автопродление и страница услуги",
+                    "Пополнение кошелька переводом на карту с фото чека, одобрение или отказ администратором в Telegram или в панели; подарочные коды, рефералы с процентным вознаграждением, тикеты поддержки и инструкции",
+                    "Обязательная подписка на канал, принятие правил, номер телефона, блокировка пользователей, рассылки по очереди и напоминания об истечении и остатке трафика",
+                    "Собственный раздел управления в панели: панель продаж, пользователи, чеки, заказы, коды скидок и подарков, рассылки, тикеты, инструкции и полные настройки (webhook или long polling, прокси)"
+                ],
+                "zh": [
+                    "新增“ShahPanel Telegram 销售机器人”模块：在面板上通过 Telegram 自动销售服务，使用相同的价格、钱包、发票和佣金；在 设置 › 模块 中启用",
+                    "商店支持分类、按 GB 计费套餐、预览账单、折扣码和钱包支付；每个 Telegram 用户可领取一次测试账户",
+                    "我的服务：状态、用量、到期时间、带二维码的订阅链接、重新生成链接、在机器人内续费、自动续费和服务页面",
+                    "银行卡转账充值，上传收据照片，由管理员在 Telegram 或面板中批准或拒绝；礼品码、按比例奖励的邀请系统、工单支持和教程",
+                    "强制关注频道、接受规则、获取手机号、封禁用户、排队群发消息以及到期和流量不足提醒",
+                    "面板中的独立管理区：销售看板、用户、收据、订单、折扣码和礼品码、群发、工单、教程以及完整设置（Webhook 或长轮询、代理）"
+                ]
+            }
+        },
+        {
             "version": "3.9.0",
             "date": "2026-10-09",
             "notes": {

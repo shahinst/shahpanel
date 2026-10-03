@@ -9,6 +9,7 @@
         ['route' => 'admin.packages.index', 'section' => 'packages', 'label' => __('menu.packages'), 'icon' => 'bx-package', 'also_active' => ['admin.package-categories.*']],
         ['route' => 'admin.packages.pricing', 'section' => 'packages', 'label' => __('ui.menu_pricing'), 'icon' => 'bx-purchase-tag'],
         module_active('tunneling') ? ['route' => 'admin.tunneling.index', 'section' => 'tunneling', 'label' => __('menu.tunneling'), 'icon' => 'bx-git-branch', 'also_active' => ['admin.tunneling.*']] : null,
+        module_active('shahbot') ? ['route' => 'admin.shahbot.index', 'section' => 'shahbot', 'label' => __('shahbot::admin.menu'), 'icon' => 'bxl-telegram', 'also_active' => ['admin.shahbot.*']] : null,
     ];
     $bottomLinks = [
         ['route' => 'admin.reports.index', 'section' => 'reports', 'label' => __('menu.reports'), 'icon' => 'bx-bar-chart-alt-2'],
