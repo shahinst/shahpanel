@@ -19,8 +19,10 @@ class MenuLayout
         'agency' => [4, 1],
         'gift' => [5, 1],
         'tutorials' => [5, 2],
-        'support' => [6, 1],
-        'app' => [6, 2],
+        'wheel' => [6, 1],
+        'lottery' => [6, 2],
+        'support' => [7, 1],
+        'app' => [7, 2],
     ];
 
     public function __construct(protected BotSettings $settings) {}

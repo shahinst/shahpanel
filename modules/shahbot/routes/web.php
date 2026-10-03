@@ -8,6 +8,7 @@ use Modules\ShahBot\Http\Controllers\Admin\BroadcastController;
 use Modules\ShahBot\Http\Controllers\Admin\CodeController;
 use Modules\ShahBot\Http\Controllers\Admin\DashboardController;
 use Modules\ShahBot\Http\Controllers\Admin\EditorController;
+use Modules\ShahBot\Http\Controllers\Admin\LotteryController;
 use Modules\ShahBot\Http\Controllers\Admin\PaymentController;
 use Modules\ShahBot\Http\Controllers\Admin\SettingsController;
 use Modules\ShahBot\Http\Controllers\Admin\TicketController;
@@ -65,6 +66,11 @@ Route::prefix(PortalPaths::slug('admin'))->name('admin.')->middleware($adminMidd
         Route::post('agents/requests/{agencyRequest}/approve', [AgentController::class, 'approve'])->name('agents.approve');
         Route::post('agents/requests/{agencyRequest}/reject', [AgentController::class, 'reject'])->name('agents.reject');
         Route::post('agents/bots/{bot}/toggle', [AgentController::class, 'toggleBot'])->name('agents.bots.toggle');
+
+        Route::get('lotteries', [LotteryController::class, 'index'])->name('lotteries.index');
+        Route::post('lotteries', [LotteryController::class, 'store'])->name('lotteries.store');
+        Route::post('lotteries/{lottery}/cancel', [LotteryController::class, 'cancel'])->name('lotteries.cancel');
+        Route::post('lotteries/{lottery}/draw', [LotteryController::class, 'draw'])->name('lotteries.draw');
 
         Route::get('editor', [EditorController::class, 'edit'])->name('editor');
         Route::post('editor/texts', [EditorController::class, 'updateTexts'])->name('editor.texts');
