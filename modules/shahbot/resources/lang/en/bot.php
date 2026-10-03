@@ -155,6 +155,20 @@ return [
     // Admin messages (inside the bot)
     'admin_menu' => "⚙️ <b>Bot admin</b>\n\n👥 Users: :users (today :today)\n🛒 Sales today: :sales_today (:count_today orders)\n💰 Sales, 30 days: :sales_month\n🧾 Receipts waiting: :pending\n🎧 Open tickets: :tickets",
     'btn_pending_receipts' => '🧾 Receipts waiting',
+    'btn_back' => "« Back",
+    'btn_my_business' => "📊 My figures",
+    'btn_my_sellers' => "👥 My sellers",
+    'admin_business' => "📊 <b>:brand</b>
+
+Accounts: <b>:accounts</b> (active: :active)
+Expiring within 7 days: <b>:expiring</b>
+Bot users: <b>:bot_users</b>
+Sales through the bot: <b>:bot_sales</b>
+Wallet balance: <b>:balance</b>",
+    'admin_sellers_head' => "👥 Your sellers (:count):
+",
+    'admin_seller_row' => "• <b>:name</b> — accounts: :accounts (active: :active) — wallet: :balance",
+    'admin_no_sellers' => "No sellers under you yet.",
     'btn_open_panel' => '🖥 Open the panel',
     'admin_no_pending' => 'No receipt is waiting for review.',
     'admin_new_receipt' => "🧾 <b>New receipt #:id</b>\n👤 :user (<code>:tg</code>)\n💰 Amount: <b>:amount</b>\n📝 :note",

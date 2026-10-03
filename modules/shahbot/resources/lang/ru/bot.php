@@ -155,6 +155,20 @@ return [
     // Сообщения администратору (в боте)
     'admin_menu' => "⚙️ <b>Управление ботом</b>\n\n👥 Пользователи: :users (сегодня :today)\n🛒 Продажи сегодня: :sales_today (:count_today заказов)\n💰 Продажи за 30 дней: :sales_month\n🧾 Чеков на проверке: :pending\n🎧 Открытых тикетов: :tickets",
     'btn_pending_receipts' => '🧾 Чеки на проверке',
+    'btn_back' => "« Назад",
+    'btn_my_business' => "📊 Мои показатели",
+    'btn_my_sellers' => "👥 Мои продавцы",
+    'admin_business' => "📊 <b>:brand</b>
+
+Аккаунты: <b>:accounts</b> (активных: :active)
+Истекают в течение 7 дней: <b>:expiring</b>
+Пользователи бота: <b>:bot_users</b>
+Продажи через бота: <b>:bot_sales</b>
+Баланс кошелька: <b>:balance</b>",
+    'admin_sellers_head' => "👥 Ваши продавцы (:count):
+",
+    'admin_seller_row' => "• <b>:name</b> — аккаунтов: :accounts (активных: :active) — кошелёк: :balance",
+    'admin_no_sellers' => "У вас пока нет продавцов.",
     'btn_open_panel' => '🖥 Открыть панель',
     'admin_no_pending' => 'Нет чеков на проверке.',
     'admin_new_receipt' => "🧾 <b>Новый чек #:id</b>\n👤 :user (<code>:tg</code>)\n💰 Сумма: <b>:amount</b>\n📝 :note",

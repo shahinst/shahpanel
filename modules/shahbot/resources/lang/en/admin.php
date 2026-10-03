@@ -357,4 +357,6 @@ return [
     'plan_bot_price' => 'Price in your bot',
     'plan_price_same' => 'same as mine',
     'plan_price_too_low' => 'These tariffs were below your own price and were not saved: :plans',
+    'my_broadcast' => 'Broadcast to my bot users',
+    'my_broadcast_hint' => 'Goes to the users of your own bot only, not the main bot or other resellers.',
 ];

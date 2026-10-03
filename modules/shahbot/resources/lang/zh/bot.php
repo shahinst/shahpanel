@@ -155,6 +155,20 @@ return [
     // 管理员消息（机器人内）
     'admin_menu' => "⚙️ <b>机器人管理</b>\n\n👥 用户：:users（今日 :today）\n🛒 今日销售：:sales_today（:count_today 单）\n💰 30 天销售：:sales_month\n🧾 待审凭证：:pending\n🎧 未结工单：:tickets",
     'btn_pending_receipts' => '🧾 待审凭证',
+    'btn_back' => "« 返回",
+    'btn_my_business' => "📊 我的数据",
+    'btn_my_sellers' => "👥 我的销售",
+    'admin_business' => "📊 <b>:brand</b>
+
+账户：<b>:accounts</b>（有效：:active）
+7 天内到期：<b>:expiring</b>
+机器人用户：<b>:bot_users</b>
+机器人销售额：<b>:bot_sales</b>
+钱包余额：<b>:balance</b>",
+    'admin_sellers_head' => "👥 您的销售（:count 人）：
+",
+    'admin_seller_row' => "• <b>:name</b> —— 账户：:accounts（有效：:active）—— 钱包：:balance",
+    'admin_no_sellers' => "您目前还没有下级销售。",
     'btn_open_panel' => '🖥 打开面板',
     'admin_no_pending' => '没有待审核的凭证。',
     'admin_new_receipt' => "🧾 <b>新凭证 #:id</b>\n👤 :user（<code>:tg</code>）\n💰 金额：<b>:amount</b>\n📝 :note",

@@ -8,6 +8,9 @@
 <x-page-header :title="__('shahbot::admin.my_bot')">
     <p class="text-muted mb-0">{{ __('shahbot::admin.my_bot_subtitle') }}</p>
     <a href="{{ route($prefix.'.plans') }}" class="btn btn-outline-primary"><i class="bx bx-package"></i> {{ __('shahbot::admin.my_plans') }}</a>
+    @if ($bot && $bot->is_active && $bot->token() !== '')
+        <a href="#my-broadcast" class="btn btn-outline-secondary"><i class="bx bx-broadcast"></i> {{ __('shahbot::admin.my_broadcast') }}</a>
+    @endif
 </x-page-header>
 
 @if (! $enabled)
@@ -94,5 +97,34 @@
             @endif
         </div>
     </div>
+
+    {{-- پیام همگانی فقط وقتی معنا دارد که رباتی با توکن سالم وصل باشد. --}}
+    @if ($bot && $bot->is_active && $bot->token() !== '')
+        <div class="card mt-3" id="my-broadcast">
+            <div class="card-body">
+                <h6 class="mb-1">{{ __('shahbot::admin.my_broadcast') }}</h6>
+                <p class="text-muted small mb-3">{{ __('shahbot::admin.my_broadcast_hint') }}</p>
+
+                <form method="POST" action="{{ route($prefix.'.broadcast') }}" class="row g-3">
+                    @csrf
+                    <div class="col-md-4">
+                        <label class="form-label">{{ __('shahbot::admin.audience') }}</label>
+                        <select name="audience" class="form-select">
+                            <option value="all">{{ __('shahbot::admin.audience_all') }}</option>
+                            <option value="customers">{{ __('shahbot::admin.audience_customers') }}</option>
+                            <option value="no_service">{{ __('shahbot::admin.audience_no_service') }}</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">{{ __('shahbot::admin.broadcast_text') }}</label>
+                        <textarea name="text" rows="4" maxlength="3500" class="form-control">{{ old('text') }}</textarea>
+                    </div>
+                    <div class="col-12">
+                        <button class="btn btn-primary"><i class="bx bx-send"></i> {{ __('shahbot::admin.send') }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    @endif
 @endif
 @endsection
