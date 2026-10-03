@@ -469,10 +469,18 @@ set_env APP_KEY "base64:$(openssl rand -base64 32)"
 
 step "8/13  Setting permissions and running migrations"
 
-chown -R www-data:www-data "$APP_DIR"
+# The code belongs to root; the web user may write only where the panel keeps
+# data (storage/, bootstrap/cache/, uploaded modules/ and the basic-auth
+# public/.htaccess). A compromised web user then cannot change the code -- or
+# the git checkout -- that root runs during updates.
+chown -R root:root "$APP_DIR"
 find "$APP_DIR" -type d -exec chmod 755 {} +
 find "$APP_DIR" -type f -exec chmod 644 {} +
+for d in storage bootstrap/cache modules; do
+    [[ -e "$APP_DIR/$d" ]] && chown -R www-data:www-data "$APP_DIR/$d"
+done
 chmod -R 775 "$APP_DIR/storage" "$APP_DIR/bootstrap/cache"
+[[ -f "$APP_DIR/public/.htaccess" ]] && chown www-data:www-data "$APP_DIR/public/.htaccess"
 lock_env
 
 run sudo -u www-data "php${PHP_VER}" "$APP_DIR/artisan" migrate --force
@@ -524,7 +532,8 @@ if [[ -f "$UPD_SRC" ]]; then
     printf 'www-data ALL=(root) NOPASSWD: /usr/local/sbin/shahpanel-update\n' > /etc/sudoers.d/shahpanel-update
     chmod 0440 /etc/sudoers.d/shahpanel-update
     if visudo -cf /etc/sudoers.d/shahpanel-update >/dev/null; then
-        install -d -o root -g root -m 0755 "$APP_DIR/public/update-progress"
+        # Progress files: root-owned, outside the webroot, served by the panel.
+        install -d -o root -g root -m 0755 /var/lib/shahpanel /var/lib/shahpanel/progress
         info "Web updater installed."
     else
         rm -f /etc/sudoers.d/shahpanel-update
@@ -832,7 +841,9 @@ unset VPN_ADMIN_PASSWORD
 # as base_path('.installed.lock'); tinker is a dev dependency and is absent from
 # a --no-dev install, so the path is resolved here instead of through artisan.
 LOCK_FILE="$APP_DIR/.installed.lock"
-sudo -u www-data touch "$LOCK_FILE"
+# Written by root: the code folder is root-owned, and the web user only reads it.
+touch "$LOCK_FILE"
+chmod 644 "$LOCK_FILE"
 info "Install lock written to $LOCK_FILE"
 
 run sudo -u www-data "php${PHP_VER}" "$APP_DIR/artisan" optimize:clear

@@ -66,6 +66,12 @@ class ApiTokenController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        // A token outlives the impersonation that minted it; it would hand the
+        // impersonator lasting access as this user.
+        if (is_impersonating()) {
+            return back()->with('error', __('security.impersonation_no_tokens'));
+        }
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'abilities' => ['nullable', 'array'],

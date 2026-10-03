@@ -18,7 +18,10 @@ set -euo pipefail
 
 APP_DIR="__APP_DIR__"
 UPDATER="/usr/local/lib/shahpanel/update.sh"
-OUT="$APP_DIR/public/update-progress"
+# Root-owned and outside the webroot: the web user can read the files (the
+# panel serves them to the main admin) but cannot replace the folder or plant
+# links in it for root to write through.
+OUT="/var/lib/shahpanel/progress"
 
 TOKEN="${1:-}"
 STAMP="${2:-}"
@@ -27,18 +30,18 @@ STAMP="${2:-}"
 [[ "$STAMP" =~ ^[0-9]{8}-[0-9]{6}$ ]] || { echo "invalid stamp" >&2; exit 2; }
 [[ -f "$UPDATER" ]] || { echo "updater not installed: $UPDATER" >&2; exit 3; }
 
-install -d -o root -g root -m 0755 "$OUT"
+for d in /var/lib/shahpanel "$OUT"; do
+  if [[ -L "$d" ]]; then echo "refusing: $d is a symlink" >&2; exit 4; fi
+done
+install -d -o root -g root -m 0755 /var/lib/shahpanel "$OUT"
+if [[ "$(stat -c %U "$OUT")" != "root" ]]; then echo "refusing: $OUT is not owned by root" >&2; exit 4; fi
 # Progress files are only useful while someone is watching.
 find "$OUT" -maxdepth 1 -type f -mmin +1440 -delete 2>/dev/null || true
 
-# .txt, not .log: the OWASP Core Rule Set (ops/modsecurity) refuses requests
-# for .log files, which left the page's console empty.
 LOG_FILE="$OUT/$TOKEN.txt"
 STATUS_FILE="$OUT/$TOKEN.json"
-: > "$LOG_FILE"
-chmod 0644 "$LOG_FILE"
-printf '{"status":"queued","stage":"queued"}' > "$STATUS_FILE"
-chmod 0644 "$STATUS_FILE"
+rm -f -- "$LOG_FILE" "$STATUS_FILE"
+( umask 022; : > "$LOG_FILE"; printf '{"status":"queued","stage":"queued"}' > "$STATUS_FILE" )
 
 # One update at a time; a second click is reported, not started.
 RUNNER="exec 9>/run/shahpanel-update.lock

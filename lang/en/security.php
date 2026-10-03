@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'impersonation_no_tokens' => 'API tokens cannot be created while impersonating a user.',
     'title' => 'Security and firewall',
     'hub_title' => 'Security and firewall',
     'section_panel' => 'Panel security',

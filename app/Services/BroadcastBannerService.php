@@ -109,7 +109,8 @@ class BroadcastBannerService
             'broadcast_id' => $broadcastId,
             'title' => $notification->title,
             'body' => $notification->body,
-            'link' => $notification->link,
+            // Re-checked on the way out: links saved before validation existed.
+            'link' => safe_link($notification->link),
             'image_url' => $this->imageUrl($broadcast?->image_path),
             'created_at' => $notification->created_at,
             'sender_name' => $broadcast?->sender?->full_name ?: $broadcast?->sender?->username,

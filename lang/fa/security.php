@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'impersonation_no_tokens' => 'هنگام ورود به‌جای کاربر نمی‌توان برای او توکن API ساخت.',
     'title' => 'امنیت و فایروال',
     'hub_title' => 'امنیت و فایروال',
     'section_panel' => 'امنیت پنل',

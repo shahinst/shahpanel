@@ -39,6 +39,13 @@ class ProfileController extends Controller
 
         unset($validated['current_password']);
 
+        // Someone acting as this user may tidy their profile but not take the
+        // account over: the sign-in identity stays with its owner.
+        if (is_impersonating()) {
+            unset($validated['username'], $validated['email'], $validated['password']);
+            $passwordChanged = false;
+        }
+
         $user->update($validated);
 
         // Only once the new password is actually stored, and only for a password

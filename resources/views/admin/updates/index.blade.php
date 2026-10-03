@@ -219,8 +219,7 @@
     const statusBadge = document.getElementById('upd-run-status');
     const reloadBtn = document.getElementById('upd-reload');
     let logOffset = 0;
-    let logUrl = null;
-    let statusUrl = null;
+    let progressUrl = null;
     let polls = 0;
     let lastChange = Date.now();
     let bestPercent = 0;
@@ -251,32 +250,26 @@
         result.textContent = message;
     }
 
-    function readLog() {
-        return fetch(logUrl + '?t=' + Date.now(), { headers: { Range: 'bytes=' + logOffset + '-' }, cache: 'no-store' })
+    // One authenticated call returns the run's status and the new log text.
+    // Errors are expected while PHP restarts at the end of the update; the
+    // poll simply tries again.
+    function readProgress() {
+        return fetch(progressUrl + '?offset=' + logOffset, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin', cache: 'no-store' })
             .then(function (r) {
-                if (r.status === 416) return '';
                 if (!r.ok) {
-                    // Say why the console is empty (a firewall refusing the
-                    // file, say) instead of leaving a blank box.
-                    if (!logWarned) {
+                    if (!logWarned && [401, 403, 404, 419].indexOf(r.status) !== -1) {
                         logWarned = true;
                         append(labels.logUnavailable.replace(':status', r.status) + '\n');
                     }
                     throw new Error(r.status);
                 }
-                return r.text().then(function (t) {
-                    // A server that ignores Range sends the whole file.
-                    if (r.status === 200 && logOffset > 0) t = t.slice(logOffset);
-                    return t;
-                });
+                return r.json();
             })
-            .then(function (t) {
-                if (t) { logOffset += new TextEncoder().encode(t).length; append(t); lastChange = Date.now(); }
+            .then(function (payload) {
+                if (payload.log) { append(payload.log); lastChange = Date.now(); }
+                logOffset = payload.offset || logOffset;
+                return payload.status;
             });
-    }
-
-    function readStatus() {
-        return fetch(statusUrl + '?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; });
     }
 
     function finish(st) {
@@ -300,15 +293,14 @@
 
     function poll() {
         polls++;
-        Promise.all([readLog().catch(function () {}), readStatus().catch(function () { return null; })])
-            .then(function (res) {
-                const st = res[1];
+        readProgress().catch(function () { return null; })
+            .then(function (st) {
                 if (st && st.stage) {
                     setPercent(stagePercent[st.stage] || bestPercent);
                     stageEl.textContent = (labels.stages[st.stage] || st.stage);
                 }
                 if (st && ['success', 'failed', 'rolled_back', 'rollback_failed'].indexOf(st.status) !== -1) {
-                    readLog().catch(function () {}).then(function () { finish(st); });
+                    readProgress().catch(function () {}).then(function () { finish(st); });
                     return;
                 }
                 // Nothing at all for 20 minutes: say so instead of spinning.
@@ -341,8 +333,7 @@
                     yes.disabled = false;
                     return;
                 }
-                logUrl = res.body.log_url;
-                statusUrl = res.body.status_url;
+                progressUrl = res.body.progress_url;
                 lastChange = Date.now();
                 setPercent(2);
                 stageEl.textContent = labels.stages.queued;
