@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 use Modules\ShahBot\Models\BotInstance;
 use Modules\ShahBot\Models\BotUser;
 use Modules\ShahBot\Support\BotContext;
+use Modules\ShahBot\Support\BotLocale;
 use Modules\ShahBot\Support\BotSettings;
 use RuntimeException;
 
@@ -64,6 +65,10 @@ class BotUserService
             'last_seen_at' => now(),
             'bot_blocked_by_user' => false,
         ]);
+
+        if ($isNew) {
+            $user->language = app(BotLocale::class)->guess($from['language_code'] ?? null);
+        }
 
         if ($isNew && $startParam !== null && preg_match('/^ref_?(\d+)$/', $startParam, $m)) {
             $referrer = BotUser::query()->where('bot_id', $botId)->where('telegram_id', (int) $m[1])->first();

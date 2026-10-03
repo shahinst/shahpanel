@@ -333,4 +333,10 @@ return [
     'location_fee' => 'Location change fee (0 = free)',
     'refund_enabled' => 'Refund requests',
     'ops_hint' => 'Locations are the package\'s allowed servers; each service can move once a day and the fee goes to the sales owner\'s wallet.',
+
+    // Languages
+    'set_languages' => 'Languages',
+    'languages_hint' => 'The languages users can choose. A new user gets the language of their Telegram app (when enabled) and can change it with the “Language” button. Texts edited under “Texts & keyboard” and the welcome/support texts of the settings are for Persian; other languages show the translated defaults.',
+    'default_language' => 'Default language',
+    'btn_language' => 'Language',
 ];

@@ -79,7 +79,7 @@ class ServiceOpsService
         });
 
         $name = e((string) ($account->display_label ?: $account->remote_username));
-        $this->notifier->user($to, __('shahbot::bot.transfer_received', ['name' => $name, 'from' => e($from->displayName())]));
+        $this->notifier->user($to, fn () => __('shahbot::bot.transfer_received', ['name' => $name, 'from' => e($from->displayName())]));
 
         return $account->fresh();
     }
@@ -220,7 +220,7 @@ class ServiceOpsService
             'reviewed_at' => now(),
         ]);
 
-        $this->notifier->user($request->botUser, __('shahbot::bot.refund_approved', [
+        $this->notifier->user($request->botUser, fn () => __('shahbot::bot.refund_approved', [
             'name' => e((string) ($request->account->display_label ?: $request->account->remote_username)),
             'amount' => format_money($amount),
         ]));
@@ -239,7 +239,7 @@ class ServiceOpsService
             throw new InvalidArgumentException(__('shahbot::bot.refund_reviewed'));
         }
 
-        $this->notifier->user($request->botUser, __('shahbot::bot.refund_rejected', [
+        $this->notifier->user($request->botUser, fn () => __('shahbot::bot.refund_rejected', [
             'name' => e((string) ($request->account?->display_label ?: $request->account?->remote_username)),
         ]));
 

@@ -197,13 +197,13 @@ class OnlinePaymentService
                 }
 
                 if ($payment->status === GatewayPaymentStatus::Completed) {
-                    $this->notifier->user($link->botUser, __('shahbot::bot.payment_approved', [
+                    $this->notifier->user($link->botUser, fn () => __('shahbot::bot.payment_approved', [
                         'amount' => format_money($payment->net_toman, 'IRT'),
                         'balance' => format_money($this->users->balance($link->botUser)),
                     ]));
                     $sent++;
                 } elseif ($payment->status->isTerminal()) {
-                    $this->notifier->user($link->botUser, __('shahbot::bot.pay_failed', [
+                    $this->notifier->user($link->botUser, fn () => __('shahbot::bot.pay_failed', [
                         'amount' => format_money($payment->gross_toman, 'IRT'),
                     ]));
                     $sent++;
@@ -302,7 +302,7 @@ class OnlinePaymentService
         });
 
         if ($done !== null) {
-            $this->notifier->user($user, __('shahbot::bot.payment_approved', [
+            $this->notifier->user($user, fn () => __('shahbot::bot.payment_approved', [
                 'amount' => format_money($done->amount),
                 'balance' => format_money($this->users->balance($user)),
             ]));

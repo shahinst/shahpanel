@@ -4,6 +4,7 @@ namespace Modules\ShahBot\Services;
 
 use Modules\ShahBot\Models\BotUser;
 use Modules\ShahBot\Support\BotContext;
+use Modules\ShahBot\Support\BotLocale;
 use Modules\ShahBot\Support\BotSettings;
 use Modules\ShahBot\Support\BotTexts;
 use Modules\ShahBot\Telegram\TelegramClient;
@@ -39,9 +40,17 @@ class BotNotifier
     /**
      * Messages a user through their own bot, whichever bot is in context.
      */
-    public function user(BotUser $user, string $text, ?array $keyboard = null): bool
+    /**
+     * $text and $keyboard may be closures: they are then built in the user's
+     * own language, which is what every message sent outside a conversation
+     * (approvals, replies, reminders) should do.
+     */
+    public function user(BotUser $user, string|\Closure $text, array|\Closure|null $keyboard = null): bool
     {
-        app(BotTexts::class)->apply();
+        [$text, $keyboard] = app(BotLocale::class)->run($user, fn () => [
+            $text instanceof \Closure ? $text() : $text,
+            $keyboard instanceof \Closure ? $keyboard() : $keyboard,
+        ]);
 
         $result = $this->context->botId() === (int) $user->bot_id
             ? $this->telegram->sendMessage($user->telegram_id, $text, $keyboard)

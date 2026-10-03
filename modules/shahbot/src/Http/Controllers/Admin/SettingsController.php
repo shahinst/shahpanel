@@ -11,6 +11,7 @@ use Illuminate\Routing\Controller;
 use Illuminate\View\View;
 use Modules\ShahBot\Services\OnlinePaymentService;
 use Modules\ShahBot\Services\WebhookService;
+use Modules\ShahBot\Support\BotLocale;
 use Modules\ShahBot\Support\BotSettings;
 
 class SettingsController extends Controller
@@ -63,6 +64,9 @@ class SettingsController extends Controller
             'bulk_max' => ['nullable', 'integer', 'min:1', 'max:100'],
             'wheel_cooldown_hours' => ['nullable', 'integer', 'min:1', 'max:720'],
             'location_fee' => ['nullable', 'numeric', 'min:0'],
+            'default_language' => ['nullable', 'in:fa,en,ru,zh'],
+            'languages' => ['nullable', 'array'],
+            'languages.*' => ['in:fa,en,ru,zh'],
             'wheel_prizes' => ['nullable', 'string', 'max:3000'],
             'channels' => ['nullable', 'string', 'max:1000'],
             'rules_text' => ['nullable', 'string', 'max:3500'],
@@ -96,6 +100,17 @@ class SettingsController extends Controller
             if ($request->has('_bool_'.$key)) {
                 $values[$key] = $request->boolean($key) ? '1' : '0';
             }
+        }
+
+        if ($request->has('_languages')) {
+            $languages = array_values(array_intersect(BotLocale::SUPPORTED, (array) $request->input('languages', [])));
+            $values['languages'] = implode("\n", $languages ?: ['fa']);
+
+            if (! in_array($values['default_language'] ?? 'fa', $languages ?: ['fa'], true)) {
+                $values['default_language'] = ($languages ?: ['fa'])[0];
+            }
+        } else {
+            unset($values['languages']);
         }
 
         $settings->set($values);

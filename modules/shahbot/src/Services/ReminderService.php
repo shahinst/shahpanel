@@ -67,11 +67,11 @@ class ReminderService
             return 0;
         }
 
-        $this->notifier->user($user, __('shahbot::bot.remind_expiry', [
+        $this->notifier->user($user, fn () => __('shahbot::bot.remind_expiry', [
             'name' => e((string) ($account->display_label ?: $account->remote_username)),
             'days' => persian_digits(max(0, (int) ceil(now()->diffInHours($account->expiry_at) / 24))),
             'date' => jalali_date($account->expiry_at, 'Y/m/d H:i'),
-        ]), Keyboard::inline([[Keyboard::button(__('shahbot::bot.btn_renew'), 'svc:rn:'.$account->id)]]));
+        ]), fn () => Keyboard::inline([[Keyboard::button(__('shahbot::bot.btn_renew'), 'svc:rn:'.$account->id)]]));
 
         return 1;
     }
@@ -96,11 +96,11 @@ class ReminderService
             return 0;
         }
 
-        $this->notifier->user($user, __('shahbot::bot.remind_traffic', [
+        $this->notifier->user($user, fn () => __('shahbot::bot.remind_traffic', [
             'name' => e((string) ($account->display_label ?: $account->remote_username)),
             'percent' => persian_digits((int) floor($left * 100 / $limit)),
             'left' => persian_digits(format_data_size($left)),
-        ]), Keyboard::inline([[Keyboard::button(__('shahbot::bot.btn_renew'), 'svc:rn:'.$account->id)]]));
+        ]), fn () => Keyboard::inline([[Keyboard::button(__('shahbot::bot.btn_renew'), 'svc:rn:'.$account->id)]]));
 
         return 1;
     }

@@ -1,6 +1,36 @@
 {
     "versions": [
         {
+            "version": "3.16.0",
+            "date": "2026-10-18",
+            "notes": {
+                "fa": [
+                    "ربات فروش تلگرام چهارزبانه شد: فارسی، انگلیسی، روسی و چینی، با ترجمهٔ کامل همهٔ پیام‌ها و دکمه‌ها",
+                    "زبان هر کاربر جداست: کاربر جدید به زبان برنامهٔ تلگرامش خوش‌آمد می‌شنود و با دکمهٔ «🌐 زبان / Language» آن را عوض می‌کند",
+                    "پیام‌هایی که بعداً از پنل یا زمان‌بندها می‌رسد (تأیید رسید، پاسخ تیکت، یادآوری انقضا، قرعه‌کشی و…) هم به زبان خود کاربر فرستاده می‌شود",
+                    "تب «زبان‌ها» در تنظیمات ربات برای انتخاب زبان‌های فعال و زبان پیش‌فرض"
+                ],
+                "en": [
+                    "The Telegram sales bot now speaks four languages: Persian, English, Russian and Chinese, with every message and button translated",
+                    "Each user has their own language: a new user is greeted in their Telegram app's language and can change it with the “🌐 زبان / Language” button",
+                    "Messages sent later from the panel or by scheduled jobs (receipt approval, ticket replies, expiry reminders, lotteries…) also go out in the user's language",
+                    "A “Languages” settings tab to choose the enabled languages and the default one"
+                ],
+                "ru": [
+                    "Telegram-бот продаж теперь на четырёх языках: персидском, английском, русском и китайском, с переводом всех сообщений и кнопок",
+                    "У каждого пользователя свой язык: новый пользователь получает приветствие на языке своего приложения Telegram и может сменить его кнопкой «🌐 زبان / Language»",
+                    "Сообщения, отправляемые позже из панели или планировщиком (подтверждение чека, ответы на тикеты, напоминания, розыгрыши…), тоже приходят на языке пользователя",
+                    "Вкладка «Языки» в настройках бота для выбора включённых языков и языка по умолчанию"
+                ],
+                "zh": [
+                    "Telegram 销售机器人支持四种语言：波斯语、英语、俄语和中文，所有消息和按钮均已翻译",
+                    "每位用户可使用自己的语言：新用户会以其 Telegram 应用的语言收到欢迎，并可通过“🌐 زبان / Language”按钮切换",
+                    "之后从面板或定时任务发送的消息（凭证审核、工单回复、到期提醒、抽奖等）也会以用户的语言发送",
+                    "机器人设置新增“语言”选项卡，可选择启用的语言和默认语言"
+                ]
+            }
+        },
+        {
             "version": "3.15.0",
             "date": "2026-10-17",
             "notes": {

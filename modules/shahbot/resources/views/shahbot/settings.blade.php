@@ -3,7 +3,7 @@
 @section('page_title', __('shahbot::admin.tab_settings'))
 
 @php
-    $tabs = ['connection' => 'set_connection', 'store' => 'set_store', 'wallet' => 'set_wallet', 'online' => 'set_online', 'agents' => 'set_agents', 'fun' => 'set_fun', 'marketing' => 'set_marketing', 'gates' => 'set_gates', 'texts' => 'set_texts'];
+    $tabs = ['connection' => 'set_connection', 'store' => 'set_store', 'wallet' => 'set_wallet', 'online' => 'set_online', 'agents' => 'set_agents', 'fun' => 'set_fun', 'languages' => 'set_languages', 'marketing' => 'set_marketing', 'gates' => 'set_gates', 'texts' => 'set_texts'];
     $tab = array_key_exists($tab, $tabs) ? $tab : 'connection';
     $toggle = function (string $key) use ($settings): string {
         return '<input type="hidden" name="_bool_'.$key.'" value="1">'
@@ -154,6 +154,23 @@
                         <textarea name="wheel_prizes" rows="7" class="form-control" dir="auto">{{ $settings->get('wheel_prizes') }}</textarea>
                         <div class="sb-muted mt-1">{{ __('shahbot::admin.wheel_prizes_hint') }}</div>
                     </div>
+                </div>
+            @elseif ($tab === 'languages')
+                <input type="hidden" name="_languages" value="1">
+                <p class="sb-muted">{{ __('shahbot::admin.languages_hint') }}</p>
+                @php $enabledLanguages = app(\Modules\ShahBot\Support\BotLocale::class)->enabled(); @endphp
+                <div class="mb-3">
+                    @foreach (\Modules\ShahBot\Support\BotLocale::NAMES as $code => $name)
+                        <label class="form-check form-check-inline"><input type="checkbox" class="form-check-input" name="languages[]" value="{{ $code }}" @checked(in_array($code, $enabledLanguages, true))> {{ $name }}</label>
+                    @endforeach
+                </div>
+                <div style="max-width:260px">
+                    <label class="form-label">{{ __('shahbot::admin.default_language') }}</label>
+                    <select name="default_language" class="form-select">
+                        @foreach (\Modules\ShahBot\Support\BotLocale::NAMES as $code => $name)
+                            <option value="{{ $code }}" @selected($settings->get('default_language') === $code)>{{ $name }}</option>
+                        @endforeach
+                    </select>
                 </div>
             @elseif ($tab === 'marketing')
                 {!! $toggle('referral_enabled') !!}

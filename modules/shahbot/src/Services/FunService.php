@@ -248,7 +248,7 @@ class FunService
 
         foreach (BotUser::query()->whereIn('id', $participants)->get() as $user) {
             $won = $winnerUsers->has($user->id);
-            $this->notifier->user($user, __($won ? 'shahbot::bot.lottery_won' : 'shahbot::bot.lottery_lost', [
+            $this->notifier->user($user, fn () => __($won ? 'shahbot::bot.lottery_won' : 'shahbot::bot.lottery_lost', [
                 'title' => e($locked->title),
                 'amount' => format_money($locked->prize_amount),
                 'winners' => $names ?: '—',

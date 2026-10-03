@@ -21,6 +21,7 @@ class BotUser extends Model
         'first_name',
         'last_name',
         'phone',
+        'language',
         'client_user_id',
         'reseller_user_id',
         'referrer_id',

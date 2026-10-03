@@ -94,6 +94,10 @@ class BotSettings
             'wheel_buyers_only' => '1',
             'wheel_prizes' => "پوچ|none|0|50\n۱۰٪ تخفیف|discount|10|25\n۲۰٬۰۰۰ تومان شارژ|wallet|20000|15\n۵۰٬۰۰۰ تومان شارژ|wallet|50000|8\n۲۰٪ تخفیف|discount|20|2",
 
+            // Languages
+            'languages' => "fa\nen\nru\nzh",
+            'default_language' => 'fa',
+
             // Editors and mini app
             'texts' => '',
             'menu_layout' => '',
@@ -222,6 +226,22 @@ class BotSettings
         }
 
         return $secret;
+    }
+
+    /**
+     * A text the admin sets in Persian (welcome, support, closed, agency):
+     * Persian users get the admin's wording, everyone else the translated
+     * default of that text.
+     */
+    public function localized(string $key): string
+    {
+        $value = $this->get($key);
+
+        if (app()->getLocale() === 'fa' && $value !== '') {
+            return $value;
+        }
+
+        return (string) __('shahbot::bot.cfg_'.$key);
     }
 
     public function isConfigured(): bool
