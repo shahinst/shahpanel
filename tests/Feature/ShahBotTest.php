@@ -9,8 +9,11 @@ use App\Models\Account;
 use App\Models\GatewayPayment;
 use App\Models\PaymentGateway;
 use App\Models\User;
+use App\Services\AccountRefundService;
 use App\Services\AccountService;
+use App\Services\AccountTransferService;
 use App\Services\ServerSelectionService;
+use App\Services\SubscriptionFeedService;
 use App\Services\UserPackagePricingService;
 use App\Services\WalletService;
 use App\Support\GatewayReturnUrls;
@@ -27,6 +30,7 @@ use Modules\ShahBot\Models\BotLottery;
 use Modules\ShahBot\Models\BotOrder;
 use Modules\ShahBot\Models\BotPayment;
 use Modules\ShahBot\Models\BotReferralReward;
+use Modules\ShahBot\Models\BotRefundRequest;
 use Modules\ShahBot\Models\BotUser;
 use Modules\ShahBot\Models\BotWheelSpin;
 use Modules\ShahBot\Services\BotUserService;
@@ -250,6 +254,7 @@ class ShahBotTest extends TestCase
             'admin.shahbot.tutorials.index',
             'admin.shahbot.agents.index',
             'admin.shahbot.lotteries.index',
+            'admin.shahbot.refunds.index',
         ] as $route) {
             $this->actingAs($admin)->get(route($route))->assertOk();
         }
@@ -613,5 +618,82 @@ class ShahBotTest extends TestCase
         $winner = BotUser::query()->findOrFail($lottery->winners[0]);
         $this->assertSame('1000.00', $this->balance(app(BotUserService::class)->client($winner)));
         $this->assertSame(0, $fun->drawDue());
+    }
+
+    protected function ownedAccount(int $telegramId, array $attributes = []): array
+    {
+        $this->text($telegramId, '/start');
+        $user = BotUser::query()->where('telegram_id', $telegramId)->firstOrFail();
+        $client = app(BotUserService::class)->client($user);
+        $account = $this->makeAccount($this->owner, $attributes['server'] ?? $this->makeServer(), array_merge([
+            'client_user_id' => $client->id,
+            'expiry_at' => now()->addDays(20),
+        ], array_diff_key($attributes, ['server' => 1])));
+
+        return [$user, $account];
+    }
+
+    public function test_transfer_service_to_another_user(): void
+    {
+        [$from, $account] = $this->ownedAccount(1601);
+        $this->text(1602, '/start');
+        $to = BotUser::query()->where('telegram_id', 1602)->firstOrFail();
+        $oldToken = app(SubscriptionFeedService::class)->tokenFor($account);
+
+        $this->press(1601, 'svc:tr:'.$account->id);
+        $this->text(1601, '1602');
+        $this->press(1601, 'svc:trok:'.$account->id.':'.$to->id);
+
+        $account->refresh();
+        $this->assertSame(app(BotUserService::class)->client($to)->id, $account->client_user_id);
+        $this->assertNotSame($oldToken, $account->subscription_token);
+
+        // The giver can no longer act on it.
+        $this->press(1601, 'svc:ar:'.$account->id);
+        $this->assertFalse((bool) $account->fresh()->auto_renew);
+    }
+
+    public function test_change_location_once_a_day(): void
+    {
+        [$package] = $this->makePackage();
+        $old = $this->makeServer();
+        $new = $this->makeServer();
+        $package->servers()->attach([$old->id, $new->id]);
+        [, $account] = $this->ownedAccount(1701, ['server' => $old, 'package_id' => $package->id]);
+
+        $transfer = Mockery::mock(AccountTransferService::class);
+        $transfer->shouldReceive('transfer')->once()->andReturnUsing(function (Account $a, $server) {
+            $a->update(['server_id' => $server->id]);
+
+            return $a->fresh(['server']);
+        });
+        $this->app->instance(AccountTransferService::class, $transfer);
+
+        $this->press(1701, 'svc:lcok:'.$account->id.':'.$new->id);
+        $this->assertSame($new->id, $account->fresh()->server_id);
+
+        $this->press(1701, 'svc:lcok:'.$account->id.':'.$old->id);
+        $this->assertSame($new->id, $account->fresh()->server_id);
+    }
+
+    public function test_refund_request_is_reviewed_by_an_admin(): void
+    {
+        [, $account] = $this->ownedAccount(1801);
+
+        $this->press(1801, 'svc:rf:'.$account->id);
+        $this->text(1801, 'Too slow for me');
+        $request = BotRefundRequest::query()->firstOrFail();
+        Http::assertSent(fn ($r) => (string) ($r['chat_id'] ?? '') === '999' && str_contains((string) ($r['reply_markup'] ?? ''), 'adm:rf:ok:'.$request->id));
+
+        $refunds = Mockery::mock(AccountRefundService::class);
+        $refunds->shouldReceive('refund')->once()->andReturn(['refund_amount' => '700.00']);
+        $this->app->instance(AccountRefundService::class, $refunds);
+
+        $this->press(999, 'adm:rf:ok:'.$request->id);
+        $this->press(999, 'adm:rf:ok:'.$request->id);
+
+        $this->assertSame('approved', $request->fresh()->status);
+        $this->assertSame('700.00', number_format((float) $request->fresh()->amount, 2, '.', ''));
+        Http::assertSent(fn ($r) => (string) ($r['chat_id'] ?? '') === '1801' && str_contains((string) $r['text'], '۷۰۰'));
     }
 }

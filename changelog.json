@@ -1,6 +1,32 @@
 {
     "versions": [
         {
+            "version": "3.15.0",
+            "date": "2026-10-17",
+            "notes": {
+                "fa": [
+                    "ربات فروش تلگرام: انتقال سرویس به کاربر دیگر ربات با شناسه یا یوزرنیم؛ لینک اشتراک و صفحهٔ سرویس برای گیرنده نو می‌شود تا فرستنده دیگر دسترسی نداشته باشد",
+                    "تغییر لوکیشن: انتقال سرویس به سرور دیگری از سرورهای مجاز پکیج با همان سرویس انتقال پنل، روزی یک بار و با هزینهٔ اختیاری",
+                    "درخواست بازگشت وجه با ذکر علت؛ بررسی و تأیید در تلگرام یا بخش «بازگشت وجه» پنل و برگشت مبلغ با همان محاسبهٔ بازپرداخت پنل"
+                ],
+                "en": [
+                    "Telegram sales bot: transfer a service to another bot user by ID or username; the subscription and service links are reissued so the giver loses access",
+                    "Location change: move a service to another of its package's servers through the panel's transfer service, once a day with an optional fee",
+                    "Refund requests with a reason, reviewed in Telegram or under “Refunds” in the panel and paid back with the panel's own refund calculation"
+                ],
+                "ru": [
+                    "Telegram-бот продаж: передача услуги другому пользователю бота по ID или имени; ссылки подписки и страницы услуги перевыпускаются, чтобы отправитель потерял доступ",
+                    "Смена локации: перенос услуги на другой разрешённый сервер пакета через сервис переноса панели, раз в день и с необязательной платой",
+                    "Заявки на возврат средств с указанием причины, рассматриваемые в Telegram или в разделе «Возвраты» панели, с расчётом возврата самой панели"
+                ],
+                "zh": [
+                    "Telegram 销售机器人：可按 ID 或用户名将服务转让给机器人的其他用户；订阅和服务链接会重新生成，转出方将失去访问权限",
+                    "更换节点：通过面板的迁移服务将服务迁移到套餐允许的其他服务器，每天一次，可设置费用",
+                    "填写原因的退款申请，可在 Telegram 或面板“退款”中审核，并按面板自身的退款计算返还金额"
+                ]
+            }
+        },
+        {
             "version": "3.14.0",
             "date": "2026-10-16",
             "notes": {

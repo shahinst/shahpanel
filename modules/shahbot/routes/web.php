@@ -10,6 +10,7 @@ use Modules\ShahBot\Http\Controllers\Admin\DashboardController;
 use Modules\ShahBot\Http\Controllers\Admin\EditorController;
 use Modules\ShahBot\Http\Controllers\Admin\LotteryController;
 use Modules\ShahBot\Http\Controllers\Admin\PaymentController;
+use Modules\ShahBot\Http\Controllers\Admin\RefundController;
 use Modules\ShahBot\Http\Controllers\Admin\SettingsController;
 use Modules\ShahBot\Http\Controllers\Admin\TicketController;
 use Modules\ShahBot\Http\Controllers\Admin\TutorialController;
@@ -47,6 +48,10 @@ Route::prefix(PortalPaths::slug('admin'))->name('admin.')->middleware($adminMidd
         Route::get('payments/{payment}/receipt', [PaymentController::class, 'receipt'])->name('payments.receipt');
         Route::post('payments/{payment}/approve', [PaymentController::class, 'approve'])->name('payments.approve');
         Route::post('payments/{payment}/reject', [PaymentController::class, 'reject'])->name('payments.reject');
+
+        Route::get('refunds', [RefundController::class, 'index'])->name('refunds.index');
+        Route::post('refunds/{refund}/approve', [RefundController::class, 'approve'])->name('refunds.approve');
+        Route::post('refunds/{refund}/reject', [RefundController::class, 'reject'])->name('refunds.reject');
 
         Route::get('codes', [CodeController::class, 'index'])->name('codes.index');
         Route::post('codes', [CodeController::class, 'store'])->name('codes.store');

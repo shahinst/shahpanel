@@ -322,4 +322,15 @@ return [
     'lottery_draw_now' => 'Draw now',
     'lottery_drawn' => 'The lottery was drawn.',
     'lottery_dates_invalid' => 'The dates are invalid or the draw is before the start.',
+
+    // Service operations
+    'tab_refunds' => 'Refunds',
+    'refund_hint' => 'Approving runs the panel\'s own refund: the unused share of time and data goes back to the wallets and the service is disabled.',
+    'approve_refund' => 'Approve and refund',
+    'refund_done' => 'Refunded; amount returned to the customer: :amount',
+    'transfer_enabled' => 'Transfer a service to another user',
+    'location_enabled' => 'Location (server) change by the user',
+    'location_fee' => 'Location change fee (0 = free)',
+    'refund_enabled' => 'Refund requests',
+    'ops_hint' => 'Locations are the package\'s allowed servers; each service can move once a day and the fee goes to the sales owner\'s wallet.',
 ];
