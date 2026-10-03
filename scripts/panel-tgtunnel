@@ -23,6 +23,23 @@ UNIT="wg-quick@${IFACE}"
 STATE=/var/lib/panel-tgtunnel
 STALE_AFTER=180   # seconds without a handshake before the watchdog restarts
 
+# The Bot API host and the address it really answers on. Filtered networks
+# answer DNS for it with a fake address outside Telegram's ranges, which
+# would then never be routed into the tunnel -- so while the tunnel is up
+# the name is pinned to the real one.
+API_HOST=api.telegram.org
+API_IP=149.154.167.220
+HOSTS_MARK="# panel-tgtunnel"
+
+pin_api_host() {
+    unpin_api_host
+    printf '%s %s %s\n' "$API_IP" "$API_HOST" "$HOSTS_MARK" >> /etc/hosts
+}
+
+unpin_api_host() {
+    sed -i "/${HOSTS_MARK}\$/d" /etc/hosts
+}
+
 # https://core.telegram.org/resources/cidr.txt
 TG_V4="91.108.4.0/22 91.108.8.0/22 91.108.12.0/22 91.108.16.0/22 91.108.20.0/22 91.108.56.0/22 91.105.192.0/23 95.161.64.0/20 149.154.160.0/20 185.76.151.0/24"
 TG_V6="2001:67c:4e8::/48 2001:b28:f23c::/48 2001:b28:f23d::/48 2001:b28:f23f::/48 2a0a:f280::/32"
@@ -117,12 +134,14 @@ apply() {
 
     systemctl enable "$UNIT" >/dev/null 2>&1 || true
     systemctl restart "$UNIT"
+    pin_api_host
     date +%s > "$STATE/applied_at"
     echo "ok"
 }
 
 down() {
     systemctl disable --now "$UNIT" >/dev/null 2>&1 || true
+    unpin_api_host
     rm -f "$CONF" "$STATE/applied_at"
     echo "ok"
 }
@@ -148,18 +167,36 @@ status() {
 }
 
 test_tunnel() {
-    systemctl is-active --quiet "$UNIT" || { echo '{"ok":false,"error":"tunnel is not running"}'; return; }
-    local before after code
+    systemctl is-active --quiet "$UNIT" || { echo '{"ok":false,"reason":"not_running"}'; return; }
+
+    local dns code via before after reason=
+    dns=$(getent ahostsv4 "$API_HOST" 2>/dev/null | awk '{print $1; exit}')
+    via=$(ip -4 route get "$API_IP" 2>/dev/null | grep -o 'dev [^ ]*' | awk '{print $2}')
     before=$(wg show "$IFACE" transfer 2>/dev/null | awk '{r+=$2} END {print r+0}')
-    # --interface pins the request to the tunnel, so a success here cannot
-    # come from the normal route.
-    code=$(curl -4 -s -o /dev/null -w '%{http_code}' --interface "$IFACE" -m 15 https://api.telegram.org/ || true)
+    # --interface pins the request to the tunnel and --resolve to Telegram's
+    # real address, so a success here cannot come from anywhere else.
+    code=$(curl -4 -s -o /dev/null -w '%{http_code}' --interface "$IFACE" \
+        --resolve "${API_HOST}:443:${API_IP}" -m 15 "https://${API_HOST}/" || true)
     after=$(wg show "$IFACE" transfer 2>/dev/null | awk '{r+=$2} END {print r+0}')
-    local ok=false
-    [[ "$code" =~ ^[1-5][0-9][0-9]$ && "$code" != 000 ]] && ok=true
-    printf '{"ok":%s,"http":"%s","bytes_received":%s,"telegram_via":"%s"}\n' \
-        "$ok" "$code" $(( after - before )) \
-        "$(ip -4 route get 149.154.167.220 2>/dev/null | grep -o 'dev [^ ]*' | awk '{print $2}')"
+
+    local ok=false received=$(( after - before ))
+    if [[ "$code" =~ ^[1-5][0-9][0-9]$ ]]; then
+        ok=true
+    elif [[ "$via" != "$IFACE" ]]; then
+        reason=not_routed
+    elif [[ $received -le 0 ]]; then
+        # The handshake works but nothing comes back: the far side does not
+        # forward to the internet (no NAT / ip_forward), or Telegram is
+        # filtered there too.
+        reason=no_return
+    else
+        reason=telegram_unreachable
+    fi
+    # The bot uses the host name; it must point inside Telegram's ranges.
+    [[ "$ok" == true && "$dns" != "$API_IP" ]] && { ok=false; reason=dns_not_pinned; }
+
+    printf '{"ok":%s,"http":"%s","bytes_received":%s,"telegram_via":"%s","dns":"%s","reason":"%s"}\n' \
+        "$ok" "$code" "$received" "$via" "$dns" "$reason"
 }
 
 watchdog() {

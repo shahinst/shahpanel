@@ -1,6 +1,28 @@
 {
     "versions": [
         {
+            "version": "3.21.2",
+            "date": "2026-10-22",
+            "notes": {
+                "fa": [
+                    "تانل تلگرام روی سرورهای ایران کار نمی‌کرد: DNS ایران برای api.telegram.org آدرس جعلی (مثل 10.10.34.35) برمی‌گرداند که در محدودهٔ تلگرام نیست، پس نه تست و نه ربات از تانل رد نمی‌شدند. حالا تا وقتی تانل وصل است این نام به آی‌پی واقعی تلگرام وصل می‌شود و با حذف تانل برمی‌گردد.",
+                    "تست اتصال حالا دلیل دقیق شکست را می‌گوید: سرویس خاموش است، آی‌پی تلگرام به تانل نمی‌رود، سرور وایرگارد جوابی برنمی‌گرداند (NAT/ip_forward خاموش یا فیلتر روی خودش)، یا تلگرام از آن سرور در دسترس نیست."
+                ],
+                "en": [
+                    "The Telegram tunnel did not work on Iranian servers: their DNS answers api.telegram.org with a fake address (such as 10.10.34.35) outside Telegram's ranges, so neither the test nor the bot went through the tunnel. While the tunnel is up the name now points at Telegram's real address, and it is put back when the tunnel is removed.",
+                    "The connection test now says why it failed: the service is down, Telegram's address is not routed into the tunnel, the WireGuard server sends nothing back (NAT/ip_forward off, or filtered there too), or Telegram cannot be reached from that server."
+                ],
+                "ru": [
+                    "The Telegram tunnel did not work on Iranian servers: their DNS answers api.telegram.org with a fake address (such as 10.10.34.35) outside Telegram's ranges, so neither the test nor the bot went through the tunnel. While the tunnel is up the name now points at Telegram's real address, and it is put back when the tunnel is removed.",
+                    "The connection test now says why it failed: the service is down, Telegram's address is not routed into the tunnel, the WireGuard server sends nothing back (NAT/ip_forward off, or filtered there too), or Telegram cannot be reached from that server."
+                ],
+                "zh": [
+                    "The Telegram tunnel did not work on Iranian servers: their DNS answers api.telegram.org with a fake address (such as 10.10.34.35) outside Telegram's ranges, so neither the test nor the bot went through the tunnel. While the tunnel is up the name now points at Telegram's real address, and it is put back when the tunnel is removed.",
+                    "The connection test now says why it failed: the service is down, Telegram's address is not routed into the tunnel, the WireGuard server sends nothing back (NAT/ip_forward off, or filtered there too), or Telegram cannot be reached from that server."
+                ]
+            }
+        },
+        {
             "version": "3.21.1",
             "date": "2026-10-22",
             "notes": {

@@ -25,4 +25,9 @@ return [
     'remove_confirm' => 'Remove the tunnel? Telegram goes back to the server\'s normal route.',
     'removed' => 'The tunnel was removed.',
     'manage' => 'Manage',
+    'reason_not_running' => 'Test failed: the tunnel service is not running. Press "Save and connect" again.',
+    'reason_not_routed' => 'Test failed: Telegram\'s address is not routed into the tunnel. Save the config again.',
+    'reason_no_return' => 'Test failed: the WireGuard server answers the handshake but nothing comes back through it. The far server does not forward traffic to the internet (NAT and ip_forward are off there), or Telegram is filtered on that server too. It must be outside Iran and allow internet access.',
+    'reason_telegram_unreachable' => 'Test failed: traffic goes through the tunnel but Telegram cannot be reached from the WireGuard server. Use a WireGuard server outside Iran.',
+    'reason_dns_not_pinned' => 'The tunnel works but api.telegram.org still resolves to the wrong address, so the bot cannot reach it. Press "Save and connect" again.',
 ];
