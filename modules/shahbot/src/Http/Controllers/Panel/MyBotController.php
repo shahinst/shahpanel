@@ -15,6 +15,7 @@ use Modules\ShahBot\Models\BotPackage;
 use Modules\ShahBot\Models\BotUser;
 use Modules\ShahBot\Services\BroadcastService;
 use Modules\ShahBot\Services\WebhookService;
+use Modules\ShahBot\Support\BotAccess;
 use Modules\ShahBot\Support\BotContext;
 use Modules\ShahBot\Support\BotSettings;
 
@@ -33,7 +34,7 @@ class MyBotController extends Controller
 
         return view('shahbot::panel.my-bot', [
             'panel' => $user->role === UserRole::Agent ? 'agent' : 'seller',
-            'enabled' => $settings->bool('agent_bots_enabled'),
+            'enabled' => app(BotAccess::class)->allows($request->user()),
             'bot' => $bot,
             'values' => (array) ($bot?->settings ?? []),
             'stats' => $bot ? [
@@ -49,7 +50,7 @@ class MyBotController extends Controller
     {
         $user = $request->user();
         abort_unless(in_array($user->role, [UserRole::Agent, UserRole::Seller], true), 403);
-        abort_unless($settings->bool('agent_bots_enabled'), 403);
+        abort_unless(app(BotAccess::class)->allows($request->user()), 403);
 
         $data = $request->validate([
             'bot_token' => ['nullable', 'string', 'regex:/^\d{5,}:[A-Za-z0-9_-]{30,}$/'],
@@ -114,7 +115,7 @@ class MyBotController extends Controller
 
         return view('shahbot::panel.my-plans', [
             'panel' => $user->role === UserRole::Agent ? 'agent' : 'seller',
-            'enabled' => $settings->bool('agent_bots_enabled'),
+            'enabled' => app(BotAccess::class)->allows($request->user()),
             'bot' => $bot,
             'rows' => $pricing->managementCatalogForOwner($user)
                 ->filter(fn (array $row): bool => ! $row['duration']->tier->isTest())
@@ -127,7 +128,7 @@ class MyBotController extends Controller
     {
         $user = $request->user();
         abort_unless(in_array($user->role, [UserRole::Agent, UserRole::Seller], true), 403);
-        abort_unless($settings->bool('agent_bots_enabled'), 403);
+        abort_unless(app(BotAccess::class)->allows($request->user()), 403);
 
         $bot = BotInstance::query()->where('owner_user_id', $user->id)->first();
 
@@ -199,7 +200,7 @@ class MyBotController extends Controller
     {
         $user = $request->user();
         abort_unless(in_array($user->role, [UserRole::Agent, UserRole::Seller], true), 403);
-        abort_unless($settings->bool('agent_bots_enabled'), 403);
+        abort_unless(app(BotAccess::class)->allows($request->user()), 403);
 
         $bot = BotInstance::query()->where('owner_user_id', $user->id)->first();
 
@@ -220,7 +221,7 @@ class MyBotController extends Controller
     public function connect(Request $request, BotSettings $settings, WebhookService $webhooks): RedirectResponse
     {
         $bot = BotInstance::query()->where('owner_user_id', $request->user()->id)->first();
-        abort_unless($bot !== null && $bot->is_active && $settings->bool('agent_bots_enabled'), 403);
+        abort_unless($bot !== null && $bot->is_active && app(BotAccess::class)->allows($request->user()), 403);
 
         if ($bot->token() === '') {
             return back()->with('error', __('shahbot::admin.token_missing'));

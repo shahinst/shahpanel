@@ -14,6 +14,7 @@ use Modules\ShahBot\Models\BotOrder;
 use Modules\ShahBot\Models\BotUser;
 use Modules\ShahBot\Services\BotUserService;
 use Modules\ShahBot\Services\ShopService;
+use Modules\ShahBot\Support\BotAccess;
 use Modules\ShahBot\Support\BotContext;
 use Modules\ShahBot\Support\BotSettings;
 
@@ -87,7 +88,8 @@ class MiniAppController extends Controller
         }
 
         $instance = BotInstance::query()->whereKey($bot)->where('is_active', true)->first();
-        abort_if($instance === null || ! $settings->bool('agent_bots_enabled'), 404);
+        // The bot works only while its owner still holds bot access.
+        abort_if($instance === null || ! app(BotAccess::class)->allows($instance->owner), 404);
 
         return $instance;
     }

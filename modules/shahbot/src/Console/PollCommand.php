@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
 use Modules\ShahBot\Bot\UpdateHandler;
 use Modules\ShahBot\Models\BotInstance;
+use Modules\ShahBot\Support\BotAccess;
 use Modules\ShahBot\Support\BotContext;
 use Modules\ShahBot\Support\BotSettings;
 use Modules\ShahBot\Telegram\TelegramClient;
@@ -31,9 +32,10 @@ class PollCommand extends Command
         // The main bot and every active agent bot that has a token.
         $bots = collect([null]);
 
-        if ($settings->bool('agent_bots_enabled')) {
-            $bots = $bots->merge(BotInstance::query()->where('is_active', true)->whereNotNull('token_enc')->get());
-        }
+        // Only bots whose owner still holds access: revoking it stops the bot.
+        $access = app(BotAccess::class);
+        $bots = $bots->merge(BotInstance::query()->with('owner')->where('is_active', true)->whereNotNull('token_enc')->get()
+            ->filter(fn (BotInstance $bot): bool => $access->allows($bot->owner)));
 
         $until = time() + max(5, (int) $this->option('seconds'));
         $single = $bots->count() === 1;

@@ -142,8 +142,7 @@
                     <div class="col-md-2"><label class="form-label">{{ __('shahbot::admin.bulk_max') }}</label><input type="number" min="1" max="100" name="bulk_max" value="{{ $settings->get('bulk_max') }}" class="form-control"></div>
                 </div>
                 <hr>
-                {!! $toggle('agent_bots_enabled') !!}
-                <p class="sb-muted">{{ __('shahbot::admin.agent_bots_hint') }}</p>
+                <p class="sb-muted">{{ __('shahbot::admin.bot_access_moved') }} <a href="{{ route('admin.shahbot.access') }}">{{ __('shahbot::admin.bot_access') }}</a></p>
             @elseif ($tab === 'fun')
                 {!! $toggle('wheel_enabled') !!}
                 {!! $toggle('wheel_buyers_only') !!}

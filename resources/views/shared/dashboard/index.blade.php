@@ -6,6 +6,11 @@
 @if (($stats['panel'] ?? null) === 'admin')
     @include('admin.partials.star-prompt')
 @endif
+{{-- Only while the Telegram tunnel module is on, and only for the owner who may manage it. --}}
+@if (($stats['panel'] ?? null) === 'admin' && module_active('tgtunnel') && \Illuminate\Support\Facades\Route::has('admin.tgtunnel.index')
+    && app(\App\Services\AdminSectionAccessService::class)->canAccessRoute(auth()->user(), 'admin.tgtunnel.index'))
+    @include('tgtunnel::widget')
+@endif
 @php
     $panel = $stats['panel'];
     $charts = $stats['charts'];

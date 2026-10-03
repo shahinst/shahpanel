@@ -49,6 +49,8 @@ return [
         'administrators.*',
         // Updating the panel is the owner's call, like managing administrators.
         'updates.*',
+        // The Telegram tunnel changes the server's routing as root.
+        'tgtunnel.*',
     ],
 
     'sections' => [

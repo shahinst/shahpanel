@@ -1,0 +1,186 @@
+#!/usr/bin/env bash
+# panel-tgtunnel — send only Telegram's traffic through a WireGuard tunnel.
+#
+# For servers where Telegram is filtered: the panel's bot talks to Telegram
+# through the tunnel, everything else keeps its normal route.
+#
+# Runs as root through one sudoers line for www-data. The panel hands it a
+# WireGuard config, which is NEVER used as given: wg-quick runs PreUp/PostUp
+# lines as root, so a config is a root shell in disguise. Only the key, the
+# address, the MTU and the peer's key, preshared key and endpoint are read,
+# each against a strict pattern, and the real config is written here.
+#
+#   panel-tgtunnel apply          build the tunnel from a client config on stdin
+#   panel-tgtunnel down           stop it and forget the config
+#   panel-tgtunnel status         one line of JSON
+#   panel-tgtunnel test           reach api.telegram.org through the tunnel
+#   panel-tgtunnel watchdog       restart when down or stale (cron, every minute)
+set -Eeuo pipefail
+
+IFACE=tgtun
+CONF="/etc/wireguard/${IFACE}.conf"
+UNIT="wg-quick@${IFACE}"
+STATE=/var/lib/panel-tgtunnel
+STALE_AFTER=180   # seconds without a handshake before the watchdog restarts
+
+# https://core.telegram.org/resources/cidr.txt
+TG_V4="91.108.4.0/22 91.108.8.0/22 91.108.12.0/22 91.108.16.0/22 91.108.20.0/22 91.108.56.0/22 91.105.192.0/23 95.161.64.0/20 149.154.160.0/20 185.76.151.0/24"
+TG_V6="2001:67c:4e8::/48 2001:b28:f23c::/48 2001:b28:f23d::/48 2001:b28:f23f::/48 2a0a:f280::/32"
+
+die() { printf '%s\n' "$*" >&2; exit 1; }
+[[ $EUID -eq 0 ]] || die "must run as root"
+
+KEY_RE='^[A-Za-z0-9+/]{42}[AEIMQUYcgkosw480]=$'
+V4_RE='^([0-9]{1,3}\.){3}[0-9]{1,3}/[0-9]{1,2}$'
+V6_RE='^[0-9A-Fa-f:]+/[0-9]{1,3}$'
+EP_RE='^(\[[0-9A-Fa-f:]+\]|[A-Za-z0-9.-]{1,253}):[0-9]{1,5}$'
+
+# value of KEY inside [SECTION], first occurrence, whitespace trimmed
+field() {
+    awk -v sec="$2" -v key="$3" '
+        /^[[:space:]]*\[/ { s = $0; gsub(/[][[:space:]]/, "", s); cur = tolower(s); next }
+        cur == tolower(sec) {
+            line = $0; sub(/[#;].*/, "", line)
+            n = index(line, "="); if (n == 0) next
+            k = substr(line, 1, n - 1); v = substr(line, n + 1)
+            gsub(/[[:space:]]/, "", k); gsub(/^[[:space:]]+|[[:space:]]+$/, "", v)
+            if (tolower(k) == tolower(key)) { print v; exit }
+        }' "$1"
+}
+
+apply() {
+    # The config arrives on stdin, never as a path: a path from www-data
+    # could point root at any file on the machine.
+    local src; src=$(mktemp)
+    trap 'rm -f "$src"' RETURN
+    head -c 16384 > "$src"
+    [[ -s "$src" ]] || die "empty config"
+
+    local priv addr mtu pub psk ep
+    priv=$(field "$src" Interface PrivateKey)
+    addr=$(field "$src" Interface Address)
+    mtu=$(field "$src" Interface MTU)
+    pub=$(field "$src" Peer PublicKey)
+    psk=$(field "$src" Peer PresharedKey)
+    ep=$(field "$src" Peer Endpoint)
+
+    [[ "$priv" =~ $KEY_RE ]] || die "invalid or missing Interface PrivateKey"
+    [[ "$pub" =~ $KEY_RE ]] || die "invalid or missing Peer PublicKey"
+    [[ -z "$psk" || "$psk" =~ $KEY_RE ]] || die "invalid Peer PresharedKey"
+    [[ "$ep" =~ $EP_RE ]] || die "invalid or missing Peer Endpoint (host:port)"
+    [[ -z "$mtu" || ( "$mtu" =~ ^[0-9]{3,4}$ && $mtu -ge 1200 && $mtu -le 1500 ) ]] || die "invalid MTU"
+
+    local a v4= v6= addrs=()
+    IFS=',' read -ra parts <<< "$addr"
+    for a in "${parts[@]}"; do
+        a="${a// /}"
+        if [[ "$a" =~ $V4_RE ]]; then v4=1; addrs+=("$a")
+        elif [[ "$a" =~ $V6_RE ]]; then v6=1; addrs+=("$a")
+        else die "invalid Interface Address: $a"; fi
+    done
+    [[ -n "$v4" ]] || die "Interface Address needs an IPv4 address"
+
+    command -v wg-quick >/dev/null 2>&1 || DEBIAN_FRONTEND=noninteractive apt-get install -y -qq wireguard-tools >/dev/null
+
+    # Routes are ours, not wg-quick's (Table = off): only Telegram's ranges go
+    # into the tunnel. Without an IPv6 address on the tunnel, Telegram's IPv6
+    # ranges are made unreachable instead, so clients fall back to IPv4 at once
+    # rather than trying a filtered direct path first.
+    local up=() down=() c
+    for c in $TG_V4; do up+=("ip -4 route replace $c dev %i"); down+=("ip -4 route del $c dev %i"); done
+    for c in $TG_V6; do
+        if [[ -n "$v6" ]]; then up+=("ip -6 route replace $c dev %i"); down+=("ip -6 route del $c dev %i")
+        else up+=("ip -6 route replace unreachable $c"); down+=("ip -6 route del unreachable $c"); fi
+    done
+
+    install -d -m 0700 /etc/wireguard "$STATE"
+    local tmp; tmp=$(mktemp "${CONF}.XXXXXX")
+    {
+        echo "# Written by panel-tgtunnel. Edit from the panel, not here."
+        echo "[Interface]"
+        echo "PrivateKey = $priv"
+        echo "Address = $(IFS=,; echo "${addrs[*]}")"
+        [[ -n "$mtu" ]] && echo "MTU = $mtu"
+        echo "Table = off"
+        for c in "${up[@]}"; do echo "PostUp = $c || true"; done
+        for c in "${down[@]}"; do echo "PreDown = $c || true"; done
+        echo
+        echo "[Peer]"
+        echo "PublicKey = $pub"
+        [[ -n "$psk" ]] && echo "PresharedKey = $psk"
+        echo "Endpoint = $ep"
+        echo "AllowedIPs = $(echo $TG_V4 | tr ' ' ',')$( [[ -n "$v6" ]] && echo ",$(echo $TG_V6 | tr ' ' ',')")"
+        echo "PersistentKeepalive = 25"
+    } > "$tmp"
+    chmod 0600 "$tmp"
+    mv -f "$tmp" "$CONF"
+
+    systemctl enable "$UNIT" >/dev/null 2>&1 || true
+    systemctl restart "$UNIT"
+    date +%s > "$STATE/applied_at"
+    echo "ok"
+}
+
+down() {
+    systemctl disable --now "$UNIT" >/dev/null 2>&1 || true
+    rm -f "$CONF" "$STATE/applied_at"
+    echo "ok"
+}
+
+handshake_age() {
+    local hs
+    hs=$(wg show "$IFACE" latest-handshakes 2>/dev/null | awk '{print $2; exit}')
+    [[ -n "$hs" && "$hs" != 0 ]] && echo $(( $(date +%s) - hs )) || echo -1
+}
+
+status() {
+    local configured=false active=false age=-1 rx=0 tx=0 endpoint= via=
+    [[ -f "$CONF" ]] && configured=true
+    systemctl is-active --quiet "$UNIT" && active=true
+    if $active; then
+        age=$(handshake_age)
+        read -r rx tx < <(wg show "$IFACE" transfer 2>/dev/null | awk '{r+=$2; t+=$3} END {print r+0, t+0}')
+        endpoint=$(wg show "$IFACE" endpoints 2>/dev/null | awk '{print $2; exit}')
+    fi
+    via=$(ip -4 route get 149.154.167.220 2>/dev/null | grep -o 'dev [^ ]*' | awk '{print $2}')
+    printf '{"configured":%s,"active":%s,"handshake_age":%s,"rx":%s,"tx":%s,"endpoint":"%s","telegram_via":"%s"}\n' \
+        "$configured" "$active" "$age" "${rx:-0}" "${tx:-0}" "$endpoint" "$via"
+}
+
+test_tunnel() {
+    systemctl is-active --quiet "$UNIT" || { echo '{"ok":false,"error":"tunnel is not running"}'; return; }
+    local before after code
+    before=$(wg show "$IFACE" transfer 2>/dev/null | awk '{r+=$2} END {print r+0}')
+    # --interface pins the request to the tunnel, so a success here cannot
+    # come from the normal route.
+    code=$(curl -4 -s -o /dev/null -w '%{http_code}' --interface "$IFACE" -m 15 https://api.telegram.org/ || true)
+    after=$(wg show "$IFACE" transfer 2>/dev/null | awk '{r+=$2} END {print r+0}')
+    local ok=false
+    [[ "$code" =~ ^[1-5][0-9][0-9]$ && "$code" != 000 ]] && ok=true
+    printf '{"ok":%s,"http":"%s","bytes_received":%s,"telegram_via":"%s"}\n' \
+        "$ok" "$code" $(( after - before )) \
+        "$(ip -4 route get 149.154.167.220 2>/dev/null | grep -o 'dev [^ ]*' | awk '{print $2}')"
+}
+
+watchdog() {
+    [[ -f "$CONF" ]] || exit 0
+    if ! systemctl is-active --quiet "$UNIT"; then
+        systemctl restart "$UNIT" || true
+        return
+    fi
+    local age; age=$(handshake_age)
+    # A handshake older than this means the peer stopped answering (server
+    # restarted, endpoint IP changed): a restart re-resolves and re-handshakes.
+    if [[ "$age" -lt 0 || "$age" -gt "$STALE_AFTER" ]]; then
+        systemctl restart "$UNIT" || true
+    fi
+}
+
+case "${1:-}" in
+    apply)    apply ;;
+    down)     down ;;
+    status)   status ;;
+    test)     test_tunnel ;;
+    watchdog) watchdog ;;
+    *)        die "usage: panel-tgtunnel apply < config | down | status | test | watchdog" ;;
+esac

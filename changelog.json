@@ -1,6 +1,40 @@
 {
     "versions": [
         {
+            "version": "3.21.0",
+            "date": "2026-10-22",
+            "notes": {
+                "fa": [
+                    "ادمین برای هر نماینده و فروشنده جداگانه تعیین می‌کند که ربات فروش اختصاصی داشته باشد؛ هر نماینده هم برای فروشنده‌های خودش. با برداشتن دسترسی یک نماینده، ربات فروشنده‌هایش هم می‌ایستد.",
+                    "منوی «ربات من» برای هر نماینده و فروشنده‌ای که دسترسی دارد در پنل خودش نشان داده می‌شود.",
+                    "ماژول تازهٔ «تانل تلگرام»: برای سرورهایی که تلگرام رویشان فیلتر است یک اکانت وایرگارد می‌دهید و فقط ترافیک تلگرام از آن رد می‌شود؛ بقیهٔ ترافیک سرور دست نمی‌خورد. اتصال دائمی است، نگهبانِ هر دقیقه آن را در صورت قطعی دوباره وصل می‌کند، و وضعیتش روی داشبورد ادمین دیده می‌شود.",
+                    "از کانفیگ وایرگاردی که داده می‌شود فقط کلیدها، آدرس و سرور خوانده می‌شود؛ دستورهای PostUp/PreUp و AllowedIPs آن هرگز اجرا یا استفاده نمی‌شوند.",
+                    "دستور تازهٔ panel:repair-volume-renewals حجمی را که باگ «ارتقای حجم» پیش از ۳.۱۹.۰ از مشتری گرفته بود پیدا و جبران می‌کند. بدون --apply فقط گزارش می‌دهد و اجرای دوباره‌اش بی‌خطر است."
+                ],
+                "en": [
+                    "The admin decides per agent and seller who gets their own sales bot, and each agent decides for their own sellers. Taking an agent's access away stops their sellers' bots too.",
+                    "\"My bot\" now appears in the panel of every agent and seller who has access.",
+                    "New \"Telegram tunnel\" module: for servers where Telegram is filtered, give it a WireGuard account and only Telegram's traffic goes through it; the rest of the server is untouched. The connection is permanent, a watchdog reconnects it every minute if it drops, and its state shows on the admin dashboard.",
+                    "Only the keys, address and endpoint of the given WireGuard config are read; its PostUp/PreUp commands and AllowedIPs are never run or used.",
+                    "New command panel:repair-volume-renewals finds and pays back the volume the \"upgrade volume\" renewal bug took before 3.19.0. Without --apply it only reports, and running it again is safe."
+                ],
+                "ru": [
+                    "The admin decides per agent and seller who gets their own sales bot, and each agent decides for their own sellers. Taking an agent's access away stops their sellers' bots too.",
+                    "\"My bot\" now appears in the panel of every agent and seller who has access.",
+                    "New \"Telegram tunnel\" module: for servers where Telegram is filtered, give it a WireGuard account and only Telegram's traffic goes through it; the rest of the server is untouched. The connection is permanent, a watchdog reconnects it every minute if it drops, and its state shows on the admin dashboard.",
+                    "Only the keys, address and endpoint of the given WireGuard config are read; its PostUp/PreUp commands and AllowedIPs are never run or used.",
+                    "New command panel:repair-volume-renewals finds and pays back the volume the \"upgrade volume\" renewal bug took before 3.19.0. Without --apply it only reports, and running it again is safe."
+                ],
+                "zh": [
+                    "The admin decides per agent and seller who gets their own sales bot, and each agent decides for their own sellers. Taking an agent's access away stops their sellers' bots too.",
+                    "\"My bot\" now appears in the panel of every agent and seller who has access.",
+                    "New \"Telegram tunnel\" module: for servers where Telegram is filtered, give it a WireGuard account and only Telegram's traffic goes through it; the rest of the server is untouched. The connection is permanent, a watchdog reconnects it every minute if it drops, and its state shows on the admin dashboard.",
+                    "Only the keys, address and endpoint of the given WireGuard config are read; its PostUp/PreUp commands and AllowedIPs are never run or used.",
+                    "New command panel:repair-volume-renewals finds and pays back the volume the \"upgrade volume\" renewal bug took before 3.19.0. Without --apply it only reports, and running it again is safe."
+                ]
+            }
+        },
+        {
             "version": "3.20.0",
             "date": "2026-10-21",
             "notes": {

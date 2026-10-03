@@ -15,6 +15,7 @@ use Modules\ShahBot\Http\Controllers\Admin\SettingsController;
 use Modules\ShahBot\Http\Controllers\Admin\TicketController;
 use Modules\ShahBot\Http\Controllers\Admin\TutorialController;
 use Modules\ShahBot\Http\Controllers\Admin\UserController;
+use Modules\ShahBot\Http\Controllers\Panel\BotAccessController;
 use Modules\ShahBot\Http\Controllers\Panel\MyBotController;
 
 /*
@@ -71,6 +72,8 @@ Route::prefix(PortalPaths::slug('admin'))->name('admin.')->middleware($adminMidd
         Route::post('agents/requests/{agencyRequest}/approve', [AgentController::class, 'approve'])->name('agents.approve');
         Route::post('agents/requests/{agencyRequest}/reject', [AgentController::class, 'reject'])->name('agents.reject');
         Route::post('agents/bots/{bot}/toggle', [AgentController::class, 'toggleBot'])->name('agents.bots.toggle');
+        Route::get('access', [BotAccessController::class, 'admin'])->name('access');
+        Route::post('access', [BotAccessController::class, 'update'])->name('access.update');
 
         Route::get('lotteries', [LotteryController::class, 'index'])->name('lotteries.index');
         Route::post('lotteries', [LotteryController::class, 'store'])->name('lotteries.store');
@@ -97,5 +100,8 @@ foreach (['agent', 'seller'] as $role) {
         Route::get('shahbot/plans', [MyBotController::class, 'plans'])->name('shahbot.my-bot.plans');
         Route::post('shahbot/plans', [MyBotController::class, 'savePlans'])->name('shahbot.my-bot.plans.save');
         Route::post('shahbot/broadcast', [MyBotController::class, 'broadcast'])->name('shahbot.my-bot.broadcast');
+        // Agents only; the controller refuses sellers.
+        Route::get('shahbot/access', [BotAccessController::class, 'agent'])->name('shahbot.access');
+        Route::post('shahbot/access', [BotAccessController::class, 'update'])->name('shahbot.access.update');
     });
 }

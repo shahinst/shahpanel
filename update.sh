@@ -467,6 +467,30 @@ install_web_updater() {
 }
 install_web_updater
 
+# Telegram tunnel helper (the tgtunnel module drives it). Installed whether or
+# not the module is on, so turning the module on needs no root step.
+install_tgtunnel_helper() {
+  local src="$APP_DIR/scripts/panel-tgtunnel"
+  [[ -f "$src" ]] || return 0
+  install -o root -g root -m 0750 "$src" /usr/local/sbin/.panel-tgtunnel.new
+  mv -f /usr/local/sbin/.panel-tgtunnel.new /usr/local/sbin/panel-tgtunnel
+  printf 'www-data ALL=(root) NOPASSWD: /usr/local/sbin/panel-tgtunnel\n' > /etc/sudoers.d/.panel-tgtunnel.new
+  chmod 0440 /etc/sudoers.d/.panel-tgtunnel.new
+  if visudo -cf /etc/sudoers.d/.panel-tgtunnel.new >/dev/null 2>&1; then
+    mv -f /etc/sudoers.d/.panel-tgtunnel.new /etc/sudoers.d/panel-tgtunnel
+  else
+    rm -f /etc/sudoers.d/.panel-tgtunnel.new
+    warn "telegram tunnel helper not installed: the sudoers rule was rejected"
+    return 0
+  fi
+  # The watchdog keeps the tunnel up: it restarts it when it is down or the
+  # peer has stopped answering. It does nothing while no tunnel is set up.
+  printf '* * * * * root /usr/local/sbin/panel-tgtunnel watchdog >/dev/null 2>&1\n' > /etc/cron.d/panel-tgtunnel
+  chmod 0644 /etc/cron.d/panel-tgtunnel
+  ok "telegram tunnel helper installed"
+}
+install_tgtunnel_helper
+
 # restart, not reload: a reload keeps the existing workers alive, so OPcache
 # goes on serving the PHP files from before the update and the panel silently
 # runs half the old code until something else restarts the service.

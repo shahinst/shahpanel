@@ -7,6 +7,7 @@
         ['admin.shahbot.refunds.index', 'bx-undo', 'tab_refunds', ['admin.shahbot.refunds.*']],
         ['admin.shahbot.codes.index', 'bx-purchase-tag', 'tab_codes', ['admin.shahbot.codes.*']],
         ['admin.shahbot.agents.index', 'bx-briefcase', 'tab_agents', ['admin.shahbot.agents.*']],
+        ['admin.shahbot.access', 'bx-key', 'bot_access', ['admin.shahbot.access*']],
         ['admin.shahbot.lotteries.index', 'bx-trophy', 'tab_fun', ['admin.shahbot.lotteries.*']],
         ['admin.shahbot.broadcasts.index', 'bx-broadcast', 'tab_broadcasts', ['admin.shahbot.broadcasts.*']],
         ['admin.shahbot.tickets.index', 'bx-support', 'tab_tickets', ['admin.shahbot.tickets.*']],
