@@ -975,11 +975,11 @@ If you cannot support the project financially, a ⭐ on the repository and bug r
 
 ## 📄 License
 
-ShahPanel is free software, released under the **GNU Affero General Public License, version 3 ([AGPL-3.0](LICENSE))**.
+ShahPanel is free software, released under the **GNU Affero General Public License, version 3 or (at your option) any later version ([AGPL-3.0-or-later](LICENSE))**.
 
 ```
 Copyright (C) 2026 shahinst
-SPDX-License-Identifier: AGPL-3.0-only
+SPDX-License-Identifier: AGPL-3.0-or-later
 ```
 
 | ✅ Permissions | 📌 Conditions | ❌ Limitations |

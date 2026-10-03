@@ -974,11 +974,11 @@ tools/maintain-core.php 独立于 Laravel 的诊断页面（需令牌）
 
 ## 📄 许可证
 
-ShahPanel 是自由软件，依据 **GNU Affero 通用公共许可证第 3 版（[AGPL-3.0](LICENSE)）** 发布。
+ShahPanel 是自由软件，依据 **GNU Affero 通用公共许可证第 3 版或（由您选择）任何更高版本（[AGPL-3.0-or-later](LICENSE)）** 发布。
 
 ```
 Copyright (C) 2026 shahinst
-SPDX-License-Identifier: AGPL-3.0-only
+SPDX-License-Identifier: AGPL-3.0-or-later
 ```
 
 | ✅ 允许 | 📌 条件 | ❌ 限制 |

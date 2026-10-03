@@ -978,11 +978,11 @@ tools/maintain-core.php صفحه‌ی تشخیص مستقل از Laravel (پشت
 
 ## 📄 مجوز
 
-شاه‌پنل نرم‌افزاری آزاد است و تحت **مجوز عمومی همگانی افرو گنو، نسخهٔ ۳ ([GNU AGPL-3.0](LICENSE))** منتشر می‌شود.
+شاه‌پنل نرم‌افزاری آزاد است و تحت **مجوز عمومی همگانی افرو گنو، نسخهٔ ۳ یا (به انتخاب شما) هر نسخهٔ بعدی آن ([GNU AGPL-3.0-or-later](LICENSE))** منتشر می‌شود.
 
 ```
 Copyright (C) 2026 shahinst
-SPDX-License-Identifier: AGPL-3.0-only
+SPDX-License-Identifier: AGPL-3.0-or-later
 ```
 
 | ✅ مجاز | 📌 شرط | ❌ تضمین |

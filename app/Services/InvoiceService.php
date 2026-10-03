@@ -52,7 +52,7 @@ class InvoiceService
     }
 
     /**
-     * The invoice as PDF bytes: Persian text shaped by mPDF, Vazirmatn,
+     * The invoice as PDF bytes: Persian text shaped by TCPDF, Vazirmatn,
      * Persian digits and Jalali dates on Persian pages.
      */
     public function renderPdf(Invoice $invoice): string
@@ -60,9 +60,12 @@ class InvoiceService
         $invoice->loadMissing(['buyer', 'seller', 'agent', 'account.package', 'account.packageDuration', 'account.server', 'account.clientUser', 'items']);
 
         $amount = (float) $invoice->total;
+        $siteName = (string) (\App\Models\Setting::getValue('site_name') ?: config('app.name'));
+        $siteUrl = (string) (\App\Models\Setting::getValue('site_url') ?: '');
 
         return \App\Support\PersianPdf::render('pdf.invoice', [
             'pdfTitle' => __('ui.sales_invoice').' '.$invoice->invoice_number,
+            'pdfFooter' => $siteUrl !== '' ? $siteName.' — '.$siteUrl : $siteName,
             'invoice' => $invoice,
             'client' => $invoice->account?->clientUser,
             // Only what the buyer paid: the other legs (agent margin, admin

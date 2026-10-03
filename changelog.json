@@ -1,6 +1,32 @@
 {
     "versions": [
         {
+            "version": "3.10.2",
+            "date": "2026-10-12",
+            "notes": {
+                "fa": [
+                    "مجوز به AGPL-3.0-or-later تغییر کرد (نسخهٔ ۳ یا هر نسخهٔ بعدی AGPL)",
+                    "ساخت PDF فاکتور و گزارش حسابداری از mPDF (با مجوز GPL-2.0 که با AGPL ناسازگار بود) به TCPDF (مجوز LGPL-3.0) منتقل شد؛ فارسی، وزیرمتن، اعداد فارسی و تاریخ شمسی مثل قبل حفظ شد",
+                    "قالب فاکتور PDF و گزارش حسابداری برای چیدمان دقیق‌تر بازنویسی شد"
+                ],
+                "en": [
+                    "The licence is now AGPL-3.0-or-later (version 3 or any later version of the AGPL)",
+                    "Invoice and accounting PDFs moved from mPDF (GPL-2.0, incompatible with the AGPL) to TCPDF (LGPL-3.0); Persian shaping, Vazirmatn, Persian digits and Jalali dates are kept",
+                    "The invoice and accounting PDF layouts were rewritten for a more precise layout"
+                ],
+                "ru": [
+                    "Лицензия изменена на AGPL-3.0-or-later (версия 3 или любая более поздняя версия AGPL)",
+                    "PDF счетов и бухгалтерских отчётов переведены с mPDF (GPL-2.0, несовместима с AGPL) на TCPDF (LGPL-3.0); персидский текст, шрифт Vazirmatn, персидские цифры и даты по солнечной хиджре сохранены",
+                    "Шаблоны PDF счёта и бухгалтерского отчёта переписаны для более точной вёрстки"
+                ],
+                "zh": [
+                    "许可证改为 AGPL-3.0-or-later（AGPL 第 3 版或任何更高版本）",
+                    "发票和会计 PDF 从 mPDF（GPL-2.0，与 AGPL 不兼容）迁移到 TCPDF（LGPL-3.0）；保留波斯语排版、Vazirmatn 字体、波斯数字和伊朗历日期",
+                    "发票和会计报表 PDF 模板重写，排版更精确"
+                ]
+            }
+        },
+        {
             "version": "3.10.1",
             "date": "2026-10-11",
             "notes": {
