@@ -8,7 +8,7 @@
 
 <br>
 
-[![License](https://img.shields.io/badge/license-proprietary-red?style=flat-square)](#-license)
+[![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square)](LICENSE)
 [![PHP](https://img.shields.io/badge/PHP-8.2%2B-777bb4?style=flat-square&logo=php&logoColor=white)](https://php.net)
 [![Laravel](https://img.shields.io/badge/Laravel-11-ff2d20?style=flat-square&logo=laravel&logoColor=white)](https://laravel.com)
 [![MySQL](https://img.shields.io/badge/MySQL-8%2B-4479a1?style=flat-square&logo=mysql&logoColor=white)](https://mysql.com)
@@ -975,7 +975,23 @@ If you cannot support the project financially, a ⭐ on the repository and bug r
 
 ## 📄 License
 
-This project is **proprietary**. Use, redistribution or resale without written permission is not allowed.
+ShahPanel is free software, released under the **GNU Affero General Public License, version 3 ([AGPL-3.0](LICENSE))**.
+
+```
+Copyright (C) 2026 shahinst
+SPDX-License-Identifier: AGPL-3.0-only
+```
+
+| ✅ Permissions | 📌 Conditions | ❌ Limitations |
+|---|---|---|
+| Private and commercial use | Keep the copyright notice and the license text | No warranty (AS IS) |
+| Modification | Modified versions are released under the same license (AGPL-3.0) | No liability |
+| Distribution | State the changes you made | |
+| Patent use | **Offer the source code to every user who interacts with the panel over a network** (section 13) | |
+
+If you run a modified copy of the panel and other people (agents, sellers or clients) use it over the web, you must make the source of that exact version available to them. The "Source code" link in the panel footer exists for this; point it at your own repository with `SHAHPANEL_SOURCE_URL` in `.env`.
+
+The full license text is in [LICENSE](LICENSE).
 
 <div align="center">
 <br>

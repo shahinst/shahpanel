@@ -8,7 +8,7 @@
 
 <br>
 
-[![License](https://img.shields.io/badge/license-proprietary-red?style=flat-square)](#-许可证)
+[![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square)](LICENSE)
 [![PHP](https://img.shields.io/badge/PHP-8.2%2B-777bb4?style=flat-square&logo=php&logoColor=white)](https://php.net)
 [![Laravel](https://img.shields.io/badge/Laravel-11-ff2d20?style=flat-square&logo=laravel&logoColor=white)](https://laravel.com)
 [![MySQL](https://img.shields.io/badge/MySQL-8%2B-4479a1?style=flat-square&logo=mysql&logoColor=white)](https://mysql.com)
@@ -974,7 +974,23 @@ tools/maintain-core.php 独立于 Laravel 的诊断页面（需令牌）
 
 ## 📄 许可证
 
-本项目为**专有软件（proprietary）**。未经书面许可，不得使用、再分发或销售。
+ShahPanel 是自由软件，依据 **GNU Affero 通用公共许可证第 3 版（[AGPL-3.0](LICENSE)）** 发布。
+
+```
+Copyright (C) 2026 shahinst
+SPDX-License-Identifier: AGPL-3.0-only
+```
+
+| ✅ 允许 | 📌 条件 | ❌ 限制 |
+|---|---|---|
+| 个人及商业使用 | 保留版权声明和许可证文本 | 不提供任何担保（AS IS） |
+| 修改代码 | 修改后的版本只能以相同许可证（AGPL-3.0）发布 | 不承担任何责任 |
+| 再分发 | 注明所做的修改 | |
+| 专利使用 | **向所有通过网络使用面板的用户提供源代码**（第 13 条） | |
+
+如果您运行修改过的面板，并且其他人（代理、销售员或客户）通过网页使用它，您必须向他们提供该版本的源代码。面板页脚的“源代码”链接正是为此而设；请在 `.env` 中通过 `SHAHPANEL_SOURCE_URL` 将其指向您自己的仓库。
+
+完整的许可证文本见 [LICENSE](LICENSE)。
 
 <div align="center">
 <br>

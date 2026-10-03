@@ -28,6 +28,7 @@ return [
     'copied' => 'Скопировано',
     'links_title' => 'Автор',
     'version_label' => 'Версия :version',
+    'source_code' => 'Исходный код (AGPL-3.0)',
     'star_title' => 'Добро пожаловать в ShahPanel! ⭐',
     'star_text' => 'Если ShahPanel вам полезна, поставьте проекту звезду на GitHub — это помогает его развитию.',
     'star_button' => 'Поставить звезду на GitHub',

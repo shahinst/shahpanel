@@ -3,7 +3,7 @@
     "type": "project",
     "description": "Multi-tenant VPN reseller panel for MikroTik, Sanaei (3x-ui), Pasarguard, Remnawave and Cisco AnyConnect.",
     "keywords": ["vpn", "mikrotik", "reseller", "laravel", "3x-ui", "remnawave", "pasarguard"],
-    "license": "proprietary",
+    "license": "AGPL-3.0-only",
     "require": {
         "php": "^8.2",
         "ext-zip": "*",
