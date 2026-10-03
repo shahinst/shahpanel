@@ -3,7 +3,7 @@
 @section('page_title', __('shahbot::admin.tab_settings'))
 
 @php
-    $tabs = ['connection' => 'set_connection', 'store' => 'set_store', 'wallet' => 'set_wallet', 'online' => 'set_online', 'agents' => 'set_agents', 'marketing' => 'set_marketing', 'gates' => 'set_gates', 'texts' => 'set_texts'];
+    $tabs = ['connection' => 'set_connection', 'store' => 'set_store', 'wallet' => 'set_wallet', 'online' => 'set_online', 'agents' => 'set_agents', 'fun' => 'set_fun', 'marketing' => 'set_marketing', 'gates' => 'set_gates', 'texts' => 'set_texts'];
     $tab = array_key_exists($tab, $tabs) ? $tab : 'connection';
     $toggle = function (string $key) use ($settings): string {
         return '<input type="hidden" name="_bool_'.$key.'" value="1">'
@@ -138,6 +138,17 @@
                 <hr>
                 {!! $toggle('agent_bots_enabled') !!}
                 <p class="sb-muted">{{ __('shahbot::admin.agent_bots_hint') }}</p>
+            @elseif ($tab === 'fun')
+                {!! $toggle('wheel_enabled') !!}
+                {!! $toggle('wheel_buyers_only') !!}
+                <div class="row g-3">
+                    <div class="col-md-3"><label class="form-label">{{ __('shahbot::admin.wheel_cooldown_hours') }}</label><input type="number" min="1" max="720" name="wheel_cooldown_hours" value="{{ $settings->get('wheel_cooldown_hours') }}" class="form-control"></div>
+                    <div class="col-12">
+                        <label class="form-label">{{ __('shahbot::admin.wheel_prizes') }}</label>
+                        <textarea name="wheel_prizes" rows="7" class="form-control" dir="auto">{{ $settings->get('wheel_prizes') }}</textarea>
+                        <div class="sb-muted mt-1">{{ __('shahbot::admin.wheel_prizes_hint') }}</div>
+                    </div>
+                </div>
             @elseif ($tab === 'marketing')
                 {!! $toggle('referral_enabled') !!}
                 <div class="row g-3 mb-2">

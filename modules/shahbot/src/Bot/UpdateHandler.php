@@ -26,6 +26,7 @@ use Modules\ShahBot\Services\AgencyService;
 use Modules\ShahBot\Services\BotNotifier;
 use Modules\ShahBot\Services\BotUserService;
 use Modules\ShahBot\Services\CodeService;
+use Modules\ShahBot\Services\FunService;
 use Modules\ShahBot\Services\OnlinePaymentService;
 use Modules\ShahBot\Services\PaymentService;
 use Modules\ShahBot\Services\ResellerService;
@@ -63,6 +64,7 @@ class UpdateHandler
         protected OnlinePaymentService $online,
         protected AgencyService $agency,
         protected ResellerService $resellers,
+        protected FunService $fun,
     ) {}
 
     public function handle(array $update): void
@@ -369,6 +371,8 @@ class UpdateHandler
             'referral' => $this->settings->bool('referral_enabled'),
             'agency' => $isReseller || $this->agency->available($this->user),
             'app' => $miniApp !== null,
+            'wheel' => $this->fun->wheelOpen(),
+            'lottery' => $this->fun->activeLottery() !== null,
         ];
 
         $rows = [];
@@ -427,6 +431,8 @@ class UpdateHandler
                 ? $this->askFor('agency_note', e($this->settings->get('agency_text')))
                 : throw new InvalidArgumentException(__('shahbot::bot.agency_closed')),
             'menu_reseller' => fn () => $this->showReseller(),
+            'menu_wheel' => fn () => $this->showWheel(),
+            'menu_lottery' => fn () => $this->showLottery(),
             'menu_admin' => fn () => $this->settings->isAdminChat($this->user->telegram_id) ? $this->showAdmin() : $this->reply(__('shahbot::bot.unknown')),
         ];
 
@@ -635,6 +641,7 @@ class UpdateHandler
             'test' => $this->testCallback($messageId),
             'tut' => $this->tutorialCallback($parts, $messageId),
             'rs' => $this->resellerCallback($parts, $messageId),
+            'fun' => ($parts[1] ?? '') === 'spin' ? $this->spinWheel($messageId) : null,
             default => null,
         };
     }
@@ -1454,6 +1461,64 @@ class UpdateHandler
             $this->agency->reject($request, $reviewer);
             $this->notifier->admins(__('shahbot::bot.admin_agency_rejected', ['id' => $requestId, 'by' => e($reviewer)]));
         }
+    }
+
+    // --- Lucky wheel and lottery ---------------------------------------------
+
+    protected function showWheel(): void
+    {
+        if (! $this->fun->wheelOpen()) {
+            throw new InvalidArgumentException(__('shahbot::bot.wheel_closed'));
+        }
+
+        $prizes = collect($this->fun->prizes())->pluck('label')->map(fn ($l) => '🎁 '.e($l))->implode("\n");
+        $next = $this->fun->nextSpinAt($this->user);
+
+        $this->reply(__('shahbot::bot.wheel_intro', [
+            'prizes' => $prizes,
+            'hours' => persian_digits($this->settings->int('wheel_cooldown_hours')),
+        ]), $next === null
+            ? Keyboard::inline([[Keyboard::button(__('shahbot::bot.btn_spin'), 'fun:spin')]])
+            : null);
+
+        if ($next !== null) {
+            $this->reply(__('shahbot::bot.wheel_wait', ['time' => jalali_date($next, 'Y/m/d H:i')]));
+        }
+    }
+
+    protected function spinWheel(int $messageId): void
+    {
+        $spin = $this->fun->spin($this->user);
+
+        // Purely for the show: Telegram's own slot machine animation.
+        $this->tg->call('sendDice', ['chat_id' => $this->chatId, 'emoji' => '🎰'], 10);
+
+        $text = match ($spin->prize_type) {
+            'wallet' => __('shahbot::bot.wheel_won_wallet', ['prize' => e($spin->prize_label), 'amount' => format_money($spin->prize_value)]),
+            'discount' => __('shahbot::bot.wheel_won_code', ['prize' => e($spin->prize_label), 'code' => e((string) $spin->code)]),
+            default => __('shahbot::bot.wheel_lost', ['prize' => e($spin->prize_label)]),
+        };
+
+        $this->say($messageId, $text);
+    }
+
+    protected function showLottery(): void
+    {
+        $lottery = $this->fun->activeLottery();
+
+        if ($lottery === null) {
+            throw new InvalidArgumentException(__('shahbot::bot.lottery_none'));
+        }
+
+        $this->reply(__('shahbot::bot.lottery_info', [
+            'title' => e($lottery->title),
+            'description' => e((string) $lottery->description),
+            'amount' => format_money($lottery->prize_amount),
+            'winners' => persian_digits($lottery->winners_count),
+            'from' => jalali_date($lottery->starts_at, 'Y/m/d'),
+            'draw' => jalali_date($lottery->draw_at, 'Y/m/d H:i'),
+            'tickets' => persian_digits($this->fun->ticketsOf($lottery, $this->user)),
+        ]));
     }
 
     // --- Reseller -----------------------------------------------------------

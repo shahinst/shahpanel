@@ -23,12 +23,15 @@ use Modules\ShahBot\Models\BotAgencyRequest;
 use Modules\ShahBot\Models\BotCode;
 use Modules\ShahBot\Models\BotGatewayPayment;
 use Modules\ShahBot\Models\BotInstance;
+use Modules\ShahBot\Models\BotLottery;
 use Modules\ShahBot\Models\BotOrder;
 use Modules\ShahBot\Models\BotPayment;
 use Modules\ShahBot\Models\BotReferralReward;
 use Modules\ShahBot\Models\BotUser;
+use Modules\ShahBot\Models\BotWheelSpin;
 use Modules\ShahBot\Services\BotUserService;
 use Modules\ShahBot\Services\CodeService;
+use Modules\ShahBot\Services\FunService;
 use Modules\ShahBot\Services\OnlinePaymentService;
 use Modules\ShahBot\Services\PaymentService;
 use Modules\ShahBot\Services\ShopService;
@@ -246,11 +249,12 @@ class ShahBotTest extends TestCase
             'admin.shahbot.tickets.index',
             'admin.shahbot.tutorials.index',
             'admin.shahbot.agents.index',
+            'admin.shahbot.lotteries.index',
         ] as $route) {
             $this->actingAs($admin)->get(route($route))->assertOk();
         }
 
-        foreach (['connection', 'store', 'wallet', 'online', 'agents', 'marketing', 'gates', 'texts'] as $tab) {
+        foreach (['connection', 'store', 'wallet', 'online', 'agents', 'fun', 'marketing', 'gates', 'texts'] as $tab) {
             $this->actingAs($admin)->get(route('admin.shahbot.settings', ['tab' => $tab]))->assertOk();
         }
 
@@ -562,5 +566,52 @@ class ShahBotTest extends TestCase
 
         $fields['hash'] = str_repeat('0', 64);
         $this->postJson(route('shahbot.app.me', ['bot' => 0]), ['initData' => http_build_query($fields)])->assertUnauthorized();
+    }
+
+    public function test_lucky_wheel_pays_once_per_cooldown(): void
+    {
+        app(BotSettings::class)->set(['wheel_enabled' => '1', 'wheel_buyers_only' => '0', 'wheel_prizes' => 'Big prize|wallet|500|1']);
+        $this->text(1414, '/start');
+        $this->press(1414, 'fun:spin');
+        $this->press(1414, 'fun:spin');
+
+        $user = BotUser::query()->where('telegram_id', 1414)->firstOrFail();
+        $this->assertSame(1, BotWheelSpin::query()->where('bot_user_id', $user->id)->count());
+        $this->assertSame('500.00', $this->balance(app(BotUserService::class)->client($user)));
+
+        app(BotSettings::class)->set(['wheel_prizes' => 'Coupon|discount|15|1', 'wheel_cooldown_hours' => '1']);
+        $this->travel(2)->hours();
+        $this->press(1414, 'fun:spin');
+        $code = BotWheelSpin::query()->latest('id')->value('code');
+        $this->assertNotNull($code);
+        $this->assertSame(1, BotCode::query()->where('code', $code)->value('max_uses'));
+    }
+
+    public function test_lottery_draws_weighted_winners_and_pays_them(): void
+    {
+        $a = $this->botUser(1501);
+        $b = $this->botUser(1502);
+        BotOrder::query()->create(['bot_user_id' => $a->id, 'type' => 'buy', 'amount' => 100]);
+        BotOrder::query()->create(['bot_user_id' => $b->id, 'type' => 'renew', 'amount' => 100]);
+        BotOrder::query()->create(['bot_user_id' => $b->id, 'type' => 'test', 'amount' => 0]);
+
+        $lottery = BotLottery::query()->create([
+            'title' => 'Weekly', 'prize_amount' => 1000, 'winners_count' => 1,
+            'starts_at' => now()->subDay(), 'draw_at' => now()->addMinutes(5), 'status' => 'open',
+        ])->fresh();
+
+        $fun = app(FunService::class);
+        $this->assertSame(1, $fun->ticketsOf($lottery, $a));
+        $this->assertSame(0, $fun->drawDue());
+
+        $this->travel(10)->minutes();
+        $this->assertSame(1, $fun->drawDue());
+
+        $lottery->refresh();
+        $this->assertSame('drawn', $lottery->status);
+        $this->assertSame(2, $lottery->participants);
+        $winner = BotUser::query()->findOrFail($lottery->winners[0]);
+        $this->assertSame('1000.00', $this->balance(app(BotUserService::class)->client($winner)));
+        $this->assertSame(0, $fun->drawDue());
     }
 }

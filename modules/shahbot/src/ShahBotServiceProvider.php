@@ -54,6 +54,7 @@ class ShahBotServiceProvider extends ServiceProvider
                 Console\BroadcastCommand::class,
                 Console\RemindCommand::class,
                 Console\GatewaySyncCommand::class,
+                Console\LotteryCommand::class,
             ]);
         }
 
@@ -63,6 +64,7 @@ class ShahBotServiceProvider extends ServiceProvider
             $schedule->command('shahbot:poll')->everyMinute()->withoutOverlapping(2)->runInBackground()->name('shahbot.poll');
             $schedule->command('shahbot:broadcast')->everyMinute()->withoutOverlapping(10)->runInBackground()->name('shahbot.broadcast');
             $schedule->command('shahbot:gateway-sync')->everyMinute()->withoutOverlapping(5)->name('shahbot.gateway-sync');
+            $schedule->command('shahbot:lottery')->everyFiveMinutes()->withoutOverlapping(10)->name('shahbot.lottery');
             $schedule->command('shahbot:remind')->hourlyAt(17)->withoutOverlapping()->name('shahbot.remind');
         });
     }

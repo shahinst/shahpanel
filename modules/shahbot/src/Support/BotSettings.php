@@ -82,6 +82,12 @@ class BotSettings
             'reminder_days' => '2',
             'low_traffic_percent' => '10',
 
+            // Lucky wheel
+            'wheel_enabled' => '0',
+            'wheel_cooldown_hours' => '24',
+            'wheel_buyers_only' => '1',
+            'wheel_prizes' => "پوچ|none|0|50\n۱۰٪ تخفیف|discount|10|25\n۲۰٬۰۰۰ تومان شارژ|wallet|20000|15\n۵۰٬۰۰۰ تومان شارژ|wallet|50000|8\n۲۰٪ تخفیف|discount|20|2",
+
             // Editors and mini app
             'texts' => '',
             'menu_layout' => '',
