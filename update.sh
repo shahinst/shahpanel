@@ -123,6 +123,7 @@ DUMP=""
 CODE_CHANGED=0
 VENDOR_TOUCHED=0
 MIGRATE_STARTED=0
+MAINTENANCE=0
 STARTED_AT="$(date -Is)"
 
 step() { STEP_NO=$((STEP_NO+1)); echo -e "\n${BLU}${BLD}[${STEP_NO}/8] $*${RST}"; }
@@ -195,6 +196,9 @@ rollback() {
   fi
 
   sudo -u www-data php artisan optimize:clear >/dev/null 2>&1 || true
+  if [[ "$MAINTENANCE" -eq 1 ]]; then
+    sudo -u www-data php artisan up >/dev/null 2>&1 || rm -f "$APP_DIR/storage/framework/down"
+  fi
   secure_permissions 2>/dev/null || true
   sudo -u www-data php artisan queue:restart >/dev/null 2>&1 || true
   restart_php || true
@@ -377,6 +381,9 @@ ok "vendor/ is up to date"
 # minute with "Failed to open stream: Permission denied".
 step "Running migrations"
 stage "migrate"
+# Visitors get a short "back in a moment" page instead of errors from new
+# code running against a half-migrated database.
+if sudo -u www-data php artisan down --retry=30 >/dev/null 2>&1; then MAINTENANCE=1; fi
 MIGRATE_STARTED=1
 run sudo -u www-data php artisan migrate --force
 ok "schema is up to date"
@@ -417,6 +424,10 @@ stage "verify"
 # not discovered by the first visitor.
 run sudo -u www-data php artisan --version
 run sudo -u www-data php artisan route:list --path=__shahpanel_healthcheck__ >/dev/null 2>&1 || sudo -u www-data php artisan about --only=environment >/dev/null
+if [[ "$MAINTENANCE" -eq 1 ]]; then
+  sudo -u www-data php artisan up >/dev/null 2>&1 || true
+  MAINTENANCE=0
+fi
 
 
 # Root-side launcher for the panel's "Update" button (scripts/shahpanel-update).

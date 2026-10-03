@@ -26,6 +26,7 @@ use Throwable;
  */
 class SendDatabaseBackupToTelegramJob implements ShouldQueue
 {
+    use \App\Jobs\Concerns\RunsOnBackupQueue;
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     /**
@@ -47,7 +48,9 @@ class SendDatabaseBackupToTelegramJob implements ShouldQueue
      */
     public function __construct(
         public string $slot,
-    ) {}
+    ) {
+        $this->useBackupQueue();
+    }
 
     public function handle(
         DatabaseBackupService $backupService,

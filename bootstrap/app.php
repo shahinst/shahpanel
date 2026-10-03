@@ -25,6 +25,10 @@ return Application::configure(basePath: dirname(__DIR__))
         __DIR__.'/../app/Console/Commands',
     ])
     ->withMiddleware(function (Middleware $middleware) {
+        // update.sh puts the panel in maintenance mode while it migrates; the
+        // update page keeps polling its console through this one route.
+        $middleware->preventRequestsDuringMaintenance(except: ['*/updates/progress/*']);
+
         $prepend = [];
 
         if (class_exists(\App\Http\Middleware\RequestFirewall::class)) {

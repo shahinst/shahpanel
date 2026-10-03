@@ -314,6 +314,13 @@ rm -f /etc/phpmyadmin/conf.d/shahpanel-uri.php
 if [[ $KEEP_DB -eq 1 ]]; then
     step "Keeping the database (--keep-database)"
     info "'${DB_NAME}' and '${DB_USER}' were left in place"
+elif [[ ! "$DB_NAME" =~ ^[A-Za-z0-9_]+$ ]] || [[ " mysql sys information_schema performance_schema " == *" ${DB_NAME,,} "* ]] \
+    || [[ ! "$DB_USER" =~ ^[A-Za-z0-9_]+$ ]] || [[ "${DB_USER,,}" == "root" || "${DB_USER,,}" == "mysql" ]]; then
+    # A hand-edited .env pointing at a system schema or at root would otherwise
+    # take the whole MySQL server down with the panel.
+    step "Dropping the database"
+    warn "refusing to drop '${DB_NAME}' / user '${DB_USER}': not a panel database"
+    note_leftover "database '${DB_NAME}' (check it and drop it by hand)"
 else
     step "Dropping the database"
 

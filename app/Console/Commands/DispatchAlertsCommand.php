@@ -73,13 +73,12 @@ class DispatchAlertsCommand extends Command
             ->where('status', AccountStatus::Active)
             ->whereNotNull('data_limit_bytes')
             ->where('data_limit_bytes', '>', 0)
+            // Filtered in SQL: loading every limited account just to keep the
+            // few near their limit ran out of memory on large panels.
+            ->whereRaw('data_used_bytes >= data_limit_bytes * 0.9')
+            ->whereColumn('data_used_bytes', '<', 'data_limit_bytes')
             ->with('ownerSeller')
-            ->get()
-            ->filter(function (Account $account) {
-                $usedRatio = $account->data_used_bytes / $account->data_limit_bytes;
-
-                return $usedRatio >= 0.9 && $usedRatio < 1;
-            });
+            ->get();
 
         $sent = 0;
 

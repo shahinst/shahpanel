@@ -23,6 +23,7 @@ use Throwable;
  */
 class SendServerBackupToTelegramJob implements ShouldQueue
 {
+    use \App\Jobs\Concerns\RunsOnBackupQueue;
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     /**
@@ -51,6 +52,7 @@ class SendServerBackupToTelegramJob implements ShouldQueue
     ) {
         // فرصت کافی برای SFTP چند سرور + آپلود چند ده مگابایت به تلگرام.
         $this->timeout = max(600, (int) config('shahpanel.server_backup.timeout_seconds', 300) * 3);
+        $this->useBackupQueue();
     }
 
     public function handle(

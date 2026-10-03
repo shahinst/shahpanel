@@ -39,7 +39,21 @@ return [
             'connection' => env('DB_QUEUE_CONNECTION', null),
             'table' => env('DB_QUEUE_TABLE', 'jobs'),
             'queue' => env('DB_QUEUE', 'default'),
-            'retry_after' => env('DB_QUEUE_RETRY_AFTER', 90),
+            // Above the longest job on this connection (MikroTik queue apply,
+            // 600 s), so a slow job is never handed to a second worker.
+            'retry_after' => env('DB_QUEUE_RETRY_AFTER', 660),
+            'after_commit' => false,
+        ],
+
+        // Backups to Telegram run for up to half an hour. On their own
+        // connection and worker they no longer hold up account and tunneling
+        // jobs, and their long retry_after does not slow the retry of those.
+        'database_long' => [
+            'driver' => 'database',
+            'connection' => env('DB_QUEUE_CONNECTION', null),
+            'table' => env('DB_QUEUE_TABLE', 'jobs'),
+            'queue' => 'backups',
+            'retry_after' => env('DB_QUEUE_LONG_RETRY_AFTER', 2000),
             'after_commit' => false,
         ],
 
