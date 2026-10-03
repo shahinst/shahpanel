@@ -55,6 +55,7 @@ class UserPackageAssignmentService
         if ($user->role === UserRole::Admin) {
             return Package::query()
                 ->where('is_active', true)
+                ->whereNull('owner_agent_id')
                 ->pluck('id')
                 ->map(fn ($id): int => (int) $id)
                 ->all();
@@ -68,10 +69,39 @@ class UserPackageAssignmentService
                 ->all();
         }
 
-        return $user->assignedPackages()
+        $assigned = $user->assignedPackages()
             ->pluck('user_packages.package_id')
             ->map(fn ($id): int => (int) $id)
             ->values()
+            ->all();
+
+        return array_values(array_unique(array_merge($assigned, $this->agentOwnedPackageIds($user))));
+    }
+
+    /**
+     * An inbound reseller's own packages: theirs, and every one of their
+     * sellers', without assigning them one by one.
+     *
+     * @return list<int>
+     */
+    public function agentOwnedPackageIds(User $user): array
+    {
+        $ownerId = match ($user->role) {
+            UserRole::Agent => (int) $user->id,
+            UserRole::Seller => (int) $user->parent_id,
+            default => 0,
+        };
+
+        if ($ownerId === 0 || ! Schema::hasColumn('packages', 'owner_agent_id')) {
+            return [];
+        }
+
+        return Package::query()
+            ->where('owner_agent_id', $ownerId)
+            ->whereNotNull('inbound_allocation_id')
+            ->where('is_active', true)
+            ->pluck('id')
+            ->map(fn ($id): int => (int) $id)
             ->all();
     }
 
@@ -94,12 +124,14 @@ class UserPackageAssignmentService
      */
     public function assignablePackagesFor(User $assigner, ?User $target = null): Collection
     {
+        // Agent-owned packages never go through assignment: their sellers see
+        // them automatically and nobody else may have them.
         if ($assigner->role === UserRole::Admin) {
-            return Package::query()->active()->orderBy('sort_order')->get();
+            return Package::query()->active()->whereNull('owner_agent_id')->orderBy('sort_order')->get();
         }
 
         if ($assigner->role === UserRole::Agent) {
-            return $this->assignedPackages($assigner);
+            return $this->assignedPackages($assigner)->whereNull('owner_agent_id')->values();
         }
 
         return collect();

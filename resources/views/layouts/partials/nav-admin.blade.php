@@ -3,6 +3,7 @@
     $mainLinks = [
         ['route' => 'admin.dashboard', 'section' => 'dashboard', 'label' => __('menu.dashboard'), 'icon' => 'bx-home-alt'],
         ['route' => 'admin.users.index', 'section' => 'agents', 'label' => __('menu.agents'), 'icon' => 'bx-user-pin'],
+        ['route' => 'admin.inbound-allocations.index', 'section' => 'agents', 'label' => __('inbound_resellers.menu_admin'), 'icon' => 'bx-transfer-alt'],
         ['route' => 'admin.sellers.index', 'section' => 'sellers', 'label' => __('menu.sellers'), 'icon' => 'bx-user'],
         ['route' => 'admin.clients.index', 'section' => 'clients', 'label' => __('menu.clients'), 'icon' => 'bx-group'],
         ['route' => 'admin.packages.index', 'section' => 'packages', 'label' => __('menu.packages'), 'icon' => 'bx-package', 'also_active' => ['admin.package-categories.*']],

@@ -109,6 +109,7 @@ class AccountService
         }
 
         $this->userPackageAssignmentService->assertUserHasPackage($seller, $package);
+        app(\App\Services\InboundReseller\InboundAllocationService::class)->assertCanProvision($package);
 
         $kycService = app(\App\Services\Kyc\KycService::class);
         $kycService->assertPackageRequiresKyc($package);
@@ -159,6 +160,10 @@ class AccountService
                 }
 
                 $account = $this->provisionRemoteAccount($seller, $ownerAgentId, $package, $server, $duration, $clientData, $endUser?->id);
+
+                if ($package->inbound_allocation_id !== null) {
+                    $account->forceFill(['inbound_allocation_id' => $package->inbound_allocation_id])->save();
+                }
 
                 if ($kycVerification instanceof \App\Models\AccountKycVerification) {
                     $kycService->attachToAccount($kycVerification, $account);
@@ -307,6 +312,7 @@ class AccountService
         }
 
         app(PackageCategoryService::class)->assertPackageAvailableForRenewal($package);
+        app(\App\Services\InboundReseller\InboundAllocationService::class)->assertCanProvision($package);
 
         if ($duration === null) {
             $duration = $account->packageDuration;

@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Schema;
 class Package extends Model
 {
     protected $fillable = [
+        'owner_agent_id',
+        'inbound_allocation_id',
         'name',
         'package_category_id',
         'service_type',
@@ -268,5 +270,21 @@ class Package extends Model
             ->min('price');
 
         return $min !== null ? (string) $min : null;
+    }
+
+    public function inboundAllocation(): BelongsTo
+    {
+        return $this->belongsTo(InboundAllocation::class);
+    }
+
+    public function ownerAgent(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'owner_agent_id');
+    }
+
+    /** A package an inbound reseller built on their own allocation. */
+    public function isAgentOwned(): bool
+    {
+        return $this->inbound_allocation_id !== null && $this->owner_agent_id !== null;
     }
 }

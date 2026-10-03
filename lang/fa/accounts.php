@@ -379,4 +379,5 @@ TEXT,
     'auto_renew_disabled' => 'تمدید خودکار خاموش شد.',
     'auto_renew_on_confirm' => 'تمدید خودکار روشن شود؟ هنگام انقضا هزینه تمدید از کیف پول مالک کسر می‌شود.',
     'auto_renew_off_confirm' => 'تمدید خودکار خاموش شود؟',
+    'admin_report_tx_inbound_usage' => 'هزینه مصرف اینباند',
 ];

@@ -61,7 +61,7 @@ return [
             'label' => 'menu.agents',
             'icon' => 'bx-user-pin',
             'probe' => 'users.index',
-            'routes' => ['users.*'],
+            'routes' => ['users.*', 'inbound-allocations.*'],
         ],
 
         'sellers' => [

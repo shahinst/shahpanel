@@ -405,6 +405,16 @@ Route::prefix($adminPath)->name('admin.')->middleware($adminMiddleware)->group(f
     Route::get('accounting/export', [AdminAccountingController::class, 'export'])->name('accounting.export');
     Route::get('invoices/{invoice}/pdf', [\App\Http\Controllers\Admin\InvoiceController::class, 'pdf'])->name('accounting.invoice-pdf');
 
+    // Inbound resellers (agents paid by traffic on their own inbounds).
+    Route::get('inbound-allocations', [\App\Http\Controllers\Admin\InboundAllocationController::class, 'index'])->name('inbound-allocations.index');
+    Route::get('inbound-allocations/create', [\App\Http\Controllers\Admin\InboundAllocationController::class, 'create'])->name('inbound-allocations.create');
+    Route::post('inbound-allocations', [\App\Http\Controllers\Admin\InboundAllocationController::class, 'store'])->name('inbound-allocations.store');
+    Route::get('inbound-allocations/{inboundAllocation}/edit', [\App\Http\Controllers\Admin\InboundAllocationController::class, 'edit'])->name('inbound-allocations.edit');
+    Route::put('inbound-allocations/{inboundAllocation}', [\App\Http\Controllers\Admin\InboundAllocationController::class, 'update'])->name('inbound-allocations.update');
+    Route::post('inbound-allocations/{inboundAllocation}/suspend', [\App\Http\Controllers\Admin\InboundAllocationController::class, 'suspend'])->name('inbound-allocations.suspend');
+    Route::post('inbound-allocations/{inboundAllocation}/resume', [\App\Http\Controllers\Admin\InboundAllocationController::class, 'resume'])->name('inbound-allocations.resume');
+    Route::post('inbound-allocations/{inboundAllocation}/bill', [\App\Http\Controllers\Admin\InboundAllocationController::class, 'bill'])->name('inbound-allocations.bill');
+
     Route::get('broadcasts', [AdminBroadcastController::class, 'index'])->name('broadcasts.index');
     Route::get('broadcasts/create', [AdminBroadcastController::class, 'create'])->name('broadcasts.create');
     Route::post('broadcasts', [AdminBroadcastController::class, 'store'])->name('broadcasts.store');
@@ -508,6 +518,13 @@ Route::prefix($agentPath)->name('agent.')->middleware(['auth', 'role:agent', 'lo
     Route::get('accounting', [AgentAccountingController::class, 'index'])->name('accounting.index');
     Route::get('accounting/corrections', [AgentAccountingCorrectionController::class, 'index'])->name('accounting.corrections');
     Route::get('accounting/export', [AgentAccountingController::class, 'export'])->name('accounting.export');
+
+    Route::get('inbounds', [\App\Http\Controllers\Agent\InboundController::class, 'index'])->name('inbounds.index');
+    Route::get('inbounds/{allocation}/packages/create', [\App\Http\Controllers\Agent\InboundController::class, 'createPackage'])->name('inbounds.packages.create');
+    Route::post('inbounds/{allocation}/packages', [\App\Http\Controllers\Agent\InboundController::class, 'storePackage'])->name('inbounds.packages.store');
+    Route::get('inbounds/packages/{package}/edit', [\App\Http\Controllers\Agent\InboundController::class, 'editPackage'])->name('inbounds.packages.edit');
+    Route::put('inbounds/packages/{package}', [\App\Http\Controllers\Agent\InboundController::class, 'updatePackage'])->name('inbounds.packages.update');
+    Route::delete('inbounds/packages/{package}', [\App\Http\Controllers\Agent\InboundController::class, 'destroyPackage'])->name('inbounds.packages.destroy');
 
     Route::get('broadcasts', [AgentBroadcastController::class, 'index'])->name('broadcasts.index');
     Route::get('broadcasts/create', [AgentBroadcastController::class, 'create'])->name('broadcasts.create');

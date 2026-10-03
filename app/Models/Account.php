@@ -21,6 +21,7 @@ class Account extends Model
     use SoftDeletes;
 
     protected $fillable = [
+        'inbound_allocation_id',
         'auto_renew',
         'remote_disable_pending_at',
         'owner_seller_id',
@@ -326,5 +327,10 @@ class Account extends Model
         }
 
         return explode('/', $address, 2)[0];
+    }
+
+    public function inboundAllocation(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(InboundAllocation::class);
     }
 }

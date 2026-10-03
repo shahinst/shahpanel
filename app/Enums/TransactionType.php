@@ -20,4 +20,6 @@ enum TransactionType: string
     case ClientRetail = 'client_retail';
     /** Wholesale cost when provisioning for an end-user sale. */
     case ClientCost = 'client_cost';
+    /** Traffic an inbound reseller's accounts consumed, billed per GB. */
+    case InboundUsage = 'inbound_usage';
 }
