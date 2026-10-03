@@ -519,6 +519,31 @@ else
     warn "scripts/panel-firewall is missing — the panel's firewall page will stay inert."
 fi
 
+# Telegram tunnel helper (the tgtunnel module drives it). Installed whether or
+# not the module is on, so turning the module on needs no root step.
+install_tgtunnel_helper() {
+  local src="$APP_DIR/scripts/panel-tgtunnel"
+  [[ -f "$src" ]] || return 0
+  install -o root -g root -m 0750 "$src" /usr/local/sbin/.panel-tgtunnel.new
+  mv -f /usr/local/sbin/.panel-tgtunnel.new /usr/local/sbin/panel-tgtunnel
+  printf 'www-data ALL=(root) NOPASSWD: /usr/local/sbin/panel-tgtunnel\n' > /etc/sudoers.d/.panel-tgtunnel.new
+  chmod 0440 /etc/sudoers.d/.panel-tgtunnel.new
+  if visudo -cf /etc/sudoers.d/.panel-tgtunnel.new >/dev/null 2>&1; then
+    mv -f /etc/sudoers.d/.panel-tgtunnel.new /etc/sudoers.d/panel-tgtunnel
+  else
+    rm -f /etc/sudoers.d/.panel-tgtunnel.new
+    warn "telegram tunnel helper not installed: the sudoers rule was rejected"
+    return 0
+  fi
+  # The watchdog keeps the tunnel up: it restarts it when it is down or the
+  # peer has stopped answering. It does nothing while no tunnel is set up.
+  printf '* * * * * root /usr/local/sbin/panel-tgtunnel watchdog >/dev/null 2>&1\n' > /etc/cron.d/panel-tgtunnel
+  chmod 0644 /etc/cron.d/panel-tgtunnel
+  info "telegram tunnel helper installed"
+}
+install_tgtunnel_helper
+
+
 # The admin panel's "Update" button runs update.sh through this root-owned
 # launcher. What it runs is a root-owned copy of update.sh outside the
 # checkout, so the web user cannot change the code that runs as root.

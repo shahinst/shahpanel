@@ -40,6 +40,7 @@ use Modules\ShahBot\Services\OnlinePaymentService;
 use Modules\ShahBot\Services\PaymentService;
 use Modules\ShahBot\Services\ShopService;
 use Modules\ShahBot\ShahBotServiceProvider;
+use Modules\ShahBot\Support\BotAccess;
 use Modules\ShahBot\Support\BotLocale;
 use Modules\ShahBot\Support\BotSettings;
 use Modules\ShahBot\Support\BotTexts;
@@ -267,13 +268,43 @@ class ShahBotTest extends TestCase
         $this->actingAs($admin)->get(route('admin.shahbot.users.show', $user))->assertOk();
 
         // An agent's own bot page, and saving a token for it.
-        app(BotSettings::class)->set(['agent_bots_enabled' => '1']);
+        // Bot access is granted per person; without a grant the page is refused.
         $agent = $this->makeAgent();
+        $this->actingAs($agent)->post(route('agent.shahbot.my-bot.update'), ['admin_chat_ids' => '1'])->assertForbidden();
+        $this->actingAs($admin)->get(route('admin.shahbot.access'))->assertOk();
+        $this->actingAs($admin)->post(route('admin.shahbot.access.update'), ['user_id' => $agent->id, 'on' => 1])->assertRedirect();
         $this->actingAs($agent)->get(route('agent.shahbot.my-bot'))->assertOk();
         $this->actingAs($agent)->post(route('agent.shahbot.my-bot.update'), ['bot_token' => '777777:'.str_repeat('c', 35), 'admin_chat_ids' => '1'])->assertRedirect();
         $this->assertSame('777777:'.str_repeat('c', 35), BotInstance::query()->where('owner_user_id', $agent->id)->firstOrFail()->token());
         // The main bot's token cannot be claimed.
-        $this->actingAs($this->makeSeller())->post(route('seller.shahbot.my-bot.update'), ['bot_token' => '123456:'.str_repeat('a', 35)])->assertSessionHasErrors('bot_token');
+        // A seller directly under the admin, so no agent's grant is involved.
+        $seller = $this->makeSeller(null, ['parent_id' => $admin->id]);
+        app(BotAccess::class)->set($admin, $seller, true);
+        $this->actingAs($seller)->post(route('seller.shahbot.my-bot.update'), ['bot_token' => '123456:'.str_repeat('a', 35)])->assertSessionHasErrors('bot_token');
+    }
+
+    public function test_an_agent_grants_only_their_own_sellers_and_loses_them_with_their_own_access(): void
+    {
+        $admin = $this->makeAdmin();
+        $agent = $this->makeAgent();
+        $mine = $this->makeSeller($agent);
+        $other = $this->makeSeller();
+        $access = app(BotAccess::class);
+
+        // Nothing to hand out before the admin grants the agent.
+        $this->actingAs($agent)->post(route('agent.shahbot.access.update'), ['user_id' => $mine->id, 'on' => 1])->assertForbidden();
+
+        $access->set($admin, $agent, true);
+        $this->actingAs($agent)->post(route('agent.shahbot.access.update'), ['user_id' => $mine->id, 'on' => 1])->assertRedirect();
+        $this->assertTrue($access->allows($mine->fresh()));
+
+        // Another agent's or the admin's seller is out of reach.
+        $this->actingAs($agent)->post(route('agent.shahbot.access.update'), ['user_id' => $other->id, 'on' => 1])->assertForbidden();
+        $this->assertFalse($access->allows($other->fresh()));
+
+        // Revoking the agent stops their seller's bot as well.
+        $access->set($admin, $agent, false);
+        $this->assertFalse($access->allows($mine->fresh()));
     }
 
     public function test_settings_save_keeps_the_token_secret(): void

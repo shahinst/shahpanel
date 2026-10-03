@@ -1,0 +1,11 @@
+{
+    "slug": "tgtunnel",
+    "name": "تانل تلگرام",
+    "version": "1.0.0",
+    "description": "برای سرورهایی که تلگرام روی آی‌پی‌شان فیلتر است: یک اکانت وایرگارد می‌دهید و فقط ترافیک تلگرام از آن تانل رد می‌شود؛ بقیهٔ ترافیک سرور مسیر عادی خودش را می‌رود. اتصال دائمی است و اگر قطع شود خودکار برقرار می‌شود، و وضعیتش روی داشبورد ادمین دیده می‌شود.",
+    "author": "ShahPanel",
+    "license": "AGPL-3.0-or-later",
+    "namespace": "Modules\\TgTunnel\\",
+    "autoload": "src",
+    "provider": "Modules\\TgTunnel\\TgTunnelServiceProvider"
+}

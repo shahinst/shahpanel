@@ -1,0 +1,28 @@
+<?php
+
+return [
+    'title' => 'Telegram tunnel',
+    'subtitle' => 'If Telegram is filtered on this server\'s IP, give it a WireGuard account and only Telegram\'s traffic goes through it. Everything else keeps its normal route.',
+    'status' => 'Connection',
+    'connected' => 'Connected — Telegram traffic goes through the tunnel',
+    'disconnected' => 'Down — reconnecting',
+    'not_configured' => 'Not set up',
+    'helper_missing' => 'Tunnel tool is not installed on the server',
+    'helper_missing_hint' => 'The tunnel tool is not installed on this server. Update the panel once (sudo bash update.sh) to install it.',
+    'last_handshake' => 'Last handshake',
+    'seconds_ago' => ':n s ago',
+    'telegram_via' => 'Telegram route',
+    'test' => 'Test connection',
+    'test_ok' => 'Test passed: api.telegram.org answered through the tunnel (HTTP :http) and :bytes bytes came back through it.',
+    'test_failed' => 'Test failed: Telegram could not be reached through the tunnel (:error). Check the WireGuard account, the server address and that its port is open.',
+    'config' => 'WireGuard config',
+    'config_hint' => 'Paste the whole WireGuard client config here (the same .conf you would give a phone or a PC).',
+    'config_safety' => 'Only the keys, address, MTU and server endpoint are read from it. PostUp/PreUp commands, DNS and AllowedIPs are ignored: the panel builds the routes itself and sends only Telegram\'s IP ranges into the tunnel.',
+    'connect' => 'Save and connect',
+    'applied' => 'The tunnel was set up and started.',
+    'apply_failed' => 'The tunnel could not be set up: :error',
+    'remove' => 'Remove tunnel',
+    'remove_confirm' => 'Remove the tunnel? Telegram goes back to the server\'s normal route.',
+    'removed' => 'The tunnel was removed.',
+    'manage' => 'Manage',
+];

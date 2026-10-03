@@ -8,6 +8,9 @@
 <x-page-header :title="__('shahbot::admin.my_bot')">
     <p class="text-muted mb-0">{{ __('shahbot::admin.my_bot_subtitle') }}</p>
     <a href="{{ route($prefix.'.plans') }}" class="btn btn-outline-primary"><i class="bx bx-package"></i> {{ __('shahbot::admin.my_plans') }}</a>
+    @if ($panel === 'agent')
+        <a href="{{ route('agent.shahbot.access') }}" class="btn btn-outline-primary"><i class="bx bx-key"></i> {{ __('shahbot::admin.bot_access_my_sellers') }}</a>
+    @endif
     @if ($bot && $bot->is_active && $bot->token() !== '')
         <a href="#my-broadcast" class="btn btn-outline-secondary"><i class="bx bx-broadcast"></i> {{ __('shahbot::admin.my_broadcast') }}</a>
     @endif
