@@ -7,8 +7,6 @@ use App\Enums\InvoiceType;
 use App\Models\Account;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
-use App\Support\PdfFontSetup;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -53,20 +51,63 @@ class InvoiceService
         return $invoice->fresh(['items', 'account.package']);
     }
 
+    /**
+     * The invoice as PDF bytes: Persian text shaped by mPDF, Vazirmatn,
+     * Persian digits and Jalali dates on Persian pages.
+     */
+    public function renderPdf(Invoice $invoice): string
+    {
+        $invoice->loadMissing(['buyer', 'seller', 'agent', 'account.package', 'account.packageDuration', 'account.server', 'account.clientUser', 'items']);
+
+        $amount = (float) $invoice->total;
+
+        return \App\Support\PersianPdf::render('pdf.invoice', [
+            'pdfTitle' => __('ui.sales_invoice').' '.$invoice->invoice_number,
+            'invoice' => $invoice,
+            'client' => $invoice->account?->clientUser,
+            // Only what the buyer paid: the other legs (agent margin, admin
+            // revenue) are the panel's business, not the customer's.
+            'payments' => \App\Models\Transaction::query()
+                ->where('related_invoice_id', $invoice->id)
+                ->where('user_id', $invoice->buyer_user_id)
+                ->whereIn('type', [
+                    \App\Enums\TransactionType::Purchase,
+                    \App\Enums\TransactionType::Renewal,
+                    \App\Enums\TransactionType::ClientCost,
+                ])
+                ->orderBy('id')
+                ->get(),
+            'amountInWords' => locale_digits() === 'fa' && $amount > 0
+                ? \App\Support\PersianNumberWords::convert($amount).' '.\App\Enums\MoneyCurrency::normalize($invoice->currency)->label()
+                : null,
+            'panel' => [
+                'name' => (string) (\App\Models\Setting::getValue('site_name') ?: config('app.name')),
+                'url' => (string) (\App\Models\Setting::getValue('site_url') ?: ''),
+                'phone' => (string) (\App\Models\Setting::getValue('support_phone') ?: ''),
+                'telegram' => (string) (\App\Models\Setting::getValue('support_telegram') ?: ''),
+            ],
+        ]);
+    }
+
+    /**
+     * @deprecated kept for callers that expect a file path; renderPdf() is
+     * what the download routes use.
+     */
     public function generatePdf(Invoice $invoice): string
     {
-        $invoice->loadMissing(['buyer', 'seller', 'agent', 'account.package', 'items']);
-
-        $pdf = Pdf::loadView('pdf.invoice', [
-            'invoice' => $invoice,
-        ])->setPaper('a4');
-
-        PdfFontSetup::configure($pdf);
-
         $relativePath = 'invoices/'.$invoice->invoice_number.'.pdf';
-        Storage::disk('local')->put($relativePath, $pdf->output());
+        Storage::disk('local')->put($relativePath, $this->renderPdf($invoice));
 
         return Storage::disk('local')->path($relativePath);
+    }
+
+    public function pdfResponse(Invoice $invoice): \Symfony\Component\HttpFoundation\Response
+    {
+        return response($this->renderPdf($invoice), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="invoice-'.$invoice->invoice_number.'.pdf"',
+            'Cache-Control' => 'private, no-store',
+        ]);
     }
 
     protected function generateInvoiceNumber(): string

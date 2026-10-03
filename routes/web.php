@@ -403,6 +403,7 @@ Route::prefix($adminPath)->name('admin.')->middleware($adminMiddleware)->group(f
 
     Route::get('accounting', [AdminAccountingController::class, 'index'])->name('accounting.index');
     Route::get('accounting/export', [AdminAccountingController::class, 'export'])->name('accounting.export');
+    Route::get('invoices/{invoice}/pdf', [\App\Http\Controllers\Admin\InvoiceController::class, 'pdf'])->name('accounting.invoice-pdf');
 
     Route::get('broadcasts', [AdminBroadcastController::class, 'index'])->name('broadcasts.index');
     Route::get('broadcasts/create', [AdminBroadcastController::class, 'create'])->name('broadcasts.create');

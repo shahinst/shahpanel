@@ -10,6 +10,20 @@ final class SmsSettings
 {
     public const PROVIDER_SMS_IR = 'sms_ir';
 
+    public const PROVIDER_IDEHPAYAM = 'idehpayam';
+
+    public const PROVIDERS = [self::PROVIDER_SMS_IR, self::PROVIDER_IDEHPAYAM];
+
+    public const KEY_IDEHPAYAM_USERNAME = 'idehpayam_username';
+
+    public const KEY_IDEHPAYAM_PASSWORD = 'idehpayam_password_enc';
+
+    public const KEY_IDEHPAYAM_FROM = 'idehpayam_from';
+
+    public const KEY_IDEHPAYAM_TYPE = 'idehpayam_type';
+
+    public const KEY_IDEHPAYAM_BASE_URL = 'idehpayam_base_url';
+
     public const KEY_PROVIDER = 'sms_provider';
 
     public const KEY_SMS_IR_API = 'sms_ir_api_key_enc';
@@ -26,7 +40,97 @@ final class SmsSettings
 
     public static function provider(): string
     {
-        return Setting::getValue(self::KEY_PROVIDER, self::PROVIDER_SMS_IR) ?? self::PROVIDER_SMS_IR;
+        $provider = Setting::getValue(self::KEY_PROVIDER, self::PROVIDER_SMS_IR) ?? self::PROVIDER_SMS_IR;
+
+        return in_array($provider, self::PROVIDERS, true) ? $provider : self::PROVIDER_SMS_IR;
+    }
+
+    public static function idehPayamUsername(): ?string
+    {
+        $value = trim((string) Setting::getValue(self::KEY_IDEHPAYAM_USERNAME, ''));
+
+        return $value !== '' ? $value : null;
+    }
+
+    public static function setIdehPayamUsername(?string $username): void
+    {
+        $value = trim((string) $username);
+        Setting::setValue(self::KEY_IDEHPAYAM_USERNAME, $value !== '' ? $value : null);
+    }
+
+    public static function idehPayamPassword(): ?string
+    {
+        $stored = Setting::getValue(self::KEY_IDEHPAYAM_PASSWORD);
+
+        if ($stored === null || $stored === '') {
+            return null;
+        }
+
+        try {
+            return Crypt::decryptString($stored);
+        } catch (DecryptException) {
+            return null;
+        }
+    }
+
+    public static function setIdehPayamPassword(string $plain): void
+    {
+        Setting::setValue(self::KEY_IDEHPAYAM_PASSWORD, Crypt::encryptString($plain));
+    }
+
+    public static function idehPayamFrom(): ?string
+    {
+        $value = trim((string) Setting::getValue(self::KEY_IDEHPAYAM_FROM, ''));
+
+        return $value !== '' ? $value : null;
+    }
+
+    public static function setIdehPayamFrom(?string $from): void
+    {
+        $value = trim((string) $from);
+        Setting::setValue(self::KEY_IDEHPAYAM_FROM, $value !== '' ? $value : null);
+    }
+
+    public static function idehPayamType(): int
+    {
+        $type = (int) Setting::getValue(self::KEY_IDEHPAYAM_TYPE, '0');
+
+        return in_array($type, (array) config('sms.idehpayam.types', [0, 1]), true) ? $type : 0;
+    }
+
+    public static function setIdehPayamType(int $type): void
+    {
+        Setting::setValue(self::KEY_IDEHPAYAM_TYPE, (string) $type);
+    }
+
+    public static function idehPayamBaseUrl(): string
+    {
+        $value = trim((string) Setting::getValue(self::KEY_IDEHPAYAM_BASE_URL, ''));
+
+        return rtrim($value !== '' ? $value : (string) config('sms.idehpayam.base_url'), '/');
+    }
+
+    public static function setIdehPayamBaseUrl(?string $url): void
+    {
+        $value = rtrim(trim((string) $url), '/');
+        Setting::setValue(self::KEY_IDEHPAYAM_BASE_URL, $value !== '' ? $value : null);
+    }
+
+    public static function isIdehPayamConfigured(): bool
+    {
+        return self::idehPayamUsername() !== null
+            && self::idehPayamPassword() !== null
+            && self::idehPayamFrom() !== null;
+    }
+
+    /**
+     * Whether the chosen provider has what it needs to send anything.
+     */
+    public static function isProviderConfigured(): bool
+    {
+        return self::provider() === self::PROVIDER_IDEHPAYAM
+            ? self::isIdehPayamConfigured()
+            : self::hasSmsIrApiKey();
     }
 
     public static function setProvider(string $provider): void
@@ -146,9 +250,15 @@ final class SmsSettings
 
     public static function isAccountLoginSmsReady(): bool
     {
-        return self::isAccountLoginSmsEnabled()
-            && self::hasSmsIrApiKey()
-            && self::smsIrVerifyTemplateId() !== null;
+        if (! self::isAccountLoginSmsEnabled()) {
+            return false;
+        }
+
+        // IdehPayam sends the login text as a plain message, so it needs no
+        // template; sms.ir sends it through a Verify template.
+        return self::provider() === self::PROVIDER_IDEHPAYAM
+            ? self::isIdehPayamConfigured()
+            : self::hasSmsIrApiKey() && self::smsIrVerifyTemplateId() !== null;
     }
 
     public static function normalizeParameterName(string $name): string

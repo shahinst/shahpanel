@@ -17,7 +17,7 @@ class DashboardController extends Controller
     {
         return view('shared.dashboard.index', array_merge(
             [
-                'stats' => $statsService->safeForSeller($request->user()),
+                'stats' => $statsService->withRange($request->query('range'))->safeForSeller($request->user()),
                 'broadcastBanner' => $bannerService->forUser($request->user()),
             ],
             $this->staffAccountCreateModalData($request),

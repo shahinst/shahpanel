@@ -32,10 +32,10 @@ class InvoiceController extends Controller
         return view('seller.invoices.show', compact('invoice'));
     }
 
-    public function pdf(Invoice $invoice, \App\Services\InvoiceService $invoiceService): \Symfony\Component\HttpFoundation\BinaryFileResponse
+    public function pdf(Invoice $invoice, \App\Services\InvoiceService $invoiceService): \Symfony\Component\HttpFoundation\Response
     {
         $this->authorize('view', $invoice);
 
-        return response()->download($invoiceService->generatePdf($invoice));
+        return $invoiceService->pdfResponse($invoice);
     }
 }

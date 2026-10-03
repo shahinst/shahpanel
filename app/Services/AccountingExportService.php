@@ -4,8 +4,6 @@ namespace App\Services;
 
 use App\Models\Invoice;
 use App\Models\User;
-use App\Support\PdfFontSetup;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AccountingExportService
@@ -83,7 +81,8 @@ class AccountingExportService
             );
         });
 
-        $pdf = Pdf::loadView('pdf.accounting', [
+        $pdfBytes = \App\Support\PersianPdf::render('pdf.accounting', [
+            'pdfTitle' => __('menu.accounting'),
             'rows' => $rows,
             'totals' => $totals,
             'filters' => $filters,
@@ -92,14 +91,12 @@ class AccountingExportService
             'includeCredited' => $includeCredited,
             'includeMarginPercent' => $includeMarginPercent,
             'headers' => $headers,
-        ])->setPaper('a4', 'landscape');
-
-        PdfFontSetup::configure($pdf);
+        ], 'L');
 
         $filename = 'accounting-'.now()->format('Y-m-d-His').'.pdf';
 
         return response()->streamDownload(
-            fn () => print ($pdf->output()),
+            fn () => print ($pdfBytes),
             $filename,
             ['Content-Type' => 'application/pdf']
         );

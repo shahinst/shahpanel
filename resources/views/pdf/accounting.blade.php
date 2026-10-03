@@ -14,13 +14,13 @@
             margin-bottom: 16px;
             padding-bottom: 10px;
         }
-        .title { font-size: 18px; font-weight: bold; color: #2563eb; font-family: vazirmatn, DejaVu Sans, sans-serif; }
-        .meta { color: #64748b; font-size: 10px; margin-top: 4px; font-family: vazirmatn, DejaVu Sans, sans-serif; }
+        .title { font-size: 18px; font-weight: bold; color: #2563eb; }
+        .meta { color: #64748b; font-size: 10px; margin-top: 4px; }
         table { width: 100%; border-collapse: collapse; }
         th, td {
             border: 1px solid #e2e8f0;
             padding: 6px 8px;
-            font-family: vazirmatn, DejaVu Sans, sans-serif;
+           
         }
         th { background: #f8fafc; font-weight: bold; }
         .totals td { font-weight: bold; background: #f1f5f9; }
