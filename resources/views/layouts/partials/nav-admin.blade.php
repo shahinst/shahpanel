@@ -49,6 +49,8 @@
         :active="$isActive" />
 @endforeach
 
+@include('layouts.partials.nav-expiring', ['panel' => $panel])
+
 @include('layouts.partials.nav-accounts', ['panel' => $panel])
 
 @include('layouts.partials.nav-financial', ['panel' => $panel])

@@ -17,6 +17,8 @@
         :active="request()->routeIs(str_replace('.index', '.*', str_replace('.edit', '.*', $link['route'])).'*') || request()->routeIs($link['route'])" />
 @endforeach
 
+@include('layouts.partials.nav-expiring', ['panel' => $panel])
+
 @include('layouts.partials.nav-accounts', ['panel' => $panel])
 
 @include('layouts.partials.nav-financial', ['panel' => $panel])

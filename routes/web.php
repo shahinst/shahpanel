@@ -403,6 +403,8 @@ Route::prefix($adminPath)->name('admin.')->middleware($adminMiddleware)->group(f
 
     Route::get('accounting', [AdminAccountingController::class, 'index'])->name('accounting.index');
     Route::get('accounting/export', [AdminAccountingController::class, 'export'])->name('accounting.export');
+    Route::get('expiring-accounts', [\App\Http\Controllers\ExpiringAccountsController::class, 'index'])->name('accounts.expiring');
+    Route::get('expiring-accounts/export', [\App\Http\Controllers\ExpiringAccountsController::class, 'export'])->name('accounts.expiring.export');
     Route::get('invoices/{invoice}/pdf', [\App\Http\Controllers\Admin\InvoiceController::class, 'pdf'])->name('accounting.invoice-pdf');
 
     // Inbound resellers (agents paid by traffic on their own inbounds).
@@ -518,6 +520,8 @@ Route::prefix($agentPath)->name('agent.')->middleware(['auth', 'role:agent', 'lo
     Route::get('accounting', [AgentAccountingController::class, 'index'])->name('accounting.index');
     Route::get('accounting/corrections', [AgentAccountingCorrectionController::class, 'index'])->name('accounting.corrections');
     Route::get('accounting/export', [AgentAccountingController::class, 'export'])->name('accounting.export');
+    Route::get('expiring-accounts', [\App\Http\Controllers\ExpiringAccountsController::class, 'index'])->name('accounts.expiring');
+    Route::get('expiring-accounts/export', [\App\Http\Controllers\ExpiringAccountsController::class, 'export'])->name('accounts.expiring.export');
 
     Route::get('inbounds', [\App\Http\Controllers\Agent\InboundController::class, 'index'])->name('inbounds.index');
     Route::get('inbounds/{allocation}/packages/create', [\App\Http\Controllers\Agent\InboundController::class, 'createPackage'])->name('inbounds.packages.create');
@@ -637,6 +641,8 @@ Route::prefix($sellerPath)->name('seller.')->middleware(['auth', 'role:seller', 
 
     Route::get('accounting', [SellerAccountingController::class, 'index'])->name('accounting.index');
     Route::get('accounting/export', [SellerAccountingController::class, 'export'])->name('accounting.export');
+    Route::get('expiring-accounts', [\App\Http\Controllers\ExpiringAccountsController::class, 'index'])->name('accounts.expiring');
+    Route::get('expiring-accounts/export', [\App\Http\Controllers\ExpiringAccountsController::class, 'export'])->name('accounts.expiring.export');
 
     Route::get('transactions', [SellerTransactionController::class, 'index'])->name('transactions.index');
 

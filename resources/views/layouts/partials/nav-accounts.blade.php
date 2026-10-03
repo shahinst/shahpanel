@@ -3,7 +3,8 @@
 @php
     use Illuminate\Support\Facades\Route;
 
-    $accountsOpen = request()->routeIs("{$panel}.accounts.*");
+    // The expiring-accounts page has its own main-menu entry.
+    $accountsOpen = request()->routeIs("{$panel}.accounts.*") && ! request()->routeIs("{$panel}.accounts.expiring*");
     $hasCategories = Route::has("{$panel}.accounts.wireguard")
         && Route::has("{$panel}.accounts.ppp")
         && Route::has("{$panel}.accounts.v2ray")
@@ -14,7 +15,6 @@
         ['route' => "{$panel}.accounts.ppp", 'section' => 'accounts_ppp', 'label' => __('menu.accounts_ppp'), 'icon' => 'bx-plug'],
         ['route' => "{$panel}.accounts.v2ray", 'section' => 'accounts_v2ray', 'label' => __('menu.accounts_v2ray'), 'icon' => 'bx-rocket'],
         ['route' => "{$panel}.accounts.anyconnect", 'section' => 'accounts_anyconnect', 'label' => __('menu.accounts_anyconnect'), 'icon' => 'bx-network-chart'],
-        ['route' => "{$panel}.accounts.expiring", 'section' => 'accounts', 'label' => __('ui.expiring_accounts_title'), 'icon' => 'bx-time-five'],
     ];
 
     $accountLinks = array_values(array_filter(
