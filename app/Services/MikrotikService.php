@@ -421,7 +421,7 @@ class MikrotikService
     /**
      * Remove every item at $basePath whose $field exactly equals $value.
      *
-     * @return int  number of items removed
+     * @return int number of items removed
      */
     public function removeMatching(Server $server, string $basePath, string $field, string $value): int
     {
@@ -814,6 +814,103 @@ class MikrotikService
         }
 
         $this->execute($server, '/queue/simple/add', $payload);
+    }
+
+    /**
+     * Make one interface's simple queues match $desired, reading the router once.
+     *
+     * The per-queue ensureSimpleQueue() costs a filtered print plus a write for
+     * every queue, and a /24 has 254 of them: on a router already carrying a
+     * few thousand queues one save ran to hundreds of round trips and died
+     * part way, leaving some addresses limited and the rest not. Here the
+     * whole list is read once, unchanged queues are left alone, and only
+     * missing or different ones are written. Queues that belong to the
+     * interface by name but are no longer wanted (an old speed suffix) go.
+     *
+     * The parent ($desired entry with no 'parent') is written first, since the
+     * children point at it.
+     *
+     * @param  list<array{name: string, target: string, max-limit: string, parent?: ?string}>  $desired
+     * @return array{added: int, updated: int, removed: int, unchanged: int, errors: list<string>}
+     */
+    public function syncInterfaceQueues(Server $server, string $interfaceName, array $desired): array
+    {
+        $result = ['added' => 0, 'updated' => 0, 'removed' => 0, 'unchanged' => 0, 'errors' => []];
+        $existing = [];
+
+        foreach ($this->queryRouter($server, '/queue/simple/print') as $row) {
+            $name = (string) ($row['name'] ?? '');
+
+            if ($name === $interfaceName || str_starts_with($name, $interfaceName.'-')) {
+                $existing[$name] = $row;
+            }
+        }
+
+        usort($desired, fn (array $a, array $b): int => (int) isset($a['parent']) <=> (int) isset($b['parent']));
+        $wanted = [];
+
+        foreach ($desired as $queue) {
+            $wanted[$queue['name']] = true;
+            $payload = array_filter($queue, fn ($v) => $v !== null && $v !== '');
+            $row = $existing[$queue['name']] ?? null;
+
+            try {
+                if ($row === null) {
+                    $this->execute($server, '/queue/simple/add', $payload);
+                    $result['added']++;
+                } elseif ($this->queueDiffers($row, $queue)) {
+                    $this->execute($server, '/queue/simple/set', ['.id' => $row['.id']] + $payload + ['disabled' => 'no']);
+                    $result['updated']++;
+                } else {
+                    $result['unchanged']++;
+                }
+            } catch (Throwable $e) {
+                $result['errors'][] = $queue['name'].': '.$e->getMessage();
+            }
+        }
+
+        foreach ($existing as $name => $row) {
+            // Per-account ceilings ({iface}-acct-{id}, WireguardSpeedLimitService)
+            // share the prefix but are not this interface's to manage.
+            if (isset($wanted[$name]) || ! isset($row['.id']) || preg_match('/-acct-\d+$/', $name)) {
+                continue;
+            }
+
+            try {
+                $this->execute($server, '/queue/simple/remove', ['.id' => $row['.id']]);
+                $result['removed']++;
+            } catch (Throwable $e) {
+                $result['errors'][] = $name.': '.$e->getMessage();
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * RouterOS prints limits in bits ("10000000/10000000") while the panel
+     * writes "10M/10M", so both sides are reduced to numbers first.
+     *
+     * @param  array<string, mixed>  $row
+     * @param  array{target: string, max-limit: string, parent?: ?string}  $queue
+     */
+    protected function queueDiffers(array $row, array $queue): bool
+    {
+        $bits = function (string $limit): string {
+            return implode('/', array_map(function (string $part): string {
+                $part = strtolower(trim($part));
+                $mult = ['k' => 1000, 'm' => 1000000, 'g' => 1000000000][substr($part, -1)] ?? 1;
+
+                return (string) ((int) round((float) rtrim($part, 'kmg') * $mult));
+            }, explode('/', $limit)));
+        };
+        $target = fn (string $t): string => preg_replace('#/32$#', '', trim($t));
+        $parent = (string) ($queue['parent'] ?? '');
+
+        return $target((string) ($row['target'] ?? '')) !== $target($queue['target'])
+            || $bits((string) ($row['max-limit'] ?? '0/0')) !== $bits($queue['max-limit'])
+            || (($row['parent'] ?? 'none') === 'none' ? '' : (string) $row['parent']) !== $parent
+            || ($row['disabled'] ?? 'false') === 'true';
     }
 
     /**

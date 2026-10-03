@@ -1,6 +1,36 @@
 {
     "versions": [
         {
+            "version": "3.22.0",
+            "date": "2026-10-24",
+            "notes": {
+                "fa": [
+                    "اینترفیس‌های وایرگارد و پروفایل‌های PPP حالا از خودِ پنل حذف می‌شوند — از روتر و پنل با هم، همراه صف‌های سرعت و قوانین فایروالشان. تا وقتی اکانتی از آن استفاده می‌کند حذف انجام نمی‌شود.",
+                    "سرعت پروفایل‌های PPP هم حالا بعد از ساخت قابل تغییر است.",
+                    "ذخیرهٔ سقف سرعت روی روترهای پرصف دیگر نیمه‌کاره نمی‌ماند: لیست صف‌ها یک بار خوانده می‌شود و فقط صف‌های جاافتاده یا متفاوت نوشته می‌شوند، به‌جای صدها درخواست جداگانه.",
+                    "اگر بخشی از صف‌ها ساخته نشود، دیگر پیام «ذخیره شد» نمی‌آید: تعداد ناموفق‌ها و اولین خطا نشان داده می‌شود و ذخیرهٔ دوباره فقط همان‌ها را می‌سازد."
+                ],
+                "en": [
+                    "WireGuard interfaces and PPP profiles can now be removed from the panel -- from the router and the panel together, with their speed queues and firewall rules. Removal is refused while an account still uses them.",
+                    "PPP profiles can now have their speed changed after they were created.",
+                    "Saving a speed limit on a router with many queues no longer stops half way: the queue list is read once and only missing or different queues are written, instead of hundreds of separate calls.",
+                    "When some queues cannot be written, the panel no longer says \"saved\": it shows how many failed and the first error, and saving again writes only those."
+                ],
+                "ru": [
+                    "WireGuard interfaces and PPP profiles can now be removed from the panel -- from the router and the panel together, with their speed queues and firewall rules. Removal is refused while an account still uses them.",
+                    "PPP profiles can now have their speed changed after they were created.",
+                    "Saving a speed limit on a router with many queues no longer stops half way: the queue list is read once and only missing or different queues are written, instead of hundreds of separate calls.",
+                    "When some queues cannot be written, the panel no longer says \"saved\": it shows how many failed and the first error, and saving again writes only those."
+                ],
+                "zh": [
+                    "WireGuard interfaces and PPP profiles can now be removed from the panel -- from the router and the panel together, with their speed queues and firewall rules. Removal is refused while an account still uses them.",
+                    "PPP profiles can now have their speed changed after they were created.",
+                    "Saving a speed limit on a router with many queues no longer stops half way: the queue list is read once and only missing or different queues are written, instead of hundreds of separate calls.",
+                    "When some queues cannot be written, the panel no longer says \"saved\": it shows how many failed and the first error, and saving again writes only those."
+                ]
+            }
+        },
+        {
             "version": "3.21.2",
             "date": "2026-10-22",
             "notes": {

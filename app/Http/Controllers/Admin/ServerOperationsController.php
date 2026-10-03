@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Server;
 use App\Models\ServerInterface;
+use App\Services\MikrotikInterfaceRemovalService;
 use App\Services\MikrotikPppProfileService;
+use App\Services\MikrotikQueueService;
 use App\Services\MikrotikServerProfilePushService;
 use App\Services\MikrotikWireguardInterfaceService;
 use App\Services\SanaeiServerMigrationService;
@@ -648,6 +650,77 @@ class ServerOperationsController extends Controller
         return redirect()
             ->route('admin.servers.show', $server)
             ->with('success', __('servers.ovpn_profile_uploaded'));
+    }
+
+    public function destroyWireguardInterface(Server $server, ServerInterface $serverInterface, MikrotikInterfaceRemovalService $removal): RedirectResponse
+    {
+        return $this->removeInterface($server, $serverInterface, 'wireguard', fn () => $removal->removeWireguard($server, $serverInterface));
+    }
+
+    public function destroyPppProfile(Server $server, ServerInterface $serverInterface, MikrotikInterfaceRemovalService $removal): RedirectResponse
+    {
+        return $this->removeInterface($server, $serverInterface, 'ppp', fn () => $removal->removePpp($server, $serverInterface));
+    }
+
+    /**
+     * PPP profiles could be created with a speed but never given one later.
+     * The limit is the same parent-plus-per-address queue set WireGuard uses.
+     */
+    public function updatePppProfile(Request $request, Server $server, ServerInterface $serverInterface, MikrotikQueueService $queues): RedirectResponse
+    {
+        $this->authorize('update', $server);
+        abort_unless($serverInterface->server_id === $server->id && $serverInterface->category === 'ppp', 404);
+
+        $data = $request->validate(['speed_limit_mbps' => ['nullable', 'integer', 'in:5,10,20,30,40,50']]);
+        $speed = isset($data['speed_limit_mbps']) ? (int) $data['speed_limit_mbps'] : null;
+        $meta = $serverInterface->meta ?? [];
+
+        if (trim((string) ($meta['subnet'] ?? '')) === '' && $speed !== null) {
+            return back()->with('error', __('servers.ppp_speed_needs_subnet', ['name' => $serverInterface->name]));
+        }
+
+        @set_time_limit(300);
+
+        try {
+            if ($speed === null) {
+                $queues->removeInterfaceSpeedQueues($server, $serverInterface->name);
+                unset($meta['speed_limit_mbps']);
+                $serverInterface->update(['meta' => $meta]);
+            } else {
+                $meta['speed_limit_mbps'] = $speed;
+                $serverInterface->update(['meta' => $meta]);
+                $queues->applyInterfaceSpeedQueues($server, $serverInterface->fresh());
+            }
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return back()->with('error', $exception->getMessage());
+        }
+
+        return back()->with('success', __('servers.ppp_profile_updated', ['name' => $serverInterface->name]));
+    }
+
+    protected function removeInterface(Server $server, ServerInterface $serverInterface, string $category, callable $remove): RedirectResponse
+    {
+        $this->authorize('update', $server);
+        abort_unless($serverInterface->server_id === $server->id && $serverInterface->category === $category, 404);
+
+        if (! $server->isMikrotik()) {
+            return back()->with('error', __('servers.wireguard_mikrotik_only'));
+        }
+
+        @set_time_limit(300);
+        $name = $serverInterface->name;
+
+        try {
+            $remove();
+        } catch (Throwable $exception) {
+            report($exception);
+
+            return back()->with('error', $exception->getMessage());
+        }
+
+        return back()->with('success', __('servers.interface_deleted', ['name' => $name]));
     }
 
     public function destroyOvpnProfile(

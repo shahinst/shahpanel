@@ -379,4 +379,12 @@ return [
     'progress_failed' => 'خطا',
     'progress_title_push' => 'ارسال و همگام‌سازی اکانت‌ها با سرور',
     'progress_title_traffic' => 'همگام‌سازی مصرف',
+    'speed_queues_partial' => 'سرعت فقط روی بخشی از آدرس‌ها اعمال شد: :failed از :total صف ساخته نشد. دوباره ذخیره کنید؛ صف‌های درست دست نمی‌خورند. اولین خطا: :error',
+    'interface_in_use' => '«:name» هنوز :count اکانت در پنل دارد و حذف نشد. اول آن اکانت‌ها را به پروفایل دیگری منتقل یا حذف کنید.',
+    'interface_in_use_router' => '«:name» روی روتر هنوز :count کاربر PPP دارد و حذف نشد.',
+    'ppp_profile_builtin' => '«:name» پروفایل پیش‌فرض خود میکروتیک است و قابل حذف نیست.',
+    'interface_delete_confirm' => '«:name» از روتر و پنل حذف شود؟ صف‌های سرعت و قوانین فایروال آن هم پاک می‌شوند.',
+    'interface_deleted' => '«:name» از روتر و پنل حذف شد.',
+    'ppp_profile_updated' => 'سرعت پروفایل «:name» ذخیره و روی روتر اعمال شد.',
+    'ppp_speed_needs_subnet' => '«:name» زیرشبکهٔ مشخصی ندارد، پس نمی‌شود برای تک‌تک آدرس‌هایش صف ساخت.',
 ];

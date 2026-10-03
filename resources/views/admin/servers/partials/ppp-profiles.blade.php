@@ -27,6 +27,7 @@
             __('servers.speed_limit'),
             __('app.status'),
             __('servers.synced_at'),
+            __('servers.row_update'),
         ]">
             @forelse ($pppProfiles as $profile)
                 @php
@@ -37,6 +38,7 @@
                     $routerSecrets = $meta['secret_count'] ?? '—';
                     $panelAccounts = $meta['panel_account_count'] ?? '—';
                     $speedMbps = $meta['speed_limit_mbps'] ?? null;
+                    $formId = 'ppp-update-'.$profile->id;
                 @endphp
                 <tr>
                     <td><code>{{ $profile->name }}</code></td>
@@ -48,7 +50,14 @@
                     <td>{{ is_numeric($routerSecrets) ? persian_digits($routerSecrets) : $routerSecrets }}</td>
                     <td>{{ is_numeric($panelAccounts) ? persian_digits($panelAccounts) : $panelAccounts }}</td>
                     <td>
-                        @if ($speedMbps && (int) $speedMbps > 0)
+                        @can('update', $server)
+                            @include('admin.servers.partials.speed-limit-select', [
+                                'fieldName' => 'speed_limit_mbps',
+                                'selected' => $speedMbps,
+                                'inputId' => 'ppp-speed-'.$profile->id,
+                                'formId' => $formId,
+                            ])
+                        @elseif ($speedMbps && (int) $speedMbps > 0)
                             {{ persian_digits((int) $speedMbps) }} {{ __('servers.speed_limit_mbps_unit') }}
                         @else
                             {{ __('servers.speed_limit_unlimited') }}
@@ -62,10 +71,28 @@
                         @endif
                     </td>
                     <td>{{ $profile->synced_at ? jalali_date($profile->synced_at) : '—' }}</td>
+                    <td class="text-nowrap">
+                        @can('update', $server)
+                            <form method="POST" id="{{ $formId }}" class="d-inline"
+                                  action="{{ route('admin.servers.ppp-profiles.update', [$server, $profile]) }}">
+                                @csrf
+                                @method('PUT')
+                                <button type="submit" class="btn btn-sm btn-outline-primary" title="{{ __('servers.row_update') }}"><i class="bx bx-save"></i></button>
+                            </form>
+                            <form method="POST" class="d-inline" data-confirm="{{ __('servers.interface_delete_confirm', ['name' => $profile->name]) }}"
+                                  action="{{ route('admin.servers.ppp-profiles.destroy', [$server, $profile]) }}">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="{{ __('app.delete') }}"><i class="bx bx-trash"></i></button>
+                            </form>
+                        @else
+                            —
+                        @endcan
+                    </td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="11" class="text-center text-muted py-3">
+                    <td colspan="12" class="text-center text-muted py-3">
                         {{ __('servers.ppp_profiles_empty') }}
                     </td>
                 </tr>

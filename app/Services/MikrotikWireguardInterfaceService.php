@@ -6,6 +6,7 @@ use App\Models\Account;
 use App\Models\Package;
 use App\Models\Server;
 use App\Models\ServerInterface;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use InvalidArgumentException;
@@ -242,7 +243,12 @@ class MikrotikWireguardInterfaceService
 
         $this->mikrotik->setWireguardInterfaceDisabled($server, $newName, ! $isEnabled);
 
-        $queueService->removeInterfaceSpeedQueues($server, $newName);
+        // Wiping every queue and rebuilding it cost hundreds of round trips
+        // per save; applyInterfaceSpeedQueues() now reconciles in place, so
+        // the queues are cleared only when the limit is taken off.
+        if ($speedLimitMbps === null || $speedLimitMbps <= 0) {
+            $queueService->removeInterfaceSpeedQueues($server, $newName);
+        }
 
         if ($speedLimitMbps !== null && $speedLimitMbps > 0) {
             $meta['speed_limit_mbps'] = $speedLimitMbps;
@@ -532,7 +538,7 @@ class MikrotikWireguardInterfaceService
     }
 
     /**
-     * @return \Illuminate\Support\Collection<int, ServerInterface>
+     * @return Collection<int, ServerInterface>
      */
     protected function enabledWireguardInterfaces(Server $server)
     {
