@@ -1,6 +1,32 @@
 {
     "versions": [
         {
+            "version": "3.13.0",
+            "date": "2026-10-15",
+            "notes": {
+                "fa": [
+                    "ربات فروش تلگرام: مینی‌اپ تلگرام برای دیدن سرویس‌ها، درصد مصرف، روزهای باقی‌مانده، موجودی و کپی لینک اشتراک داخل خود تلگرام (با بررسی امضای تلگرام)",
+                    "ویرایشگر کیبورد: ترتیب، ردیف و نمایش هر دکمهٔ منوی اصلی از پنل",
+                    "ویرایشگر متن‌ها: همهٔ پیام‌ها و برچسب دکمه‌های ربات از پنل قابل ویرایش است، با جستجو و بازگرداندن به پیش‌فرض"
+                ],
+                "en": [
+                    "Telegram sales bot: a Telegram mini app showing services, usage, days left, balance and copyable subscription links inside Telegram (Telegram signature checked)",
+                    "Keyboard editor: order, row and visibility of each main menu button from the panel",
+                    "Text editor: every bot message and button label can be edited from the panel, with search and reset to default"
+                ],
+                "ru": [
+                    "Telegram-бот продаж: мини-приложение Telegram с услугами, расходом, оставшимися днями, балансом и копированием ссылки подписки прямо в Telegram (с проверкой подписи Telegram)",
+                    "Редактор клавиатуры: порядок, ряд и видимость каждой кнопки главного меню из панели",
+                    "Редактор текстов: все сообщения и надписи кнопок бота редактируются из панели, с поиском и сбросом к значениям по умолчанию"
+                ],
+                "zh": [
+                    "Telegram 销售机器人：Telegram 小程序，可在 Telegram 内查看服务、用量、剩余天数、余额并复制订阅链接（校验 Telegram 签名）",
+                    "键盘编辑器：在面板中设置主菜单每个按钮的顺序、行和显示状态",
+                    "文本编辑器：机器人的所有消息和按钮文字均可在面板中编辑，支持搜索和恢复默认"
+                ]
+            }
+        },
+        {
             "version": "3.12.0",
             "date": "2026-10-14",
             "notes": {

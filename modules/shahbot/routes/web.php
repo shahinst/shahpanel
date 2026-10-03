@@ -7,6 +7,7 @@ use Modules\ShahBot\Http\Controllers\Admin\AgentController;
 use Modules\ShahBot\Http\Controllers\Admin\BroadcastController;
 use Modules\ShahBot\Http\Controllers\Admin\CodeController;
 use Modules\ShahBot\Http\Controllers\Admin\DashboardController;
+use Modules\ShahBot\Http\Controllers\Admin\EditorController;
 use Modules\ShahBot\Http\Controllers\Admin\PaymentController;
 use Modules\ShahBot\Http\Controllers\Admin\SettingsController;
 use Modules\ShahBot\Http\Controllers\Admin\TicketController;
@@ -64,6 +65,10 @@ Route::prefix(PortalPaths::slug('admin'))->name('admin.')->middleware($adminMidd
         Route::post('agents/requests/{agencyRequest}/approve', [AgentController::class, 'approve'])->name('agents.approve');
         Route::post('agents/requests/{agencyRequest}/reject', [AgentController::class, 'reject'])->name('agents.reject');
         Route::post('agents/bots/{bot}/toggle', [AgentController::class, 'toggleBot'])->name('agents.bots.toggle');
+
+        Route::get('editor', [EditorController::class, 'edit'])->name('editor');
+        Route::post('editor/texts', [EditorController::class, 'updateTexts'])->name('editor.texts');
+        Route::post('editor/keyboard', [EditorController::class, 'updateKeyboard'])->name('editor.keyboard');
 
         Route::get('tutorials', [TutorialController::class, 'index'])->name('tutorials.index');
         Route::post('tutorials', [TutorialController::class, 'store'])->name('tutorials.store');

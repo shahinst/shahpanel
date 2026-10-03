@@ -37,12 +37,12 @@ class Keyboard
     }
 
     /**
-     * @param  list<list<string>>  $rows
+     * @param  list<list<string|array>>  $rows  plain labels, or full button arrays (e.g. a web_app button)
      */
     public static function reply(array $rows): array
     {
         return [
-            'keyboard' => array_map(fn (array $row) => array_map(fn (string $t) => ['text' => $t], $row), $rows),
+            'keyboard' => array_map(fn (array $row) => array_map(fn ($t) => is_array($t) ? $t : ['text' => (string) $t], $row), $rows),
             'resize_keyboard' => true,
         ];
     }

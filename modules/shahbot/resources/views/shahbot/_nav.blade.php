@@ -9,6 +9,7 @@
         ['admin.shahbot.broadcasts.index', 'bx-broadcast', 'tab_broadcasts', ['admin.shahbot.broadcasts.*']],
         ['admin.shahbot.tickets.index', 'bx-support', 'tab_tickets', ['admin.shahbot.tickets.*']],
         ['admin.shahbot.tutorials.index', 'bx-book-open', 'tab_tutorials', ['admin.shahbot.tutorials.*']],
+        ['admin.shahbot.editor', 'bx-edit', 'tab_editor', ['admin.shahbot.editor*']],
         ['admin.shahbot.settings', 'bx-cog', 'tab_settings', ['admin.shahbot.settings*']],
     ];
     $pendingCount = \Modules\ShahBot\Models\BotPayment::query()->where('status', 'pending')->count();

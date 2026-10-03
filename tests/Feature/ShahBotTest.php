@@ -34,6 +34,7 @@ use Modules\ShahBot\Services\PaymentService;
 use Modules\ShahBot\Services\ShopService;
 use Modules\ShahBot\ShahBotServiceProvider;
 use Modules\ShahBot\Support\BotSettings;
+use Modules\ShahBot\Support\BotTexts;
 use Tests\Concerns\CreatesPanelData;
 use Tests\TestCase;
 
@@ -502,5 +503,64 @@ class ShahBotTest extends TestCase
 
         $this->assertSame(2, BotOrder::query()->where('bot_user_id', $user->id)->where('type', 'bulk')->count());
         $this->assertSame(2, Account::query()->where('owner_seller_id', $seller->id)->count());
+    }
+
+    public function test_text_and_keyboard_editor(): void
+    {
+        $admin = $this->makeAdmin();
+        $this->actingAs($admin)->get(route('admin.shahbot.editor'))->assertOk();
+
+        $this->actingAs($admin)->post(route('admin.shahbot.editor.texts'), ['texts' => [
+            'menu_wallet' => '💰 Wallet!',
+            'menu_buy' => __('shahbot::bot.menu_buy', [], 'fa'), // unchanged: not stored
+        ]])->assertRedirect();
+        $this->assertSame(['menu_wallet' => '💰 Wallet!'], app(BotTexts::class)->overrides());
+
+        $this->actingAs($admin)->post(route('admin.shahbot.editor.keyboard'), ['layout' => [
+            'buy' => ['row' => 1, 'pos' => 2, 'on' => 1],
+            'services' => ['row' => 1, 'pos' => 1, 'on' => 1],
+            'wallet' => ['row' => 2, 'pos' => 1, 'on' => 1],
+            'gift' => ['row' => 3, 'pos' => 1],
+        ]])->assertRedirect();
+
+        $this->text(1212, '/start');
+        Http::assertSent(function ($r) {
+            $markup = json_decode((string) ($r['reply_markup'] ?? ''), true);
+            $rows = $markup['keyboard'] ?? null;
+
+            return is_array($rows)
+                && $rows[0][0]['text'] === __('shahbot::bot.menu_services', [], 'fa')
+                && $rows[1][0]['text'] === '💰 Wallet!'
+                && ! str_contains(json_encode($rows, JSON_UNESCAPED_UNICODE), __('shahbot::bot.menu_gift', [], 'fa'));
+        });
+
+        // The renamed button still opens the wallet.
+        $this->text(1212, '💰 Wallet!');
+        Http::assertSent(fn ($r) => str_contains((string) ($r['reply_markup'] ?? ''), 'wal:hist'));
+    }
+
+    public function test_mini_app_needs_a_valid_telegram_signature(): void
+    {
+        [, $duration] = $this->sellablePackage();
+        $user = $this->botUser(1313);
+        $client = app(BotUserService::class)->client($user);
+        $this->makeAccount($this->owner, $this->makeServer(), ['client_user_id' => $client->id, 'expiry_at' => now()->addDays(5), 'data_limit_bytes' => 1000, 'data_used_bytes' => 250]);
+
+        $this->get(route('shahbot.app', ['bot' => 0]))->assertOk()->assertSee('telegram-web-app.js', false);
+
+        $token = '123456:'.str_repeat('a', 35);
+        $fields = ['auth_date' => (string) time(), 'query_id' => 'q1', 'user' => json_encode(['id' => 1313, 'first_name' => 'Ali'])];
+        ksort($fields);
+        $check = implode("\n", array_map(fn ($k, $v) => $k.'='.$v, array_keys($fields), $fields));
+        $fields['hash'] = hash_hmac('sha256', $check, hash_hmac('sha256', $token, 'WebAppData', true));
+        $initData = http_build_query($fields);
+
+        $this->postJson(route('shahbot.app.me', ['bot' => 0]), ['initData' => $initData])
+            ->assertOk()
+            ->assertJsonPath('registered', true)
+            ->assertJsonPath('services.0.percent', 25);
+
+        $fields['hash'] = str_repeat('0', 64);
+        $this->postJson(route('shahbot.app.me', ['bot' => 0]), ['initData' => http_build_query($fields)])->assertUnauthorized();
     }
 }

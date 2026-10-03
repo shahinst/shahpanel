@@ -229,4 +229,18 @@ return [
     'bulk_range' => 'تعداد باید بین ۱ و :max باشد.',
     'reseller_accounts_title' => '📋 آخرین اکانت‌های شما:',
     'order_type_bulk' => 'خرید عمده',
+
+    // مینی‌اپ
+    'menu_app' => '📱 مینی‌اپ',
+    'app_buy' => 'خرید و تمدید در ربات',
+    'app_balance' => 'موجودی کیف پول',
+    'app_services' => 'سرویس‌های من',
+    'app_orders' => 'خریدها',
+    'app_outside' => 'این صفحه را از داخل ربات تلگرام باز کنید.',
+    'app_start' => 'ابتدا ربات را استارت کنید.',
+    'app_copy' => 'کپی لینک',
+    'app_copied' => 'لینک کپی شد',
+    'app_expiry' => 'انقضا',
+    'app_days' => 'روز مانده',
+    'app_used' => 'مصرف',
 ];

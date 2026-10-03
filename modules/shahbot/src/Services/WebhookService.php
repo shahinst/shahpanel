@@ -5,6 +5,7 @@ namespace Modules\ShahBot\Services;
 use Modules\ShahBot\Models\BotInstance;
 use Modules\ShahBot\Support\BotContext;
 use Modules\ShahBot\Support\BotSettings;
+use Modules\ShahBot\Support\BotTexts;
 use Modules\ShahBot\Telegram\TelegramClient;
 
 /**
@@ -61,6 +62,8 @@ class WebhookService
             $this->settings->set(['bot_username' => $username]);
         }
 
+        $this->setMenuButton();
+
         if ($this->settings->main('mode') === 'polling') {
             $result = $this->telegram->call('deleteWebhook');
 
@@ -85,5 +88,24 @@ class WebhookService
         }
 
         return $this->telegram->call('getWebhookInfo', [], 10)['result'] ?? [];
+    }
+
+    /**
+     * Points the bot's menu button at the mini app when it can be served.
+     */
+    protected function setMenuButton(): void
+    {
+        if (! $this->settings->bool('mini_app_enabled') || ! str_starts_with((string) config('app.url'), 'https://')) {
+            return;
+        }
+
+        app(BotTexts::class)->apply();
+        $this->telegram->call('setChatMenuButton', [
+            'menu_button' => json_encode([
+                'type' => 'web_app',
+                'text' => strip_tags(__('shahbot::bot.menu_app', [], 'fa')),
+                'web_app' => ['url' => route('shahbot.app', ['bot' => app(BotContext::class)->botId()])],
+            ], JSON_UNESCAPED_UNICODE),
+        ], 10);
     }
 }

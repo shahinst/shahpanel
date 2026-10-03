@@ -5,6 +5,7 @@ namespace Modules\ShahBot\Services;
 use Modules\ShahBot\Models\BotUser;
 use Modules\ShahBot\Support\BotContext;
 use Modules\ShahBot\Support\BotSettings;
+use Modules\ShahBot\Support\BotTexts;
 use Modules\ShahBot\Telegram\TelegramClient;
 
 /**
@@ -21,6 +22,8 @@ class BotNotifier
 
     public function admins(string $text, ?array $keyboard = null): void
     {
+        app(BotTexts::class)->apply();
+
         foreach ($this->settings->adminChatIds() as $chatId) {
             $this->telegram->sendMessage($chatId, $text, $keyboard);
         }
@@ -38,6 +41,8 @@ class BotNotifier
      */
     public function user(BotUser $user, string $text, ?array $keyboard = null): bool
     {
+        app(BotTexts::class)->apply();
+
         $result = $this->context->botId() === (int) $user->bot_id
             ? $this->telegram->sendMessage($user->telegram_id, $text, $keyboard)
             : $this->context->run((int) $user->bot_id, fn () => $this->telegram->sendMessage($user->telegram_id, $text, $keyboard));
