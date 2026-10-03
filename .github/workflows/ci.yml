@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: shahpanel_test
+          MYSQL_USER: shahpanel_test
+          MYSQL_PASSWORD: shahpanel_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: bcmath, ctype, curl, dom, fileinfo, gd, intl, mbstring, pdo_mysql, zip
+          coverage: none
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.composer/cache/files
+          key: composer-${{ hashFiles('composer.lock') }}
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: PHP syntax check
+        run: find app config database routes modules -name '*.php' -print0 | xargs -0 -n1 -P4 php -l > /dev/null
+
+      - name: Shell syntax check
+        run: |
+          for f in install.sh update.sh uninstall.sh scripts/*.sh; do
+            [ -f "$f" ] && bash -n "$f"
+          done
+
+      - name: Compile Blade views
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+          php artisan view:cache
+
+      - name: Run tests
+        run: vendor/bin/phpunit
