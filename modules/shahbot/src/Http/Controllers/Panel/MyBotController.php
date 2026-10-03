@@ -3,6 +3,7 @@
 namespace Modules\ShahBot\Http\Controllers\Panel;
 
 use App\Enums\UserRole;
+use App\Services\ClientDisplayPricingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -10,6 +11,7 @@ use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Modules\ShahBot\Models\BotInstance;
 use Modules\ShahBot\Models\BotOrder;
+use Modules\ShahBot\Models\BotPackage;
 use Modules\ShahBot\Models\BotUser;
 use Modules\ShahBot\Services\WebhookService;
 use Modules\ShahBot\Support\BotContext;
@@ -59,6 +61,10 @@ class MyBotController extends Controller
             'support_text' => ['nullable', 'string', 'max:1000'],
             'channels' => ['nullable', 'string', 'max:500'],
             'rules_text' => ['nullable', 'string', 'max:3500'],
+            'brand_name' => ['nullable', 'string', 'max:80'],
+            'about_text' => ['nullable', 'string', 'max:3500'],
+            'contact_text' => ['nullable', 'string', 'max:1000'],
+            'faq_text' => ['nullable', 'string', 'max:3500'],
         ]);
 
         $bot = BotInstance::query()->firstOrNew(['owner_user_id' => $user->id]);
@@ -83,6 +89,99 @@ class MyBotController extends Controller
         unset($data['bot_token']);
         $bot->settings = array_map(fn ($v) => (string) ($v ?? ''), $data);
         $bot->save();
+
+        return back()->with('success', __('shahbot::admin.saved'));
+    }
+
+    /**
+     * The tariffs this bot sells, and at what price.
+     *
+     * The list is built from the owner's own catalog, so an agent can only ever
+     * pick from what the panel already lets them sell. Servers and inbounds are
+     * not part of it and are never shown -- a reseller sells a tariff, not a
+     * machine.
+     */
+    public function plans(Request $request, BotSettings $settings, ClientDisplayPricingService $pricing): View
+    {
+        $user = $request->user();
+        abort_unless(in_array($user->role, [UserRole::Agent, UserRole::Seller], true), 403);
+
+        $bot = BotInstance::query()->where('owner_user_id', $user->id)->first();
+        $own = $bot === null
+            ? collect()
+            : BotPackage::query()->where('bot_id', $bot->id)->get()->keyBy('package_duration_id');
+
+        return view('shahbot::panel.my-plans', [
+            'panel' => $user->role === UserRole::Agent ? 'agent' : 'seller',
+            'enabled' => $settings->bool('agent_bots_enabled'),
+            'bot' => $bot,
+            'rows' => $pricing->managementCatalogForOwner($user)
+                ->filter(fn (array $row): bool => ! $row['duration']->tier->isTest())
+                ->values(),
+            'own' => $own,
+        ]);
+    }
+
+    public function savePlans(Request $request, BotSettings $settings, ClientDisplayPricingService $pricing): RedirectResponse
+    {
+        $user = $request->user();
+        abort_unless(in_array($user->role, [UserRole::Agent, UserRole::Seller], true), 403);
+        abort_unless($settings->bool('agent_bots_enabled'), 403);
+
+        $bot = BotInstance::query()->where('owner_user_id', $user->id)->first();
+
+        if ($bot === null) {
+            return back()->with('error', __('shahbot::admin.my_bot_needed_first'));
+        }
+
+        $data = $request->validate([
+            'enabled' => ['nullable', 'array'],
+            'enabled.*' => ['nullable', 'boolean'],
+            'prices' => ['nullable', 'array'],
+            'prices.*' => ['nullable', 'numeric', 'min:0', 'max:99999999999'],
+        ]);
+
+        // Only tariffs the owner really has. Anything else in the request is
+        // ignored rather than rejected, so a stale form does not block a save.
+        $allowed = $pricing->managementCatalogForOwner($user)
+            ->filter(fn (array $row): bool => ! $row['duration']->tier->isTest())
+            ->keyBy(fn (array $row): int => (int) $row['duration']->id);
+
+        $tooCheap = [];
+
+        foreach ($allowed as $durationId => $row) {
+            $price = $data['prices'][$durationId] ?? null;
+            $price = ($price === null || $price === '') ? null : number_format((float) $price, 2, '.', '');
+
+            // A price under the owner's own means the panel charges them more
+            // than the customer pays, and every sale eats their wallet. Refused
+            // here and again when the store reads the row.
+            if ($price !== null && bccomp($price, (string) $row['display_price'], 2) < 0) {
+                $tooCheap[] = $row['package']->name.' · '.$row['duration']->tier->label();
+
+                continue;
+            }
+
+            BotPackage::query()->updateOrCreate(
+                ['bot_id' => $bot->id, 'package_duration_id' => (int) $durationId],
+                [
+                    'is_enabled' => (bool) ($data['enabled'][$durationId] ?? false),
+                    'display_price' => $price,
+                ],
+            );
+        }
+
+        // Rows for tariffs the owner no longer has would silently narrow the
+        // store if the panel gave the tariff back later.
+        BotPackage::query()->where('bot_id', $bot->id)
+            ->whereNotIn('package_duration_id', $allowed->keys()->all())
+            ->delete();
+
+        if ($tooCheap !== []) {
+            return back()->with('warning', __('shahbot::admin.plan_price_too_low', [
+                'plans' => implode('، ', array_slice($tooCheap, 0, 5)),
+            ]));
+        }
 
         return back()->with('success', __('shahbot::admin.saved'));
     }

@@ -7,6 +7,7 @@
 @section('panel_content')
 <x-page-header :title="__('shahbot::admin.my_bot')">
     <p class="text-muted mb-0">{{ __('shahbot::admin.my_bot_subtitle') }}</p>
+    <a href="{{ route($prefix.'.plans') }}" class="btn btn-outline-primary"><i class="bx bx-package"></i> {{ __('shahbot::admin.my_plans') }}</a>
 </x-page-header>
 
 @if (! $enabled)
@@ -31,6 +32,25 @@
             <p class="text-muted">{{ __('shahbot::admin.my_bot_steps') }}</p>
             <form method="POST" action="{{ route($prefix.'.update') }}" class="row g-3">
                 @csrf
+                <div class="col-12">
+                    <label class="form-label">{{ __('shahbot::admin.brand_name') }}</label>
+                    <input type="text" name="brand_name" value="{{ old('brand_name', $values['brand_name'] ?? '') }}" class="form-control" maxlength="80">
+                    <div class="text-muted small">{{ __('shahbot::admin.brand_name_hint') }}</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">{{ __('shahbot::admin.about_text') }}</label>
+                    <textarea name="about_text" rows="4" class="form-control">{{ old('about_text', $values['about_text'] ?? '') }}</textarea>
+                    <div class="text-muted small">{{ __('shahbot::admin.about_hint') }}</div>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">{{ __('shahbot::admin.contact_text') }}</label>
+                    <textarea name="contact_text" rows="4" class="form-control">{{ old('contact_text', $values['contact_text'] ?? '') }}</textarea>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">{{ __('shahbot::admin.faq_text') }}</label>
+                    <textarea name="faq_text" rows="3" class="form-control">{{ old('faq_text', $values['faq_text'] ?? '') }}</textarea>
+                    <div class="text-muted small">{{ __('shahbot::admin.faq_hint') }}</div>
+                </div>
                 <div class="col-md-6">
                     <label class="form-label">{{ __('shahbot::admin.bot_token') }}</label>
                     <input type="password" name="bot_token" class="form-control" dir="ltr" autocomplete="off" placeholder="{{ $bot && $bot->token() !== '' ? '••••••••••' : '123456:ABC...' }}">

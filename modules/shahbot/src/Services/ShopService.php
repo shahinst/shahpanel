@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Modules\ShahBot\Models\BotCode;
 use Modules\ShahBot\Models\BotOrder;
+use Modules\ShahBot\Models\BotPackage;
 use Modules\ShahBot\Models\BotReferralReward;
 use Modules\ShahBot\Models\BotUser;
 use Modules\ShahBot\Support\BotSettings;
@@ -47,7 +48,7 @@ class ShopService
      */
     public function groups(BotUser $user): Collection
     {
-        $rows = $this->pricing->catalogForClient($this->users->client($user))
+        $rows = $this->catalog($user)
             ->filter(fn (array $row): bool => ! $row['duration']->tier->isTest()
                 && $this->categories->isPackageAvailableForNewAccounts($row['package']))
             ->values();
@@ -59,8 +60,58 @@ class ShopService
 
     public function row(BotUser $user, int $durationId): ?array
     {
-        return $this->pricing->catalogForClient($this->users->client($user))
+        return $this->catalog($user)
             ->first(fn (array $row): bool => (int) $row['duration']->id === $durationId);
+    }
+
+    /**
+     * The owner's catalog, narrowed to what this particular bot sells.
+     *
+     * An agent bot shows a subset of its owner's catalog at prices the owner
+     * chose. The narrowing happens here, in the one place both the menu and
+     * the purchase read, so a tariff the owner switched off cannot be bought
+     * by replaying its callback -- a filter applied only where the buttons are
+     * drawn would stop the menu and nothing else.
+     *
+     * A bot with no rows of its own sells the whole catalog, so bots that
+     * existed before this table keep behaving exactly as they did.
+     *
+     * @return Collection<int, array>
+     */
+    protected function catalog(BotUser $user): Collection
+    {
+        $rows = $this->pricing->catalogForClient($this->users->client($user));
+        $botId = (int) $user->bot_id;
+
+        if ($botId === 0) {
+            return $rows;
+        }
+
+        $own = BotPackage::query()->where('bot_id', $botId)->get()->keyBy('package_duration_id');
+
+        if ($own->isEmpty()) {
+            return $rows;
+        }
+
+        return $rows->filter(function (array $row) use ($own): bool {
+            $pick = $own->get((int) $row['duration']->id);
+
+            return $pick === null || $pick->is_enabled;
+        })->map(function (array $row) use ($own): array {
+            $pick = $own->get((int) $row['duration']->id);
+
+            // The owner may raise the price, never drop it below what the
+            // panel charges them -- a cheaper bot price would be paid out of
+            // the owner's own wallet on every sale. The floor is enforced when
+            // the price is saved as well; this is the second line, for a row
+            // that was already in the table when the owner's own price rose.
+            if ($pick !== null && $pick->display_price !== null
+                && bccomp((string) $pick->display_price, (string) $row['display_price'], 2) >= 0) {
+                $row['display_price'] = (string) $pick->display_price;
+            }
+
+            return $row;
+        })->values();
     }
 
     public function rowLabel(array $row): string

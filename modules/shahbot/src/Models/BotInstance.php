@@ -5,6 +5,7 @@ namespace Modules\ShahBot\Models;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Crypt;
 use Throwable;
 
@@ -19,6 +20,10 @@ class BotInstance extends Model
     public const OWN_SETTINGS = [
         'admin_chat_ids', 'card_number', 'card_holder', 'card_bank', 'card_note',
         'welcome_text', 'support_text', 'channels', 'rules_text',
+        // The agent's own brand. These are deliberately plain texts the owner
+        // writes, not a fixed set of fields: every reseller advertises
+        // different things, and a free text box covers what a column cannot.
+        'brand_name', 'about_text', 'contact_text', 'faq_text',
     ];
 
     protected $table = 'shahbot_bots';
@@ -35,6 +40,22 @@ class BotInstance extends Model
     public function owner(): BelongsTo
     {
         return $this->belongsTo(User::class, 'owner_user_id');
+    }
+
+    public function packages(): HasMany
+    {
+        return $this->hasMany(BotPackage::class, 'bot_id');
+    }
+
+    /**
+     * What the bot calls itself. Falls back to the panel name so a bot whose
+     * owner never filled the brand in still greets people with something.
+     */
+    public function brandName(): string
+    {
+        $brand = trim((string) (($this->settings ?? [])['brand_name'] ?? ''));
+
+        return $brand !== '' ? $brand : (string) config('app.name');
     }
 
     public function token(): string
