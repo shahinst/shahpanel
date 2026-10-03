@@ -7,6 +7,10 @@ return [
     'section_system' => 'سیستم',
 
     'fields' => [
+        'alert_telegram_enabled' => 'ارسال اعلان‌ها به تلگرام کاربران (با ربات بک‌آپ، برای کسانی که آیدی عددی تلگرام را در پروفایل ثبت کرده‌اند)',
+        'alert_expiry_days' => 'چند روز قبل از انقضا هشدار داده شود',
+        'alert_clients_enabled' => 'ارسال هشدار انقضا و حجم برای خود مشتری‌ها',
+        'alert_low_balance_amount' => 'هشدار کم بودن موجودی کیف پول (مبلغ)',
         'site_name' => 'نام سایت',
         'site_url' => 'آدرس سایت',
         'timezone' => 'منطقه زمانی',
@@ -29,6 +33,8 @@ return [
     ],
 
     'hints' => [
+        'alert_expiry_days' => 'پیش‌فرض ۳ روز.',
+        'alert_low_balance_amount' => 'وقتی موجودی نماینده یا فروشنده کمتر از این مبلغ شود، روزی یک بار به او اعلان داده می‌شود. خالی یا ۰ یعنی خاموش.',
         'site_name' => 'در عنوان صفحات و ایمیل‌ها نمایش داده می‌شود.',
         'site_url' => 'آدرس کامل سایت با https، مثلاً https://example.com',
         'timezone' => 'پیشنهادی: Asia/Tehran',
@@ -82,4 +88,5 @@ return [
         'info' => 'Info',
         'debug' => 'Debug',
     ],
+    'section_alerts' => 'هشدارها',
 ];

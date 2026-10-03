@@ -209,4 +209,6 @@ return [
     'loading_from_server' => 'در حال دریافت از سرور…',
     'load_from_server_failed' => 'دریافت از سرور ناموفق بود.',
     'mikrotik_server_needs_interface' => 'برای سرور «:server» ابتدا یک اینترفیس انتخاب کنید.',
+    'sanaei_limit_ip' => 'حداکثر تعداد دستگاه هم‌زمان',
+    'sanaei_limit_ip_hint' => 'تعداد IPهای هم‌زمان مجاز برای هر اکانت (limitIp در 3x-ui). خالی یا ۰ یعنی بدون محدودیت. فقط روی اکانت‌های جدید اعمال می‌شود.',
 ];

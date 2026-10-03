@@ -5,8 +5,10 @@ namespace App\Console\Commands;
 use App\Enums\AccountStatus;
 use App\Enums\NotificationType;
 use App\Models\Account;
+use App\Models\Setting;
 use App\Models\User;
 use App\Enums\UserRole;
+use App\Enums\UserStatus;
 use App\Enums\SyncLogStatus;
 use App\Models\ServerSyncLog;
 use App\Services\PanelAlertService;
@@ -23,19 +25,86 @@ class DispatchAlertsCommand extends Command
         $this->alertExpiringAccounts($alerts);
         $this->alertQuotaWarnings($alerts);
         $this->alertRecentSyncFailures($alerts);
+        $this->alertLowBalances($alerts);
 
         return self::SUCCESS;
     }
 
+    /**
+     * The account's own client, when the admin turned client alerts on.
+     */
+    protected function clientRecipient(Account $account): ?User
+    {
+        if (Setting::getValue('alert_clients_enabled', '0') !== '1') {
+            return null;
+        }
+
+        $client = $account->clientUser;
+
+        return $client !== null && $client->role === UserRole::Client && $client->status === UserStatus::Active
+            ? $client
+            : null;
+    }
+
+    /**
+     * Agents and sellers whose wallet fell under the admin's threshold, once a
+     * day, so they top up before a renewal or a client purchase fails.
+     */
+    protected function alertLowBalances(PanelAlertService $alerts): void
+    {
+        $threshold = (float) Setting::getValue('alert_low_balance_amount', '0');
+
+        if ($threshold <= 0) {
+            return;
+        }
+
+        $sent = 0;
+        $wallets = app(\App\Services\WalletService::class);
+
+        User::query()
+            ->whereIn('role', [UserRole::Agent->value, UserRole::Seller->value])
+            ->where('status', UserStatus::Active->value)
+            ->chunkById(200, function ($users) use ($alerts, $wallets, $threshold, &$sent): void {
+                foreach ($users as $user) {
+                    $balance = (float) $wallets->getOrCreateWallet($user)->balance;
+
+                    if ($balance >= $threshold) {
+                        continue;
+                    }
+
+                    $panel = $user->role === UserRole::Agent ? 'agent' : 'seller';
+                    $link = \Illuminate\Support\Facades\Route::has($panel.'.wallet.top-up.create')
+                        ? route($panel.'.wallet.top-up.create')
+                        : null;
+
+                    $created = $alerts->notifyOnce(
+                        $user,
+                        NotificationType::Warning,
+                        trans_for($user, 'backend.notify_low_balance_title'),
+                        trans_for($user, 'backend.notify_low_balance_body', ['balance' => format_money($balance)]),
+                        'lowbal:'.$user->id,
+                        $link,
+                    );
+
+                    if ($created !== null) {
+                        $sent++;
+                    }
+                }
+            });
+
+        $this->line("Low balance alerts: {$sent}");
+    }
+
     protected function alertExpiringAccounts(PanelAlertService $alerts): void
     {
-        $threshold = now()->addDays(3);
+        $days = max(1, min(30, (int) Setting::getValue('alert_expiry_days', '3')));
+        $threshold = now()->addDays($days);
 
         $accounts = Account::query()
             ->where('status', AccountStatus::Active)
             ->whereNotNull('expiry_at')
             ->whereBetween('expiry_at', [now(), $threshold])
-            ->with('ownerSeller')
+            ->with(['ownerSeller', 'clientUser'])
             ->get();
 
         $sent = 0;
@@ -62,6 +131,20 @@ class DispatchAlertsCommand extends Command
             if ($created !== null) {
                 $sent++;
             }
+
+            if (($client = $this->clientRecipient($account)) !== null) {
+                $alerts->notifyAccountAlert(
+                    $client,
+                    NotificationType::AccountExpiry,
+                    trans_for($client, 'backend.notify_expiry_reminder_title'),
+                    trans_for($client, 'backend.notify_expiry_reminder_body', [
+                        'username' => $account->remote_username,
+                        'date' => jalali_date($account->expiry_at, 'Y/m/d'),
+                    ]),
+                    $account,
+                    'expiry:client:'.$account->id,
+                );
+            }
         }
 
         $this->line("Expiring alerts: {$sent}/{$accounts->count()}");
@@ -77,7 +160,7 @@ class DispatchAlertsCommand extends Command
             // few near their limit ran out of memory on large panels.
             ->whereRaw('data_used_bytes >= data_limit_bytes * 0.9')
             ->whereColumn('data_used_bytes', '<', 'data_limit_bytes')
-            ->with('ownerSeller')
+            ->with(['ownerSeller', 'clientUser'])
             ->get();
 
         $sent = 0;
@@ -100,6 +183,17 @@ class DispatchAlertsCommand extends Command
 
             if ($created !== null) {
                 $sent++;
+            }
+
+            if (($client = $this->clientRecipient($account)) !== null) {
+                $alerts->notifyAccountAlert(
+                    $client,
+                    NotificationType::QuotaExhausted,
+                    trans_for($client, 'backend.notify_quota_warning_title'),
+                    trans_for($client, 'backend.notify_quota_warning_body', ['username' => $account->remote_username]),
+                    $account,
+                    'quota90:client:'.$account->id,
+                );
             }
         }
 

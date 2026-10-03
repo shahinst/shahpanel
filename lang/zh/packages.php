@@ -208,4 +208,6 @@ return [
     'loading_from_server' => '正在从服务器加载…',
     'load_from_server_failed' => '无法从服务器加载。',
     'mikrotik_server_needs_interface' => '请先为服务器“:server”选择接口。',
+    'sanaei_limit_ip' => '最大同时设备数',
+    'sanaei_limit_ip_hint' => '每个账户可同时使用的 IP 数量（3x-ui 中的 limitIp）。留空或 0 表示不限制。仅对新账户生效。',
 ];

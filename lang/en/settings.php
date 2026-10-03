@@ -7,6 +7,10 @@ return [
     'section_system' => 'System',
 
     'fields' => [
+        'alert_telegram_enabled' => 'Send notifications to users\' Telegram (via the backup bot, for users who entered their numeric Telegram id in their profile)',
+        'alert_expiry_days' => 'Days before expiry to alert',
+        'alert_clients_enabled' => 'Send expiry and quota alerts to clients too',
+        'alert_low_balance_amount' => 'Low wallet balance alert (amount)',
         'site_name' => 'Site name',
         'site_url' => 'Site URL',
         'timezone' => 'Timezone',
@@ -29,6 +33,8 @@ return [
     ],
 
     'hints' => [
+        'alert_expiry_days' => 'Default: 3 days.',
+        'alert_low_balance_amount' => 'Agents and sellers whose balance drops below this get one notice a day. Empty or 0 turns it off.',
         'site_name' => 'Shown in page titles and emails.',
         'site_url' => 'Full URL with https.',
         'timezone' => 'Recommended: Asia/Tehran',
@@ -82,4 +88,5 @@ return [
         'info' => 'Info',
         'debug' => 'Debug',
     ],
+    'section_alerts' => 'Alerts',
 ];

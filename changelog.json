@@ -1,6 +1,48 @@
 {
     "versions": [
         {
+            "version": "3.7.0",
+            "date": "2026-10-07",
+            "notes": {
+                "fa": [
+                    "تمدید، فعال‌سازی و غیرفعال‌سازی گروهی اکانت‌ها از فهرست اکانت‌ها (کنار حذف گروهی)",
+                    "تمدید خودکار: با روشن کردن آن روی هر اکانت، هنگام انقضا با همان پکیج و دوره از کیف پول مالک تمدید می‌شود؛ اگر ممکن نباشد مالک باخبر می‌شود",
+                    "محدودیت تعداد دستگاه هم‌زمان (limitIp) برای پکیج‌های سنایی/3x-ui",
+                    "هشدار کم بودن موجودی کیف پول برای نماینده‌ها و فروشنده‌ها با مبلغ قابل تنظیم",
+                    "امکان ارسال هشدار انقضا و نزدیک شدن به سقف حجم برای خود مشتری‌ها و تنظیم تعداد روزهای هشدار قبل از انقضا",
+                    "ارسال اعلان‌ها به تلگرام کاربرانی که آیدی عددی تلگرام را در پروفایل ثبت کرده‌اند (با ربات بک‌آپ پنل)",
+                    "بخش جدید «هشدارها» در تنظیمات"
+                ],
+                "en": [
+                    "Bulk renew, enable and disable from the accounts list (next to bulk delete)",
+                    "Auto-renew: when switched on for an account, it is renewed at its package and period from the owner's wallet when it expires; the owner is told if that is not possible",
+                    "Simultaneous device limit (limitIp) for Sanaei / 3x-ui packages",
+                    "Low wallet balance alert for agents and sellers, with an adjustable amount",
+                    "Expiry and near-quota alerts can also go to the clients themselves, and the number of days before expiry is adjustable",
+                    "Notifications are sent to the Telegram of users who entered their numeric Telegram id in their profile (through the panel's backup bot)",
+                    "New “Alerts” section in settings"
+                ],
+                "ru": [
+                    "Массовое продление, включение и отключение из списка аккаунтов (рядом с массовым удалением)",
+                    "Автопродление: если включено для аккаунта, при истечении он продлевается тем же пакетом и периодом из кошелька владельца; если это невозможно, владелец получает уведомление",
+                    "Ограничение одновременных устройств (limitIp) для пакетов Sanaei / 3x-ui",
+                    "Оповещение о низком балансе кошелька для агентов и продавцов с настраиваемой суммой",
+                    "Оповещения об истечении и приближении к лимиту могут приходить и самим клиентам; количество дней до истечения настраивается",
+                    "Уведомления отправляются в Telegram пользователям, указавшим числовой Telegram id в профиле (через бот резервных копий)",
+                    "Новый раздел «Оповещения» в настройках"
+                ],
+                "zh": [
+                    "在账户列表中批量续费、启用和停用（位于批量删除旁）",
+                    "自动续费：为账户开启后，到期时将以相同套餐和周期从所有者钱包续费；无法续费时会通知所有者",
+                    "Sanaei / 3x-ui 套餐的同时设备数限制（limitIp）",
+                    "代理和销售员的钱包余额不足提醒，金额可调",
+                    "到期和接近流量上限提醒也可发送给客户本人，并可设置到期前提醒天数",
+                    "向在个人资料中填写数字 Telegram ID 的用户发送 Telegram 通知（通过面板备份机器人）",
+                    "设置中新增“提醒”分区"
+                ]
+            }
+        },
+        {
             "version": "3.6.0",
             "date": "2026-10-06",
             "notes": {

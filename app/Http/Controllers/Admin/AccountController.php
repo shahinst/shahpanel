@@ -554,6 +554,69 @@ class AccountController extends Controller
     }
 
     /**
+     * Renew, enable or disable the ticked accounts in one go. Each account goes
+     * through the same service call (and the same charge) as its own row
+     * button; one failing account is reported and the rest still run.
+     */
+    public function bulkAction(Request $request, AccountService $accountService): RedirectResponse
+    {
+        $validated = $request->validate([
+            'action' => ['required', 'in:renew,enable,disable'],
+            'ids' => ['required', 'array', 'min:1', 'max:'.max(1, (int) config('shahpanel.bulk_account_max', 50))],
+            'ids.*' => ['integer', 'exists:accounts,id'],
+        ]);
+
+        $accounts = Account::query()->whereIn('id', $validated['ids'])->get();
+
+        if ($accounts->isEmpty()) {
+            return back()->with('warning', __('app.no_results'));
+        }
+
+        $done = 0;
+        $failed = [];
+
+        foreach ($accounts as $account) {
+            if ($request->user()->cannot('update', $account)) {
+                $failed[] = $account->remote_username;
+
+                continue;
+            }
+
+            try {
+                match ($validated['action']) {
+                    'renew' => $accountService->renewAccount(
+                        $account,
+                        null,
+                        \App\Enums\AccountBillingContext::Staff,
+                        $request->user(),
+                    ),
+                    'enable' => $accountService->enableAccount($account),
+                    'disable' => $accountService->disableAccount($account),
+                };
+                $done++;
+            } catch (\Throwable $exception) {
+                report($exception);
+                $failed[] = $account->remote_username.' ('.$exception->getMessage().')';
+            }
+        }
+
+        $redirect = back();
+
+        if ($done > 0) {
+            $redirect->with('success', __('accounts.bulk_action_done', ['count' => $done]));
+        }
+
+        if ($failed !== []) {
+            $redirect->with('warning', __('accounts.bulk_action_failed', [
+                'count' => count($failed),
+                'names' => implode('، ', array_slice($failed, 0, 10)),
+            ]));
+        }
+
+        return $redirect;
+    }
+
+    /**
      * Issue a fresh WireGuard key pair for an account whose private key the
      * panel does not hold — the case for every account read off a router, since
      * a WireGuard peer only ever stores the client's public key.

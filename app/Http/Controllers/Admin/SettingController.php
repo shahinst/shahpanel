@@ -34,6 +34,10 @@ class SettingController extends Controller
             'portal_enabled' => ['section' => 'system', 'type' => 'boolean'],
         'registration_enabled' => ['section' => 'system', 'type' => 'boolean'],
         'ticket_auto_close_days' => ['section' => 'system', 'type' => 'number'],
+        'alert_low_balance_amount' => ['section' => 'alerts', 'type' => 'number'],
+        'alert_clients_enabled' => ['section' => 'alerts', 'type' => 'boolean'],
+        'alert_expiry_days' => ['section' => 'alerts', 'type' => 'number'],
+        'alert_telegram_enabled' => ['section' => 'alerts', 'type' => 'boolean'],
     ];
 
     /**
@@ -56,6 +60,7 @@ class SettingController extends Controller
             'general' => __('settings.section_general'),
             'payment' => __('settings.section_payment'),
             'system' => __('settings.section_system'),
+            'alerts' => __('settings.section_alerts'),
         ];
 
         // مقدار «مؤثر» را از خود enum می‌گیریم تا ترتیب تنظیم/کانفیگ/پیش‌فرض
@@ -95,6 +100,10 @@ class SettingController extends Controller
             'portal_enabled' => ['nullable', 'boolean'],
             'registration_enabled' => ['nullable', 'boolean'],
             'ticket_auto_close_days' => ['nullable', 'integer', 'min:1', 'max:365'],
+            'alert_low_balance_amount' => ['nullable', 'numeric', 'min:0'],
+            'alert_clients_enabled' => ['nullable', 'boolean'],
+            'alert_expiry_days' => ['nullable', 'integer', 'min:1', 'max:30'],
+            'alert_telegram_enabled' => ['nullable', 'boolean'],
         ];
 
         foreach ($this->supportedLocales() as $locale) {

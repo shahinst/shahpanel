@@ -175,6 +175,19 @@ class ServerBackupTelegramNotifier
         ];
     }
 
+    /**
+     * Send a message to any chat (a user's own Telegram id) with the panel bot.
+     */
+    public function sendMessageTo(string $chatId, string $text): bool
+    {
+        return $this->ok($this->post('sendMessage', [
+            'chat_id' => $chatId,
+            'text' => $text,
+            'parse_mode' => 'HTML',
+            'disable_web_page_preview' => true,
+        ]));
+    }
+
     public function sendMessage(string $text): bool
     {
         $response = $this->post('sendMessage', [

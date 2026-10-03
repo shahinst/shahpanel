@@ -64,6 +64,12 @@ class PanelAlertService
     public function accountLinkFor(User $recipient, Account $account): ?string
     {
         $account->loadMissing('ownerSeller');
+        if ($recipient->role === UserRole::Client) {
+            return (int) $account->client_user_id === (int) $recipient->id && \Illuminate\Support\Facades\Route::has('client.accounts.show')
+                ? route('client.accounts.show', $account)
+                : null;
+        }
+
         $panel = match ($recipient->role) {
             UserRole::Admin => 'admin',
             UserRole::Agent => 'agent',

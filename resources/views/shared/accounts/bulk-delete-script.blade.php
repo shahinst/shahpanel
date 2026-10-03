@@ -30,15 +30,18 @@
     // The ids are gathered at submit time rather than kept in sync with every
     // click, so a stale hidden field can never send an account the admin
     // unticked. Leftovers from a cancelled confirm are cleared first.
-    form.addEventListener('submit', function () {
-        form.querySelectorAll('input[name="ids[]"]').forEach((input) => input.remove());
+    // The bulk renew/enable/disable forms collect the ticked ids the same way.
+    [form, ...document.querySelectorAll('[data-bulk-ids-form]')].forEach(function (target) {
+        target.addEventListener('submit', function () {
+            target.querySelectorAll('input[name="ids[]"]').forEach((input) => input.remove());
 
-        selected().forEach(function (box) {
-            const hidden = document.createElement('input');
-            hidden.type = 'hidden';
-            hidden.name = 'ids[]';
-            hidden.value = box.value;
-            form.appendChild(hidden);
+            selected().forEach(function (box) {
+                const hidden = document.createElement('input');
+                hidden.type = 'hidden';
+                hidden.name = 'ids[]';
+                hidden.value = box.value;
+                target.appendChild(hidden);
+            });
         });
     });
 

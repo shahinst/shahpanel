@@ -208,4 +208,6 @@ return [
     'loading_from_server' => 'Loading from the server…',
     'load_from_server_failed' => 'Could not load from the server.',
     'mikrotik_server_needs_interface' => 'Choose an interface for the “:server” server first.',
+    'sanaei_limit_ip' => 'Max simultaneous devices',
+    'sanaei_limit_ip_hint' => 'How many IPs one account may use at once (limitIp in 3x-ui). Empty or 0 means no limit. Applies to new accounts.',
 ];
