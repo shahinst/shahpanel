@@ -87,8 +87,8 @@
                                 <span class="badge bg-info">{{ __('payment_cards.add_request') }}</span>
                             @endif
                             <div class="d-flex gap-2 mt-2">
-                                <form method="POST" action="{{ route($panel.'.payment-cards.approve', $pending) }}">@csrf<button class="btn btn-sm btn-success">{{ __('menu.approve') }}</button></form>
-                                <form method="POST" action="{{ route($panel.'.payment-cards.reject', $pending) }}">@csrf<button class="btn btn-sm btn-outline-secondary">{{ __('menu.reject') }}</button></form>
+                                <form method="POST" action="{{ route($panel.'.payment-cards.approve', $pending) }}" data-confirm="{{ __('app.confirm_approve') }}">@csrf<button class="btn btn-sm btn-success">{{ __('menu.approve') }}</button></form>
+                                <form method="POST" action="{{ route($panel.'.payment-cards.reject', $pending) }}" data-confirm="{{ __('app.confirm_reject') }}">@csrf<button class="btn btn-sm btn-outline-secondary">{{ __('menu.reject') }}</button></form>
                             </div>
                         </div>
                     @endforeach

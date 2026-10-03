@@ -19,7 +19,7 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <form method="POST" action="{{ route('admin.gateway-payments.approve', $payment) }}">
+                            <form method="POST" action="{{ route('admin.gateway-payments.approve', $payment) }}" data-confirm="{{ __('app.confirm_approve') }}">
                                 @csrf
                                 <div class="mb-3">
                                     <label class="form-label">{{ __('payment_gateways.admin_note') }}</label>
@@ -29,7 +29,7 @@
                             </form>
                         </div>
                         <div class="col-md-6">
-                            <form method="POST" action="{{ route('admin.gateway-payments.reject', $payment) }}">
+                            <form method="POST" action="{{ route('admin.gateway-payments.reject', $payment) }}" data-confirm="{{ __('app.confirm_reject') }}">
                                 @csrf
                                 <div class="mb-3">
                                     <label class="form-label">{{ __('payment_gateways.admin_note') }}</label>

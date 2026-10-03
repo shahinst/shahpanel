@@ -90,22 +90,18 @@
                                 </td>
                                 <td class="text-nowrap">
                                     @if ($categoryRoutesReady)
-                                        @if (Route::has('admin.package-categories.toggle-active'))
-                                            <form method="POST" action="{{ route('admin.package-categories.toggle-active', $category) }}" class="d-inline">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button type="submit" class="btn btn-sm btn-outline-{{ $category->is_active ? 'warning' : 'success' }}">
-                                                    {{ $category->is_active ? __('packages.deactivate') : __('packages.activate') }}
-                                                </button>
-                                            </form>
-                                        @endif
-                                        <a href="{{ route('admin.package-categories.edit', $category) }}" class="btn btn-sm btn-light">{{ __('app.edit') }}</a>
-                                        <form method="POST" action="{{ route('admin.package-categories.destroy', $category) }}" class="d-inline"
-                                              onsubmit="return confirm(@json(__('packages.category_delete_confirm')))">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-outline-danger">{{ __('app.delete') }}</button>
-                                        </form>
+                                        <div class="icon-actions">
+                                            @if (Route::has('admin.package-categories.toggle-active'))
+                                                <x-icon-action :icon="$category->is_active ? 'bx-pause-circle' : 'bx-play-circle'"
+                                                    :variant="$category->is_active ? 'warning' : 'success'"
+                                                    :label="$category->is_active ? __('packages.deactivate') : __('packages.activate')"
+                                                    :action="route('admin.package-categories.toggle-active', $category)" method="PATCH" />
+                                            @endif
+                                            <x-icon-action icon="bx-edit" :label="__('app.edit')" :href="route('admin.package-categories.edit', $category)" />
+                                            <x-icon-action icon="bx-trash" variant="danger" :label="__('app.delete')"
+                                                :action="route('admin.package-categories.destroy', $category)" method="DELETE"
+                                                :confirm="__('packages.category_delete_confirm')" />
+                                        </div>
                                     @else
                                         —
                                     @endif
@@ -178,26 +174,22 @@
                                     @endif
                                 </td>
                                 <td class="text-nowrap">
-                                    @if (Route::has('admin.packages.toggle-active'))
-                                        <form method="POST" action="{{ route('admin.packages.toggle-active', $package) }}" class="d-inline">
-                                            @csrf
-                                            @method('PATCH')
-                                            <button type="submit" class="btn btn-sm btn-outline-{{ $package->is_active ? 'warning' : 'success' }}">
-                                                {{ $package->is_active ? __('packages.deactivate') : __('packages.activate') }}
-                                            </button>
-                                        </form>
-                                    @endif
-                                    <a href="{{ route('admin.packages.edit', $package) }}" class="btn btn-sm btn-light">{{ __('app.edit') }}</a>
-                                    @can('delete', $package)
-                                        @if (Route::has('admin.packages.destroy'))
-                                            <form method="POST" action="{{ route('admin.packages.destroy', $package) }}" class="d-inline"
-                                                  onsubmit="return confirm(@json(__('packages.delete_confirm')))">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-outline-danger">{{ __('app.delete') }}</button>
-                                            </form>
+                                    <div class="icon-actions">
+                                        @if (Route::has('admin.packages.toggle-active'))
+                                            <x-icon-action :icon="$package->is_active ? 'bx-pause-circle' : 'bx-play-circle'"
+                                                :variant="$package->is_active ? 'warning' : 'success'"
+                                                :label="$package->is_active ? __('packages.deactivate') : __('packages.activate')"
+                                                :action="route('admin.packages.toggle-active', $package)" method="PATCH" />
                                         @endif
-                                    @endcan
+                                        <x-icon-action icon="bx-edit" :label="__('app.edit')" :href="route('admin.packages.edit', $package)" />
+                                        @can('delete', $package)
+                                            @if (Route::has('admin.packages.destroy'))
+                                                <x-icon-action icon="bx-trash" variant="danger" :label="__('app.delete')"
+                                                    :action="route('admin.packages.destroy', $package)" method="DELETE"
+                                                    :confirm="__('packages.delete_confirm')" />
+                                            @endif
+                                        @endcan
+                                    </div>
                                 </td>
                             </tr>
                         @empty

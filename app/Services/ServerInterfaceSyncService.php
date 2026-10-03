@@ -29,7 +29,7 @@ class ServerInterfaceSyncService
                 'synced' => 0,
                 'removed' => 0,
                 'lines' => [],
-                'errors' => ['جدول server_interfaces وجود ندارد. ابتدا migrate را از نگهداری DB یا maintain.php اجرا کنید.'],
+                'errors' => [__('services.iface_table_missing')],
             ];
         }
 
@@ -57,7 +57,7 @@ class ServerInterfaceSyncService
         try {
             $servicePorts = $this->mikrotikService->detectEnabledServicePorts($server);
         } catch (Throwable $exception) {
-            $errors[] = 'خطا در دریافت پورت سرویس‌ها: '.$exception->getMessage();
+            $errors[] = __('services.iface_service_ports_failed', ['error' => $exception->getMessage()]);
         }
 
         try {
@@ -107,11 +107,11 @@ class ServerInterfaceSyncService
                 $this->upsertInterface($server, $key, $name, 'ppp', $meta, $protocol, $port);
 
                 $synced++;
-                $portLabel = $primaryPort ? " — پورت {$primaryPort} ({$protocol})" : '';
-                $lines[] = "پروفایل PPP «{$name}»{$portLabel} ذخیره شد.";
+                $portLabel = $primaryPort ? __('services.iface_port_label', ['port' => $primaryPort, 'protocol' => $protocol]) : '';
+                $lines[] = __('services.iface_ppp_profile_saved', ['name' => $name, 'port' => $portLabel]);
             }
         } catch (Throwable $exception) {
-            $errors[] = 'خطا در دریافت پروفایل‌های PPP: '.$exception->getMessage();
+            $errors[] = __('services.iface_ppp_profiles_failed', ['error' => $exception->getMessage()]);
         }
 
         try {
@@ -121,20 +121,20 @@ class ServerInterfaceSyncService
             $lines = array_merge($lines, $wireguardSync['lines']);
             $errors = array_merge($errors, $wireguardSync['errors']);
         } catch (Throwable $exception) {
-            $errors[] = 'خطا در سینک اینترفیس WireGuard: '.$exception->getMessage();
+            $errors[] = __('services.iface_wireguard_failed', ['error' => $exception->getMessage()]);
         }
 
         $removed = $this->removeStale($server, $pppRemoteKeys, 'ppp')
             + $this->removeStale($server, $wireguardRemoteKeys, 'wireguard');
 
         if ($removed > 0) {
-            $lines[] = "{$removed} پروفایل قدیمی حذف شد.";
+            $lines[] = __('services.iface_old_profiles_removed', ['count' => $removed]);
         }
 
         try {
             $this->l2tpIpsecService->syncFromRouter($server);
         } catch (Throwable $exception) {
-            $errors[] = 'خطا در سینک تنظیمات L2TP/IPsec: '.$exception->getMessage();
+            $errors[] = __('services.iface_l2tp_failed', ['error' => $exception->getMessage()]);
         }
 
         return compact('synced', 'removed', 'lines', 'errors');
@@ -170,16 +170,16 @@ class ServerInterfaceSyncService
                 ], $protocol, isset($inbound['port']) ? (int) $inbound['port'] : null);
 
                 $synced++;
-                $lines[] = "Inbound «{$name}» (#{$id}) ذخیره شد.";
+                $lines[] = __('services.iface_inbound_saved', ['name' => $name.' (#'.$id.')']);
             }
         } catch (Throwable $exception) {
-            $errors[] = 'خطا در دریافت inboundها: '.$exception->getMessage();
+            $errors[] = __('services.iface_inbounds_failed', ['error' => $exception->getMessage()]);
         }
 
         $removed = $this->removeStale($server, $remoteKeys);
 
         if ($removed > 0) {
-            $lines[] = "{$removed} inbound قدیمی از دیتابیس حذف شد.";
+            $lines[] = __('services.iface_old_inbounds_removed', ['count' => $removed]);
         }
 
         return compact('synced', 'removed', 'lines', 'errors');
@@ -224,16 +224,16 @@ class ServerInterfaceSyncService
                 ], null, null);
 
                 $synced++;
-                $lines[] = "Inbound «{$tag}» ذخیره شد.";
+                $lines[] = __('services.iface_inbound_saved', ['name' => $tag]);
             }
         } catch (Throwable $exception) {
-            $errors[] = 'خطا در دریافت inboundها: '.$exception->getMessage();
+            $errors[] = __('services.iface_inbounds_failed', ['error' => $exception->getMessage()]);
         }
 
         $removed = $this->removeStale($server, $remoteKeys);
 
         if ($removed > 0) {
-            $lines[] = "{$removed} inbound قدیمی از دیتابیس حذف شد.";
+            $lines[] = __('services.iface_old_inbounds_removed', ['count' => $removed]);
         }
 
         return compact('synced', 'removed', 'lines', 'errors');

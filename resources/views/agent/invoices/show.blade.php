@@ -13,7 +13,7 @@
                     <dt>{{ __('menu.amount') }}</dt>
                     <dd>{{ format_money($invoice->total, $invoice->currency) }}</dd>
                     <dt>{{ __('app.status') }}</dt>
-                    <dd>{{ $invoice->status->value }}</dd>
+                    <dd>{{ $invoice->status->label() }}</dd>
                     <dt>{{ __('ui.col_date') }}</dt>
                     <dd>{{ jalali_date($invoice->issued_at ?? $invoice->created_at) }}</dd>
                 </dl>

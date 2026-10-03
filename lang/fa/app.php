@@ -26,4 +26,12 @@ return [
     'active' => 'فعال',
     'inactive' => 'غیرفعال',
     'install_required' => 'نصب هنوز کامل نشده است.',
+    'date' => 'تاریخ',
+    'pagination' => 'صفحه‌بندی',
+    'confirm_approve' => 'از تأیید این مورد مطمئن هستید؟',
+    'confirm_reject' => 'از رد این مورد مطمئن هستید؟',
+    'confirm_action' => 'از انجام این کار مطمئن هستید؟',
+    'invoice_status_paid' => 'پرداخت‌شده',
+    'invoice_status_pending' => 'در انتظار پرداخت',
+    'invoice_status_cancelled' => 'لغوشده',
 ];

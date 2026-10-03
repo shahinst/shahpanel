@@ -204,4 +204,8 @@ return [
     'sanaei_inbounds_empty' => 'No inbound has been fetched from this server yet — press "Fetch inbounds" on the server page.',
     'sanaei_server_required' => 'To choose inbounds the package must have a Sanaei server selected.',
     'sanaei_inbound_not_on_servers' => 'Inbound #:id does not exist on the Sanaei servers of this package.',
+    'invalid_duration_price' => 'The price for the “:tier” period is not valid.',
+    'loading_from_server' => 'Loading from the server…',
+    'load_from_server_failed' => 'Could not load from the server.',
+    'mikrotik_server_needs_interface' => 'Choose an interface for the “:server” server first.',
 ];

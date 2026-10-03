@@ -50,8 +50,8 @@ class DispatchAlertsCommand extends Command
             $created = $alerts->notifyAccountAlert(
                 $recipient,
                 NotificationType::AccountExpiry,
-                __('backend.notify_expiry_reminder_title'),
-                __('backend.notify_expiry_reminder_body', [
+                trans_for($recipient, 'backend.notify_expiry_reminder_title'),
+                trans_for($recipient, 'backend.notify_expiry_reminder_body', [
                     'username' => $account->remote_username,
                     'date' => jalali_date($account->expiry_at, 'Y/m/d'),
                 ]),
@@ -92,8 +92,8 @@ class DispatchAlertsCommand extends Command
             $created = $alerts->notifyAccountAlert(
                 $recipient,
                 NotificationType::QuotaExhausted,
-                __('backend.notify_quota_warning_title'),
-                __('backend.notify_quota_warning_body', ['username' => $account->remote_username]),
+                trans_for($recipient, 'backend.notify_quota_warning_title'),
+                trans_for($recipient, 'backend.notify_quota_warning_body', ['username' => $account->remote_username]),
                 $account,
                 'quota90:'.$account->id,
             );
@@ -154,8 +154,8 @@ class DispatchAlertsCommand extends Command
                 $created = $alerts->notifyOnce(
                     $admin,
                     NotificationType::ServerSync,
-                    __('backend.notify_server_sync_error_title'),
-                    __('backend.notify_server_sync_error_body', [
+                    trans_for($admin, 'backend.notify_server_sync_error_title'),
+                    trans_for($admin, 'backend.notify_server_sync_error_body', [
                         'server' => $log->server?->name ?? '',
                         'errors' => $log->errors_count,
                     ]),

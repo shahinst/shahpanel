@@ -977,3 +977,21 @@ if (! function_exists('safe_link')) {
         return null;
     }
 }
+
+if (! function_exists('trans_for')) {
+    /**
+     * Translate in a user's own language. Alerts are written by cron, which
+     * runs in the panel's default locale, so an English-speaking seller used
+     * to receive every alert in Persian.
+     */
+    function trans_for(?\App\Models\User $user, string $key, array $replace = []): string
+    {
+        $locale = $user?->locale;
+
+        if (! is_string($locale) || $locale === '' || ! is_dir(lang_path($locale))) {
+            $locale = (string) config('app.locale');
+        }
+
+        return (string) __($key, $replace, $locale);
+    }
+}

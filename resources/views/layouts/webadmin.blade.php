@@ -13,6 +13,17 @@
 </head>
 <body @yield('body_attrs')>
 @yield('body')
+<script>
+    // Any form with data-confirm asks before it is sent (approve, reject,
+    // reassign...). Capture phase, so it runs before other submit handlers.
+    document.addEventListener('submit', function (event) {
+        var message = event.target && event.target.getAttribute && event.target.getAttribute('data-confirm');
+        if (message && !window.confirm(message)) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+        }
+    }, true);
+</script>
 @stack('scripts')
 </body>
 </html>

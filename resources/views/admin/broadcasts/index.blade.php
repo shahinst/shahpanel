@@ -25,11 +25,11 @@
                             <td>{{ jalali_date($broadcast->created_at) }}</td>
                             <td>
                                 @if ($broadcast->status === \App\Enums\BroadcastStatus::Pending && $broadcast->sender?->role === \App\Enums\UserRole::Agent)
-                                    <form method="POST" action="{{ route('admin.broadcasts.approve', $broadcast) }}" style="display:inline;">
+                                    <form method="POST" action="{{ route('admin.broadcasts.approve', $broadcast) }}" data-confirm="{{ __('app.confirm_approve') }}" style="display:inline;">
                                         @csrf
                                         <button type="submit" class="btn btn-sm btn-success">{{ __('broadcasts.approve_btn') }}</button>
                                     </form>
-                                    <form method="POST" action="{{ route('admin.broadcasts.reject', $broadcast) }}" style="display:inline;">
+                                    <form method="POST" action="{{ route('admin.broadcasts.reject', $broadcast) }}" data-confirm="{{ __('app.confirm_reject') }}" style="display:inline;">
                                         @csrf
                                         <button type="submit" class="btn btn-sm btn-danger">{{ __('broadcasts.reject_btn') }}</button>
                                     </form>

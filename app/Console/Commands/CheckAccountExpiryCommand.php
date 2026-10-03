@@ -44,8 +44,8 @@ class CheckAccountExpiryCommand extends Command
                 $alerts->notifyAccountAlert(
                     $recipient,
                     NotificationType::AccountExpiry,
-                    __('backend.notify_account_expired_title'),
-                    __('backend.notify_account_expired_body', ['username' => $account->remote_username]),
+                    trans_for($recipient, 'backend.notify_account_expired_title'),
+                    trans_for($recipient, 'backend.notify_account_expired_body', ['username' => $account->remote_username]),
                     $account,
                     'expired:'.$account->id,
                 );

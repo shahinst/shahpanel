@@ -31,13 +31,15 @@
                         </span>
                     </td>
                     <td class="text-nowrap">
-                        <a href="{{ route('admin.servers.show', $server) }}" class="btn btn-sm btn-primary">
-                            <i class="bx bx-cog"></i> {{ __('servers.manage') }}
-                        </a>
-                        <a href="{{ route('admin.servers.edit', $server) }}" class="btn btn-sm btn-light">
-                            <i class="bx bx-edit"></i> {{ __('app.edit') }}
-                        </a>
-                        @include('admin.servers.partials.delete-form', ['server' => $server])
+                        <div class="icon-actions">
+                            <x-icon-action icon="bx-cog" variant="primary" :label="__('servers.manage')" :href="route('admin.servers.show', $server)" />
+                            <x-icon-action icon="bx-edit" :label="__('app.edit')" :href="route('admin.servers.edit', $server)" />
+                            @can('delete', $server)
+                                <x-icon-action icon="bx-trash" variant="danger" :label="__('servers.delete')"
+                                    :action="route('admin.servers.destroy', $server)" method="DELETE"
+                                    :confirm="__('servers.delete_confirm', ['name' => $server->name])" />
+                            @endcan
+                        </div>
                     </td>
                 </tr>
             @empty

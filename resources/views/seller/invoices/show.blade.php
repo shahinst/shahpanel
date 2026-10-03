@@ -13,7 +13,7 @@
                     <dt>{{ __('menu.amount') }}</dt>
                     <dd>{{ format_money($invoice->total, $invoice->currency) }}</dd>
                     <dt>{{ __('app.status') }}</dt>
-                    <dd>{{ $invoice->status->value }}</dd>
+                    <dd>{{ $invoice->status->label() }}</dd>
                 </dl>
             </div>
         </div>

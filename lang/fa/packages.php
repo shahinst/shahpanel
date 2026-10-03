@@ -205,4 +205,8 @@ return [
     'sanaei_inbounds_empty' => 'هنوز inboundی از این سرور دریافت نشده — در صفحهٔ سرور «دریافت inboundها» را بزنید.',
     'sanaei_server_required' => 'برای انتخاب inbound باید یک سرور Sanaei در پکیج انتخاب شود.',
     'sanaei_inbound_not_on_servers' => 'inbound شمارهٔ :id روی سرورهای Sanaei این پکیج وجود ندارد.',
+    'invalid_duration_price' => 'قیمت دوره «:tier» معتبر نیست.',
+    'loading_from_server' => 'در حال دریافت از سرور…',
+    'load_from_server_failed' => 'دریافت از سرور ناموفق بود.',
+    'mikrotik_server_needs_interface' => 'برای سرور «:server» ابتدا یک اینترفیس انتخاب کنید.',
 ];

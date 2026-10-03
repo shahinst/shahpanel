@@ -20,14 +20,14 @@
 
                 @if ($paymentRequest->status === \App\Enums\PaymentRequestStatus::Pending)
                     <hr>
-                    <form method="POST" action="{{ route('admin.payment-requests.approve', $paymentRequest) }}" class="form-inline" style="margin-bottom:10px;">
+                    <form method="POST" action="{{ route('admin.payment-requests.approve', $paymentRequest) }}" data-confirm="{{ __('app.confirm_approve') }}" class="form-inline" style="margin-bottom:10px;">
                         @csrf
                         <div class="form-group">
                             <input name="admin_note" placeholder="{{ __('menu.admin_note') }}" class="form-control">
                         </div>
                         <x-button type="submit" size="sm">{{ __('menu.approve') }}</x-button>
                     </form>
-                    <form method="POST" action="{{ route('admin.payment-requests.reject', $paymentRequest) }}" class="form-inline">
+                    <form method="POST" action="{{ route('admin.payment-requests.reject', $paymentRequest) }}" data-confirm="{{ __('app.confirm_reject') }}" class="form-inline">
                         @csrf
                         <div class="form-group">
                             <input name="admin_note" required placeholder="{{ __('menu.admin_note') }}" class="form-control">

@@ -26,4 +26,12 @@ return [
     'active' => 'Активен',
     'inactive' => 'Отключён',
     'install_required' => 'Сначала запустите установщик.',
+    'date' => 'Дата',
+    'pagination' => 'Пагинация',
+    'confirm_approve' => 'Подтвердить этот элемент?',
+    'confirm_reject' => 'Отклонить этот элемент?',
+    'confirm_action' => 'Вы уверены?',
+    'invoice_status_paid' => 'Оплачен',
+    'invoice_status_pending' => 'Ожидает оплаты',
+    'invoice_status_cancelled' => 'Отменён',
 ];

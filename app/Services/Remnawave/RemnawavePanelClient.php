@@ -147,9 +147,9 @@ final class RemnawavePanelClient
                 }
             }
 
-            $message = 'اتصال به پنل Remnawave برقرار شد.';
+            $message = __('services.remnawave_connected');
             if ($squadCount > 0) {
-                $message .= ' — '.persian_digits($squadCount).' Internal Squad (ذخیره شد).';
+                $message .= ' — '.__('services.remnawave_squads_saved', ['count' => persian_digits($squadCount)]);
             }
             if ($nodeCount > 0) {
                 $message .= ' — '.persian_digits($nodeCount).' node.';
@@ -158,7 +158,7 @@ final class RemnawavePanelClient
                 $message .= ' — '.persian_digits($inboundCount).' inbound.';
             }
             if ($userCount !== null) {
-                $message .= ' — '.persian_digits($userCount).' کاربر در پنل.';
+                $message .= ' — '.__('services.remnawave_users_in_panel', ['count' => persian_digits($userCount)]);
             }
 
             $result = [
@@ -554,7 +554,7 @@ final class RemnawavePanelClient
             return;
         }
 
-        $lastError = 'آدرس پنل Remnawave در دسترس نیست.';
+        $lastError = __('services.remnawave_unreachable');
 
         foreach (RemnawavePanelUrl::candidatesFromServer($this->server) as $candidate) {
             $tried[] = $candidate->apiBaseUrl();
@@ -575,7 +575,7 @@ final class RemnawavePanelClient
                     return;
                 }
 
-                $lastError = 'HTTP '.$response->status().' برای '.$probeUrl;
+                $lastError = __('services.remnawave_http_for', ['status' => $response->status(), 'url' => $probeUrl]);
             } catch (Throwable $exception) {
                 $lastError = $exception->getMessage();
                 $this->logStep('url_probe_failed', [
@@ -734,10 +734,10 @@ final class RemnawavePanelClient
     protected function missingApiTokenMessage(): string
     {
         if (trim((string) ($this->server->api_token_enc ?? '')) === '') {
-            return 'توکن API در shahpanel ذخیره نشده است. ویرایش سرور → فیلد «توکن API» → توکن از Remnawave Settings → API Tokens را بچسبانید → ذخیره. (نام کاربری/رمز برای ساخت کاربر کافی نیست.)';
+            return __('services.remnawave_token_missing');
         }
 
-        return 'توکن API ذخیره‌شده معتبر نیست یا منقضی شده — در پنل Remnawave توکن جدید بسازید و دوباره در فیلد «توکن API» ذخیره کنید.';
+        return __('services.remnawave_token_invalid');
     }
 
     protected function usersProbeFailureMessage(): ?string
@@ -763,11 +763,11 @@ final class RemnawavePanelClient
     protected function friendlyConnectionError(string $message): string
     {
         if (str_contains(strtolower($message), 'timed out')) {
-            return 'اتصال به پنل Remnawave زمان‌بر شد — آدرس، پورت و فایروال را بررسی کنید.';
+            return __('services.remnawave_timeout');
         }
 
         if (str_contains(strtolower($message), 'could not resolve host')) {
-            return 'نام میزبان Remnawave قابل resolve نیست.';
+            return __('services.remnawave_dns');
         }
 
         return $message;

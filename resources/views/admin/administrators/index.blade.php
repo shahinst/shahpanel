@@ -49,15 +49,14 @@
                                 @endif
                             </td>
                             <td>
-                                <a href="{{ route('admin.administrators.edit', $admin) }}" class="btn btn-sm btn-light">{{ __('app.edit') }}</a>
-                                @if (! $isSuper && (int) $admin->id !== (int) auth()->id())
-                                    <form method="POST" action="{{ route('admin.administrators.destroy', $admin) }}" class="d-inline"
-                                          onsubmit="return confirm('{{ __('admins.delete_confirm') }}')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-danger">{{ __('app.delete') }}</button>
-                                    </form>
-                                @endif
+                                <div class="icon-actions">
+                                    <x-icon-action icon="bx-edit" :label="__('app.edit')" :href="route('admin.administrators.edit', $admin)" />
+                                    @if (! $isSuper && (int) $admin->id !== (int) auth()->id())
+                                        <x-icon-action icon="bx-trash" variant="danger" :label="__('app.delete')"
+                                            :action="route('admin.administrators.destroy', $admin)" method="DELETE"
+                                            :confirm="__('admins.delete_confirm')" />
+                                    @endif
+                                </div>
                             </td>
                         </tr>
                     @empty
