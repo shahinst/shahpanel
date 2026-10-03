@@ -1,0 +1,66 @@
+<?php
+
+use App\Http\Middleware\RestrictAdminByIp;
+use App\Support\PortalPaths;
+use Illuminate\Support\Facades\Route;
+use Modules\ShahBot\Http\Controllers\Admin\BroadcastController;
+use Modules\ShahBot\Http\Controllers\Admin\CodeController;
+use Modules\ShahBot\Http\Controllers\Admin\DashboardController;
+use Modules\ShahBot\Http\Controllers\Admin\PaymentController;
+use Modules\ShahBot\Http\Controllers\Admin\SettingsController;
+use Modules\ShahBot\Http\Controllers\Admin\TicketController;
+use Modules\ShahBot\Http\Controllers\Admin\TutorialController;
+use Modules\ShahBot\Http\Controllers\Admin\UserController;
+
+/*
+| The bot's admin section. The admin group is rebuilt exactly as the core
+| routes/web.php builds it (and as the tunneling module does), so the section
+| gate, the IP allowlist and the activity log apply here too.
+*/
+
+$adminMiddleware = ['auth', 'role:admin', 'log.activity'];
+if (class_exists(RestrictAdminByIp::class)) {
+    $adminMiddleware[] = 'admin.ip';
+}
+$adminMiddleware[] = 'admin.section';
+
+Route::prefix(PortalPaths::slug('admin'))->name('admin.')->middleware($adminMiddleware)->group(function (): void {
+    Route::prefix('shahbot')->name('shahbot.')->group(function (): void {
+        Route::get('/', [DashboardController::class, 'index'])->name('index');
+        Route::get('orders', [DashboardController::class, 'orders'])->name('orders');
+
+        Route::get('settings', [SettingsController::class, 'edit'])->name('settings');
+        Route::post('settings', [SettingsController::class, 'update'])->name('settings.update');
+        Route::post('settings/connect', [SettingsController::class, 'connect'])->name('settings.connect');
+
+        Route::get('users', [UserController::class, 'index'])->name('users.index');
+        Route::get('users/{botUser}', [UserController::class, 'show'])->name('users.show');
+        Route::post('users/{botUser}/block', [UserController::class, 'toggleBlock'])->name('users.block');
+        Route::post('users/{botUser}/message', [UserController::class, 'message'])->name('users.message');
+        Route::post('users/{botUser}/wallet', [UserController::class, 'wallet'])->name('users.wallet');
+
+        Route::get('payments', [PaymentController::class, 'index'])->name('payments.index');
+        Route::get('payments/{payment}/receipt', [PaymentController::class, 'receipt'])->name('payments.receipt');
+        Route::post('payments/{payment}/approve', [PaymentController::class, 'approve'])->name('payments.approve');
+        Route::post('payments/{payment}/reject', [PaymentController::class, 'reject'])->name('payments.reject');
+
+        Route::get('codes', [CodeController::class, 'index'])->name('codes.index');
+        Route::post('codes', [CodeController::class, 'store'])->name('codes.store');
+        Route::post('codes/{code}/toggle', [CodeController::class, 'toggle'])->name('codes.toggle');
+        Route::delete('codes/{code}', [CodeController::class, 'destroy'])->name('codes.destroy');
+
+        Route::get('broadcasts', [BroadcastController::class, 'index'])->name('broadcasts.index');
+        Route::post('broadcasts', [BroadcastController::class, 'store'])->name('broadcasts.store');
+        Route::post('broadcasts/{broadcast}/cancel', [BroadcastController::class, 'cancel'])->name('broadcasts.cancel');
+
+        Route::get('tickets', [TicketController::class, 'index'])->name('tickets.index');
+        Route::get('tickets/{ticket}', [TicketController::class, 'show'])->name('tickets.show');
+        Route::post('tickets/{ticket}/reply', [TicketController::class, 'reply'])->name('tickets.reply');
+        Route::post('tickets/{ticket}/close', [TicketController::class, 'close'])->name('tickets.close');
+
+        Route::get('tutorials', [TutorialController::class, 'index'])->name('tutorials.index');
+        Route::post('tutorials', [TutorialController::class, 'store'])->name('tutorials.store');
+        Route::put('tutorials/{tutorial}', [TutorialController::class, 'update'])->name('tutorials.update');
+        Route::delete('tutorials/{tutorial}', [TutorialController::class, 'destroy'])->name('tutorials.destroy');
+    });
+});

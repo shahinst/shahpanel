@@ -13,6 +13,13 @@ abstract class TestCase extends BaseTestCase
         $app = require __DIR__.'/../bootstrap/app.php';
         $app->make(Kernel::class)->bootstrap();
 
+        // Bundled modules keep their tables in modules/{slug}/database/migrations,
+        // which normally run only when a module is activated. The test database
+        // gets them up front so a module's own tests can boot it.
+        foreach (glob(dirname(__DIR__).'/modules/*/database/migrations', GLOB_ONLYDIR) ?: [] as $dir) {
+            $app['migrator']->path($dir);
+        }
+
         return $app;
     }
 
