@@ -23,6 +23,7 @@ use App\Models\Server;
 use App\Models\ServerInterface;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Services\Pasarguard\PasarguardPanelUrl;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -1261,7 +1262,10 @@ class AccountService
             );
             $account->update([
                 'pasarguard_user_id' => (int) ($remote['id'] ?? $account->pasarguard_user_id),
-                'pasarguard_subscription_url' => (string) ($remote['subscription_url'] ?? $account->pasarguard_subscription_url),
+                'pasarguard_subscription_url' => PasarguardPanelUrl::absolutize(
+                    $remote['subscription_url'] ?? $account->pasarguard_subscription_url,
+                    $server,
+                ),
             ]);
 
             return [
@@ -1282,7 +1286,10 @@ class AccountService
 
         $account->update([
             'pasarguard_user_id' => (int) ($remote['id'] ?? $account->pasarguard_user_id),
-            'pasarguard_subscription_url' => (string) ($remote['subscription_url'] ?? $account->pasarguard_subscription_url),
+            'pasarguard_subscription_url' => PasarguardPanelUrl::absolutize(
+                $remote['subscription_url'] ?? $account->pasarguard_subscription_url,
+                $server,
+            ),
         ]);
 
         return [
@@ -1314,7 +1321,10 @@ class AccountService
 
         if (! empty($remote['subscription_url'])) {
             $account->update([
-                'pasarguard_subscription_url' => (string) $remote['subscription_url'],
+                'pasarguard_subscription_url' => PasarguardPanelUrl::absolutize(
+                    $remote['subscription_url'],
+                    $account->server,
+                ),
                 'pasarguard_user_id' => (int) ($remote['id'] ?? $account->pasarguard_user_id),
             ]);
         }
@@ -2736,7 +2746,10 @@ class AccountService
 
             return [
                 'pasarguard_user_id' => (int) ($remote['id'] ?? 0) ?: null,
-                'pasarguard_subscription_url' => (string) ($remote['subscription_url'] ?? ''),
+                'pasarguard_subscription_url' => PasarguardPanelUrl::absolutize(
+                    $remote['subscription_url'] ?? '',
+                    $server,
+                ),
             ];
         }
 
