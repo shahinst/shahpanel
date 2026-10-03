@@ -35,61 +35,6 @@ trait ListsAccountsByCategory
         return $this->indexByCategory($request, AccountCategory::Anyconnect);
     }
 
-    /**
-     * Accounts that need attention: expiring within the configured number of days,
-     * OR with less than the configured volume left. Scoped to the viewer (admin sees
-     * all, agent their hierarchy, seller their own) — same rules as the normal lists.
-     */
-    public function indexExpiring(Request $request): View
-    {
-        $this->authorize('viewAny', Account::class);
-
-        $days = \App\Support\ExpiringAccountThresholds::days();
-        $volumeBytes = \App\Support\ExpiringAccountThresholds::volumeBytes();
-        $until = now()->addDays($days);
-
-        $accounts = $this->accountsQueryForViewer($request)
-            ->where(function (Builder $query) use ($until, $volumeBytes): void {
-                $query->where(function (Builder $inner) use ($until): void {
-                    $inner->whereNotNull('expiry_at')
-                        ->where('expiry_at', '>=', now())
-                        ->where('expiry_at', '<=', $until);
-                })->orWhere(function (Builder $inner) use ($volumeBytes): void {
-                    $inner->whereNotNull('data_limit_bytes')
-                        ->whereRaw('(data_limit_bytes - COALESCE(data_used_bytes, 0)) < ?', [$volumeBytes]);
-                });
-            })
-            ->when($request->filled('search'), function (Builder $query) use ($request): void {
-                $this->applyAccountSearchFilter($query, $request->string('search')->toString());
-            })
-            ->when($request->filled('service_type'), function (Builder $query) use ($request): void {
-                $type = \App\Enums\ServiceType::tryFrom($request->string('service_type')->toString());
-                if ($type !== null) {
-                    $query->where('service_type', $type);
-                }
-            })
-            ->when($request->filled('reason'), function (Builder $query) use ($request, $until, $volumeBytes): void {
-                if ($request->string('reason')->toString() === 'expiry') {
-                    $query->whereNotNull('expiry_at')->where('expiry_at', '>=', now())->where('expiry_at', '<=', $until);
-                } elseif ($request->string('reason')->toString() === 'volume') {
-                    $query->whereNotNull('data_limit_bytes')
-                        ->whereRaw('(data_limit_bytes - COALESCE(data_used_bytes, 0)) < ?', [$volumeBytes]);
-                }
-            })
-            ->orderByRaw('expiry_at IS NULL, expiry_at ASC')
-            ->paginate(20)
-            ->withQueryString();
-
-        return view('shared.accounts.expiring', [
-            'accounts' => $accounts,
-            'prefix' => $this->accountRoutePrefix(),
-            'showOwnerColumn' => $this->shouldShowOwnerColumn(),
-            'thresholdDays' => $days,
-            'thresholdBytes' => $volumeBytes,
-            'serviceTypeOptions' => \App\Enums\ServiceType::cases(),
-        ]);
-    }
-
     protected function indexByCategory(Request $request, AccountCategory $category): View
     {
         $this->authorize('viewAny', Account::class);
