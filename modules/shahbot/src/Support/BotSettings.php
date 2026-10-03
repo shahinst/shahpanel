@@ -82,6 +82,11 @@ class BotSettings
             'reminder_days' => '2',
             'low_traffic_percent' => '10',
 
+            // Editors and mini app
+            'texts' => '',
+            'menu_layout' => '',
+            'mini_app_enabled' => '1',
+
             // Texts
             'welcome_text' => "سلام {name} 👋\nبه ربات فروش {brand} خوش آمدید.\nاز منوی زیر یکی از گزینه‌ها را انتخاب کنید.",
             'support_text' => 'پیام خود را بنویسید و بفرستید؛ همکاران پشتیبانی در اولین فرصت پاسخ می‌دهند.',

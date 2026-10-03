@@ -31,7 +31,10 @@ use Modules\ShahBot\Services\PaymentService;
 use Modules\ShahBot\Services\ResellerService;
 use Modules\ShahBot\Services\ShopService;
 use Modules\ShahBot\Services\TicketService;
+use Modules\ShahBot\Support\BotContext;
 use Modules\ShahBot\Support\BotSettings;
+use Modules\ShahBot\Support\BotTexts;
+use Modules\ShahBot\Support\MenuLayout;
 use Modules\ShahBot\Telegram\Keyboard;
 use Modules\ShahBot\Telegram\TelegramClient;
 use Throwable;
@@ -65,6 +68,7 @@ class UpdateHandler
     public function handle(array $update): void
     {
         App::setLocale('fa');
+        app(BotTexts::class)->apply();
 
         if (isset($update['pre_checkout_query'])) {
             $this->online->answerPreCheckout($update['pre_checkout_query']);
@@ -357,36 +361,44 @@ class UpdateHandler
 
     protected function mainMenu(): array
     {
-        $rows = [
-            [__('shahbot::bot.menu_buy'), __('shahbot::bot.menu_services')],
-            [__('shahbot::bot.menu_wallet'), __('shahbot::bot.menu_account')],
+        $isReseller = $this->resellers->seller($this->user) !== null;
+        $miniApp = $this->miniAppUrl();
+
+        $available = [
+            'test' => $this->settings->bool('test_enabled'),
+            'referral' => $this->settings->bool('referral_enabled'),
+            'agency' => $isReseller || $this->agency->available($this->user),
+            'app' => $miniApp !== null,
         ];
 
-        $row = [];
-        if ($this->settings->bool('test_enabled')) {
-            $row[] = __('shahbot::bot.menu_test');
+        $rows = [];
+        foreach (app(MenuLayout::class)->rows($available) as $keys) {
+            $rows[] = array_map(function (string $key) use ($isReseller, $miniApp) {
+                return match ($key) {
+                    'agency' => __($isReseller ? 'shahbot::bot.menu_reseller' : 'shahbot::bot.menu_agency'),
+                    'app' => ['text' => __('shahbot::bot.menu_app'), 'web_app' => ['url' => $miniApp]],
+                    default => __('shahbot::bot.menu_'.$key),
+                };
+            }, $keys);
         }
-        if ($this->settings->bool('referral_enabled')) {
-            $row[] = __('shahbot::bot.menu_referral');
-        }
-        if ($row !== []) {
-            $rows[] = $row;
-        }
-
-        if ($this->resellers->seller($this->user) !== null) {
-            $rows[] = [__('shahbot::bot.menu_reseller')];
-        } elseif ($this->agency->available($this->user)) {
-            $rows[] = [__('shahbot::bot.menu_agency')];
-        }
-
-        $rows[] = [__('shahbot::bot.menu_gift'), __('shahbot::bot.menu_tutorials')];
-        $rows[] = [__('shahbot::bot.menu_support')];
 
         if ($this->settings->isAdminChat($this->user->telegram_id)) {
             $rows[] = [__('shahbot::bot.menu_admin')];
         }
 
         return Keyboard::reply($rows);
+    }
+
+    /**
+     * The mini app needs a public HTTPS address; without one the button is hidden.
+     */
+    protected function miniAppUrl(): ?string
+    {
+        if (! $this->settings->bool('mini_app_enabled') || ! str_starts_with((string) config('app.url'), 'https://')) {
+            return null;
+        }
+
+        return route('shahbot.app', ['bot' => app(BotContext::class)->botId()]);
     }
 
     protected function sendWelcome(): void

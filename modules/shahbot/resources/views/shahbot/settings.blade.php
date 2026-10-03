@@ -85,6 +85,8 @@
                 </div>
                 {!! $toggle('renew_enabled') !!}
                 {!! $toggle('show_portal_link') !!}
+                {!! $toggle('mini_app_enabled') !!}
+                <p class="sb-muted">{{ __('shahbot::admin.mini_app_hint') }}</p>
                 <hr>
                 {!! $toggle('test_enabled') !!}
                 <div class="mb-2" style="max-width:520px">

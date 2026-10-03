@@ -18,7 +18,7 @@ class SettingsController extends Controller
     protected const BOOLEANS = [
         'sales_enabled', 'test_enabled', 'renew_enabled', 'show_portal_link', 'topup_enabled',
         'referral_enabled', 'referral_first_only', 'require_phone', 'iran_phone_only', 'reminder_enabled',
-        'pay_zarinpal', 'pay_crypto', 'pay_stars', 'agency_enabled', 'agent_bots_enabled',
+        'pay_zarinpal', 'pay_crypto', 'pay_stars', 'agency_enabled', 'agent_bots_enabled', 'mini_app_enabled',
     ];
 
     public function edit(BotSettings $settings, WebhookService $webhooks): View
