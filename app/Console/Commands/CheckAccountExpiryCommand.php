@@ -27,7 +27,10 @@ class CheckAccountExpiryCommand extends Command
 
         foreach ($expired as $account) {
             try {
-                $accountService->expireAccount($account);
+                // Renewed while this list was being worked through.
+                if ($accountService->expireAccount($account)->status !== AccountStatus::Expired) {
+                    continue;
+                }
             } catch (Throwable $exception) {
                 report($exception);
                 $this->error("Failed to expire account #{$account->id}: {$exception->getMessage()}");
@@ -52,6 +55,23 @@ class CheckAccountExpiryCommand extends Command
         }
 
         $this->info("Processed {$expired->count()} expired account(s).");
+
+        // Accounts that expired while their server was unreachable are still
+        // on there. Retry them, but not every minute against a dead server.
+        $pending = Account::query()
+            ->whereNotNull('remote_disable_pending_at')
+            ->where('remote_disable_pending_at', '<=', now()->subMinutes(10))
+            ->with('server')
+            ->limit(200)
+            ->get();
+
+        foreach ($pending as $account) {
+            if ($accountService->retryPendingRemoteDisable($account)) {
+                $this->line("Disabled expired account #{$account->id} on its server");
+            } else {
+                $account->update(['remote_disable_pending_at' => now()]);
+            }
+        }
 
         return self::SUCCESS;
     }

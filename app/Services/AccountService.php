@@ -342,6 +342,13 @@ class AccountService
 
         $billingPackage = $this->billingPackageService->resolveBillingPackage($account);
 
+        // Volume-only modes sell gigabytes and keep the end date. A fixed-volume
+        // package has no per-GB price, so these modes charged a full period and
+        // gave nothing for it.
+        if ($renewalMode !== 'same' && ! $billingPackage->isElastic()) {
+            throw new \InvalidArgumentException(__('accounts.renew_volume_mode_elastic_only'));
+        }
+
         $renewalGb = $renewalGbOverride ?? $this->renewalPricingService->billableDataGb($account);
 
         $clientPortalBilling = $billingContext === AccountBillingContext::ClientPortal;
@@ -392,6 +399,12 @@ class AccountService
                 &$purchaseResult,
                 $renewalMode,
             ) {
+                // Two renewals of the same account (double click, two tabs, the
+                // client and their seller at once) used to both read the old
+                // expiry and both extend from it: paid twice, extended once.
+                Account::query()->whereKey($account->id)->lockForUpdate()->first();
+                $account->refresh();
+
                 $purchasedBeforeGb = $billingPackage->isElastic()
                     ? $this->resolvePurchasedDataGb($account)
                     : null;
@@ -464,7 +477,26 @@ class AccountService
                 }
 
                 $this->renewRemoteAccount($account, $resetTraffic, forceEnable: true);
-                $this->reconcilePanelQuotaAfterRenewal($account->fresh(), $resetTraffic);
+
+                // Topping up an account whose time has run out adds the volume
+                // but must not bring it back online; renewRemoteAccount always
+                // enables the user, so switch it off again.
+                if ($renewalMode === 'add_volume' && $account->isExpired()) {
+                    $this->disableRemoteAccount($account);
+                }
+
+                // The panel already carries the new expiry and quota, so a hiccup
+                // while re-reading its counters must not roll the payment back
+                // and leave the customer renewed for free. The next sync or the
+                // repair tools pick up whatever this missed.
+                try {
+                    $this->reconcilePanelQuotaAfterRenewal($account->fresh(), $resetTraffic);
+                } catch (Throwable $exception) {
+                    Log::warning('Quota reconcile after renewal failed', [
+                        'account_id' => $account->id,
+                        'error' => $exception->getMessage(),
+                    ]);
+                }
 
                 $this->activityLogService->log($actor, 'account.renewed', $account, array_filter([
                     'billing' => $clientPortalBilling ? AccountBillingContext::ClientPortal->value : null,
@@ -682,23 +714,70 @@ class AccountService
 
     public function expireAccount(Account $account): Account
     {
+        // The expiry check loads its list first and works through it; a renewal
+        // landing in between used to be switched off right after it was paid
+        // for. Re-read under the same row lock renewals take and skip it.
+        return DB::transaction(function () use ($account): Account {
+            $locked = Account::query()->whereKey($account->id)->lockForUpdate()->first();
+
+            if ($locked === null || $locked->status !== AccountStatus::Active || ! $locked->isExpired()) {
+                return $locked ?? $account;
+            }
+
+            $locked->load('server');
+
+            $pending = ! $this->tryDisableRemoteAfterExpiry($locked);
+
+            $locked->update([
+                'status' => AccountStatus::Expired,
+                'remote_disable_pending_at' => $pending ? now() : null,
+            ]);
+
+            $this->activityLogService->log(null, 'account.expired', $locked);
+
+            return $locked->fresh();
+        });
+    }
+
+    /**
+     * Retry switching off an expired account whose server was unreachable when
+     * it expired. Clears the flag once the server accepts the change, or once
+     * the account is no longer expired (renewed in the meantime).
+     */
+    public function retryPendingRemoteDisable(Account $account): bool
+    {
         $account->loadMissing('server');
 
+        if ($account->status !== AccountStatus::Expired) {
+            $account->update(['remote_disable_pending_at' => null]);
+
+            return true;
+        }
+
+        if (! $this->tryDisableRemoteAfterExpiry($account)) {
+            return false;
+        }
+
+        $account->update(['remote_disable_pending_at' => null]);
+
+        return true;
+    }
+
+    protected function tryDisableRemoteAfterExpiry(Account $account): bool
+    {
         try {
             $this->disableRemoteAccount($account);
+
+            return true;
         } catch (Throwable $exception) {
             Log::warning('Failed to disable remote account on expiry', [
                 'account_id' => $account->id,
                 'remote_username' => $account->remote_username,
                 'error' => $exception->getMessage(),
             ]);
+
+            return false;
         }
-
-        $account->update(['status' => AccountStatus::Expired]);
-
-        $this->activityLogService->log(null, 'account.expired', $account);
-
-        return $account->fresh();
     }
 
     /**
@@ -3032,6 +3111,10 @@ class AccountService
                 'expiryTime' => $expiryMs,
                 'enable' => true,
             ], $account->sanaei_inbound_id ?: null);
+
+            if ($resetTraffic) {
+                $this->sanaeiService->resetAccountClientsTraffic($server, $email, $account->sanaei_client_uuid);
+            }
 
             return;
         }

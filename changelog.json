@@ -1,6 +1,64 @@
 {
     "versions": [
         {
+            "version": "3.4.0",
+            "date": "2026-10-04",
+            "notes": {
+                "fa": [
+                    "تمدید از پورتال مشتری: اول مبلغ کسر می‌شود و بعد اکانت روی سرور تمدید می‌شود؛ اگر خرید از پورتال در مرحله پرداخت شکست بخورد، اکانت ساخته‌شده روی سرور هم حذف می‌شود",
+                    "تمدیدهای هم‌زمان یک اکانت (دو کلیک یا دو تب) دیگر دو بار پول نمی‌گیرند و یک بار تمدید نمی‌کنند",
+                    "در تمدید اکانت‌های سنایی مصرف قبلی روی سرور هم صفر می‌شود تا اکانت بلافاصله دوباره «حجم تمام‌شده» نشود",
+                    "در فروش از پورتال مشتریِ فروشنده، سود نماینده به کیف پول نماینده واریز می‌شود و برای خرید فاکتور صادر می‌شود تا بازپرداخت آن ممکن باشد",
+                    "خطای ارتباط در تأیید پرداخت زرین‌پال دیگر پرداخت را «ناموفق» نمی‌کند و پرداخت‌های آنلاینِ معلق (زرین‌پال و NowPayments) را ادمین می‌تواند دستی تأیید یا رد کند",
+                    "شارژ کیف پول از درگاه همیشه به کیف پول تومانی واریز می‌شود",
+                    "وقتی سرور در دسترس نیست، همگام‌سازی مصرف اکانت را صفر نمی‌کند",
+                    "اکانتی که هنگام انقضا سرورش در دسترس نبود، بعداً دوباره روی سرور غیرفعال می‌شود؛ اکانتی که همان لحظه تمدید شده منقضی نمی‌شود",
+                    "انتقال اکانت بین سرورها: اول روی سرور جدید ساخته می‌شود و بعد روی سرور قبلی غیرفعال می‌شود",
+                    "افزودن حجم به اکانتِ زمان‌تمام‌شده آن را روی سرور فعال نمی‌کند؛ افزودن/ارتقای حجم فقط برای پکیج‌های حجم‌دلخواه مجاز است",
+                    "اکانت تست با حذف اکانت قبلی یا تمدید به پلن تست دوباره داده نمی‌شود"
+                ],
+                "en": [
+                    "Client portal renewals charge first and renew on the server second; a portal purchase whose payment fails removes the account it created on the server",
+                    "Concurrent renewals of one account (double click, two tabs) no longer charge twice and extend once",
+                    "Renewing a Sanaei account also zeroes its usage on the server, so it is not marked exhausted again right away",
+                    "Portal sales by a seller now credit the agent's margin and issue an invoice, so they can be refunded",
+                    "A connection error while verifying a ZarinPal payment no longer marks it failed, and stuck online payments (ZarinPal, NowPayments) can be approved or rejected by an admin",
+                    "Gateway top-ups are always credited to the toman wallet",
+                    "Sync no longer resets an account's usage to zero when its server does not answer",
+                    "Accounts whose server was unreachable when they expired are switched off later; an account renewed at that moment is not expired",
+                    "Moving an account to another server creates it on the new server before disabling it on the old one",
+                    "Adding volume to an account whose time is over no longer turns it back on; adding or upgrading volume is limited to flexible-volume packages",
+                    "A trial can no longer be obtained again by deleting the previous one or renewing into the trial plan"
+                ],
+                "ru": [
+                    "Продление в клиентском портале сначала списывает оплату, затем продлевает на сервере; при неудачной оплате покупки созданный на сервере аккаунт удаляется",
+                    "Одновременные продления одного аккаунта больше не списывают деньги дважды при одном продлении",
+                    "При продлении аккаунта Sanaei расход на сервере тоже обнуляется, чтобы аккаунт сразу не считался исчерпанным",
+                    "Продажи продавца через портал начисляют маржу агента и создают счёт, поэтому их можно вернуть",
+                    "Ошибка связи при проверке платежа ZarinPal больше не помечает его неудачным; зависшие онлайн-платежи (ZarinPal, NowPayments) администратор может подтвердить или отклонить вручную",
+                    "Пополнения через платёжный шлюз всегда зачисляются на кошелёк в туманах",
+                    "Синхронизация больше не обнуляет расход аккаунта, если сервер не отвечает",
+                    "Аккаунты, сервер которых был недоступен в момент истечения, отключаются позже; аккаунт, продлённый в этот момент, не истекает",
+                    "При переносе аккаунт сначала создаётся на новом сервере и только потом отключается на старом",
+                    "Добавление объёма к аккаунту с истёкшим сроком больше не включает его; добавление/увеличение объёма доступно только для пакетов с гибким объёмом",
+                    "Пробный аккаунт больше нельзя получить повторно удалением прежнего или продлением на пробный тариф"
+                ],
+                "zh": [
+                    "客户门户续费先扣款再在服务器上续期；门户购买付款失败时会删除已在服务器上创建的账户",
+                    "同一账户的并发续费不再出现扣款两次却只续期一次",
+                    "续费 Sanaei 账户时服务器上的用量也会清零，账户不会立即再次显示流量用尽",
+                    "销售员的门户销售现在会给代理结算差价并开具发票，因此可以退款",
+                    "ZarinPal 付款验证时的连接错误不再将付款标记为失败；卡住的在线付款（ZarinPal、NowPayments）可由管理员手动批准或拒绝",
+                    "支付网关充值始终记入托曼钱包",
+                    "服务器无响应时同步不再把账户用量清零",
+                    "到期时服务器无法连接的账户会在之后被停用；恰好在那一刻续费的账户不会过期",
+                    "迁移账户时先在新服务器上创建，再在旧服务器上停用",
+                    "为已到期的账户增加流量不再重新启用它；增加/升级流量仅限弹性流量套餐",
+                    "无法再通过删除旧试用账户或续费到试用套餐来重复获得试用"
+                ]
+            }
+        },
+        {
             "version": "3.3.0",
             "date": "2026-10-03",
             "notes": {

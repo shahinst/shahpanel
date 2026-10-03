@@ -1294,6 +1294,40 @@ class SanaeiService
         $this->assertNoInboundFailures($server, $baseEmail, 'update', $failures, count($clients));
     }
 
+    /**
+     * Zero the usage counters of every client of an account. 3x-ui keeps up/down
+     * in its own traffic table and ignores them in a client update, so a renewal
+     * that only moved expiry and quota left the old usage in place and the next
+     * sync marked the freshly renewed account exhausted again.
+     */
+    public function resetAccountClientsTraffic(Server $server, string $baseEmail, string $uuid): void
+    {
+        $failures = [];
+
+        foreach ($this->findAccountClients($server, $uuid, $baseEmail) as $entry) {
+            $email = rawurlencode($entry['email']);
+            $response = null;
+
+            foreach (["/inbounds/{$entry['inbound_id']}/resetClientTraffic/{$email}", "/clients/resetTraffic/{$email}"] as $path) {
+                $response = $this->client($server)->postPathAttempts([$path], []);
+
+                if ($response->status() !== 404 && $this->panelMutationSucceeded($response)) {
+                    break;
+                }
+            }
+
+            if ($response === null || ! $this->panelMutationSucceeded($response)) {
+                $failures[$entry['inbound_id']] = 'HTTP '.($response?->status() ?? 0);
+            }
+        }
+
+        $this->forgetBatchInbounds($server);
+
+        if ($failures !== []) {
+            throw new RemoteProvisionException(__('services.account_renew_traffic_not_reset'));
+        }
+    }
+
     public function disableAccountClients(
         Server $server,
         string $baseEmail,

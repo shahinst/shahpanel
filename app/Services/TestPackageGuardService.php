@@ -16,7 +16,9 @@ class TestPackageGuardService
             return;
         }
 
-        $alreadyUsed = Account::query()
+        // Deleted accounts count too: otherwise deleting the trial was enough
+        // to be handed a fresh one.
+        $alreadyUsed = Account::withTrashed()
             ->where('client_user_id', $client->id)
             ->where('package_id', $package->id)
             ->whereHas('packageDuration', fn ($query) => $query->whereIn('tier', $this->testTierValues()))

@@ -111,14 +111,10 @@ class GatewayPaymentService
 
     public function approveCardToCard(GatewayPayment $payment, User $reviewer, ?string $adminNote = null): GatewayPayment
     {
-        if ($payment->driver !== PaymentGatewayDriver::CardToCard) {
-            throw new PaymentGatewayException(__('payment_gateways.invalid_approval_driver'));
-        }
-
         return DB::transaction(function () use ($payment, $reviewer, $adminNote): GatewayPayment {
             $payment = GatewayPayment::query()->whereKey($payment->id)->lockForUpdate()->firstOrFail();
 
-            if ($payment->status !== GatewayPaymentStatus::Processing) {
+            if (! $this->awaitsManualReview($payment)) {
                 throw new PaymentGatewayException(__('payment_gateways.cannot_approve_status'));
             }
 
@@ -135,14 +131,10 @@ class GatewayPaymentService
 
     public function rejectCardToCard(GatewayPayment $payment, User $reviewer, ?string $adminNote = null): GatewayPayment
     {
-        if ($payment->driver !== PaymentGatewayDriver::CardToCard) {
-            throw new PaymentGatewayException(__('payment_gateways.invalid_approval_driver'));
-        }
-
         return DB::transaction(function () use ($payment, $reviewer, $adminNote): GatewayPayment {
             $payment = GatewayPayment::query()->whereKey($payment->id)->lockForUpdate()->firstOrFail();
 
-            if ($payment->status !== GatewayPaymentStatus::Processing) {
+            if (! $this->awaitsManualReview($payment)) {
                 throw new PaymentGatewayException(__('payment_gateways.cannot_reject_status'));
             }
 
@@ -155,6 +147,21 @@ class GatewayPaymentService
 
             return $payment->fresh(['paymentGateway', 'user', 'reviewer']);
         });
+    }
+
+    /**
+     * Card-to-card receipts always wait for an admin. Online gateways normally
+     * settle themselves, but one whose verify call or webhook never came back
+     * stays open forever; the admin settles those by hand after checking the
+     * gateway's own dashboard.
+     */
+    public function awaitsManualReview(GatewayPayment $payment): bool
+    {
+        if ($payment->driver === PaymentGatewayDriver::CardToCard) {
+            return $payment->status === GatewayPaymentStatus::Processing;
+        }
+
+        return ! $payment->status->isTerminal();
     }
 
     public function handleZarinpalCallback(string $authority, string $status): GatewayPayment
@@ -194,7 +201,10 @@ class GatewayPaymentService
                 'authority' => $authority,
             ]);
         } catch (ZarinpalApiException $exception) {
-            $payment->status = GatewayPaymentStatus::Failed;
+            // A verify call that errored (timeout, gateway outage) says nothing
+            // about whether the customer paid. Marking it Failed made a paid
+            // top-up unrecoverable; leaving it pending lets the callback be
+            // retried or an admin settle it.
             $history = $payment->callback_payload ?? [];
             $history['verify_error'] = $exception->getMessage();
             $payment->callback_payload = $history;
@@ -203,7 +213,7 @@ class GatewayPaymentService
             throw new PaymentGatewayException($exception->getMessage(), previous: $exception);
         }
 
-        return DB::transaction(function () use ($payment, $response): GatewayPayment {
+        $verified = DB::transaction(function () use ($payment, $response): GatewayPayment {
             $payment = GatewayPayment::query()->whereKey($payment->id)->lockForUpdate()->firstOrFail();
 
             if ($payment->status->isTerminal()) {
@@ -218,10 +228,12 @@ class GatewayPaymentService
             $code = (int) ($data['code'] ?? 0);
 
             if (! in_array($code, [100, 101], true)) {
+                // Saved and returned, not thrown: an exception here rolled the
+                // Failed status back along with the transaction.
                 $payment->status = GatewayPaymentStatus::Failed;
                 $payment->save();
 
-                throw new PaymentGatewayException(__('payment_gateways.zarinpal_verify_failed'));
+                return $payment;
             }
 
             $payment->save();
@@ -229,6 +241,12 @@ class GatewayPaymentService
 
             return $payment->fresh(['paymentGateway', 'user']);
         });
+
+        if ($verified->status === GatewayPaymentStatus::Failed) {
+            throw new PaymentGatewayException(__('payment_gateways.zarinpal_verify_failed'));
+        }
+
+        return $verified;
     }
 
     /**
@@ -344,6 +362,10 @@ class GatewayPaymentService
             (string) $payment->net_toman,
             TransactionType::Charge,
             [
+                // Gateway amounts are always toman. On a panel whose default
+                // currency is not IRT they used to land in that wallet as if
+                // they were dollars or lira.
+                'currency' => \App\Enums\MoneyCurrency::IRT->value,
                 'related_gateway_payment_id' => $payment->id,
                 'description' => $this->walletCreditDescription($payment),
             ],
@@ -361,6 +383,7 @@ class GatewayPaymentService
                     (string) $payment->commission_toman,
                     TransactionType::Commission,
                     [
+                        'currency' => \App\Enums\MoneyCurrency::IRT->value,
                         'related_gateway_payment_id' => $payment->id,
                         'source_user_id' => $payment->user_id,
                         'description' => __('payment_gateways.admin_commission_description', [

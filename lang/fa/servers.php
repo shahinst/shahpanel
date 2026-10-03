@@ -362,6 +362,7 @@ return [
     'progress_sync_done' => 'همگام‌سازی تمام شد: :synced اکانت همگام شد، :errors خطا.',
     'progress_sync_overlap' => 'یک همگام‌سازی دیگر (مثلاً کرون) همین حالا روی این سرور در حال اجراست؛ این اجرا رد شد.',
     'progress_error' => 'خطا',
+    'sync_remote_unavailable' => "سرور پاسخ نداد؛ مصرف این اکانت دست‌نخورده ماند",
     'progress_interrupted' => 'اجرای عملیات قطع شد (احتمالاً سرویس PHP ری‌استارت شد). دوباره اجرا کنید.',
     'progress_elapsed' => 'زمان سپری‌شده',
     'progress_eta' => 'زمان باقی‌مانده',

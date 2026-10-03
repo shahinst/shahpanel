@@ -204,6 +204,14 @@ class SyncService
         $this->lastPortalTrafficMeta = null;
         $traffic = $this->fetchTraffic($account, $server);
         $meta = $this->lastPortalTrafficMeta;
+
+        // No answer from the panel (down, timed out, user missing) is not "used
+        // zero bytes". Saving it as zero reset the account's usage, and the next
+        // good read logged the whole period again as new traffic.
+        if (! is_array($meta['raw'] ?? null)) {
+            throw new \RuntimeException(__('servers.sync_remote_unavailable'));
+        }
+
         $usedBytes = $this->resolveAbsoluteUsedBytes($traffic, $meta);
 
         $previousLog = AccountUsageLog::query()

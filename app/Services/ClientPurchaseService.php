@@ -7,9 +7,13 @@ use App\Enums\UserRole;
 use App\Models\Account;
 use App\Models\Package;
 use App\Models\PackageDuration;
+use App\Models\Server;
 use App\Models\User;
+use App\Support\RemoteAccountCleanupSnapshot;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use InvalidArgumentException;
+use Throwable;
 
 class ClientPurchaseService
 {
@@ -66,7 +70,40 @@ class ClientPurchaseService
 
         $server = $this->serverSelection->pickLeastBusyForPackage($package);
 
-        return DB::transaction(function () use ($client, $owner, $package, $duration, $server, $quote, $gb): Account {
+        $account = null;
+
+        try {
+            return $this->purchaseInTransaction($client, $owner, $package, $duration, $server, $quote, $gb, $account);
+        } catch (Throwable $exception) {
+            // The account was built on the server before the wallets were
+            // charged; when the charge fails the row rolls back but the remote
+            // user would stay behind, working and unpaid.
+            if ($account instanceof Account) {
+                try {
+                    $this->accountService->executeRemoteCleanupFromSnapshot(RemoteAccountCleanupSnapshot::fromAccount($account));
+                } catch (Throwable $cleanup) {
+                    Log::warning('Remote cleanup after failed client purchase failed', [
+                        'remote_username' => $account->remote_username,
+                        'error' => $cleanup->getMessage(),
+                    ]);
+                }
+            }
+
+            throw $exception;
+        }
+    }
+
+    protected function purchaseInTransaction(
+        User $client,
+        User $owner,
+        Package $package,
+        PackageDuration $duration,
+        Server $server,
+        array $quote,
+        ?float $gb,
+        ?Account &$account,
+    ): Account {
+        return DB::transaction(function () use ($client, $owner, $package, $duration, $server, $quote, $gb, &$account): Account {
             $account = $this->accountService->createAccount(
                 $owner,
                 $package,

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\InvoiceType;
 use App\Enums\TransactionType;
 use App\Enums\UserRole;
 use App\Models\Account;
@@ -22,6 +23,7 @@ class ClientPortalEconomicsService
         protected UserHierarchyService $userHierarchyService,
         protected WalletService $walletService,
         protected ClientDisplayPricingService $displayPricingService,
+        protected InvoiceService $invoiceService,
     ) {}
 
     /**
@@ -112,8 +114,27 @@ class ClientPortalEconomicsService
         $purchaseType = $renewal ? TransactionType::Renewal : TransactionType::Purchase;
         $admin = $this->userHierarchyService->resolveCommissionChain($owner)['admin'];
 
+        // A seller's wholesale price sits above their agent's. The seller paid
+        // the higher one and the admin received the lower one, so the agent's
+        // margin in between vanished; it is credited to the agent now, the way
+        // staff purchases already do.
+        $agent = $owner->role === UserRole::Seller ? $owner->parent : null;
+        $agentMargin = $agent !== null && $agent->role === UserRole::Agent
+            && $this->moneyCompare($quote['wholesale_total'], $quote['upstream_cost']) > 0
+                ? $this->moneySub($quote['wholesale_total'], $quote['upstream_cost'])
+                : '0.00';
+
+        // Portal sales used to leave no invoice, so the refund screen refused
+        // them ("no invoice") and the client's money could not be returned.
+        $invoice = $this->invoiceService->createInvoice(
+            $account,
+            $renewal ? InvoiceType::Renewal : InvoiceType::NewAccount,
+            $quote['display_total'],
+        );
+
         $context = [
             'related_account_id' => $account->id,
+            'related_invoice_id' => $invoice->id,
             'source_user_id' => $client->id,
             'description' => $renewal
                 ? 'Client portal renewal (retail)'
@@ -127,7 +148,7 @@ class ClientPortalEconomicsService
                 : 'Client portal purchase (wholesale cost)',
         ]);
 
-        DB::transaction(function () use ($client, $owner, $admin, $quote, $purchaseType, $context, $costContext): void {
+        DB::transaction(function () use ($client, $owner, $admin, $agent, $agentMargin, $quote, $purchaseType, $context, $costContext): void {
             $this->walletService->debit($client, $quote['display_total'], $purchaseType, $context);
 
             $this->walletService->credit(
@@ -145,6 +166,17 @@ class ClientPortalEconomicsService
                 TransactionType::ClientCost,
                 $costContext
             );
+
+            if ($agent !== null && $this->moneyCompare($agentMargin, '0') > 0) {
+                $this->walletService->credit(
+                    $agent,
+                    $agentMargin,
+                    TransactionType::Margin,
+                    array_merge($costContext, [
+                        'description' => 'Agent margin — client portal sale',
+                    ])
+                );
+            }
 
             if ($this->moneyCompare($quote['upstream_cost'], '0') > 0) {
                 $this->walletService->credit(

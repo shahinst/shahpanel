@@ -362,6 +362,7 @@ return [
     'progress_sync_done' => '同步完成：已同步 :synced 个账号，:errors 个错误。',
     'progress_sync_overlap' => '此服务器上已有另一个同步（例如定时任务）正在运行；本次已跳过。',
     'progress_error' => '错误',
+    'sync_remote_unavailable' => "服务器未响应；该账户的用量保持不变",
     'progress_interrupted' => '操作被中断（可能是 PHP 重启）。请重新运行。',
     'progress_elapsed' => '已用时间',
     'progress_eta' => '剩余时间',
