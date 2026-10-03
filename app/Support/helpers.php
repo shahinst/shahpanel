@@ -950,3 +950,30 @@ if (! function_exists('admin_route_allowed')) {
         }
     }
 }
+
+if (! function_exists('safe_link')) {
+    /**
+     * A link that is safe to put in href or redirect to: an http(s) URL or a
+     * path on this site. Anything else -- javascript:, data:, protocol-relative
+     * //host -- is dropped, so a broadcast or notification link cannot run
+     * script in the reader's session.
+     */
+    function safe_link(?string $url): ?string
+    {
+        $url = trim((string) $url);
+
+        if ($url === '') {
+            return null;
+        }
+
+        if (preg_match('#^https?://[^\s]+$#i', $url) === 1) {
+            return $url;
+        }
+
+        if (str_starts_with($url, '/') && ! str_starts_with($url, '//') && ! str_contains($url, '\\')) {
+            return $url;
+        }
+
+        return null;
+    }
+}

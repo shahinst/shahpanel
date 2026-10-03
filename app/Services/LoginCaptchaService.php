@@ -13,7 +13,51 @@ use Illuminate\Validation\ValidationException;
  */
 final class LoginCaptchaService
 {
-    private const CHARSET = '0123456789abcdefghijklmnopqrstuvwxyz';
+    /**
+     * No 0/o, 1/i/l: they look alike when drawn and only cost real users retries.
+     */
+    private const CHARSET = '23456789abcdefghjkmnpqrstuvwxyz';
+
+    /**
+     * Each character as strokes on a 10x14 grid (y down). The image draws these
+     * instead of <text>: an SVG with the answer as text could be read by any
+     * bot with a regular expression.
+     *
+     * @var array<string, list<list<array{0: int, 1: int}>>>
+     */
+    private const GLYPHS = [
+        '2' => [[[0, 3], [2, 0], [8, 0], [10, 3], [10, 5], [0, 14], [10, 14]]],
+        '3' => [[[0, 0], [10, 0], [5, 6], [9, 8], [10, 11], [7, 14], [2, 14], [0, 12]]],
+        '4' => [[[8, 14], [8, 0], [0, 10], [10, 10]]],
+        '5' => [[[10, 0], [1, 0], [0, 6], [6, 5], [10, 8], [10, 11], [7, 14], [1, 14], [0, 12]]],
+        '6' => [[[9, 1], [6, 0], [3, 0], [0, 4], [0, 11], [3, 14], [7, 14], [10, 11], [10, 8], [7, 6], [3, 6], [0, 8]]],
+        '7' => [[[0, 0], [10, 0], [4, 14]]],
+        '8' => [[[5, 7], [1, 5], [1, 2], [4, 0], [6, 0], [9, 2], [9, 5], [5, 7], [0, 10], [1, 13], [4, 14], [6, 14], [9, 13], [10, 10], [5, 7]]],
+        '9' => [[[10, 6], [7, 8], [3, 8], [0, 6], [0, 3], [3, 0], [7, 0], [10, 3], [10, 10], [7, 14], [3, 14], [1, 13]]],
+        'a' => [[[0, 14], [5, 0], [10, 14]], [[2, 9], [8, 9]]],
+        'b' => [[[0, 0], [0, 14], [7, 14], [10, 11], [7, 7], [0, 7]], [[0, 0], [7, 0], [9, 2], [7, 7]]],
+        'c' => [[[10, 2], [7, 0], [3, 0], [0, 3], [0, 11], [3, 14], [7, 14], [10, 12]]],
+        'd' => [[[0, 0], [0, 14], [6, 14], [10, 10], [10, 4], [6, 0], [0, 0]]],
+        'e' => [[[10, 0], [0, 0], [0, 14], [10, 14]], [[0, 7], [7, 7]]],
+        'f' => [[[10, 0], [0, 0], [0, 14]], [[0, 7], [7, 7]]],
+        'g' => [[[10, 2], [7, 0], [3, 0], [0, 3], [0, 11], [3, 14], [7, 14], [10, 11], [10, 8], [6, 8]]],
+        'h' => [[[0, 0], [0, 14]], [[10, 0], [10, 14]], [[0, 7], [10, 7]]],
+        'j' => [[[10, 0], [10, 11], [7, 14], [3, 14], [0, 11]]],
+        'k' => [[[0, 0], [0, 14]], [[10, 0], [0, 8]], [[3, 6], [10, 14]]],
+        'm' => [[[0, 14], [0, 0], [5, 8], [10, 0], [10, 14]]],
+        'n' => [[[0, 14], [0, 0], [10, 14], [10, 0]]],
+        'p' => [[[0, 14], [0, 0], [7, 0], [10, 3], [10, 5], [7, 8], [0, 8]]],
+        'q' => [[[3, 0], [0, 3], [0, 11], [3, 14], [7, 14], [10, 11], [10, 3], [7, 0], [3, 0]], [[6, 10], [10, 14]]],
+        'r' => [[[0, 14], [0, 0], [7, 0], [10, 3], [10, 5], [7, 8], [0, 8]], [[5, 8], [10, 14]]],
+        's' => [[[10, 2], [7, 0], [3, 0], [0, 3], [3, 6], [7, 8], [10, 11], [7, 14], [3, 14], [0, 12]]],
+        't' => [[[0, 0], [10, 0]], [[5, 0], [5, 14]]],
+        'u' => [[[0, 0], [0, 11], [3, 14], [7, 14], [10, 11], [10, 0]]],
+        'v' => [[[0, 0], [5, 14], [10, 0]]],
+        'w' => [[[0, 0], [2, 14], [5, 6], [8, 14], [10, 0]]],
+        'x' => [[[0, 0], [10, 14]], [[10, 0], [0, 14]]],
+        'y' => [[[0, 0], [5, 7], [10, 0]], [[5, 7], [5, 14]]],
+        'z' => [[[0, 0], [10, 0], [0, 14], [10, 14]]],
+    ];
 
     private const SESSION_KEY = 'login_captcha';
 
@@ -135,44 +179,56 @@ final class LoginCaptchaService
         $width = max(200, $count * 36 + 40);
         $height = 56;
         $noise = '';
-        $text = '';
+        $glyphs = '';
+        $jitter = static fn (): float => random_int(-60, 60) / 100;
 
-        for ($i = 0; $i < 6; $i++) {
-            $x1 = random_int(0, $width);
-            $y1 = random_int(0, $height);
-            $x2 = random_int(0, $width);
-            $y2 = random_int(0, $height);
+        // Decoy strokes in the same width and colours as the characters, so the
+        // strokes cannot be told apart from the answer by their style.
+        for ($i = 0; $i < 5; $i++) {
+            $points = [];
+            $x = random_int(0, (int) ($width / 3));
+
+            for ($k = 0; $k < 4; $k++) {
+                $points[] = sprintf('%d,%d', $x, random_int(6, $height - 6));
+                $x += random_int((int) ($width / 8), (int) ($width / 4));
+            }
+
             $noise .= sprintf(
-                '<line x1="%d" y1="%d" x2="%d" y2="%d" stroke="#94a3b8" stroke-width="1" opacity="0.35"/>',
-                $x1,
-                $y1,
-                $x2,
-                $y2
+                '<polyline points="%s" fill="none" stroke="#%02x%02x%02x" stroke-width="%s" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"/>',
+                implode(' ', $points),
+                random_int(0x5a, 0x94), random_int(0x6a, 0xa3), random_int(0x80, 0xb8),
+                random_int(15, 25) / 10
             );
         }
 
         foreach ($chars as $index => $char) {
-            $x = 24 + ($index * 32);
-            $y = 38 + random_int(-4, 4);
-            $rotate = random_int(-18, 18);
-            // رنگ باید کانال‌به‌کانال تیره ساخته شود؛ یک بازهٔ ۲۴بیتی یکجا
-            // مقادیری مثل #2affff هم تولید می‌کرد که روی پلاک روشن دیده نمی‌شد
-            // و کاربر واقعی را از ورود بازمی‌داشت.
-            $fill = sprintf(
-                '#%02x%02x%02x',
-                random_int(0x1a, 0x4a),
-                random_int(0x1a, 0x55),
-                random_int(0x2e, 0x68)
-            );
-            $text .= sprintf(
-                '<text x="%d" y="%d" fill="%s" font-family="Tahoma,Arial,sans-serif" font-size="26" font-weight="700" transform="rotate(%d %d %d)" direction="ltr">%s</text>',
-                $x,
-                $y,
+            $strokes = self::GLYPHS[$char] ?? [];
+            $sx = random_int(170, 210) / 100;
+            $sy = random_int(250, 290) / 100;
+            $ox = 22 + ($index * 32) + random_int(-3, 3);
+            $oy = 9 + random_int(-4, 4);
+            $rotate = random_int(-16, 16);
+            $cx = $ox + 5 * $sx;
+            $cy = $oy + 7 * $sy;
+            $fill = sprintf('#%02x%02x%02x', random_int(0x1a, 0x4a), random_int(0x1a, 0x55), random_int(0x2e, 0x68));
+            $paths = '';
+
+            foreach ($strokes as $stroke) {
+                $points = array_map(
+                    static fn (array $p): string => sprintf('%.1f,%.1f', $ox + ($p[0] + $jitter()) * $sx, $oy + ($p[1] + $jitter()) * $sy),
+                    $stroke
+                );
+                $paths .= sprintf('<polyline points="%s"/>', implode(' ', $points));
+            }
+
+            $glyphs .= sprintf(
+                '<g fill="none" stroke="%s" stroke-width="%s" stroke-linecap="round" stroke-linejoin="round" transform="rotate(%d %.1f %.1f)">%s</g>',
                 $fill,
+                random_int(26, 34) / 10,
                 $rotate,
-                $x,
-                $y,
-                htmlspecialchars($char, ENT_XML1 | ENT_QUOTES, 'UTF-8')
+                $cx,
+                $cy,
+                $paths
             );
         }
 
@@ -183,8 +239,8 @@ final class LoginCaptchaService
             $width,
             $height,
             htmlspecialchars(__('auth.captcha_aria'), ENT_XML1 | ENT_QUOTES, 'UTF-8'),
-            $noise,
-            $text
+            $glyphs,
+            $noise
         );
     }
 

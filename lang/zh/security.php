@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'impersonation_no_tokens' => '代替用户登录时无法为其创建 API 令牌。',
     'title' => '安全与防火墙',
     'hub_title' => '安全与防火墙',
     'section_panel' => '面板安全',

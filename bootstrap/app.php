@@ -39,6 +39,7 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\SetLocale::class,
             \App\Http\Middleware\EnsureInstalled::class,
             \App\Http\Middleware\HandleImpersonationSession::class,
+            \App\Http\Middleware\LogOutInactiveUsers::class,
             \App\Http\Middleware\EnforcePanelMaintenance::class,
         ];
 

@@ -22,6 +22,12 @@ class PanelUpdateController extends Controller
     /** Root-owned launcher installed by install.sh / update.sh (scripts/shahpanel-update). */
     public const LAUNCHER = '/usr/local/sbin/shahpanel-update';
 
+    /** Where the launcher writes <token>.txt (log) and <token>.json (status). */
+    public const PROGRESS_DIR = '/var/lib/shahpanel/progress';
+
+    /** Largest log slice sent per poll. */
+    protected const LOG_CHUNK = 262144;
+
     public function index(Request $request, PanelVersionService $versions): View
     {
         // The page always shows a fresh answer; the banner elsewhere reads the cache.
@@ -86,10 +92,51 @@ class PanelUpdateController extends Controller
 
         return response()->json([
             'token' => $token,
-            'log_url' => asset('update-progress/'.$token.'.txt'),
-            'status_url' => asset('update-progress/'.$token.'.json'),
+            'progress_url' => route('admin.updates.progress', ['token' => $token]),
             'backup' => $backupDir.'/db-'.$validated['stamp'].'.sql.gz',
         ]);
+    }
+
+    /**
+     * The run's status and the part of its log after `offset`. Served by the
+     * panel to the main admin only (updates.* is super_only), from a root-owned
+     * folder outside the webroot.
+     */
+    public function progress(Request $request, string $token): JsonResponse
+    {
+        abort_unless(preg_match('/^[a-f0-9]{32}$/', $token) === 1, 404);
+
+        $statusFile = self::PROGRESS_DIR.'/'.$token.'.json';
+        $logFile = self::PROGRESS_DIR.'/'.$token.'.txt';
+
+        if (! is_file($statusFile)) {
+            return response()->json(['status' => null, 'log' => '', 'offset' => 0], 404);
+        }
+
+        $status = json_decode((string) @file_get_contents($statusFile), true);
+        $offset = max(0, (int) $request->query('offset', 0));
+        $log = '';
+
+        if (is_file($logFile)) {
+            $size = (int) @filesize($logFile);
+
+            if ($offset < $size && ($handle = @fopen($logFile, 'rb')) !== false) {
+                fseek($handle, $offset);
+                $log = (string) fread($handle, self::LOG_CHUNK);
+                fclose($handle);
+            }
+
+            // Never split a multi-byte character between two polls.
+            $valid = mb_strcut($log, 0, strlen($log), 'UTF-8');
+            $offset += strlen($valid);
+            $log = $valid;
+        }
+
+        return response()->json([
+            'status' => is_array($status) ? $status : null,
+            'log' => $log,
+            'offset' => $offset,
+        ])->header('Cache-Control', 'no-store');
     }
 
     /**

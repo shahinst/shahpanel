@@ -11,7 +11,7 @@
 @endphp
 @if ($showStarPrompt)
 <div class="star-prompt" id="star-prompt" role="dialog" aria-modal="true" aria-labelledby="star-prompt-title"
-     data-dismiss-url="{{ route('admin.updates.star-prompt.dismiss') }}">
+     data-dismiss-url="{{ route('admin.star-prompt.dismiss') }}">
     <div class="star-prompt__card">
         <div class="star-prompt__sky" aria-hidden="true">
             <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>

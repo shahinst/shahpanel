@@ -31,7 +31,11 @@ class BroadcastController extends Controller
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'body' => ['required', 'string', 'max:5000'],
-            'link' => ['nullable', 'string', 'max:500'],
+            'link' => ['nullable', 'string', 'max:500', function (string $attribute, mixed $value, \Closure $fail): void {
+                if ($value !== null && $value !== '' && safe_link((string) $value) === null) {
+                    $fail(__('validation.url', ['attribute' => $attribute]));
+                }
+            }],
         ]);
 
         $service->submitAsAgent(

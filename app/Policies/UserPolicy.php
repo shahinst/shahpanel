@@ -60,8 +60,18 @@ class UserPolicy
 
     public function disableTwoFactor(User $viewer, User $target): bool
     {
-        return $viewer->role === UserRole::Admin
-            && in_array($target->role, [UserRole::Admin, UserRole::Agent, UserRole::Seller], true);
+        if ($viewer->role !== UserRole::Admin) {
+            return false;
+        }
+
+        // Another admin's second factor is the panel owner's to remove. The route
+        // sits in the agents section, so an admin given only that section could
+        // otherwise strip the owner's 2FA.
+        if ($target->role === UserRole::Admin) {
+            return is_super_admin($viewer);
+        }
+
+        return in_array($target->role, [UserRole::Agent, UserRole::Seller], true);
     }
 
     protected function inHierarchy(User $viewer, User $target): bool

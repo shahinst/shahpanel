@@ -45,7 +45,57 @@ export HOME="${HOME:-/root}"
 
 # Every git call trusts the checkout explicitly. Relying on the global
 # safe.directory entry alone failed whenever that entry could not be written.
-git() { command git -c safe.directory="$APP_DIR" "$@"; }
+# Hooks and fsmonitor are always off and system-level git config is ignored:
+# the checkout may have been owned by the web user (older installs), and
+# either setting would let that user run commands as root.
+export GIT_CONFIG_NOSYSTEM=1
+git() {
+  command git -c safe.directory="$APP_DIR" -c core.hooksPath=/dev/null \
+    -c core.fsmonitor=false -c core.sshCommand=ssh -c credential.helper= "$@"
+}
+
+# composer runs as root (it writes vendor/, which root owns) but never runs
+# package scripts or plugins as root: those boot the application, and the
+# application loads modules/, which the web user can write. Package discovery
+# runs afterwards as the web user.
+composer_install() {
+  composer install --no-dev --optimize-autoloader --no-interaction --no-scripts --no-plugins \
+    && sudo -u www-data php artisan package:discover --ansi >/dev/null
+}
+
+# Refuse to touch a checkout whose own git config could redirect a fetch or
+# run commands (url.*.insteadOf, include, core.sshCommand, aliases, ...).
+assert_safe_git_config() {
+  local bad
+  bad="$(command git -c safe.directory="$APP_DIR" -C "$APP_DIR" config --local --name-only --list 2>/dev/null \
+    | grep -Eiv '^(core\.(repositoryformatversion|filemode|bare|logallrefupdates|ignorecase|precomposeunicode|autocrlf)|remote\.origin\.(url|fetch)|branch\.[^.]+\.(remote|merge)|gc\.auto|pull\.(rebase|ff)|safe\.directory|init\.defaultbranch|user\.(name|email))$' || true)"
+  if [[ -n "$bad" ]]; then
+    warn "unexpected settings in $APP_DIR/.git/config:"
+    echo "$bad" | sed 's/^/    /'
+    die "refusing to run git as root with these settings — remove them (git config --local --unset <name>) and run again"
+  fi
+}
+
+# The code belongs to root; the web user writes only where the panel stores
+# data. A compromised web user can then no longer change the code (or .git)
+# that this script and the scheduler run.
+secure_permissions() {
+  chown -R root:root "$APP_DIR"
+  find "$APP_DIR" -path "$APP_DIR/vendor" -prune -o -path "$APP_DIR/node_modules" -prune -o -type d -exec chmod 755 {} +
+  chmod -R u+rwX,go+rX,go-w "$APP_DIR"
+  local d
+  for d in storage bootstrap/cache modules; do
+    [[ -e "$APP_DIR/$d" ]] && chown -R www-data:www-data "$APP_DIR/$d" && chmod -R u+rwX,g+rwX "$APP_DIR/$d"
+  done
+  # Written by the panel's Apache basic-auth option.
+  [[ -f "$APP_DIR/public/.htaccess" ]] && chown www-data:www-data "$APP_DIR/public/.htaccess"
+  if [[ -f "$APP_DIR/.env" ]]; then
+    chown root:www-data "$APP_DIR/.env"
+    chmod 640 "$APP_DIR/.env"
+  fi
+  [[ -f "$APP_DIR/.installed.lock" ]] && chmod 644 "$APP_DIR/.installed.lock"
+  return 0
+}
 REPO="${REPO:-https://github.com/shahinst/shahpanel.git}"
 BRANCH="${BRANCH:-master}"
 BACKUP_DIR="${BACKUP_DIR:-/var/backups/shahpanel}"
@@ -126,7 +176,7 @@ rollback() {
   fi
 
   if [[ "$VENDOR_TOUCHED" -eq 1 ]]; then
-    if composer install --no-dev --optimize-autoloader --no-interaction; then ok "vendor/ restored"; else warn "could not restore vendor/"; failed=1; fi
+    if composer_install; then ok "vendor/ restored"; else warn "could not restore vendor/"; failed=1; fi
   fi
 
   if [[ "$MIGRATE_STARTED" -eq 1 && -n "$DUMP" && -s "$DUMP" ]]; then
@@ -145,7 +195,7 @@ rollback() {
   fi
 
   sudo -u www-data php artisan optimize:clear >/dev/null 2>&1 || true
-  chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
+  secure_permissions 2>/dev/null || true
   sudo -u www-data php artisan queue:restart >/dev/null 2>&1 || true
   restart_php || true
 
@@ -226,6 +276,7 @@ step "Checking local state"
 # The checkout belongs to www-data but we run as root, which git refuses to
 # touch until the directory is declared safe.
 git config --global --add safe.directory "$APP_DIR" 2>/dev/null || true
+assert_safe_git_config
 # chmod -R 775 storage flips the mode bit on tracked placeholder files, which
 # would otherwise look like local edits forever.
 git config core.fileMode false
@@ -317,7 +368,7 @@ ok "now at $(git rev-parse --short HEAD)"
 step "Installing PHP dependencies"
 stage "composer"
 VENDOR_TOUCHED=1
-run composer install --no-dev --optimize-autoloader --no-interaction
+run composer_install
 ok "vendor/ is up to date"
 
 # ── 6) Database migrations ───────────────────────────────────────────────
@@ -334,8 +385,7 @@ ok "schema is up to date"
 step "Clearing caches and fixing permissions"
 stage "caches"
 run sudo -u www-data php artisan optimize:clear
-chown -R www-data:www-data storage bootstrap/cache
-chmod -R 775 storage bootstrap/cache
+secure_permissions
 # The queue worker runs the old code until it is told to stop and respawn.
 sudo -u www-data php artisan queue:restart >/dev/null 2>&1 || true
 # Older installs were written without fastcgi_read_timeout, so a long admin
@@ -387,7 +437,10 @@ install_web_updater() {
   chmod 0440 /etc/sudoers.d/.shahpanel-update.new
   if visudo -cf /etc/sudoers.d/.shahpanel-update.new >/dev/null 2>&1; then
     mv -f /etc/sudoers.d/.shahpanel-update.new /etc/sudoers.d/shahpanel-update
-    install -d -o root -g root -m 0755 "$APP_DIR/public/update-progress"
+    # Progress files live outside the webroot in a root-owned folder; the
+    # panel serves them to the main admin only.
+    install -d -o root -g root -m 0755 /var/lib/shahpanel /var/lib/shahpanel/progress
+    rm -rf "$APP_DIR/public/update-progress"
     ok "web updater installed"
   else
     rm -f /etc/sudoers.d/.shahpanel-update.new

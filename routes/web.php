@@ -238,7 +238,8 @@ Route::prefix($adminPath)->name('admin.')->middleware($adminMiddleware)->group(f
     Route::get('updates', [\App\Http\Controllers\Admin\PanelUpdateController::class, 'index'])->name('updates.index');
     Route::post('updates/check', [\App\Http\Controllers\Admin\PanelUpdateController::class, 'check'])->name('updates.check');
     Route::post('updates/run', [\App\Http\Controllers\Admin\PanelUpdateController::class, 'run'])->middleware('throttle:6,1')->name('updates.run');
-    Route::post('updates/star-prompt', [\App\Http\Controllers\Admin\PanelUpdateController::class, 'dismissStarPrompt'])->name('updates.star-prompt.dismiss');
+    Route::get('updates/progress/{token}', [\App\Http\Controllers\Admin\PanelUpdateController::class, 'progress'])->name('updates.progress');
+    Route::post('updates/star-prompt', [\App\Http\Controllers\Admin\PanelUpdateController::class, 'dismissStarPrompt'])->name('star-prompt.dismiss');
     Route::post('servers/{server}/wireguard-interfaces', [AdminServerOperationsController::class, 'storeWireguardInterface'])->name('servers.wireguard-interfaces.store');
     Route::put('servers/{server}/wireguard-interfaces/{serverInterface}', [AdminServerOperationsController::class, 'updateWireguardInterface'])->name('servers.wireguard-interfaces.update');
     Route::post('servers/{server}/ppp-profiles', [AdminServerOperationsController::class, 'storePppProfile'])->name('servers.ppp-profiles.store');

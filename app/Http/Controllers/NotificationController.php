@@ -28,8 +28,10 @@ class NotificationController extends Controller
 
         $service->markRead($notification);
 
-        if ($notification->link) {
-            return redirect()->to($notification->link);
+        $link = safe_link($notification->link);
+
+        if ($link !== null) {
+            return redirect()->to($link);
         }
 
         return redirect()->route('notifications.index', ['id' => $notification->id]);

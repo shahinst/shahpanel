@@ -1,6 +1,52 @@
 {
     "versions": [
         {
+            "version": "3.3.0",
+            "date": "2026-10-03",
+            "notes": {
+                "fa": [
+                    "امنیت به‌روزرسانی از داخل پنل: کد پنل حالا متعلق به root است و کاربر وب فقط به پوشه‌های لازم دسترسی نوشتن دارد؛ مسیر چاپ کنسول به بیرون از پوشه عمومی منتقل شد",
+                    "API تونلینگ هم مثل صفحه‌های تونلینگ تابع محدودیت بخش‌های ادمین، فهرست IP مجاز و گزارش فعالیت شد",
+                    "ورود به پنل کاربران (Impersonation) فقط با نقش درست انجام می‌شود و در حالت ورود به‌جای کاربر نمی‌توان رمز، ایمیل، نام کاربری یا توکن API او را تغییر داد",
+                    "غیرفعال‌کردن ورود دومرحله‌ای ادمین‌های دیگر فقط در اختیار مدیر اصلی است",
+                    "کاربری که تعلیق یا حذف شود در اولین درخواست بعدی از پنل خارج می‌شود",
+                    "لینک اطلاعیه‌ها و اعلان‌ها فقط آدرس http/https یا مسیر داخلی پنل را می‌پذیرد",
+                    "کپچای صفحه ورود به‌جای متن، حروف را به‌صورت خط رسم می‌کند تا ربات‌ها نتوانند آن را بخوانند",
+                    "اضافه شدن تست‌های خودکار و اجرای آن‌ها در GitHub Actions"
+                ],
+                "en": [
+                    "In-panel update hardening: panel code is now owned by root, the web user can write only where it must, and the update console log lives outside the public folder",
+                    "The tunneling API now follows the admin section permissions, the admin IP allowlist and the activity log, like the tunneling pages",
+                    "Impersonation only works through the route for the target's role, and while impersonating you cannot change the user's password, email, username or API tokens",
+                    "Only the panel owner can turn off another administrator's two-factor login",
+                    "Suspended or deleted users are signed out on their next request",
+                    "Broadcast and notification links accept only http(s) URLs or paths inside the panel",
+                    "The login captcha draws its characters as strokes instead of text, so bots cannot read it",
+                    "Added an automated test suite that runs on GitHub Actions"
+                ],
+                "ru": [
+                    "Защита обновления из панели: код панели принадлежит root, веб-пользователь пишет только туда, куда необходимо, а журнал консоли обновления хранится вне публичной папки",
+                    "API туннелирования теперь подчиняется правам разделов администратора, списку разрешённых IP и журналу действий, как и страницы туннелирования",
+                    "Вход под пользователем возможен только через маршрут его роли, и в этом режиме нельзя менять пароль, email, имя пользователя или API-токены",
+                    "Отключать двухфакторный вход другого администратора может только владелец панели",
+                    "Заблокированные или удалённые пользователи выходят из системы при следующем запросе",
+                    "Ссылки рассылок и уведомлений принимают только http(s)-адреса или пути внутри панели",
+                    "Капча на странице входа рисует символы линиями вместо текста, поэтому боты не могут её прочитать",
+                    "Добавлен набор автоматических тестов, запускаемых в GitHub Actions"
+                ],
+                "zh": [
+                    "面板内更新加固：面板代码归 root 所有，Web 用户只能写入必要的目录，更新控制台日志移出公共目录",
+                    "隧道 API 现在与隧道页面一样遵循管理员分区权限、管理员 IP 白名单和活动日志",
+                    "模拟登录只能通过与目标角色对应的路由进行，模拟期间无法修改该用户的密码、邮箱、用户名或 API 令牌",
+                    "只有面板所有者可以关闭其他管理员的两步验证",
+                    "被停用或删除的用户会在下一次请求时被登出",
+                    "公告和通知链接只接受 http(s) 地址或面板内路径",
+                    "登录验证码改为以线条绘制字符而非文本，机器人无法读取",
+                    "新增自动化测试套件并在 GitHub Actions 中运行"
+                ]
+            }
+        },
+        {
             "version": "3.2.0",
             "date": "2026-10-03",
             "notes": {
