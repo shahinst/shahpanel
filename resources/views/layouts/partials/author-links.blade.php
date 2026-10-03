@@ -25,7 +25,12 @@
             </a>
         @endif
     </div>
-    <div class="author-links__version" dir="ltr">{{ __('updates.version_label', ['version' => $panelVersion]) }}</div>
+    <div class="author-links__version" dir="ltr">
+        {{ __('updates.version_label', ['version' => $panelVersion]) }}
+        @if (filled(config('shahpanel.source_url')))
+            · <a href="{{ config('shahpanel.source_url') }}" target="_blank" rel="noopener license">{{ __('updates.source_code') }}</a>
+        @endif
+    </div>
 </div>
 @once
 <style>

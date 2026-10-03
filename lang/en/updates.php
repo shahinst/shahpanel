@@ -28,6 +28,7 @@ return [
     'copied' => 'Copied',
     'links_title' => 'Author',
     'version_label' => 'Version :version',
+    'source_code' => 'Source code (AGPL-3.0)',
     'star_title' => 'Welcome to ShahPanel! ⭐',
     'star_text' => 'If ShahPanel is useful to you, please star the project on GitHub — those stars keep its development going.',
     'star_button' => 'Star on GitHub',

@@ -1,6 +1,28 @@
 {
     "versions": [
         {
+            "version": "3.10.1",
+            "date": "2026-10-11",
+            "notes": {
+                "fa": [
+                    "شاه‌پنل از این نسخه نرم‌افزار آزاد است و تحت مجوز GNU AGPL-3.0 منتشر می‌شود (فایل LICENSE و بخش مجوز در README به چهار زبان)",
+                    "لینک «کد منبع (AGPL-3.0)» پایین پنل، که نشانی آن با SHAHPANEL_SOURCE_URL در فایل .env قابل تغییر است"
+                ],
+                "en": [
+                    "From this version ShahPanel is free software under the GNU AGPL-3.0 (LICENSE file and a license section in the README in four languages)",
+                    "A “Source code (AGPL-3.0)” link in the panel footer; its address can be changed with SHAHPANEL_SOURCE_URL in .env"
+                ],
+                "ru": [
+                    "Начиная с этой версии ShahPanel — свободное ПО под лицензией GNU AGPL-3.0 (файл LICENSE и раздел о лицензии в README на четырёх языках)",
+                    "Ссылка «Исходный код (AGPL-3.0)» в подвале панели; её адрес задаётся через SHAHPANEL_SOURCE_URL в .env"
+                ],
+                "zh": [
+                    "自本版本起，ShahPanel 成为以 GNU AGPL-3.0 许可证发布的自由软件（LICENSE 文件以及四种语言 README 中的许可证章节）",
+                    "面板页脚新增“源代码 (AGPL-3.0)”链接，可通过 .env 中的 SHAHPANEL_SOURCE_URL 修改其地址"
+                ]
+            }
+        },
+        {
             "version": "3.10.0",
             "date": "2026-10-10",
             "notes": {

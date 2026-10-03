@@ -4,6 +4,7 @@
     "version": "1.0.0",
     "description": "ابزار انتقال اکانت‌ها از پنل Sanaei به Remnawave، همراه با گزارش و لاگ هر انتقال. با غیرفعال‌کردن ماژول، این بخش از پنل حذف می‌شود.",
     "author": "ShahPanel",
+    "license": "AGPL-3.0-only",
     "namespace": "Modules\\Migrate\\",
     "autoload": "src",
     "provider": "Modules\\Migrate\\MigrateServiceProvider"

@@ -8,7 +8,7 @@
 
 <br>
 
-[![License](https://img.shields.io/badge/license-proprietary-red?style=flat-square)](#-مجوز)
+[![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-blue?style=flat-square)](LICENSE)
 [![PHP](https://img.shields.io/badge/PHP-8.2%2B-777bb4?style=flat-square&logo=php&logoColor=white)](https://php.net)
 [![Laravel](https://img.shields.io/badge/Laravel-11-ff2d20?style=flat-square&logo=laravel&logoColor=white)](https://laravel.com)
 [![MySQL](https://img.shields.io/badge/MySQL-8%2B-4479a1?style=flat-square&logo=mysql&logoColor=white)](https://mysql.com)
@@ -978,7 +978,23 @@ tools/maintain-core.php صفحه‌ی تشخیص مستقل از Laravel (پشت
 
 ## 📄 مجوز
 
-این پروژه **اختصاصی (proprietary)** است. استفاده، انتشار مجدد یا فروش بدون اجازه‌ی کتبی مجاز نیست.
+شاه‌پنل نرم‌افزاری آزاد است و تحت **مجوز عمومی همگانی افرو گنو، نسخهٔ ۳ ([GNU AGPL-3.0](LICENSE))** منتشر می‌شود.
+
+```
+Copyright (C) 2026 shahinst
+SPDX-License-Identifier: AGPL-3.0-only
+```
+
+| ✅ مجاز | 📌 شرط | ❌ تضمین |
+|---|---|---|
+| استفاده‌ی شخصی و تجاری | حفظ اعلان کپی‌رایت و متن مجوز | بدون هیچ ضمانتی (AS IS) |
+| تغییر و توسعه‌ی کد | انتشار نسخه‌ی تغییریافته فقط با همین مجوز (AGPL-3.0) | بدون مسئولیت در قبال خسارت |
+| انتشار مجدد | مشخص‌کردن تغییرات انجام‌شده | |
+| استفاده‌ی مجوزهای ثبت اختراع | **ارائه‌ی کد منبع به همه‌ی کاربرانی که از طریق شبکه با پنل کار می‌کنند** (بند ۱۳) | |
+
+اگر نسخه‌ی تغییریافته‌ای از پنل را روی سرور اجرا می‌کنید و دیگران (نماینده‌ها، فروشنده‌ها یا مشتری‌ها) از طریق وب با آن کار می‌کنند، باید کد منبع همان نسخه را در دسترسشان بگذارید. لینک «کد منبع» پایین پنل برای همین است؛ نشانی آن را با `SHAHPANEL_SOURCE_URL` در فایل `.env` به مخزن خودتان تغییر دهید.
+
+متن کامل مجوز در فایل [LICENSE](LICENSE) آمده است.
 
 <div align="center">
 <br>

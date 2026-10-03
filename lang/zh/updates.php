@@ -28,6 +28,7 @@ return [
     'copied' => '已复制',
     'links_title' => '作者',
     'version_label' => '版本 :version',
+    'source_code' => '源代码 (AGPL-3.0)',
     'star_title' => '欢迎使用 ShahPanel！⭐',
     'star_text' => '如果 ShahPanel 对您有帮助，请在 GitHub 上为项目点个星——这些星星支持它持续开发。',
     'star_button' => '在 GitHub 上点星',

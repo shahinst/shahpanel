@@ -51,6 +51,10 @@ return [
         'proxy' => env('PANEL_UPDATE_PROXY'),
     ],
 
+    // AGPL-3.0 section 13: everyone who uses the panel over the network must be
+    // offered its source. A modified copy must point this at its own source.
+    'source_url' => env('SHAHPANEL_SOURCE_URL', 'https://github.com/shahinst/shahpanel'),
+
     'author_links' => [
         'github' => 'https://github.com/shahinst/shahpanel',
         'telegram' => 'https://t.me/shaahinst',
