@@ -362,6 +362,7 @@ return [
     'progress_sync_done' => 'Синхронизация завершена: :synced аккаунтов, ошибок: :errors.',
     'progress_sync_overlap' => 'На этом сервере уже идёт другая синхронизация (например, по cron); этот запуск пропущен.',
     'progress_error' => 'Ошибка',
+    'sync_remote_unavailable' => "Сервер не ответил; расход этого аккаунта не изменён",
     'progress_interrupted' => 'Операция была прервана (вероятно, перезапущен PHP). Запустите её снова.',
     'progress_elapsed' => 'Прошло',
     'progress_eta' => 'Осталось',

@@ -21,6 +21,7 @@ class Account extends Model
     use SoftDeletes;
 
     protected $fillable = [
+        'remote_disable_pending_at',
         'owner_seller_id',
         'owner_agent_id',
         'client_user_id',
@@ -86,6 +87,7 @@ class Account extends Model
             'data_used_bytes' => 'integer',
             'lifetime_used_bytes' => 'integer',
             'expiry_at' => 'datetime',
+            'remote_disable_pending_at' => 'datetime',
             'portal_token_expires_at' => 'datetime',
             'status' => AccountStatus::class,
             'last_sync_at' => 'datetime',

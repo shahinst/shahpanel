@@ -52,6 +52,12 @@ class ClientRenewalService
             throw new InvalidArgumentException(__('packages.duration_not_available'));
         }
 
+        // A trial is handed out once; renewing into the test tier would give it
+        // again every time it ran out.
+        if ($duration->tier->isTest()) {
+            throw new InvalidArgumentException(__('packages.test_already_used_for_client'));
+        }
+
         $duration->setRelation('package', $account->package);
 
         $gb = $this->renewalPricingService->billableDataGb($account);
@@ -61,13 +67,17 @@ class ClientRenewalService
         $this->clientPortalEconomics->assertCanSettle($client, $owner, $quote);
 
         return DB::transaction(function () use ($account, $client, $owner, $duration, $quote): Account {
+            // Money first: renewing writes the new expiry to the remote panel,
+            // which a rollback cannot undo. If the wallets cannot pay, nothing
+            // has touched the server yet; if the renewal fails, the debit rolls
+            // back with this transaction.
+            $this->clientPortalEconomics->settlePurchase($client, $owner, $account, $quote, renewal: true);
+
             $renewed = $this->accountService->renewAccount(
                 $account,
                 $duration,
                 AccountBillingContext::ClientPortal
             );
-
-            $this->clientPortalEconomics->settlePurchase($client, $owner, $renewed, $quote, renewal: true);
 
             $this->activityLogService->log(
                 $client,

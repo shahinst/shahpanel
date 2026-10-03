@@ -13,7 +13,7 @@
             </div>
         </div>
 
-        @if ($payment->driver === \App\Enums\PaymentGatewayDriver::CardToCard && $payment->status === \App\Enums\GatewayPaymentStatus::Processing)
+        @if (app(\App\Services\PaymentGateways\GatewayPaymentService::class)->awaitsManualReview($payment))
             <div class="panel-modern-card">
                 <div class="card-head"><h3>{{ __('payment_gateways.review_actions') }}</h3></div>
                 <div class="card-body">

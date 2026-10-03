@@ -17,6 +17,27 @@ use Throwable;
 
 class AccountRefundService
 {
+    /**
+     * Money paid for the account, returned on refund. ClientCost is the
+     * wholesale price an owner paid for a client-portal sale.
+     */
+    protected const BUYER_TYPES = [
+        TransactionType::Purchase,
+        TransactionType::Renewal,
+        TransactionType::ClientCost,
+    ];
+
+    /**
+     * Money earned from the sale, clawed back on refund. ClientRetail is what
+     * the owner received from their client in a portal sale.
+     */
+    protected const EARNER_TYPES = [
+        TransactionType::Margin,
+        TransactionType::Revenue,
+        TransactionType::Commission,
+        TransactionType::ClientRetail,
+    ];
+
     protected const DESC_BUYER_RETURNED = 'Account refund — buyer charge returned';
 
     protected const DESC_COMMISSION_REVERSED = 'Account refund — agent commission reversed';
@@ -214,17 +235,17 @@ class AccountRefundService
                         $currency = $this->resolveLedgerCurrency($transaction, $account, $invoice);
                         $movementContext = array_merge($context, ['currency' => $currency]);
 
-                        if (in_array($type, [TransactionType::Purchase, TransactionType::Renewal], true)) {
+                        if (in_array($type, self::BUYER_TYPES, true)) {
                             // Money the buyer (seller/agent) paid is returned to their wallet.
                             $this->walletService->credit($user, $portion, TransactionType::Refund, array_merge($movementContext, [
                                 'description' => self::DESC_BUYER_RETURNED,
                             ]));
-                        } elseif (in_array($type, [TransactionType::Margin, TransactionType::Revenue, TransactionType::Commission], true)) {
+                        } elseif (in_array($type, self::EARNER_TYPES, true)) {
                             // Commission/revenue the upline (agent) and admin earned at purchase
                             // is clawed back so a seller refund cannot leave the system out of pocket.
                             // allowNegative keeps the ledger balanced even if the earner already spent it.
                             $this->walletService->debit($user, $portion, TransactionType::Refund, array_merge($movementContext, [
-                                'description' => $type === TransactionType::Margin || $type === TransactionType::Commission
+                                'description' => $type !== TransactionType::Revenue
                                     ? self::DESC_COMMISSION_REVERSED
                                     : self::DESC_REVENUE_REVERSED,
                             ]), allowNegative: true);
@@ -585,7 +606,7 @@ class AccountRefundService
 
             $type = $this->resolveTransactionType($transaction);
 
-            if ($type === null || ! in_array($type, [TransactionType::Purchase, TransactionType::Renewal], true)) {
+            if ($type === null || ! in_array($type, self::BUYER_TYPES, true)) {
                 continue;
             }
 
@@ -603,13 +624,7 @@ class AccountRefundService
         return Transaction::query()
             ->where('related_account_id', $accountId)
             ->when($invoiceId !== null, fn ($query) => $query->where('related_invoice_id', $invoiceId))
-            ->whereIn('type', [
-                TransactionType::Purchase,
-                TransactionType::Renewal,
-                TransactionType::Margin,
-                TransactionType::Revenue,
-                TransactionType::Commission,
-            ])
+            ->whereIn('type', [...self::BUYER_TYPES, ...self::EARNER_TYPES])
             ->orderBy('id')
             ->get();
     }

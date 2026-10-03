@@ -366,4 +366,5 @@ TEXT,
     'assign_package_hint' => '此账号没有套餐或时长（例如从服务器导入）。选择套餐后会记录其流量和时长；若无到期时间，则从今天开始计算。',
     'assign_package_invalid' => '所选套餐与此账号的服务类型不匹配。',
     'assign_package_push_failed' => '套餐已保存在面板中，但未能推送到服务器：:error',
+    'renew_volume_mode_elastic_only' => "仅弹性流量套餐可以增加或升级流量；请用相同套餐续费此账户。",
 ];

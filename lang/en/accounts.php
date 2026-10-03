@@ -366,4 +366,5 @@ TEXT,
     'assign_package_hint' => 'This account has no package or period (for example, it was imported from the server). Picking a package records its volume and period on the account, and sets an expiry from today if it has none.',
     'assign_package_invalid' => 'The chosen package does not match this account\'s service type.',
     'assign_package_push_failed' => 'The package was saved in the panel but could not be pushed to the server: :error',
+    'renew_volume_mode_elastic_only' => "Adding or upgrading volume is only possible for flexible-volume packages; renew this account with the same package instead.",
 ];

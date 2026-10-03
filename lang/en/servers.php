@@ -362,6 +362,7 @@ return [
     'progress_sync_done' => 'Sync finished: :synced accounts synced, :errors errors.',
     'progress_sync_overlap' => 'Another sync (for example the cron run) is already running on this server; this run was skipped.',
     'progress_error' => 'Error',
+    'sync_remote_unavailable' => "The server did not answer; this account's usage was left unchanged",
     'progress_interrupted' => 'The operation was interrupted (PHP was probably restarted). Run it again.',
     'progress_elapsed' => 'Elapsed',
     'progress_eta' => 'Time left',
