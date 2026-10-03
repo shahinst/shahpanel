@@ -421,7 +421,7 @@ class AccountService
                     : null;
                 $limitBeforeBytes = $account->data_limit_bytes;
 
-                $preserveUsage = in_array($renewalMode, ['add_volume', 'upgrade_volume'], true);
+                $preserveUsage = self::renewalPreservesUsage($renewalMode);
                 $resetTraffic = ! $preserveUsage;
 
                 if ($preserveUsage && $this->usesPanelTrafficAccounting($account)) {
@@ -2008,6 +2008,26 @@ class AccountService
     /**
      * Apply purchased/limit bytes for elastic renewals (same / add / upgrade).
      */
+    /**
+     * Does this renewal mode carry the used bytes over, or start a fresh volume?
+     *
+     * Only add_volume keeps the meter running. It is billed for the added
+     * gigabytes alone and adds them on top of the existing ceiling, so the
+     * customer keeps what they already spent and gets exactly what they paid
+     * for.
+     *
+     * upgrade_volume is billed for the whole new volume (see
+     * AccountRenewalPricingService::billableGbForRenewal) and replaces the
+     * ceiling. Carrying the old usage into it charged for a full volume and
+     * then handed over that volume minus whatever had already been spent: a
+     * customer who paid for 20GB with 10GB already used could reach 10GB.
+     * Paying for a whole volume starts a whole volume.
+     */
+    public static function renewalPreservesUsage(string $renewalMode): bool
+    {
+        return $renewalMode === 'add_volume';
+    }
+
     protected function applyElasticRenewalVolume(
         Account $account,
         Package $billingPackage,

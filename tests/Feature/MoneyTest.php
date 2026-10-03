@@ -3,12 +3,14 @@
 namespace Tests\Feature;
 
 use App\Enums\AccountStatus;
+use App\Enums\ServiceType;
 use App\Enums\TransactionType;
 use App\Models\Invoice;
 use App\Models\User;
 use App\Services\AccountRefundService;
 use App\Services\AccountService;
 use App\Services\ClientPortalEconomicsService;
+use App\Services\SanaeiService;
 use App\Services\SyncService;
 use App\Services\WalletService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -75,13 +77,13 @@ class MoneyTest extends TestCase
         $agent = $this->makeAgent();
         $server = $this->makeServer('sanaei');
         $account = $this->makeAccount($agent, $server, [
-            'service_type' => \App\Enums\ServiceType::SanaeiVless,
+            'service_type' => ServiceType::SanaeiVless,
             'data_used_bytes' => 5_000_000,
         ]);
 
-        $sanaei = Mockery::mock(\App\Services\SanaeiService::class);
+        $sanaei = Mockery::mock(SanaeiService::class);
         $sanaei->shouldReceive('getAggregatedClientTraffics')->andReturn(null);
-        $this->app->instance(\App\Services\SanaeiService::class, $sanaei);
+        $this->app->instance(SanaeiService::class, $sanaei);
 
         try {
             $this->app->make(SyncService::class)->syncAccount($account);
@@ -105,5 +107,16 @@ class MoneyTest extends TestCase
 
         $this->assertSame(AccountStatus::Active, $result->status);
         $this->assertSame(AccountStatus::Active, $account->fresh()->status);
+    }
+
+    public function test_only_adding_volume_carries_the_used_bytes_over(): void
+    {
+        // add_volume is billed for the added gigabytes and raises the ceiling,
+        // so the meter has to keep running. The other modes are billed for a
+        // whole volume and replace the ceiling: carrying usage into them sold a
+        // customer 20GB and left them 10GB because 10GB was already spent.
+        $this->assertTrue(AccountService::renewalPreservesUsage('add_volume'));
+        $this->assertFalse(AccountService::renewalPreservesUsage('upgrade_volume'));
+        $this->assertFalse(AccountService::renewalPreservesUsage('same'));
     }
 }
