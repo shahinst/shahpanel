@@ -379,4 +379,12 @@ return [
     'progress_failed' => 'Failed',
     'progress_title_push' => 'Pushing accounts to the server',
     'progress_title_traffic' => 'Usage sync',
+    'speed_queues_partial' => 'The speed was applied to only part of the addresses: :failed of :total queues could not be written. Save again; the queues already correct are left alone. First error: :error',
+    'interface_in_use' => '":name" still has :count accounts in the panel and was not removed. Move or delete those accounts first.',
+    'interface_in_use_router' => '":name" still has :count PPP users on the router and was not removed.',
+    'ppp_profile_builtin' => '":name" is a built-in MikroTik profile and cannot be removed.',
+    'interface_delete_confirm' => 'Remove ":name" from the router and the panel? Its speed queues and firewall rules go too.',
+    'interface_deleted' => '":name" was removed from the router and the panel.',
+    'ppp_profile_updated' => 'The speed of profile ":name" was saved and applied on the router.',
+    'ppp_speed_needs_subnet' => '":name" has no known subnet, so per-address queues cannot be built for it.',
 ];

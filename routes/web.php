@@ -243,6 +243,9 @@ Route::prefix($adminPath)->name('admin.')->middleware($adminMiddleware)->group(f
     Route::post('servers/{server}/wireguard-interfaces', [AdminServerOperationsController::class, 'storeWireguardInterface'])->name('servers.wireguard-interfaces.store');
     Route::put('servers/{server}/wireguard-interfaces/{serverInterface}', [AdminServerOperationsController::class, 'updateWireguardInterface'])->name('servers.wireguard-interfaces.update');
     Route::post('servers/{server}/ppp-profiles', [AdminServerOperationsController::class, 'storePppProfile'])->name('servers.ppp-profiles.store');
+    Route::put('servers/{server}/ppp-profiles/{serverInterface}', [AdminServerOperationsController::class, 'updatePppProfile'])->name('servers.ppp-profiles.update');
+    Route::delete('servers/{server}/ppp-profiles/{serverInterface}', [AdminServerOperationsController::class, 'destroyPppProfile'])->name('servers.ppp-profiles.destroy');
+    Route::delete('servers/{server}/wireguard-interfaces/{serverInterface}', [AdminServerOperationsController::class, 'destroyWireguardInterface'])->name('servers.wireguard-interfaces.destroy');
     Route::post('servers/{server}/ovpn-profile', [AdminServerOperationsController::class, 'storeOvpnProfile'])->name('servers.ovpn-profile.store');
     Route::delete('servers/{server}/ovpn-profile', [AdminServerOperationsController::class, 'destroyOvpnProfile'])->name('servers.ovpn-profile.destroy');
     Route::post('servers/{server}/l2tp-ipsec', [AdminServerOperationsController::class, 'storeL2tpIpsec'])->name('servers.l2tp-ipsec.store');

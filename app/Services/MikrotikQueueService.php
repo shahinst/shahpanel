@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Server;
 use App\Models\ServerInterface;
 use Illuminate\Support\Facades\Log;
+use RuntimeException;
 use Throwable;
 
 /**
@@ -49,45 +50,45 @@ class MikrotikQueueService
         }
 
         $peerLimit = $this->formatLimit($speedMbps);
-        $parentLimit = $this->parentQueueLimit();
-        $applied = 0;
-
-        try {
-            if ($iface->isWireguardProfile()) {
-                $this->mikrotik->ensureSimpleQueue($server, $name, $name, $parentLimit);
-            } else {
-                $this->mikrotik->ensureSimpleQueue($server, $name, $subnet, $parentLimit);
-            }
-            $applied++;
-        } catch (Throwable $e) {
-            Log::warning('MikroTik parent queue failed', [
-                'server_id' => $server->id,
-                'name' => $name,
-                'error' => $e->getMessage(),
-            ]);
-        }
+        $desired = [[
+            'name' => $name,
+            'target' => $iface->isWireguardProfile() ? $name : $subnet,
+            'max-limit' => $this->parentQueueLimit(),
+        ]];
 
         foreach ($this->hostOctetsFromSubnet($subnet) as $octet) {
-            $queueName = "{$name}-{$octet}-{$speedMbps}";
             $target = $this->ipFromSubnetAndOctet($subnet, $octet);
 
-            if ($target === null) {
-                continue;
-            }
-
-            try {
-                $this->mikrotik->ensureSimpleQueue($server, $queueName, $target, $peerLimit, $name);
-                $applied++;
-            } catch (Throwable $e) {
-                Log::warning('MikroTik peer queue failed', [
-                    'server_id' => $server->id,
-                    'queue' => $queueName,
-                    'error' => $e->getMessage(),
-                ]);
+            if ($target !== null) {
+                $desired[] = [
+                    'name' => "{$name}-{$octet}-{$speedMbps}",
+                    'target' => $target,
+                    'max-limit' => $peerLimit,
+                    'parent' => $name,
+                ];
             }
         }
 
-        return $applied;
+        $result = $this->mikrotik->syncInterfaceQueues($server, $name, $desired);
+
+        // A partial apply used to be logged and reported as success, so the
+        // admin saw "saved" while part of the subnet ran unlimited. Every
+        // queue was still attempted; the failures are now the admin's to see.
+        if ($result['errors'] !== []) {
+            Log::warning('MikroTik speed queues partly failed', [
+                'server_id' => $server->id,
+                'interface' => $name,
+                'errors' => array_slice($result['errors'], 0, 20),
+            ]);
+
+            throw new RuntimeException(__('servers.speed_queues_partial', [
+                'failed' => count($result['errors']),
+                'total' => count($desired),
+                'error' => $result['errors'][0],
+            ]));
+        }
+
+        return count($desired);
     }
 
     public function removeInterfaceSpeedQueues(Server $server, string $interfaceName): int

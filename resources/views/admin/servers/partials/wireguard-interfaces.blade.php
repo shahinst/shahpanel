@@ -99,6 +99,12 @@
                                     <i class="bx bx-save"></i> {{ __('servers.row_update') }}
                                 </button>
                             </form>
+                            <form method="POST" class="d-inline" data-confirm="{{ __('servers.interface_delete_confirm', ['name' => $iface->name]) }}"
+                                  action="{{ route('admin.servers.wireguard-interfaces.destroy', [$server, $iface]) }}">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="{{ __('app.delete') }}"><i class="bx bx-trash"></i></button>
+                            </form>
                         @else
                             —
                         @endcan
