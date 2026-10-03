@@ -1,6 +1,8 @@
 @php
     $routePanel = explode('.', request()->route()?->getName() ?? '')[0] ?? 'admin';
     $exportRoute = $routePanel.'.accounting.export';
+    $invoicePdfRoute = collect([$routePanel.'.accounting.invoice-pdf', $routePanel.'.invoices.pdf'])
+        ->first(fn (string $name): bool => \Illuminate\Support\Facades\Route::has($name));
     $filterQuery = request()->only(['date_from', 'date_to', 'search', 'status']);
     // Sellers never earn sales profit, so the credited/profit column is hidden for them.
     $showCredited = ($totals['role'] ?? null) !== \App\Enums\UserRole::Seller;
@@ -124,6 +126,7 @@
             $showCredited ? __('accounting.amount_credited') : null,
             $showMarginPercent ? __('accounting.margin_percent') : null,
             __('accounting.amount_deducted'),
+            '',
         ], fn ($value) => $value !== null))">
             @forelse ($entries as $invoice)
                 @php
@@ -166,9 +169,14 @@
                         </td>
                     @endif
                     <td>{{ format_money($row['debited'], $row['currency'] ?? \App\Enums\MoneyCurrency::default()) }}</td>
+                    <td class="text-nowrap">
+                        @if ($invoicePdfRoute)
+                            <x-icon-action icon="bxs-file-pdf" variant="danger" :label="__('accounting.invoice_pdf')" :href="route($invoicePdfRoute, $invoice)" />
+                        @endif
+                    </td>
                 </tr>
             @empty
-                <tr><td colspan="{{ 8 + ($showCredited ? 1 : 0) + ($showMarginPercent ? 1 : 0) }}" class="text-center text-muted py-4">{{ __('app.no_results') }}</td></tr>
+                <tr><td colspan="{{ 9 + ($showCredited ? 1 : 0) + ($showMarginPercent ? 1 : 0) }}" class="text-center text-muted py-4">{{ __('app.no_results') }}</td></tr>
             @endforelse
         </x-table>
     </div>

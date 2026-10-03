@@ -7,14 +7,15 @@ use App\Services\AdminSystemHealthService;
 use App\Services\DashboardStatsService;
 use App\Services\ServerResourceMonitorService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function index(DashboardStatsService $statsService): View
+    public function index(Request $request, DashboardStatsService $statsService): View
     {
         return view('shared.dashboard.index', [
-            'stats' => $statsService->safeForAdmin(),
+            'stats' => $statsService->withRange($request->query('range'))->safeForAdmin($request->user()),
         ]);
     }
 

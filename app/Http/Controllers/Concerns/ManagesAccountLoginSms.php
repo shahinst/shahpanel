@@ -5,7 +5,8 @@ namespace App\Http\Controllers\Concerns;
 use App\Enums\UserRole;
 use App\Models\Account;
 use App\Services\PortalLinkService;
-use App\Services\Sms\SmsIrApiException;
+use App\Services\Sms\SmsApiException;
+use App\Services\Sms\SmsGateway;
 use App\Services\Sms\SmsIrService;
 use App\Support\SmsSettings;
 use Illuminate\Http\RedirectResponse;
@@ -68,7 +69,7 @@ trait ManagesAccountLoginSms
         }
     }
 
-    public function sendLoginInfo(Request $request, Account $account, SmsIrService $smsIrService): RedirectResponse
+    public function sendLoginInfo(Request $request, Account $account, SmsGateway $smsGateway): RedirectResponse
     {
         $this->authorize('sendLoginInfo', $account);
 
@@ -128,13 +129,13 @@ trait ManagesAccountLoginSms
             // باشد توکن نو می‌سازد، پس پیامک هرگز لینک مرده نمی‌برد.
             app(PortalLinkService::class)->ensure($account);
             $account->refresh();
-            $result = $smsIrService->sendAccountLoginInfo($validated['mobile'], $account);
+            $result = $smsGateway->sendAccountLoginInfo($validated['mobile'], $account);
             $messageId = $result['messageId'];
             $cost = $result['cost'];
 
             // messageId=0 یعنی شماره در لیست سیاه sms.ir است و پیامکی تحویل نشده؛
             // پس اکانت را «ارسال‌شده» علامت نمی‌زنیم تا امکان ارسال مجدد بماند.
-            if ($messageId === 0) {
+            if ($messageId === 0 || $messageId === '0') {
                 return $formRedirect(__('sms.test_blacklist'));
             }
 
@@ -144,7 +145,7 @@ trait ManagesAccountLoginSms
                 'message_id' => $messageId !== null ? (string) $messageId : '—',
                 'cost' => $cost !== null ? persian_digits(number_format($cost, 2)) : '—',
             ]));
-        } catch (SmsIrApiException $exception) {
+        } catch (SmsApiException $exception) {
             return $formRedirect($exception->getMessage());
         } catch (\Throwable $exception) {
             // پیام خام استثنا را به نماینده/فروشنده نشان نمی‌دهیم؛ ممکن است
