@@ -1,6 +1,24 @@
 {
     "versions": [
         {
+            "version": "3.21.1",
+            "date": "2026-10-22",
+            "notes": {
+                "fa": [
+                    "ماژول «تانل تلگرام» حالا در منوی کناری ادمین اصلی دیده می‌شود؛ قبلاً بعد از فعال‌کردن فقط از کارت داشبورد می‌شد به آن رسید."
+                ],
+                "en": [
+                    "The Telegram tunnel module now shows in the main admin's side menu; before, once activated it could only be reached from the dashboard card."
+                ],
+                "ru": [
+                    "The Telegram tunnel module now shows in the main admin's side menu; before, once activated it could only be reached from the dashboard card."
+                ],
+                "zh": [
+                    "The Telegram tunnel module now shows in the main admin's side menu; before, once activated it could only be reached from the dashboard card."
+                ]
+            }
+        },
+        {
             "version": "3.21.0",
             "date": "2026-10-22",
             "notes": {

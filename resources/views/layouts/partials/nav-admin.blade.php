@@ -10,6 +10,10 @@
         ['route' => 'admin.packages.pricing', 'section' => 'packages', 'label' => __('ui.menu_pricing'), 'icon' => 'bx-purchase-tag'],
         module_active('tunneling') ? ['route' => 'admin.tunneling.index', 'section' => 'tunneling', 'label' => __('menu.tunneling'), 'icon' => 'bx-git-branch', 'also_active' => ['admin.tunneling.*']] : null,
         module_active('shahbot') ? ['route' => 'admin.shahbot.index', 'section' => 'shahbot', 'label' => __('shahbot::admin.menu'), 'icon' => 'bxl-telegram', 'also_active' => ['admin.shahbot.*']] : null,
+        // The tunnel changes the server's routing as root, so like its routes
+        // (super_only in config/admin_sections.php) it is the main admin's alone.
+        module_active('tgtunnel') && app(\App\Services\AdminSectionAccessService::class)->isSuperAdmin(auth()->user())
+            ? ['route' => 'admin.tgtunnel.index', 'section' => 'dashboard', 'label' => __('tgtunnel::tunnel.title'), 'icon' => 'bx-shield-quarter', 'also_active' => ['admin.tgtunnel.*']] : null,
     ];
     $bottomLinks = [
         ['route' => 'admin.reports.index', 'section' => 'reports', 'label' => __('menu.reports'), 'icon' => 'bx-bar-chart-alt-2'],
