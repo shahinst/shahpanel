@@ -22,6 +22,9 @@
                     @yield('content')
                 </div>
             </div>
+            <footer class="auth-footer">
+                @include('layouts.partials.author-links', ['variant' => 'auth'])
+            </footer>
         </div>
     </div>
 </div>

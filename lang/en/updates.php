@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'product_name' => 'ShahPanel',
     'title' => 'Panel update',
     'menu' => 'Updates',
     'banner' => 'A new ShahPanel version is out (:version). Click to see what changed and update.',

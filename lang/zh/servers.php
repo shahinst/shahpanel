@@ -219,6 +219,7 @@ return [
     'delete_has_accounts' => '此服务器有 :count 个账号 —— 请先迁移或删除它们。',
     'delete_has_transfer_history' => '此服务器出现在账号转移历史中，无法删除。',
     'delete_blocked' => '不允许删除此服务器。',
+    'delete_blocked_db' => '无法在数据库中删除该服务器，因为仍有其他记录依赖它。详细信息已写入面板日志。',
 
     'wireguard_interfaces' => 'WireGuard 接口',
     'wireguard_interfaces_hint' => '每个接口都有自己的客户子网。新的 WireGuard 账号会创建在 peer 最少的接口上；当某个接口达到 250 个 peer（面板或路由器）时，会自动使用下一个接口（例如 wg-public2）。“Peer（路由器）”来自路由器；“账号（面板）”来自数据库。',

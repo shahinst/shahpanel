@@ -1,6 +1,32 @@
 {
     "versions": [
         {
+            "version": "3.2.0",
+            "date": "2026-10-03",
+            "notes": {
+                "fa": [
+                    "رفع خطای 500 هنگام حذف سروری که قبلاً اکانت حذف‌شده داشته است",
+                    "دکمه‌های ستون عملیات در صفحه‌های نمایندگان، فروشندگان و مشتریان آیکنی و یکدست شدند و با بردن ماوس روی هر آیکن نام آن نمایش داده می‌شود",
+                    "پایین صفحه ورود نام شاه‌پنل، نسخه و لینک‌های گیت‌هاب، تلگرام و یوتیوب نمایش داده می‌شود"
+                ],
+                "en": [
+                    "Fixed a 500 error when deleting a server that once held accounts that were later deleted",
+                    "The action buttons on the agents, sellers and clients pages are now uniform icons, each showing its name on hover",
+                    "The login page now shows ShahPanel, its version and the GitHub, Telegram and YouTube links at the bottom"
+                ],
+                "ru": [
+                    "Исправлена ошибка 500 при удалении сервера, на котором были позже удалённые аккаунты",
+                    "Кнопки действий на страницах агентов, продавцов и клиентов стали единообразными значками с подписью при наведении",
+                    "Внизу страницы входа теперь показываются ShahPanel, версия и ссылки на GitHub, Telegram и YouTube"
+                ],
+                "zh": [
+                    "修复删除曾有已删除账号的服务器时出现的 500 错误",
+                    "代理、销售和客户页面的操作按钮统一为图标，鼠标悬停时显示名称",
+                    "登录页底部现在显示 ShahPanel、版本号以及 GitHub、Telegram 和 YouTube 链接"
+                ]
+            }
+        },
+        {
             "version": "3.1.5",
             "date": "2026-10-03",
             "notes": {

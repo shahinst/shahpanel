@@ -44,20 +44,15 @@
                     <td>{{ persian_digits($client->client_accounts_count) }}</td>
                     <td><span class="badge bg-light text-dark">{{ $client->status->value }}</span></td>
                     <td class="text-nowrap">
-                        <a href="{{ route($panel.'.clients.show', $client) }}" class="btn btn-sm btn-primary" title="{{ __('app.view') }}">
-                            <i class="bx bx-show"></i>
-                        </a>
-                        @can('impersonate', $client)
-                            <form method="POST" action="{{ route($panel.'.clients.impersonate', $client) }}" class="d-inline">
-                                @csrf
-                                <button type="submit" class="btn btn-sm btn-info" title="{{ __('clients.enter_portal') }}">
-                                    <i class="bx bx-log-in-circle"></i> {{ __('clients.enter_portal_short') }}
-                                </button>
-                            </form>
-                        @endcan
-                        @if ($panel === 'admin')
-                            @include('shared.users.delete-button', ['deleteUser' => $client, 'deleteRoute' => route('admin.clients.destroy', $client)])
-                        @endif
+                        <div class="icon-actions">
+                            <x-icon-action :href="route($panel.'.clients.show', $client)" icon="bx-show" variant="primary" :label="__('app.view')" />
+                            @can('impersonate', $client)
+                                <x-icon-action :action="route($panel.'.clients.impersonate', $client)" icon="bx-log-in-circle" variant="info" :label="__('clients.enter_portal')" />
+                            @endcan
+                            @if ($panel === 'admin')
+                                @include('shared.users.delete-button', ['deleteUser' => $client, 'deleteRoute' => route('admin.clients.destroy', $client)])
+                            @endif
+                        </div>
                     </td>
                 </tr>
             @empty
