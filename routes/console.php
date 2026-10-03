@@ -48,6 +48,13 @@ Schedule::command('reports:daily-rollup')
     ->withoutOverlapping()
     ->after(fn () => Cache::put('system_health.job.reports_at', now()->timestamp, now()->addDays(3)));
 
+// Inbound resellers pay for traffic, not per account: meter what the usage
+// sync recorded, charge whole gigabytes and enforce quota and credit.
+Schedule::command('inbound:bill')
+    ->everyTenMinutes()
+    ->withoutOverlapping(30)
+    ->runInBackground();
+
 Schedule::command('panel:prune-logs')
     ->dailyAt('04:10')
     ->withoutOverlapping()

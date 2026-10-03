@@ -379,4 +379,5 @@ TEXT,
     'auto_renew_disabled' => '已关闭自动续费。',
     'auto_renew_on_confirm' => '开启自动续费？账户到期时将从所有者钱包扣除续费费用。',
     'auto_renew_off_confirm' => '关闭自动续费？',
+    'admin_report_tx_inbound_usage' => 'Inbound 流量费用',
 ];

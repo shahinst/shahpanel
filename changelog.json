@@ -1,6 +1,44 @@
 {
     "versions": [
         {
+            "version": "3.8.0",
+            "date": "2026-10-08",
+            "notes": {
+                "fa": [
+                    "داشبورد کاملاً بازطراحی شد: انتخاب بازه ۷/۳۰/۹۰ روز، کارت‌های شاخص با درصد تغییر نسبت به دوره قبل و نمودار کوچک روند، کاشی‌های هشدار (انقضای نزدیک، حجم رو به اتمام، ترافیک مصرفی)",
+                    "نمودارهای جدید و دقیق‌تر: ساخت اکانت به تفکیک سرویس با جزئیات هر روز، توزیع وضعیت، روند درآمد، سهم سرویس‌ها، سرورهای پرکاربرد، پکیج‌های پرفروش، توزیع مصرف حجم، انقضای ۱۴ روز آینده و نمایندگان برتر",
+                    "مدل جدید «نماینده اینباندی» برای V2Ray: مدیر به نماینده روی سرور سنایی اینباند، سهمیه ترافیک (مثلاً ۱۰ ترابایت)، قیمت هر گیگ و سقف اعتبار می‌دهد؛ نماینده پکیج‌های خودش را می‌سازد و به فروشندگان خودش می‌فروشد، بدون پورسانت. هر ۱۰ دقیقه ترافیک مصرفی اندازه‌گیری و به ازای هر گیگ از کیف پول نماینده کسر می‌شود؛ با اتمام سهمیه یا بدهی بیش از سقف، اکانت‌ها غیرفعال و پس از شارژ خودکار فعال می‌شوند",
+                    "فاکتور PDF فارسی با فونت وزیرمتن، اعداد فارسی، تاریخ شمسی و جزئیات کامل (خریدار، سرویس، سرور، پکیج، دوره، حجم، پرداخت‌ها و مبلغ به حروف) با دکمه دانلود در هر ردیف حسابداری",
+                    "خروجی PDF حسابداری هم با حروف فارسی متصل و راست‌به‌چپ درست تولید می‌شود",
+                    "افزودن سامانه پیامکی ایده پیام در بخش پیامک (نام کاربری، رمز، خط ارسال، نوع پیام و آدرس وب‌سرویس) برای ارسال اطلاعات ورود اکانت و ارسال آزمایشی به چند شماره"
+                ],
+                "en": [
+                    "Fully redesigned dashboard: 7/30/90-day period switch, KPI cards with change vs. the previous period and sparklines, insight tiles (expiring soon, nearly out of data, traffic used)",
+                    "New, more detailed charts: accounts created by service with per-day drill-down, status distribution, money trend, service mix, busiest servers, best-selling packages, data-use distribution, 14-day expiry outlook and top agents",
+                    "New “inbound reseller” model for V2Ray: the admin gives an agent inbounds on a Sanaei server with a traffic quota (e.g. 10 TB), a price per GB and a credit limit; the agent builds their own packages and sells to their own sellers with no commissions. Every 10 minutes the traffic used is metered and charged per GB to the agent's wallet; when the quota or credit runs out the accounts are switched off, and they come back after a top-up",
+                    "Persian invoice PDFs in Vazirmatn with Persian digits, Jalali dates and full detail (buyer, service, server, package, period, data, payments, amount in words), downloadable from every accounting row",
+                    "The accounting PDF export now renders joined, right-to-left Persian text",
+                    "IdehPayam SMS provider in the SMS section (username, password, sending line, message type and web service address) for account login SMS and test sends to several numbers"
+                ],
+                "ru": [
+                    "Полностью переработанная панель: период 7/30/90 дней, KPI-карточки с изменением к прошлому периоду и мини-графиками, плитки с подсказками (скоро истекают, почти исчерпан трафик, использованный трафик)",
+                    "Новые подробные графики: созданные аккаунты по сервисам с детализацией по дням, распределение статусов, денежный тренд, доли сервисов, самые загруженные серверы, популярные пакеты, распределение расхода, истечения на 14 дней и лучшие агенты",
+                    "Новая модель «inbound-реселлер» для V2Ray: администратор выдаёт агенту inbound на сервере Sanaei с квотой трафика (напр. 10 ТБ), ценой за ГБ и кредитным лимитом; агент создаёт свои пакеты и продаёт своим продавцам без комиссий. Каждые 10 минут трафик измеряется и списывается с кошелька агента за каждый ГБ; при исчерпании квоты или кредита аккаунты отключаются и включаются после пополнения",
+                    "PDF-счета на персидском шрифтом Vazirmatn с персидскими цифрами, датами по иранскому календарю и полной детализацией (покупатель, услуга, сервер, пакет, период, трафик, платежи, сумма прописью), скачиваются из каждой строки бухгалтерии",
+                    "PDF-экспорт бухгалтерии теперь корректно отображает персидский текст справа налево",
+                    "SMS-провайдер IdehPayam в разделе SMS (логин, пароль, линия, тип сообщения, адрес веб-сервиса) для SMS со входом в аккаунт и тестовых отправок на несколько номеров"
+                ],
+                "zh": [
+                    "仪表盘全面重新设计：7/30/90 天切换、带环比变化和迷你趋势图的 KPI 卡片、提示磁贴（即将到期、流量将尽、已用流量）",
+                    "新的更详细图表：按服务的新建账户（可按天查看明细）、状态分布、资金趋势、服务占比、最繁忙服务器、最畅销套餐、流量使用分布、未来 14 天到期及顶级代理",
+                    "V2Ray 新的“Inbound 分销商”模式：管理员在 Sanaei 服务器上为代理分配 inbound、流量配额（如 10 TB）、每 GB 价格和信用额度；代理自建套餐并卖给自己的销售员，不计佣金。每 10 分钟计量流量并按 GB 从代理钱包扣费；配额或信用用尽时账户停用，充值后自动恢复",
+                    "波斯语 PDF 发票，使用 Vazirmatn 字体、波斯数字、伊朗历日期和完整明细（购买方、服务、服务器、套餐、周期、流量、付款、金额大写），可在每条会计记录中下载",
+                    "会计 PDF 导出现可正确显示连写、从右到左的波斯语文本",
+                    "短信部分新增 IdehPayam 服务商（用户名、密码、发送线路、消息类型、服务地址），用于账户登录短信和多号码测试发送"
+                ]
+            }
+        },
+        {
             "version": "3.7.0",
             "date": "2026-10-07",
             "notes": {

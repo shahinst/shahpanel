@@ -36,6 +36,10 @@ class UserPackagePricingService
 
     public function wholesalePriceFor(User $user, PackageDuration $duration): ?string
     {
+        if ($this->isAgentOwned($duration)) {
+            return $this->agentOwnedPrice($user, $duration);
+        }
+
         // Model 3 (discount mode): derive the wholesale unit price from the
         // fixed retail price and the reseller's discount tier. In legacy mode the
         // original per-user assigned-price logic below is used unchanged.
@@ -123,6 +127,13 @@ class UserPackagePricingService
 
     public function requireWholesalePrice(User $user, PackageDuration $duration): string
     {
+        // An inbound reseller's own package costs the reseller nothing up front
+        // (traffic is billed later), so zero is a valid price here.
+        if ($this->isAgentOwned($duration)) {
+            return $this->agentOwnedPrice($user, $duration)
+                ?? throw new InvalidArgumentException(__('packages.not_assigned_to_user'));
+        }
+
         $price = $this->wholesalePriceFor($user, $duration);
 
         if ($price === null || bccomp($price, '0', 2) <= 0) {
@@ -398,6 +409,25 @@ class UserPackagePricingService
         $admin = $chain['admin'];
         $buyerCharge = $discountedBuyerCharge ?? $buyerWholesale;
 
+        // Inbound reseller packages: no commission chain. The agent's own sales
+        // cost them nothing now (the panel bills their traffic per GB); a
+        // seller's purchase pays the agent's price straight to the agent.
+        if ($duration->package?->isAgentOwned()) {
+            $owner = User::query()->find((int) $duration->package->owner_agent_id);
+            $isOwner = (int) $buyer->id === (int) $duration->package->owner_agent_id;
+
+            return [
+                'buyer' => $buyer,
+                'buyer_wholesale' => $buyerWholesale,
+                'buyer_charge' => $isOwner ? '0.00' : $buyerCharge,
+                'agent' => $isOwner ? null : $owner,
+                'agent_wholesale' => '0.00',
+                'agent_margin' => $isOwner ? '0.00' : $buyerCharge,
+                'admin' => $admin,
+                'admin_revenue' => '0.00',
+            ];
+        }
+
         if ($buyer->role === UserRole::Agent) {
             return [
                 'buyer' => $buyer,
@@ -659,5 +689,32 @@ class UserPackagePricingService
         }
 
         return $parent;
+    }
+
+    protected function isAgentOwned(PackageDuration $duration): bool
+    {
+        $duration->loadMissing('package');
+
+        return (bool) $duration->package?->isAgentOwned();
+    }
+
+    /**
+     * What a user pays for an inbound reseller's package: nothing for the
+     * reseller themself, the price the reseller set for their own sellers,
+     * and no price at all (not for sale) for anyone else.
+     */
+    protected function agentOwnedPrice(User $user, PackageDuration $duration): ?string
+    {
+        $ownerId = (int) $duration->package->owner_agent_id;
+
+        if ((int) $user->id === $ownerId) {
+            return '0.00';
+        }
+
+        if ($user->role === UserRole::Seller && (int) $user->parent_id === $ownerId) {
+            return number_format((float) $duration->price, 2, '.', '');
+        }
+
+        return null;
     }
 }

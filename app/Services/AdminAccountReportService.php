@@ -479,6 +479,7 @@ class AdminAccountReportService
             TransactionType::ClientRetail => __('accounts.admin_report_tx_client_retail'),
             TransactionType::ClientCost => __('accounts.admin_report_tx_client_cost'),
             TransactionType::FinancialPlanPurchase => __('accounts.admin_report_tx_plan_purchase'),
+            TransactionType::InboundUsage => __('accounts.admin_report_tx_inbound_usage'),
         };
     }
 

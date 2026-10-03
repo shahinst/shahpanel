@@ -37,6 +37,9 @@ class PackageController extends Controller
         $categoryService = app(PackageCategoryService::class);
 
         $packages = Package::query()
+            // Inbound resellers' own packages are theirs to manage; they appear
+            // on the allocation page instead.
+            ->whereNull('owner_agent_id')
             ->with(array_merge(['durations', 'servers'], $categoryService->packageWithRelations()))
             ->when($request->filled('search'), function ($query) use ($request): void {
                 $search = $request->string('search')->toString();
