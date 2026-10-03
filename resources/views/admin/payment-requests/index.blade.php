@@ -75,7 +75,7 @@
                             <td>{{ format_money($paymentRequest->amount, $paymentRequest->moneyCurrency()) }}</td>
                             <td>{{ $paymentRequest->status->label() }}</td>
                             <td>{{ jalali_date($paymentRequest->created_at) }}</td>
-                            <td><a href="{{ route('admin.payment-requests.show', $paymentRequest) }}" class="btn btn-sm btn-light">{{ __('app.view') }}</a></td>
+                            <td><x-icon-action icon="bx-show" variant="primary" :label="__('app.view')" :href="route('admin.payment-requests.show', $paymentRequest)" /></td>
                         </tr>
                     @empty
                         <tr><td colspan="8" class="text-center text-muted">{{ __('app.no_results') }}</td></tr>

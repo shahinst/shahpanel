@@ -19,11 +19,11 @@
 
                 @if ($paymentRequest->status === \App\Enums\PaymentRequestStatus::Pending && isset($approveRoute))
                     <hr>
-                    <form method="POST" action="{{ $approveRoute }}" class="form-inline" style="margin-bottom:10px;">
+                    <form method="POST" action="{{ $approveRoute }}" data-confirm="{{ __('app.confirm_approve') }}" class="form-inline" style="margin-bottom:10px;">
                         @csrf
                         <x-button type="submit" size="sm">{{ __('menu.approve') }}</x-button>
                     </form>
-                    <form method="POST" action="{{ $rejectRoute }}" class="form-inline">
+                    <form method="POST" action="{{ $rejectRoute }}" data-confirm="{{ __('app.confirm_reject') }}" class="form-inline">
                         @csrf
                         <div class="form-group">
                             <input name="admin_note" required class="form-control" placeholder="{{ __('menu.admin_note') }}">

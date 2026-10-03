@@ -204,4 +204,8 @@ return [
     'sanaei_inbounds_empty' => 'С этого сервера ещё не получен ни один inbound — нажмите «Получить inbounds» на странице сервера.',
     'sanaei_server_required' => 'Чтобы выбрать inbounds, в пакете должен быть выбран сервер Sanaei.',
     'sanaei_inbound_not_on_servers' => 'Inbound №:id не существует на серверах Sanaei этого пакета.',
+    'invalid_duration_price' => 'Цена периода «:tier» недействительна.',
+    'loading_from_server' => 'Загрузка с сервера…',
+    'load_from_server_failed' => 'Не удалось загрузить с сервера.',
+    'mikrotik_server_needs_interface' => 'Сначала выберите интерфейс для сервера «:server».',
 ];

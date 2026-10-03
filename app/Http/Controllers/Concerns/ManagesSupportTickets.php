@@ -24,7 +24,12 @@ trait ManagesSupportTickets
 
         return view('shared.tickets.index', [
             'panel' => $this->supportPanel(),
-            'tickets' => $ticketService->ticketsFor($request->user()),
+            'tickets' => $ticketService->paginateTicketsFor(
+                $request->user(),
+                $request->query('status'),
+                $request->query('q'),
+            ),
+            'statuses' => \App\Enums\TicketStatus::cases(),
         ]);
     }
 

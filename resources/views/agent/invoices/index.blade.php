@@ -18,8 +18,8 @@
                     <td>{{ $invoice->invoice_number }}</td>
                     <td>{{ $invoice->seller?->full_name }}</td>
                     <td>{{ format_money($invoice->total, $invoice->currency) }}</td>
-                    <td>{{ $invoice->status->value }}</td>
-                    <td><a href="{{ route('agent.invoices.show', $invoice) }}" class="btn btn-sm btn-primary">{{ __('app.view') }}</a></td>
+                    <td>{{ $invoice->status->label() }}</td>
+                    <td><x-icon-action icon="bx-show" variant="primary" :label="__('app.view')" :href="route('agent.invoices.show', $invoice)" /></td>
                 </tr>
             @empty
                 <tr><td colspan="5" class="text-center text-muted py-4">{{ __('app.no_results') }}</td></tr>

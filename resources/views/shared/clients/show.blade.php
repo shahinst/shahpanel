@@ -200,7 +200,7 @@
                                     </a>
                                 @endcan
                                 @if ($canReassignAccounts && $transferTargets->isNotEmpty())
-                                    <form method="POST" action="{{ route($panel.'.clients.accounts.reassign', $account) }}" class="d-flex gap-1 flex-grow-1" style="min-width:200px;">
+                                    <form method="POST" action="{{ route($panel.'.clients.accounts.reassign', $account) }}" data-confirm="{{ __('app.confirm_action') }}" class="d-flex gap-1 flex-grow-1" style="min-width:200px;">
                                         @csrf
                                         <select name="target_client_id" class="form-control form-control-sm" required>
                                             <option value="">{{ __('clients.transfer_to_client') }}…</option>

@@ -26,4 +26,12 @@ return [
     'active' => '启用',
     'inactive' => '已停用',
     'install_required' => '请先运行安装程序。',
+    'date' => '日期',
+    'pagination' => '分页',
+    'confirm_approve' => '确定批准此项吗？',
+    'confirm_reject' => '确定拒绝此项吗？',
+    'confirm_action' => '确定要执行此操作吗？',
+    'invoice_status_paid' => '已支付',
+    'invoice_status_pending' => '待支付',
+    'invoice_status_cancelled' => '已取消',
 ];

@@ -9,6 +9,7 @@ use App\Models\SupportDepartment;
 use App\Models\SupportTicket;
 use App\Models\SupportTicketMessage;
 use App\Models\User;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -42,7 +43,30 @@ class SupportTicketService
         return false;
     }
 
+    /**
+     * The user's tickets, newest activity first, optionally narrowed by status
+     * and a search over the number and subject. Paginated: the list used to
+     * load every ticket the user had ever seen on one page.
+     */
+    public function paginateTicketsFor(User $user, ?string $status = null, ?string $search = null, int $perPage = 20): LengthAwarePaginator
+    {
+        $search = trim((string) $search);
+
+        return $this->ticketsQueryFor($user)
+            ->when(TicketStatus::tryFrom((string) $status), fn ($query, TicketStatus $value) => $query->where('status', $value->value))
+            ->when($search !== '', fn ($query) => $query->where(fn ($q) => $q
+                ->where('ticket_number', 'like', '%'.$search.'%')
+                ->orWhere('subject', 'like', '%'.$search.'%')))
+            ->paginate($perPage)
+            ->withQueryString();
+    }
+
     public function ticketsFor(User $user): Collection
+    {
+        return $this->ticketsQueryFor($user)->get();
+    }
+
+    protected function ticketsQueryFor(User $user): \Illuminate\Database\Eloquent\Builder
     {
         return SupportTicket::query()
             ->with(['requester', 'assignee', 'department'])
@@ -64,8 +88,7 @@ class SupportTicketService
                 }
             })
             ->latest('last_activity_at')
-            ->latest('id')
-            ->get();
+            ->latest('id');
     }
 
     public function departmentsFor(User $requester): Collection

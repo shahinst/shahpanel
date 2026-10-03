@@ -204,4 +204,8 @@ return [
     'sanaei_inbounds_empty' => '尚未从该服务器获取任何 inbound —— 请在服务器页面点击“获取 inbound”。',
     'sanaei_server_required' => '要选择 inbound，套餐中必须选中一台 Sanaei 服务器。',
     'sanaei_inbound_not_on_servers' => '第 :id 号 inbound 不存在于该套餐的 Sanaei 服务器上。',
+    'invalid_duration_price' => '“:tier”周期的价格无效。',
+    'loading_from_server' => '正在从服务器加载…',
+    'load_from_server_failed' => '无法从服务器加载。',
+    'mikrotik_server_needs_interface' => '请先为服务器“:server”选择接口。',
 ];

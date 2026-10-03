@@ -26,4 +26,12 @@ return [
     'active' => 'Active',
     'inactive' => 'Disabled',
     'install_required' => 'Please run the installer first.',
+    'date' => 'Date',
+    'pagination' => 'Pagination',
+    'confirm_approve' => 'Approve this item?',
+    'confirm_reject' => 'Reject this item?',
+    'confirm_action' => 'Are you sure?',
+    'invoice_status_paid' => 'Paid',
+    'invoice_status_pending' => 'Pending',
+    'invoice_status_cancelled' => 'Cancelled',
 ];

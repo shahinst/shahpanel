@@ -38,10 +38,16 @@
                     <td>{{ format_money($settleWallet?->balance ?? 0, $settle) }}</td>
                     <td>{{ $seller->status?->value ?? '—' }}</td>
                     <td class="text-nowrap">
-                        @include('agent.sellers.partials.impersonate-button', ['seller' => $seller])
-                        <a href="{{ route('agent.sellers.edit', $seller) }}" class="btn btn-sm btn-primary">
-                            <i class="bx bx-edit"></i> {{ __('app.edit') }}
-                        </a>
+                        <div class="icon-actions">
+                            @can('impersonate', $seller)
+                                @if (Route::has('agent.sellers.impersonate'))
+                                    <x-icon-action icon="bx-log-in-circle" variant="info" :label="__('security.impersonation_enter_seller')"
+                                        :action="route('agent.sellers.impersonate', $seller)"
+                                        :confirm="__('security.impersonation_seller_confirm', ['name' => $seller->full_name ?: $seller->username])" />
+                                @endif
+                            @endcan
+                            <x-icon-action icon="bx-edit" variant="primary" :label="__('app.edit')" :href="route('agent.sellers.edit', $seller)" />
+                        </div>
                     </td>
                 </tr>
             @empty

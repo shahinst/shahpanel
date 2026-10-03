@@ -72,7 +72,7 @@
             <td width="50%">
                 <strong>{{ __('ui.issue_date') }}:</strong> {{ jalali_date($invoice->issued_at) }}<br>
                 <strong>{{ __('ui.col_type') }}:</strong> {{ $invoice->type->value }}<br>
-                <strong>{{ __('app.status') }}:</strong> {{ $invoice->status->value }}
+                <strong>{{ __('app.status') }}:</strong> {{ $invoice->status->label() }}
             </td>
         </tr>
     </table>
