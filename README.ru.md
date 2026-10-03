@@ -977,11 +977,11 @@ tools/maintain-core.php диагностическая страница, нез�
 
 ## 📄 Лицензия
 
-ShahPanel — свободное программное обеспечение, распространяемое по лицензии **GNU Affero General Public License версии 3 ([AGPL-3.0](LICENSE))**.
+ShahPanel — свободное программное обеспечение, распространяемое по лицензии **GNU Affero General Public License версии 3 или (по вашему выбору) любой более поздней версии ([AGPL-3.0-or-later](LICENSE))**.
 
 ```
 Copyright (C) 2026 shahinst
-SPDX-License-Identifier: AGPL-3.0-only
+SPDX-License-Identifier: AGPL-3.0-or-later
 ```
 
 | ✅ Разрешено | 📌 Условия | ❌ Ограничения |

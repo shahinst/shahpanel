@@ -2,76 +2,133 @@
 
 namespace App\Support;
 
-use Mpdf\Config\ConfigVariables;
-use Mpdf\Config\FontVariables;
-use Mpdf\Mpdf;
+use Illuminate\Support\Facades\File;
+use TCPDF;
+use TCPDF_FONTS;
 
 /**
- * Renders a Blade view to PDF with mPDF. dompdf, used before, neither joins
- * Persian letters nor lays out right-to-left text, so every Persian word came
- * out as separate, reversed glyphs. mPDF shapes Persian properly; Vazirmatn
- * ships with the panel (resources/fonts) so nothing is downloaded at runtime.
+ * Renders a Blade view to PDF with TCPDF (LGPL-3.0, compatible with the
+ * panel's AGPL-3.0 licence). TCPDF joins Persian letters and lays out
+ * right-to-left text itself; Vazirmatn ships with the panel (resources/fonts)
+ * and is converted to TCPDF's font format once, into storage.
  *
  * Persian pages use the Farsi-digit cut of the font, so any Latin digit that
- * slips through still prints as a Persian one; other languages print in
- * DejaVu Sans.
+ * slips through still prints as a Persian one. Other languages print in
+ * DejaVu Sans, Chinese in TCPDF's built-in CJK font.
  */
 class PersianPdf
 {
-    private const FONT_CACHE_VERSION = 'v33-fd';
+    /** Bump when the bundled font files change, so stale conversions are not reused. */
+    private const FONT_CACHE_VERSION = 'v1-fd';
 
     /**
-     * @param  array<string, mixed>  $data
+     * @param  array<string, mixed>  $data  pdfTitle and pdfFooter are read from here
      */
     public static function render(string $view, array $data = [], string $orientation = 'P'): string
     {
         $persian = locale_digits() === 'fa';
         $rtl = locale_is_rtl();
-        // mPDF caches parsed font tables by family name. The folder is
-        // versioned so changing the bundled font files can never reuse tables
-        // parsed from the old ones (which fails with "GPOS lookup not supported").
-        $tempDir = storage_path('app/mpdf/'.self::FONT_CACHE_VERSION);
+        $fontFiles = $persian ? self::vazirmatn() : [];
+        $font = match (true) {
+            $persian => 'vazirmatn',
+            str_starts_with(app()->getLocale(), 'zh') => 'cid0cs',
+            default => 'dejavusans',
+        };
 
-        if (! is_dir($tempDir)) {
-            @mkdir($tempDir, 0775, true);
+        $footer = (string) ($data['pdfFooter'] ?? (string) config('app.name'));
+        $pageLabel = __('accounting.pdf_page', ['page' => '{p}', 'pages' => '{n}']);
+
+        $pdf = new class($orientation, 'mm', 'A4', true, 'UTF-8') extends TCPDF
+        {
+            public string $footerText = '';
+
+            public string $pageLabel = '';
+
+            public string $footerFont = 'dejavusans';
+
+            public function Footer(): void
+            {
+                $this->SetY(-12);
+                $this->SetFont($this->footerFont, '', 8);
+                $this->SetTextColor(156, 163, 175);
+                $this->SetDrawColor(229, 231, 235);
+                $this->Line($this->lMargin, $this->GetY(), $this->getPageWidth() - $this->rMargin, $this->GetY());
+                $page = strtr($this->pageLabel, [
+                    '{p}' => $this->getAliasNumPage(),
+                    '{n}' => $this->getAliasNbPages(),
+                ]);
+                $half = ($this->getPageWidth() - $this->lMargin - $this->rMargin) / 2;
+                $this->Cell($half, 8, $this->footerText, 0, 0, $this->getRTL() ? 'R' : 'L');
+                $this->Cell($half, 8, $page, 0, 0, $this->getRTL() ? 'L' : 'R');
+            }
+        };
+
+        foreach ($fontFiles as $style => $file) {
+            $pdf->AddFont('vazirmatn', $style, $file);
         }
 
-        $defaultConfig = (new ConfigVariables())->getDefaults();
-        $defaultFonts = (new FontVariables())->getDefaults();
+        $pdf->footerText = $footer;
+        $pdf->pageLabel = $pageLabel;
+        $pdf->footerFont = $font;
 
-        $mpdf = new Mpdf([
-            'mode' => 'utf-8',
-            'format' => 'A4',
-            'orientation' => $orientation,
-            'tempDir' => $tempDir,
-            'fontDir' => array_merge($defaultConfig['fontDir'], [resource_path('fonts/vazirmatn')]),
-            'fontdata' => $defaultFonts['fontdata'] + [
-                // The Farsi-digit cut only: the Latin-digit file carries an
-                // OpenType table mPDF cannot read.
-                'vazirmatn' => [
-                    'R' => 'Vazirmatn-FD-Regular.ttf',
-                    'B' => 'Vazirmatn-FD-Bold.ttf',
-                    'useOTL' => 0x80,
-                    'useKashida' => 75,
-                ],
-            ],
-            // Other languages print in DejaVu Sans (Latin, Cyrillic) and let
-            // mPDF pick a font for scripts it lacks, such as Chinese.
-            'default_font' => $persian ? 'vazirmatn' : 'dejavusans',
-            'directionality' => $rtl ? 'rtl' : 'ltr',
-            'autoScriptToLang' => true,
-            'autoLangToFont' => ! $persian,
-            'margin_left' => 12,
-            'margin_right' => 12,
-            'margin_top' => 12,
-            'margin_bottom' => 16,
-            'margin_footer' => 6,
-        ]);
+        $pdf->SetCreator((string) config('app.name'));
+        $pdf->SetAuthor((string) config('app.name'));
+        $pdf->SetTitle((string) ($data['pdfTitle'] ?? config('app.name')));
+        $pdf->setPrintHeader(false);
+        $pdf->setPrintFooter(true);
+        $pdf->SetMargins(12, 12, 12);
+        $pdf->SetAutoPageBreak(true, 18);
+        $pdf->setFontSubsetting(true);
+        $pdf->setRTL($rtl);
+        $pdf->SetFont($font, '', 10);
+        $pdf->AddPage();
+        $pdf->writeHTML(view($view, $data)->render(), true, false, true, false, '');
+        $pdf->lastPage();
 
-        $mpdf->SetTitle((string) ($data['pdfTitle'] ?? config('app.name')));
-        $mpdf->SetCreator((string) config('app.name'));
-        $mpdf->WriteHTML(view($view, $data)->render());
+        return $pdf->Output('', 'S');
+    }
 
-        return $mpdf->Output('', 'S');
+    /**
+     * Converts the bundled Vazirmatn (Farsi digits) to TCPDF's format on first
+     * use. Returns the converted definition file of each style.
+     *
+     * @return array<string, string>
+     */
+    protected static function vazirmatn(): array
+    {
+        $dir = storage_path('app/tcpdf-fonts/'.self::FONT_CACHE_VERSION).'/';
+
+        if (! is_dir($dir)) {
+            File::ensureDirectoryExists($dir, 0775);
+        }
+
+        $files = [];
+
+        foreach (['' => 'Vazirmatn-FD-Regular.ttf', 'B' => 'Vazirmatn-FD-Bold.ttf'] as $style => $file) {
+            $name = $style === '' ? 'vazirmatn' : 'vazirmatnb';
+            $files[$style] = $dir.$name.'.php';
+
+            if (! is_file($dir.$name.'.php')) {
+                $converted = TCPDF_FONTS::addTTFfont(resource_path('fonts/vazirmatn/'.$file), 'TrueTypeUnicode', '', 96, $dir);
+
+                // TCPDF names the files after the source file; give them the
+                // stable names the family below points at.
+                if (is_string($converted) && $converted !== $name) {
+                    foreach (['.php', '.z', '.ctg.z'] as $ext) {
+                        if (is_file($dir.$converted.$ext)) {
+                            rename($dir.$converted.$ext, $dir.$name.$ext);
+                        }
+                    }
+                    $php = (string) file_get_contents($dir.$name.'.php');
+                    file_put_contents($dir.$name.'.php', str_replace(
+                        ["'".$converted.".z'", "'".$converted.".ctg.z'"],
+                        ["'".$name.".z'", "'".$name.".ctg.z'"],
+                        $php
+                    ));
+                }
+            }
+        }
+
+        return $files;
     }
 }
