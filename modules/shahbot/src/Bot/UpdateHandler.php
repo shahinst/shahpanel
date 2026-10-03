@@ -6,6 +6,7 @@ use App\Enums\AccountCategory;
 use App\Enums\AccountStatus;
 use App\Models\Account;
 use App\Models\PackageDuration;
+use App\Models\User;
 use App\Services\PortalLinkService;
 use App\Services\SanaeiPortalService;
 use App\Services\SubscriptionFeedService;
@@ -14,17 +15,20 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use InvalidArgumentException;
+use Modules\ShahBot\Models\BotAgencyRequest;
 use Modules\ShahBot\Models\BotOrder;
 use Modules\ShahBot\Models\BotPayment;
 use Modules\ShahBot\Models\BotReferralReward;
 use Modules\ShahBot\Models\BotTicket;
 use Modules\ShahBot\Models\BotTutorial;
 use Modules\ShahBot\Models\BotUser;
+use Modules\ShahBot\Services\AgencyService;
 use Modules\ShahBot\Services\BotNotifier;
 use Modules\ShahBot\Services\BotUserService;
 use Modules\ShahBot\Services\CodeService;
 use Modules\ShahBot\Services\OnlinePaymentService;
 use Modules\ShahBot\Services\PaymentService;
+use Modules\ShahBot\Services\ResellerService;
 use Modules\ShahBot\Services\ShopService;
 use Modules\ShahBot\Services\TicketService;
 use Modules\ShahBot\Support\BotSettings;
@@ -54,6 +58,8 @@ class UpdateHandler
         protected TicketService $tickets,
         protected BotNotifier $notifier,
         protected OnlinePaymentService $online,
+        protected AgencyService $agency,
+        protected ResellerService $resellers,
     ) {}
 
     public function handle(array $update): void
@@ -367,6 +373,12 @@ class UpdateHandler
             $rows[] = $row;
         }
 
+        if ($this->resellers->seller($this->user) !== null) {
+            $rows[] = [__('shahbot::bot.menu_reseller')];
+        } elseif ($this->agency->available($this->user)) {
+            $rows[] = [__('shahbot::bot.menu_agency')];
+        }
+
         $rows[] = [__('shahbot::bot.menu_gift'), __('shahbot::bot.menu_tutorials')];
         $rows[] = [__('shahbot::bot.menu_support')];
 
@@ -399,6 +411,10 @@ class UpdateHandler
             'menu_gift' => fn () => $this->askFor('gift_code', __('shahbot::bot.ask_gift')),
             'menu_tutorials' => fn () => $this->showTutorials(),
             'menu_support' => fn () => $this->askFor('support', e($this->settings->get('support_text'))),
+            'menu_agency' => fn () => $this->agency->available($this->user)
+                ? $this->askFor('agency_note', e($this->settings->get('agency_text')))
+                : throw new InvalidArgumentException(__('shahbot::bot.agency_closed')),
+            'menu_reseller' => fn () => $this->showReseller(),
             'menu_admin' => fn () => $this->settings->isAdminChat($this->user->telegram_id) ? $this->showAdmin() : $this->reply(__('shahbot::bot.unknown')),
         ];
 
@@ -453,6 +469,8 @@ class UpdateHandler
                 'topup_receipt' => $this->stepReceipt($message),
                 'gift_code' => $this->stepGift($text),
                 'support' => $this->stepSupport($text),
+                'agency_note' => $this->stepAgency($text),
+                'rs_gb' => $this->stepResellerGb($text),
                 'admin_reply' => $this->stepAdminReply($text),
                 default => $this->cancelStep(),
             };
@@ -546,6 +564,35 @@ class UpdateHandler
         $this->reply(__('shahbot::bot.support_sent'), $this->mainMenu());
     }
 
+    protected function stepAgency(string $text): void
+    {
+        if (mb_strlen(trim($text)) < 3) {
+            $this->reply(__('shahbot::bot.agency_note_short'));
+
+            return;
+        }
+
+        $this->agency->request($this->user, $text);
+        $this->user->setStep(null);
+        $this->reply(__('shahbot::bot.agency_sent'), $this->mainMenu());
+    }
+
+    protected function stepResellerGb(string $text): void
+    {
+        $gb = (float) str_replace(',', '.', western_digits($text));
+
+        if ($gb <= 0) {
+            $this->reply(__('shahbot::bot.gb_invalid'));
+
+            return;
+        }
+
+        $durationId = (int) $this->user->stepValue('duration');
+        $this->user->setStep(null);
+        $this->reply(__('shahbot::bot.home_hint'), $this->mainMenu());
+        $this->showQuantities($durationId, (int) ceil($gb), null);
+    }
+
     protected function stepAdminReply(string $text): void
     {
         $ticket = BotTicket::query()->find((int) $this->user->stepValue('ticket'));
@@ -575,6 +622,7 @@ class UpdateHandler
             'wal' => $this->walletCallback($parts, $messageId),
             'test' => $this->testCallback($messageId),
             'tut' => $this->tutorialCallback($parts, $messageId),
+            'rs' => $this->resellerCallback($parts, $messageId),
             default => null,
         };
     }
@@ -1309,6 +1357,7 @@ class UpdateHandler
                 'pend' => $this->adminPending(),
                 'pay' => $this->adminPayment($parts[2] ?? '', (int) ($parts[3] ?? 0), $reviewer),
                 'tk' => $this->adminTicket($parts[2] ?? '', (int) ($parts[3] ?? 0)),
+                'ag' => $this->adminAgency($parts[2] ?? '', (int) ($parts[3] ?? 0), $reviewer),
                 default => $this->showAdmin($messageId),
             };
         } catch (InvalidArgumentException $e) {
@@ -1376,6 +1425,202 @@ class UpdateHandler
             $this->tickets->close($ticket);
             $this->reply(__('shahbot::bot.admin_ticket_closed', ['id' => $ticketId]));
         }
+    }
+
+    protected function adminAgency(string $action, int $requestId, string $reviewer): void
+    {
+        $request = BotAgencyRequest::query()->find($requestId);
+
+        if ($request === null) {
+            return;
+        }
+
+        if ($action === 'ok') {
+            $this->agency->approve($request, $reviewer);
+            $this->notifier->admins(__('shahbot::bot.admin_agency_approved', ['id' => $requestId, 'by' => e($reviewer)]));
+        } elseif ($action === 'no') {
+            $this->agency->reject($request, $reviewer);
+            $this->notifier->admins(__('shahbot::bot.admin_agency_rejected', ['id' => $requestId, 'by' => e($reviewer)]));
+        }
+    }
+
+    // --- Reseller -----------------------------------------------------------
+
+    protected function showReseller(?int $messageId = null): void
+    {
+        $seller = $this->resellers->requireSeller($this->user);
+        $rows = [
+            [Keyboard::button(__('shahbot::bot.btn_bulk_buy'), 'rs:buy')],
+            [Keyboard::button(__('shahbot::bot.btn_my_accounts'), 'rs:acc')],
+        ];
+
+        if (str_starts_with((string) config('app.url'), 'https://')) {
+            $rows[] = [Keyboard::url(__('shahbot::bot.btn_open_panel'), route('login'))];
+        }
+
+        $this->say($messageId, __('shahbot::bot.reseller_menu', [
+            'username' => e($seller->username),
+            'balance' => format_money($this->resellers->balance($seller)),
+            'accounts' => persian_digits(Account::query()->where('owner_seller_id', $seller->id)->count()),
+        ]), Keyboard::inline($rows));
+    }
+
+    protected function resellerCallback(array $parts, int $messageId): void
+    {
+        $seller = $this->resellers->requireSeller($this->user);
+
+        match ($parts[1] ?? '') {
+            'home' => $this->showReseller($messageId),
+            'buy' => $this->showResellerCatalog($seller, $messageId),
+            'd' => $this->chooseResellerProduct($seller, (int) ($parts[2] ?? 0), $messageId),
+            'q' => $this->confirmBulk($seller, (int) ($parts[2] ?? 0), (int) ($parts[3] ?? 0), (int) ($parts[4] ?? 0), $messageId),
+            'ok' => $this->doBulk((int) ($parts[2] ?? 0), (int) ($parts[3] ?? 0), (int) ($parts[4] ?? 0), $messageId),
+            'acc' => $this->showResellerAccounts($seller, $messageId),
+            default => null,
+        };
+    }
+
+    protected function showResellerCatalog(User $seller, int $messageId): void
+    {
+        $catalog = $this->resellers->catalog($seller);
+
+        if ($catalog->isEmpty()) {
+            throw new InvalidArgumentException(__('shahbot::bot.buy_empty'));
+        }
+
+        $buttons = $catalog->take(40)->map(fn (array $row) => [Keyboard::button(
+            $row['duration']->package->name.' · '.$row['duration']->tier->label().' · '
+                .($row['duration']->package->isElastic() ? __('shahbot::bot.per_gb', ['price' => format_money($row['price'])]) : format_money($row['price'])),
+            'rs:d:'.$row['duration']->id
+        )])->all();
+        $buttons[] = [Keyboard::button(__('shahbot::bot.back'), 'rs:home')];
+
+        $this->say($messageId, __('shahbot::bot.bulk_choose'), Keyboard::inline($buttons));
+    }
+
+    protected function chooseResellerProduct(User $seller, int $durationId, int $messageId): void
+    {
+        $row = $this->resellers->catalog($seller)->first(fn (array $r) => (int) $r['duration']->id === $durationId);
+
+        if ($row === null) {
+            throw new InvalidArgumentException(__('shahbot::bot.product_unavailable'));
+        }
+
+        $package = $row['duration']->package;
+
+        if ($package->isElastic()) {
+            $this->askFor('rs_gb', __('shahbot::bot.buy_ask_gb', [
+                'name' => e($package->name),
+                'min' => persian_digits((float) ($package->min_data_gb ?: 1)),
+                'max' => persian_digits((float) ($package->max_data_gb ?: 1000)),
+                'price' => format_money($row['price']),
+            ]), ['duration' => $durationId]);
+
+            return;
+        }
+
+        $this->showQuantities($durationId, 0, $messageId);
+    }
+
+    protected function showQuantities(int $durationId, int $gb, ?int $messageId): void
+    {
+        $max = max(1, (int) $this->settings->get('bulk_max'));
+        $options = array_values(array_unique(array_filter([1, 2, 3, 5, 10, 20, 50], fn ($n) => $n <= $max)));
+        $buttons = array_map(fn ($n) => Keyboard::button(persian_digits($n), 'rs:q:'.$durationId.':'.$n.':'.$gb), $options);
+        $rows = Keyboard::grid($buttons, 4);
+        $rows[] = [Keyboard::button(__('shahbot::bot.back'), 'rs:buy')];
+
+        $this->say($messageId, __('shahbot::bot.bulk_quantity', ['max' => persian_digits($max)]), Keyboard::inline($rows));
+    }
+
+    protected function confirmBulk(User $seller, int $durationId, int $quantity, int $gb, int $messageId): void
+    {
+        $row = $this->resellers->catalog($seller)->first(fn (array $r) => (int) $r['duration']->id === $durationId);
+
+        if ($row === null) {
+            throw new InvalidArgumentException(__('shahbot::bot.product_unavailable'));
+        }
+
+        $unit = $this->resellers->unitPrice($seller, $row['duration'], $gb > 0 ? (float) $gb : null) ?? '0';
+        $total = (float) $unit * $quantity;
+        $balance = $this->resellers->balance($seller);
+
+        $this->say($messageId, __('shahbot::bot.bulk_confirm', [
+            'name' => e($row['duration']->package->name.' · '.$row['duration']->tier->label().($gb > 0 ? ' · '.persian_digits($gb).' GB' : '')),
+            'qty' => persian_digits($quantity),
+            'unit' => format_money($unit),
+            'total' => format_money($total),
+            'balance' => format_money($balance),
+        ]), Keyboard::inline([
+            (float) $balance >= $total
+                ? [Keyboard::button(__('shahbot::bot.btn_confirm'), 'rs:ok:'.$durationId.':'.$quantity.':'.$gb)]
+                : [],
+            [Keyboard::button(__('shahbot::bot.back'), 'rs:buy')],
+        ]));
+    }
+
+    protected function doBulk(int $durationId, int $quantity, int $gb, int $messageId): void
+    {
+        $lock = Cache::lock('shahbot:buy:'.$this->user->id, 600);
+
+        if (! $lock->get()) {
+            return;
+        }
+
+        try {
+            $this->say($messageId, __('shahbot::bot.bulk_working', ['qty' => persian_digits($quantity)]));
+            $result = $this->resellers->bulkBuy($this->user, $durationId, $quantity, $gb > 0 ? (float) $gb : null);
+            $this->sendAccountList($result['accounts'], __('shahbot::bot.bulk_done', [
+                'done' => persian_digits(count($result['accounts'])),
+                'qty' => persian_digits($quantity),
+            ]));
+
+            if ($result['error'] !== null) {
+                $this->reply(__('shahbot::bot.bulk_stopped', ['error' => e($result['error'])]));
+            }
+        } finally {
+            $lock->release();
+        }
+    }
+
+    protected function showResellerAccounts(User $seller, int $messageId): void
+    {
+        $accounts = $this->resellers->accounts($seller, 15);
+
+        if ($accounts->isEmpty()) {
+            $this->say($messageId, __('shahbot::bot.services_empty'), Keyboard::inline([[Keyboard::button(__('shahbot::bot.back'), 'rs:home')]]));
+
+            return;
+        }
+
+        $this->sendAccountList($accounts->all(), __('shahbot::bot.reseller_accounts_title'));
+    }
+
+    /**
+     * @param  list<Account>  $accounts
+     */
+    protected function sendAccountList(array $accounts, string $title): void
+    {
+        $feed = app(SubscriptionFeedService::class);
+        $lines = [];
+        $plain = [];
+
+        foreach ($accounts as $account) {
+            $link = $account->service_type->accountCategory() === AccountCategory::V2ray
+                ? $feed->urlFor($account)
+                : trim($account->remote_username.' / '.($account->remote_password_enc ?? ''));
+            $lines[] = '🔹 <b>'.e($this->accountName($account)).'</b>'."\n".'<code>'.e($link).'</code>';
+            $plain[] = $this->accountName($account)."\t".$link;
+        }
+
+        if (count($lines) <= 5) {
+            $this->reply($title."\n\n".implode("\n\n", $lines));
+
+            return;
+        }
+
+        $this->reply($title);
+        $this->tg->sendDocumentBytes($this->chatId, implode("\n", $plain)."\n", 'accounts-'.now()->format('Ymd-His').'.txt');
     }
 
     // ------------------------------------------------------------------

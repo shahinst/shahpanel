@@ -2,6 +2,8 @@
 
 namespace Modules\ShahBot\Services;
 
+use Modules\ShahBot\Models\BotInstance;
+use Modules\ShahBot\Support\BotContext;
 use Modules\ShahBot\Support\BotSettings;
 use Modules\ShahBot\Telegram\TelegramClient;
 
@@ -15,6 +17,24 @@ class WebhookService
         protected BotSettings $settings,
         protected TelegramClient $telegram,
     ) {}
+
+    /**
+     * Connects an agent's bot (or, with null, the main bot).
+     *
+     * @return array{ok: bool, message: string}
+     */
+    public function connectBot(?BotInstance $bot): array
+    {
+        return app(BotContext::class)->run($bot, function () use ($bot): array {
+            $result = $this->connect();
+
+            if ($bot !== null && $result['ok']) {
+                $bot->forceFill(['username' => $this->settings->get('bot_username') ?: $bot->username])->save();
+            }
+
+            return $result;
+        });
+    }
 
     public function webhookUrl(): string
     {
@@ -32,9 +52,16 @@ class WebhookService
             return ['ok' => false, 'message' => (string) ($me['description'] ?? 'getMe failed')];
         }
 
-        $this->settings->set(['bot_username' => (string) ($me['result']['username'] ?? '')]);
+        $username = (string) ($me['result']['username'] ?? '');
+        $bot = app(BotContext::class)->bot();
 
-        if ($this->settings->get('mode') === 'polling') {
+        if ($bot !== null) {
+            $bot->forceFill(['username' => $username])->save();
+        } else {
+            $this->settings->set(['bot_username' => $username]);
+        }
+
+        if ($this->settings->main('mode') === 'polling') {
             $result = $this->telegram->call('deleteWebhook');
 
             return ['ok' => (bool) ($result['ok'] ?? false), 'message' => (string) ($result['description'] ?? '')];

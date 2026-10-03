@@ -17,6 +17,7 @@ class BotBroadcast extends Model
     protected $table = 'shahbot_broadcasts';
 
     protected $fillable = [
+        'bot_id',
         'text',
         'audience',
         'status',

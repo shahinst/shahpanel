@@ -5,6 +5,7 @@ namespace Modules\ShahBot\Services;
 use Illuminate\Database\Eloquent\Builder;
 use Modules\ShahBot\Models\BotBroadcast;
 use Modules\ShahBot\Models\BotUser;
+use Modules\ShahBot\Support\BotContext;
 use Modules\ShahBot\Telegram\TelegramClient;
 
 /**
@@ -14,11 +15,14 @@ use Modules\ShahBot\Telegram\TelegramClient;
  */
 class BroadcastService
 {
-    public function __construct(protected TelegramClient $telegram) {}
+    public function __construct(
+        protected TelegramClient $telegram,
+        protected BotContext $context,
+    ) {}
 
-    public function audienceQuery(string $audience): Builder
+    public function audienceQuery(string $audience, int $botId = 0): Builder
     {
-        $query = BotUser::query()->where('is_blocked', false)->where('bot_blocked_by_user', false);
+        $query = BotUser::query()->where('bot_id', $botId)->where('is_blocked', false)->where('bot_blocked_by_user', false);
 
         $withService = fn (Builder $q) => $q->whereNotNull('client_user_id')
             ->whereExists(fn ($s) => $s->selectRaw('1')->from('accounts')
@@ -35,15 +39,16 @@ class BroadcastService
         };
     }
 
-    public function create(string $text, string $audience, string $author): BotBroadcast
+    public function create(string $text, string $audience, string $author, int $botId = 0): BotBroadcast
     {
         $audience = in_array($audience, ['all', 'customers', 'no_service'], true) ? $audience : 'all';
 
         return BotBroadcast::query()->create([
+            'bot_id' => $botId,
             'text' => $text,
             'audience' => $audience,
             'status' => BotBroadcast::QUEUED,
-            'total' => $this->audienceQuery($audience)->count(),
+            'total' => $this->audienceQuery($audience, $botId)->count(),
             'created_by' => $author,
         ]);
     }
@@ -64,7 +69,12 @@ class BroadcastService
 
         $broadcast->update(['status' => BotBroadcast::SENDING]);
 
-        $users = $this->audienceQuery($broadcast->audience)
+        return $this->context->run((int) $broadcast->bot_id, fn () => $this->sendBatch($broadcast, $limit));
+    }
+
+    protected function sendBatch(BotBroadcast $broadcast, int $limit): BotBroadcast
+    {
+        $users = $this->audienceQuery($broadcast->audience, (int) $broadcast->bot_id)
             ->where('id', '>', $broadcast->cursor)
             ->orderBy('id')
             ->limit($limit)

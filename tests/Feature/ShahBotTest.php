@@ -4,12 +4,14 @@ namespace Tests\Feature;
 
 use App\Enums\AccountBillingContext;
 use App\Enums\TransactionType;
+use App\Enums\UserRole;
 use App\Models\Account;
 use App\Models\GatewayPayment;
 use App\Models\PaymentGateway;
 use App\Models\User;
 use App\Services\AccountService;
 use App\Services\ServerSelectionService;
+use App\Services\UserPackagePricingService;
 use App\Services\WalletService;
 use App\Support\GatewayReturnUrls;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -17,8 +19,10 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Mockery;
 use Modules\ShahBot\Bot\UpdateHandler;
+use Modules\ShahBot\Models\BotAgencyRequest;
 use Modules\ShahBot\Models\BotCode;
 use Modules\ShahBot\Models\BotGatewayPayment;
+use Modules\ShahBot\Models\BotInstance;
 use Modules\ShahBot\Models\BotOrder;
 use Modules\ShahBot\Models\BotPayment;
 use Modules\ShahBot\Models\BotReferralReward;
@@ -98,8 +102,8 @@ class ShahBotTest extends TestCase
 
         $accounts = Mockery::mock(AccountService::class)->makePartial();
         $accounts->shouldReceive('createAccount')->andReturnUsing(
-            fn (User $owner, $pkg, $srv, $dur, array $data, AccountBillingContext $ctx) => $this->makeAccount($owner, $srv, [
-                'client_user_id' => $data['client_user_id'],
+            fn (User $owner, $pkg, $srv, $dur, array $data, AccountBillingContext $ctx = AccountBillingContext::Staff) => $this->makeAccount($owner, $srv, [
+                'client_user_id' => $data['client_user_id'] ?? null,
                 'package_id' => $pkg->id,
                 'package_duration_id' => $dur->id,
                 'expiry_at' => now()->addDays(30),
@@ -240,15 +244,25 @@ class ShahBotTest extends TestCase
             'admin.shahbot.broadcasts.index',
             'admin.shahbot.tickets.index',
             'admin.shahbot.tutorials.index',
+            'admin.shahbot.agents.index',
         ] as $route) {
             $this->actingAs($admin)->get(route($route))->assertOk();
         }
 
-        foreach (['connection', 'store', 'wallet', 'online', 'marketing', 'gates', 'texts'] as $tab) {
+        foreach (['connection', 'store', 'wallet', 'online', 'agents', 'marketing', 'gates', 'texts'] as $tab) {
             $this->actingAs($admin)->get(route('admin.shahbot.settings', ['tab' => $tab]))->assertOk();
         }
 
         $this->actingAs($admin)->get(route('admin.shahbot.users.show', $user))->assertOk();
+
+        // An agent's own bot page, and saving a token for it.
+        app(BotSettings::class)->set(['agent_bots_enabled' => '1']);
+        $agent = $this->makeAgent();
+        $this->actingAs($agent)->get(route('agent.shahbot.my-bot'))->assertOk();
+        $this->actingAs($agent)->post(route('agent.shahbot.my-bot.update'), ['bot_token' => '777777:'.str_repeat('c', 35), 'admin_chat_ids' => '1'])->assertRedirect();
+        $this->assertSame('777777:'.str_repeat('c', 35), BotInstance::query()->where('owner_user_id', $agent->id)->firstOrFail()->token());
+        // The main bot's token cannot be claimed.
+        $this->actingAs($this->makeSeller())->post(route('seller.shahbot.my-bot.update'), ['bot_token' => '123456:'.str_repeat('a', 35)])->assertSessionHasErrors('bot_token');
     }
 
     public function test_settings_save_keeps_the_token_secret(): void
@@ -424,5 +438,69 @@ class ShahBotTest extends TestCase
         // Already told: the minute job stays quiet.
         $this->assertSame(0, app(OnlinePaymentService::class)->notifyFinished());
         $this->get(route('shahbot.pay.return', Str::uuid()))->assertNotFound();
+    }
+
+    public function test_agent_bot_has_its_own_users_and_token(): void
+    {
+        app(BotSettings::class)->set(['agent_bots_enabled' => '1']);
+        $agent = $this->makeAgent();
+        $bot = new BotInstance(['owner_user_id' => $agent->id, 'webhook_secret' => str_repeat('a', 40), 'is_active' => true]);
+        $bot->setToken('654321:'.str_repeat('b', 35));
+        $bot->settings = ['admin_chat_ids' => '555'];
+        $bot->save();
+
+        $payload = ['update_id' => 2, 'message' => [
+            'message_id' => 1, 'chat' => ['id' => 9009, 'type' => 'private'], 'from' => ['id' => 9009, 'first_name' => 'Agent fan'], 'text' => '/start',
+        ]];
+
+        $this->withHeader('X-Telegram-Bot-Api-Secret-Token', str_repeat('a', 40))
+            ->postJson('/shahbot/webhook/'.str_repeat('a', 40), $payload)->assertOk();
+
+        $user = BotUser::query()->where('telegram_id', 9009)->firstOrFail();
+        $this->assertSame($bot->id, $user->bot_id);
+        Http::assertSent(fn ($r) => str_contains($r->url(), '/bot654321:') && str_contains($r->url(), '/sendMessage'));
+
+        // Its users are the agent's clients.
+        $this->assertSame($agent->id, app(BotUserService::class)->client($user)->parent_id);
+
+        // The same Telegram user is a separate user of the main bot.
+        $this->text(9009, '/start');
+        $this->assertSame(2, BotUser::query()->where('telegram_id', 9009)->count());
+
+        // A disabled agent bot answers nothing.
+        $bot->update(['is_active' => false]);
+        $this->withHeader('X-Telegram-Bot-Api-Secret-Token', str_repeat('a', 40))
+            ->postJson('/shahbot/webhook/'.str_repeat('a', 40), $payload)->assertNotFound();
+    }
+
+    public function test_agency_request_approval_and_bulk_buy(): void
+    {
+        [, $duration] = $this->sellablePackage();
+        app(BotSettings::class)->set(['agency_enabled' => '1', 'agency_discount' => '10']);
+
+        $this->text(4040, '/start');
+        $this->text(4040, __('shahbot::bot.menu_agency', [], 'fa'));
+        $this->text(4040, 'I sell a lot of VPNs');
+
+        $request = BotAgencyRequest::query()->firstOrFail();
+        Http::assertSent(fn ($r) => (string) ($r['chat_id'] ?? '') === '999' && str_contains((string) ($r['reply_markup'] ?? ''), 'adm:ag:ok:'.$request->id));
+
+        $this->press(999, 'adm:ag:ok:'.$request->id);
+
+        $user = BotUser::query()->where('telegram_id', 4040)->firstOrFail();
+        $seller = $user->reseller;
+        $this->assertNotNull($seller);
+        $this->assertSame(UserRole::Seller, $seller->role);
+        $this->assertSame($this->owner->id, $seller->parent_id);
+        $this->assertSame('approved', $request->fresh()->status);
+
+        // Seller price: store price 1000 less 10%, but never below the agent's 1000.
+        $this->assertSame('1000.00', app(UserPackagePricingService::class)->wholesalePriceFor($seller, $duration));
+
+        app(WalletService::class)->credit($seller, '5000.00', TransactionType::Charge);
+        $this->press(4040, 'rs:ok:'.$duration->id.':2:0');
+
+        $this->assertSame(2, BotOrder::query()->where('bot_user_id', $user->id)->where('type', 'bulk')->count());
+        $this->assertSame(2, Account::query()->where('owner_seller_id', $seller->id)->count());
     }
 }

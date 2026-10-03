@@ -23,6 +23,7 @@
                 <tr>
                     <th>{{ __('shahbot::admin.col_user') }}</th>
                     <th>{{ __('shahbot::admin.col_telegram_id') }}</th>
+                    <th>{{ __('shahbot::admin.bot_col') }}</th>
                     <th>{{ __('shahbot::admin.col_phone') }}</th>
                     <th>{{ __('shahbot::admin.col_orders') }}</th>
                     <th>{{ __('shahbot::admin.col_total') }}</th>
@@ -35,6 +36,7 @@
                     <tr>
                         <td><a href="{{ route('admin.shahbot.users.show', $user) }}"><b>{{ $user->displayName() }}</b></a>@if ($user->username)<div class="sb-muted">{{ '@'.$user->username }}</div>@endif</td>
                         <td><code>{{ $user->telegram_id }}</code></td>
+                        <td>{{ $user->bot ? ($user->bot->owner?->username ?? '#'.$user->bot_id) : __('shahbot::admin.main_bot') }}@if ($user->reseller_user_id) <span class="sb-pill info">{{ __('shahbot::admin.tab_agents') }}</span>@endif</td>
                         <td>{{ $user->phone ? persian_digits($user->phone) : '—' }}</td>
                         <td>{{ persian_digits($user->paid_orders_count) }}</td>
                         <td>{{ format_money($user->paid_total ?? 0) }}</td>
@@ -45,7 +47,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="7" class="text-center sb-muted">{{ __('shahbot::admin.empty') }}</td></tr>
+                    <tr><td colspan="8" class="text-center sb-muted">{{ __('shahbot::admin.empty') }}</td></tr>
                 @endforelse
             </tbody>
         </table>

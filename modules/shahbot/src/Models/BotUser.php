@@ -15,12 +15,14 @@ class BotUser extends Model
     public bool $wasJustCreated = false;
 
     protected $fillable = [
+        'bot_id',
         'telegram_id',
         'username',
         'first_name',
         'last_name',
         'phone',
         'client_user_id',
+        'reseller_user_id',
         'referrer_id',
         'step',
         'step_data',
@@ -34,6 +36,7 @@ class BotUser extends Model
     protected function casts(): array
     {
         return [
+            'bot_id' => 'integer',
             'telegram_id' => 'integer',
             'step_data' => 'array',
             'is_blocked' => 'boolean',
@@ -47,6 +50,16 @@ class BotUser extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(User::class, 'client_user_id');
+    }
+
+    public function reseller(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reseller_user_id');
+    }
+
+    public function bot(): BelongsTo
+    {
+        return $this->belongsTo(BotInstance::class, 'bot_id');
     }
 
     public function referrer(): BelongsTo

@@ -97,7 +97,7 @@ class ShopService
             $gb = null;
         }
 
-        $owner = $this->users->owner();
+        $owner = $this->users->owner($user);
         $quote = $this->economics->quote($owner, $row['duration'], $gb, $row['display_price']);
         $total = $quote['display_total'];
         $discount = '0.00';
@@ -211,7 +211,7 @@ class ShopService
     {
         $account->loadMissing('package');
         $client = $this->users->client($user);
-        $owner = $this->users->owner();
+        $owner = $this->users->owner($user);
 
         return $this->pricing->catalogForClient($client)
             ->filter(fn (array $row): bool => (int) $row['package']->id === (int) $account->package_id

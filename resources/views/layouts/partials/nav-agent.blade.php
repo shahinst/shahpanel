@@ -29,4 +29,6 @@
 
 @include('layouts.partials.nav-support', ['panel' => $panel, 'showDepartments' => true])
 
+@include('layouts.partials.nav-shahbot', ['panel' => $panel])
+
 @include('layouts.partials.nav-panel-settings', ['panel' => $panel])

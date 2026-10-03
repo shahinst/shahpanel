@@ -18,7 +18,7 @@ class SettingsController extends Controller
     protected const BOOLEANS = [
         'sales_enabled', 'test_enabled', 'renew_enabled', 'show_portal_link', 'topup_enabled',
         'referral_enabled', 'referral_first_only', 'require_phone', 'iran_phone_only', 'reminder_enabled',
-        'pay_zarinpal', 'pay_crypto', 'pay_stars',
+        'pay_zarinpal', 'pay_crypto', 'pay_stars', 'agency_enabled', 'agent_bots_enabled',
     ];
 
     public function edit(BotSettings $settings, WebhookService $webhooks): View
@@ -58,6 +58,9 @@ class SettingsController extends Controller
             'card_note' => ['nullable', 'string', 'max:500'],
             'referral_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'stars_rate' => ['nullable', 'numeric', 'min:0'],
+            'agency_text' => ['nullable', 'string', 'max:1000'],
+            'agency_discount' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'bulk_max' => ['nullable', 'integer', 'min:1', 'max:100'],
             'channels' => ['nullable', 'string', 'max:1000'],
             'rules_text' => ['nullable', 'string', 'max:3500'],
             'reminder_days' => ['nullable', 'integer', 'min:1', 'max:30'],

@@ -113,7 +113,7 @@ class PaymentService
 
             $user = $locked->botUser;
             $client = $this->users->client($user);
-            $owner = $this->users->owner();
+            $owner = $this->users->owner($user);
             $amount = number_format((float) $locked->amount, 2, '.', '');
             $context = ['description' => 'Bot card-to-card top-up #'.$locked->id, 'source_user_id' => $client->id];
 

@@ -7,7 +7,9 @@ use App\Models\User;
 use App\Services\EndUserService;
 use App\Services\WalletService;
 use Illuminate\Support\Facades\DB;
+use Modules\ShahBot\Models\BotInstance;
 use Modules\ShahBot\Models\BotUser;
+use Modules\ShahBot\Support\BotContext;
 use Modules\ShahBot\Support\BotSettings;
 use RuntimeException;
 
@@ -22,11 +24,20 @@ class BotUserService
         protected BotSettings $settings,
         protected EndUserService $endUsers,
         protected WalletService $wallets,
+        protected BotContext $context,
     ) {}
 
-    public function owner(): User
+    /**
+     * The sales owner: of the given user's bot when one is given (an agent's
+     * bot sells for that agent), otherwise of the bot in context.
+     */
+    public function owner(?BotUser $for = null): User
     {
-        $owner = User::query()->find($this->settings->int('owner_user_id'));
+        $ownerId = $for !== null && (int) $for->bot_id > 0
+            ? (int) BotInstance::query()->whereKey($for->bot_id)->value('owner_user_id')
+            : $this->settings->int('owner_user_id');
+
+        $owner = User::query()->find($ownerId);
 
         if ($owner === null || ! in_array($owner->role, [UserRole::Agent, UserRole::Seller], true)) {
             throw new RuntimeException(__('shahbot::bot.err_owner_missing'));
@@ -42,7 +53,8 @@ class BotUserService
     {
         $telegramId = (int) $from['id'];
 
-        $user = BotUser::query()->firstOrNew(['telegram_id' => $telegramId]);
+        $botId = $this->context->botId();
+        $user = BotUser::query()->firstOrNew(['bot_id' => $botId, 'telegram_id' => $telegramId]);
         $isNew = ! $user->exists;
 
         $user->fill([
@@ -54,7 +66,7 @@ class BotUserService
         ]);
 
         if ($isNew && $startParam !== null && preg_match('/^ref_?(\d+)$/', $startParam, $m)) {
-            $referrer = BotUser::query()->where('telegram_id', (int) $m[1])->first();
+            $referrer = BotUser::query()->where('bot_id', $botId)->where('telegram_id', (int) $m[1])->first();
 
             if ($referrer !== null && (int) $referrer->telegram_id !== $telegramId) {
                 $user->referrer_id = $referrer->id;
@@ -90,7 +102,7 @@ class BotUserService
                 return $existing;
             }
 
-            $created = $this->endUsers->createAutoClientForAccount($this->owner(), 'TG '.$botUser->displayName());
+            $created = $this->endUsers->createAutoClientForAccount($this->owner($botUser), 'TG '.$botUser->displayName());
             $client = $created['user'];
             $client->forceFill(['phone' => $botUser->phone ?: $client->phone])->save();
 
