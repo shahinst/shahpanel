@@ -35,6 +35,7 @@ use Modules\ShahBot\Services\ServiceOpsService;
 use Modules\ShahBot\Services\ShopService;
 use Modules\ShahBot\Services\TicketService;
 use Modules\ShahBot\Support\BotContext;
+use Modules\ShahBot\Support\BotLocale;
 use Modules\ShahBot\Support\BotSettings;
 use Modules\ShahBot\Support\BotTexts;
 use Modules\ShahBot\Support\MenuLayout;
@@ -109,6 +110,7 @@ class UpdateHandler
         }
 
         $this->user = $this->users->register($message['from'], $startParam);
+        $this->useUserLocale();
 
         // A finished Stars payment is credited whatever else is going on.
         if (isset($message['successful_payment'])) {
@@ -135,7 +137,7 @@ class UpdateHandler
             return;
         }
 
-        if ($text === __('shahbot::bot.cancel') || $text === '/cancel') {
+        if ($this->isLabel($text, 'cancel') || $text === '/cancel') {
             $this->cancelStep();
 
             return;
@@ -168,6 +170,7 @@ class UpdateHandler
         $data = (string) ($callback['data'] ?? '');
 
         $this->user = $this->users->register($callback['from']);
+        $this->useUserLocale();
 
         // join:check answers with its own alert below; a callback can be
         // answered only once.
@@ -356,7 +359,7 @@ class UpdateHandler
         ]));
 
         if ($this->user->referrer_id !== null && $this->settings->bool('referral_enabled')) {
-            $this->notifier->user($this->user->referrer, __('shahbot::bot.referral_joined'));
+            $this->notifier->user($this->user->referrer, fn () => __('shahbot::bot.referral_joined'));
         }
     }
 
@@ -376,6 +379,7 @@ class UpdateHandler
             'app' => $miniApp !== null,
             'wheel' => $this->fun->wheelOpen(),
             'lottery' => $this->fun->activeLottery() !== null,
+            'language' => count(app(BotLocale::class)->enabled()) > 1,
         ];
 
         $rows = [];
@@ -410,7 +414,7 @@ class UpdateHandler
 
     protected function sendWelcome(): void
     {
-        $text = strtr($this->settings->get('welcome_text') ?: BotSettings::defaults()['welcome_text'], [
+        $text = strtr($this->settings->localized('welcome_text'), [
             '{name}' => e($this->user->first_name ?: $this->user->displayName()),
             '{brand}' => e(app_display_name()),
         ]);
@@ -429,18 +433,19 @@ class UpdateHandler
             'menu_referral' => fn () => $this->showReferral(),
             'menu_gift' => fn () => $this->askFor('gift_code', __('shahbot::bot.ask_gift')),
             'menu_tutorials' => fn () => $this->showTutorials(),
-            'menu_support' => fn () => $this->askFor('support', e($this->settings->get('support_text'))),
+            'menu_support' => fn () => $this->askFor('support', e($this->settings->localized('support_text'))),
             'menu_agency' => fn () => $this->agency->available($this->user)
-                ? $this->askFor('agency_note', e($this->settings->get('agency_text')))
+                ? $this->askFor('agency_note', e($this->settings->localized('agency_text')))
                 : throw new InvalidArgumentException(__('shahbot::bot.agency_closed')),
             'menu_reseller' => fn () => $this->showReseller(),
             'menu_wheel' => fn () => $this->showWheel(),
+            'menu_language' => fn () => $this->showLanguages(),
             'menu_lottery' => fn () => $this->showLottery(),
             'menu_admin' => fn () => $this->settings->isAdminChat($this->user->telegram_id) ? $this->showAdmin() : $this->reply(__('shahbot::bot.unknown')),
         ];
 
         foreach ($routes as $key => $action) {
-            if ($text === __('shahbot::bot.'.$key)) {
+            if ($this->isLabel($text, $key)) {
                 $this->user->setStep(null);
 
                 try {
@@ -454,6 +459,53 @@ class UpdateHandler
         }
 
         return false;
+    }
+
+    protected function useUserLocale(): void
+    {
+        App::setLocale(app(BotLocale::class)->for($this->user));
+        app(BotTexts::class)->apply();
+    }
+
+    /**
+     * Whether $text is the label of $key in any of the bot's languages, so a
+     * keyboard sent before a language change still works.
+     */
+    protected function isLabel(string $text, string $key): bool
+    {
+        if ($text === '') {
+            return false;
+        }
+
+        foreach (app(BotLocale::class)->enabled() as $locale) {
+            if ($text === __('shahbot::bot.'.$key, [], $locale)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    protected function showLanguages(): void
+    {
+        $buttons = array_map(
+            fn (string $code) => Keyboard::button(BotLocale::NAMES[$code], 'lang:'.$code),
+            app(BotLocale::class)->enabled()
+        );
+
+        $this->reply(__('shahbot::bot.lang_choose'), Keyboard::inline(Keyboard::grid($buttons, 2)));
+    }
+
+    protected function setLanguage(string $code, int $messageId): void
+    {
+        if (! in_array($code, app(BotLocale::class)->enabled(), true)) {
+            return;
+        }
+
+        $this->user->forceFill(['language' => $code])->save();
+        $this->useUserLocale();
+        $this->say($messageId, __('shahbot::bot.lang_set'));
+        $this->sendWelcome();
     }
 
     protected function askFor(string $step, string $prompt, array $data = []): void
@@ -647,6 +699,7 @@ class UpdateHandler
             'tut' => $this->tutorialCallback($parts, $messageId),
             'rs' => $this->resellerCallback($parts, $messageId),
             'fun' => ($parts[1] ?? '') === 'spin' ? $this->spinWheel($messageId) : null,
+            'lang' => $this->setLanguage((string) ($parts[1] ?? ''), $messageId),
             default => null,
         };
     }
@@ -656,7 +709,7 @@ class UpdateHandler
     protected function showCategories(?int $messageId = null): void
     {
         if (! $this->settings->bool('sales_enabled')) {
-            $this->reply(e($this->settings->get('closed_text') ?: __('shahbot::bot.sales_closed')));
+            $this->reply(e($this->settings->localized('closed_text') ?: __('shahbot::bot.sales_closed')));
 
             return;
         }

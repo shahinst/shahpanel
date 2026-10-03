@@ -293,7 +293,7 @@ class ShopService
     protected function assertSalesOpen(): void
     {
         if (! $this->settings->bool('sales_enabled')) {
-            throw new InvalidArgumentException($this->settings->get('closed_text') ?: __('shahbot::bot.sales_closed'));
+            throw new InvalidArgumentException($this->settings->localized('closed_text') ?: __('shahbot::bot.sales_closed'));
         }
     }
 
@@ -335,7 +335,7 @@ class ShopService
                 ]);
             });
 
-            $this->notifier->user($referrer, __('shahbot::bot.referral_rewarded', ['amount' => format_money($amount)]));
+            $this->notifier->user($referrer, fn () => __('shahbot::bot.referral_rewarded', ['amount' => format_money($amount)]));
         } catch (\Throwable $e) {
             report($e);
         }

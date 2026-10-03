@@ -110,7 +110,7 @@ class AgencyService
         });
 
         $seller = $request->seller;
-        $this->notifier->user($request->botUser, __('shahbot::bot.agency_approved', [
+        $this->notifier->user($request->botUser, fn () => __('shahbot::bot.agency_approved', [
             'url' => e(route('login')),
             'username' => e($seller->username),
             'password' => e($password),
@@ -130,7 +130,7 @@ class AgencyService
             throw new InvalidArgumentException(__('shahbot::bot.agency_reviewed'));
         }
 
-        $this->notifier->user($request->botUser, __('shahbot::bot.agency_rejected'));
+        $this->notifier->user($request->botUser, fn () => __('shahbot::bot.agency_rejected'));
 
         return $request->fresh();
     }

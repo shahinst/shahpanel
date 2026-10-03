@@ -47,7 +47,7 @@ class TicketService
         $ticket->messages()->create(['from_admin' => true, 'author' => mb_substr($author, 0, 128), 'body' => mb_substr($text, 0, 4000)]);
         $ticket->update(['status' => BotTicket::ANSWERED, 'last_message_at' => now()]);
 
-        return $this->notifier->user($ticket->botUser, __('shahbot::bot.ticket_reply', ['id' => $ticket->id, 'text' => e($text)]));
+        return $this->notifier->user($ticket->botUser, fn () => __('shahbot::bot.ticket_reply', ['id' => $ticket->id, 'text' => e($text)]));
     }
 
     public function close(BotTicket $ticket): void

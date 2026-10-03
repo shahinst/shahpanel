@@ -134,7 +134,7 @@ class PaymentService
             return $locked;
         });
 
-        $this->notifier->user($payment->botUser, __('shahbot::bot.payment_approved', [
+        $this->notifier->user($payment->botUser, fn () => __('shahbot::bot.payment_approved', [
             'amount' => format_money($payment->amount),
             'balance' => format_money($this->users->balance($payment->botUser)),
         ]));
@@ -161,7 +161,7 @@ class PaymentService
             return $locked;
         });
 
-        $this->notifier->user($payment->botUser, __('shahbot::bot.payment_rejected', [
+        $this->notifier->user($payment->botUser, fn () => __('shahbot::bot.payment_rejected', [
             'amount' => format_money($payment->amount),
             'reason' => e($payment->reject_reason ?: '—'),
         ]));

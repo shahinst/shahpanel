@@ -23,6 +23,7 @@ class MenuLayout
         'lottery' => [6, 2],
         'support' => [7, 1],
         'app' => [7, 2],
+        'language' => [8, 1],
     ];
 
     public function __construct(protected BotSettings $settings) {}

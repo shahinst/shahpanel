@@ -40,6 +40,7 @@ use Modules\ShahBot\Services\OnlinePaymentService;
 use Modules\ShahBot\Services\PaymentService;
 use Modules\ShahBot\Services\ShopService;
 use Modules\ShahBot\ShahBotServiceProvider;
+use Modules\ShahBot\Support\BotLocale;
 use Modules\ShahBot\Support\BotSettings;
 use Modules\ShahBot\Support\BotTexts;
 use Tests\Concerns\CreatesPanelData;
@@ -259,7 +260,7 @@ class ShahBotTest extends TestCase
             $this->actingAs($admin)->get(route($route))->assertOk();
         }
 
-        foreach (['connection', 'store', 'wallet', 'online', 'agents', 'fun', 'marketing', 'gates', 'texts'] as $tab) {
+        foreach (['connection', 'store', 'wallet', 'online', 'agents', 'fun', 'languages', 'marketing', 'gates', 'texts'] as $tab) {
             $this->actingAs($admin)->get(route('admin.shahbot.settings', ['tab' => $tab]))->assertOk();
         }
 
@@ -695,5 +696,43 @@ class ShahBotTest extends TestCase
         $this->assertSame('approved', $request->fresh()->status);
         $this->assertSame('700.00', number_format((float) $request->fresh()->amount, 2, '.', ''));
         Http::assertSent(fn ($r) => (string) ($r['chat_id'] ?? '') === '1801' && str_contains((string) $r['text'], '۷۰۰'));
+    }
+
+    public function test_each_user_gets_their_own_language(): void
+    {
+        // A new user whose Telegram app is English is greeted in English.
+        $this->update(['message' => [
+            'message_id' => 1, 'chat' => ['id' => 1901, 'type' => 'private'],
+            'from' => ['id' => 1901, 'first_name' => 'John', 'language_code' => 'en-GB'], 'text' => '/start',
+        ]]);
+        $user = BotUser::query()->where('telegram_id', 1901)->firstOrFail();
+        $this->assertSame('en', $user->language);
+        Http::assertSent(fn ($r) => (string) ($r['chat_id'] ?? '') === '1901' && str_contains((string) $r['text'], 'Welcome to the')
+            && str_contains((string) $r['reply_markup'], 'My services'));
+
+        // English labels work, and so does an old Persian keyboard.
+        $this->text(1901, '💳 Wallet');
+        Http::assertSent(fn ($r) => (string) ($r['chat_id'] ?? '') === '1901' && str_contains((string) $r['text'], 'Balance'));
+        $this->text(1901, __('shahbot::bot.menu_account', [], 'fa'));
+        Http::assertSent(fn ($r) => (string) ($r['chat_id'] ?? '') === '1901' && str_contains((string) $r['text'], 'My account'));
+
+        // Switching to Russian.
+        $this->press(1901, 'lang:ru');
+        $this->assertSame('ru', $user->fresh()->language);
+        Http::assertSent(fn ($r) => (string) ($r['chat_id'] ?? '') === '1901' && str_contains((string) $r['text'], 'Добро пожаловать'));
+
+        // A message sent later from the panel speaks the user's language.
+        app(WalletService::class)->credit($this->owner, '50000.00', TransactionType::Charge);
+        $payments = app(PaymentService::class);
+        $payment = $payments->start($user->fresh(), '50000');
+        $payments->attachReceipt($payment, 'f', null);
+        app()->setLocale('fa');
+        $payments->approve($payment->fresh(), 'admin');
+        Http::assertSent(fn ($r) => (string) ($r['chat_id'] ?? '') === '1901' && str_contains((string) $r['text'], 'Ваш платёж подтверждён'));
+        $this->assertSame('fa', app()->getLocale());
+
+        // Disabling a language falls back to the default.
+        app(BotSettings::class)->set(['languages' => "fa\nen"]);
+        $this->assertSame('fa', app(BotLocale::class)->for($user->fresh()));
     }
 }
