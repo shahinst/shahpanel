@@ -1,6 +1,32 @@
 {
     "versions": [
         {
+            "version": "3.11.0",
+            "date": "2026-10-13",
+            "notes": {
+                "fa": [
+                    "ربات فروش تلگرام: شارژ کیف پول با درگاه زرین‌پال و ارز دیجیتال (از همان درگاه‌های پنل) و با Telegram Stars",
+                    "پس از انتخاب مبلغ، کاربر روش پرداخت را انتخاب می‌کند؛ بعد از پرداخت آنلاین به صفحهٔ نتیجهٔ ربات برمی‌گردد و ربات خودکار خبر شارژ را می‌دهد",
+                    "تب «پرداخت آنلاین» در تنظیمات ربات با وضعیت هر روش و ارزش هر ستاره، و جدول پرداخت‌های آنلاین در بخش رسیدها"
+                ],
+                "en": [
+                    "Telegram sales bot: wallet top-up through ZarinPal and crypto (the panel's own gateways) and with Telegram Stars",
+                    "After choosing an amount the user picks a payment method; after an online payment they return to the bot's result page and the bot reports the top-up automatically",
+                    "An “Online payments” settings tab with the status of each method and the value of a star, and an online payments table under Receipts"
+                ],
+                "ru": [
+                    "Telegram-бот продаж: пополнение кошелька через ZarinPal и криптовалюту (шлюзы самой панели) и через Telegram Stars",
+                    "После выбора суммы пользователь выбирает способ оплаты; после онлайн-оплаты он возвращается на страницу результата бота, а бот автоматически сообщает о пополнении",
+                    "Вкладка «Онлайн-платежи» в настройках бота со статусом каждого способа и стоимостью звезды, а также таблица онлайн-платежей в разделе чеков"
+                ],
+                "zh": [
+                    "Telegram 销售机器人：可通过 ZarinPal 和加密货币（面板自身的支付网关）以及 Telegram Stars 为钱包充值",
+                    "选择金额后用户可选择支付方式；在线支付完成后返回机器人的结果页面，机器人会自动通知充值结果",
+                    "机器人设置新增“在线支付”选项卡，显示各支付方式状态和每颗星的价值；收据页面新增在线支付列表"
+                ]
+            }
+        },
+        {
             "version": "3.10.2",
             "date": "2026-10-12",
             "notes": {

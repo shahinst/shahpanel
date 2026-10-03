@@ -32,16 +32,7 @@ class PaymentService
             throw new InvalidArgumentException(__('shahbot::bot.topup_disabled'));
         }
 
-        $amount = (float) preg_replace('/[^\d.]/', '', western_digits($amount));
-        $min = (float) $this->settings->get('topup_min');
-        $max = (float) $this->settings->get('topup_max');
-
-        if ($amount <= 0 || ($min > 0 && $amount < $min) || ($max > 0 && $amount > $max)) {
-            throw new InvalidArgumentException(__('shahbot::bot.topup_range', [
-                'min' => format_money($min),
-                'max' => format_money($max),
-            ]));
-        }
+        $amount = $this->validAmount($amount);
 
         // One open request at a time; an older unpaid one is simply replaced.
         BotPayment::query()
@@ -55,6 +46,26 @@ class PaymentService
             'method' => 'card',
             'status' => BotPayment::AWAITING_RECEIPT,
         ]);
+    }
+
+    /**
+     * Parses a top-up amount (Persian digits and separators allowed) and checks
+     * it against the configured range. Every payment method shares the range.
+     */
+    public function validAmount(string $amount): float
+    {
+        $amount = (float) preg_replace('/[^\d.]/', '', western_digits($amount));
+        $min = (float) $this->settings->get('topup_min');
+        $max = (float) $this->settings->get('topup_max');
+
+        if ($amount <= 0 || ($min > 0 && $amount < $min) || ($max > 0 && $amount > $max)) {
+            throw new InvalidArgumentException(__('shahbot::bot.topup_range', [
+                'min' => format_money($min),
+                'max' => format_money($max),
+            ]));
+        }
+
+        return $amount;
     }
 
     public function attachReceipt(BotPayment $payment, ?string $fileId, ?string $note): BotPayment

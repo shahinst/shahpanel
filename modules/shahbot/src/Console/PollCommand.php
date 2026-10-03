@@ -34,7 +34,7 @@ class PollCommand extends Command
             $result = $telegram->call('getUpdates', [
                 'offset' => $offset,
                 'timeout' => $wait,
-                'allowed_updates' => json_encode(['message', 'callback_query']),
+                'allowed_updates' => json_encode(['message', 'callback_query', 'pre_checkout_query']),
             ], $wait + 10);
 
             if (! ($result['ok'] ?? false)) {

@@ -26,10 +26,12 @@ class BotPayment extends Model
     protected $fillable = [
         'bot_user_id',
         'amount',
+        'stars',
         'method',
         'status',
         'receipt_file_id',
         'receipt_note',
+        'external_id',
         'reviewed_by',
         'reviewed_at',
         'reject_reason',
@@ -39,6 +41,7 @@ class BotPayment extends Model
     {
         return [
             'amount' => 'decimal:2',
+            'stars' => 'integer',
             'reviewed_at' => 'datetime',
         ];
     }

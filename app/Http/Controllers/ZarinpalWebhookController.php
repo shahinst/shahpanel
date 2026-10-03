@@ -7,6 +7,7 @@ use App\Enums\UserRole;
 use App\Models\GatewayPayment;
 use App\Services\PaymentGateways\GatewayPaymentService;
 use App\Services\PaymentGateways\PaymentGatewayException;
+use App\Support\GatewayReturnUrls;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -38,6 +39,10 @@ class ZarinpalWebhookController extends Controller
         try {
             $payment = $this->gatewayPaymentService->handleZarinpalCallback($authority, $status);
         } catch (PaymentGatewayException) {
+            if (($custom = GatewayReturnUrls::for($payment, 'cancel')) !== null) {
+                return redirect()->away($custom);
+            }
+
             return redirect()->route($routePrefix.'.return', [
                 'gatewayPayment' => $payment->uuid,
                 'status' => 'cancel',
@@ -52,6 +57,10 @@ class ZarinpalWebhookController extends Controller
         }
 
         $returnStatus = $payment->status === GatewayPaymentStatus::Completed ? 'success' : 'cancel';
+
+        if (($custom = GatewayReturnUrls::for($payment, $returnStatus)) !== null) {
+            return redirect()->away($custom);
+        }
 
         return redirect()->route($routePrefix.'.return', [
             'gatewayPayment' => $payment->uuid,

@@ -23,6 +23,7 @@ use Modules\ShahBot\Models\BotUser;
 use Modules\ShahBot\Services\BotNotifier;
 use Modules\ShahBot\Services\BotUserService;
 use Modules\ShahBot\Services\CodeService;
+use Modules\ShahBot\Services\OnlinePaymentService;
 use Modules\ShahBot\Services\PaymentService;
 use Modules\ShahBot\Services\ShopService;
 use Modules\ShahBot\Services\TicketService;
@@ -52,11 +53,18 @@ class UpdateHandler
         protected CodeService $codes,
         protected TicketService $tickets,
         protected BotNotifier $notifier,
+        protected OnlinePaymentService $online,
     ) {}
 
     public function handle(array $update): void
     {
         App::setLocale('fa');
+
+        if (isset($update['pre_checkout_query'])) {
+            $this->online->answerPreCheckout($update['pre_checkout_query']);
+
+            return;
+        }
 
         if (isset($update['callback_query'])) {
             $this->onCallback($update['callback_query']);
@@ -86,6 +94,13 @@ class UpdateHandler
         }
 
         $this->user = $this->users->register($message['from'], $startParam);
+
+        // A finished Stars payment is credited whatever else is going on.
+        if (isset($message['successful_payment'])) {
+            $this->online->completeStars($this->user, $message['successful_payment']);
+
+            return;
+        }
 
         if (! $this->passesCommonGuards()) {
             return;
@@ -434,7 +449,7 @@ class UpdateHandler
             match ($step) {
                 'buy_gb' => $this->stepBuyGb($text),
                 'buy_code' => $this->stepBuyCode($text),
-                'topup_amount' => $this->startTopup($text),
+                'topup_amount' => $this->chooseMethod($text),
                 'topup_receipt' => $this->stepReceipt($message),
                 'gift_code' => $this->stepGift($text),
                 'support' => $this->stepSupport($text),
@@ -630,7 +645,7 @@ class UpdateHandler
             'code' => $this->askFor('buy_code', __('shahbot::bot.ask_discount'), $this->pendingPurchase()),
             'nocode' => $this->showInvoice((int) $this->pendingPurchase()['duration'], $this->pendingGb(), null, $messageId),
             'pay' => $this->payPurchase($messageId),
-            'top' => $this->startTopup((string) ($parts[2] ?? '0')),
+            'top' => $this->chooseMethod((string) ($parts[2] ?? '0')),
             default => null,
         };
     }
@@ -1041,7 +1056,7 @@ class UpdateHandler
         $balance = $this->users->balance($this->user);
         $rows = [];
 
-        if ($this->settings->bool('topup_enabled')) {
+        if ($this->online->methods() !== []) {
             $min = max(1, (float) $this->settings->get('topup_min'));
             $amounts = array_values(array_unique(array_filter([$min, $min * 2, $min * 5, $min * 10],
                 fn ($a) => (float) $this->settings->get('topup_max') <= 0 || $a <= (float) $this->settings->get('topup_max'))));
@@ -1058,7 +1073,9 @@ class UpdateHandler
     protected function walletCallback(array $parts, int $messageId): void
     {
         match ($parts[1] ?? '') {
-            'amt' => $this->startTopup((string) ($parts[2] ?? '0')),
+            'amt' => $this->chooseMethod((string) ($parts[2] ?? '0')),
+            'pay' => $this->startMethod((string) ($parts[2] ?? ''), (string) ($parts[3] ?? '0')),
+            'cur' => $this->payCrypto((string) ($parts[2] ?? ''), (string) ($parts[3] ?? '0')),
             'custom' => $this->askFor('topup_amount', __('shahbot::bot.ask_amount', [
                 'min' => format_money($this->settings->get('topup_min')),
                 'max' => format_money($this->settings->get('topup_max')),
@@ -1068,6 +1085,76 @@ class UpdateHandler
             'cancel' => $this->cancelPayment((int) ($parts[2] ?? 0), $messageId),
             default => null,
         };
+    }
+
+    /**
+     * After the amount: pick how to pay, or go straight on when only one
+     * method is open.
+     */
+    protected function chooseMethod(string $amount): void
+    {
+        $value = $this->payments->validAmount($amount);
+        $methods = $this->online->methods();
+
+        if ($methods === []) {
+            $this->user->setStep(null);
+            throw new InvalidArgumentException(__('shahbot::bot.topup_disabled'));
+        }
+
+        if (count($methods) === 1) {
+            $this->startMethod($methods[0], (string) (int) $value);
+
+            return;
+        }
+
+        $this->user->setStep(null);
+        $labels = [
+            OnlinePaymentService::ZARINPAL => __('shahbot::bot.pay_zarinpal'),
+            OnlinePaymentService::CRYPTO => __('shahbot::bot.pay_crypto'),
+            OnlinePaymentService::STARS => __('shahbot::bot.pay_stars', ['stars' => persian_digits($this->online->starsFor($value))]),
+            OnlinePaymentService::CARD => __('shahbot::bot.pay_card'),
+        ];
+        $buttons = array_map(fn (string $m) => [Keyboard::button($labels[$m], 'wal:pay:'.$m.':'.(int) $value)], $methods);
+
+        $this->reply(__('shahbot::bot.pay_choose', ['amount' => format_money($value)]), Keyboard::inline($buttons));
+    }
+
+    protected function startMethod(string $method, string $amount): void
+    {
+        $value = $this->payments->validAmount($amount);
+
+        match ($method) {
+            OnlinePaymentService::ZARINPAL => $this->sendPayLink($this->online->startZarinpal($this->user, $value)->invoice_url, $value),
+            OnlinePaymentService::CRYPTO => $this->chooseCurrency($value),
+            OnlinePaymentService::STARS => $this->online->startStars($this->user, $value),
+            OnlinePaymentService::CARD => $this->startTopup((string) (int) $value),
+            default => throw new InvalidArgumentException(__('shahbot::bot.pay_method_closed')),
+        };
+    }
+
+    protected function chooseCurrency(float $amount): void
+    {
+        $buttons = array_map(
+            fn (string $code) => Keyboard::button(strtoupper($code), 'wal:cur:'.$code.':'.(int) $amount),
+            $this->online->cryptoCurrencies()
+        );
+
+        $this->reply(__('shahbot::bot.pay_currency', ['amount' => format_money($amount)]), Keyboard::inline(Keyboard::grid($buttons, 3)));
+    }
+
+    protected function payCrypto(string $currency, string $amount): void
+    {
+        $value = $this->payments->validAmount($amount);
+        $this->sendPayLink($this->online->startCrypto($this->user, $value, $currency)->invoice_url, $value);
+    }
+
+    protected function sendPayLink(?string $url, float $amount): void
+    {
+        $this->user->setStep(null);
+        $this->reply(__('shahbot::bot.pay_link', ['amount' => format_money($amount)]), Keyboard::inline([[
+            Keyboard::url(__('shahbot::bot.btn_pay_now'), (string) $url),
+        ]]));
+        $this->reply(__('shahbot::bot.home_hint'), $this->mainMenu());
     }
 
     protected function startTopup(string $amount): void

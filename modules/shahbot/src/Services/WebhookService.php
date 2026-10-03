@@ -43,7 +43,7 @@ class WebhookService
         $result = $this->telegram->call('setWebhook', [
             'url' => $this->webhookUrl(),
             'secret_token' => $this->settings->webhookSecret(),
-            'allowed_updates' => json_encode(['message', 'callback_query']),
+            'allowed_updates' => json_encode(['message', 'callback_query', 'pre_checkout_query']),
             'max_connections' => 20,
             'drop_pending_updates' => 'true',
         ]);
