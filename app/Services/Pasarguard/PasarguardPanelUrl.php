@@ -107,6 +107,25 @@ final class PasarguardPanelUrl
         return $out !== [] ? $out : [$primary];
     }
 
+    /**
+     * PasarGuard returns a RELATIVE subscription_url (`/sub/<token>`) whenever its
+     * `subscription.url_prefix` setting is empty. Persisted as-is it is unusable:
+     * curl and client apps read `sub/<token>` as a hostname
+     * ("Could not resolve host: sub"), and the QR code encodes a path with no
+     * origin. Resolve it against the panel origin so whatever we store is always
+     * fetchable, regardless of how the remote panel is configured.
+     */
+    public static function absolutize(?string $url, Server $server): string
+    {
+        $url = trim((string) $url);
+
+        if ($url === '' || preg_match('#^[a-z][a-z0-9+.-]*://#i', $url)) {
+            return $url;
+        }
+
+        return self::fromServer($server)->displayAddress().'/'.ltrim($url, '/');
+    }
+
     public function api(string $relativePath): string
     {
         $path = ltrim($relativePath, '/');

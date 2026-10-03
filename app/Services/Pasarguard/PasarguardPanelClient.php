@@ -30,6 +30,18 @@ final class PasarguardPanelClient
 
     protected ?string $accessToken = null;
 
+    /**
+     * True when $accessToken is a PasarGuard API key rather than an admin JWT.
+     * The two are sent in different headers — see withCredentials().
+     */
+    protected bool $tokenIsApiKey = false;
+
+    /**
+     * Set after a stored API key / token was rejected, so the retry falls back
+     * to a username+password login instead of replaying the same bad token.
+     */
+    protected bool $ignoreStoredToken = false;
+
     public function __construct(protected Server $server) {}
 
     public function url(): PasarguardPanelUrl
@@ -128,9 +140,11 @@ final class PasarguardPanelClient
             return;
         }
 
-        if ($this->server->api_token_enc) {
+        if (! $this->ignoreStoredToken && $this->server->api_token_enc) {
             $this->accessToken = $this->server->api_token_enc;
+            $this->tokenIsApiKey = self::looksLikeApiKey($this->accessToken);
             $this->resolveReachableUrl();
+            $this->logStep('stored_token', ['mode' => $this->tokenIsApiKey ? 'api_key' : 'jwt']);
 
             return;
         }
@@ -437,7 +451,7 @@ final class PasarguardPanelClient
             $url .= '?'.http_build_query($query);
         }
 
-        $client = $client->withToken($this->accessToken ?? '');
+        $client = $this->withCredentials($client);
 
         try {
             $response = match (strtoupper($method)) {
@@ -451,10 +465,22 @@ final class PasarguardPanelClient
             throw new RemoteConnectionException($this->friendlyConnectionError($exception->getMessage()), 0, $exception);
         }
 
-        // A long-lived worker outlives the admin JWT; re-login once instead of
-        // turning every later call into an unrecoverable 401.
-        if ($response->status() === 401 && $allowReauth && ! $this->server->api_token_enc) {
+        // A long-lived worker outlives the admin JWT, and a stored API key can be
+        // revoked or rotated behind our back; re-login once instead of turning
+        // every later call into an unrecoverable 401.
+        if ($response->status() === 401 && $allowReauth && $this->canLoginWithPassword()) {
+            $this->logStep('reauth', [
+                'reason' => 'http_401',
+                'rejected_mode' => $this->accessToken === null
+                    ? 'none'
+                    : ($this->tokenIsApiKey ? 'api_key' : 'jwt'),
+            ]);
+
+            // Skip the stored token on the retry, otherwise a bad one is simply
+            // replayed and the second attempt fails for the same reason.
+            $this->ignoreStoredToken = true;
             $this->accessToken = null;
+            $this->tokenIsApiKey = false;
             unset(self::$tokenByServer[$this->server->id]);
 
             $this->authenticate($timeoutSeconds, $connectTimeoutSeconds);
@@ -463,6 +489,46 @@ final class PasarguardPanelClient
         }
 
         return $response;
+    }
+
+    /**
+     * PasarGuard reads an admin JWT from `Authorization: Bearer <jwt>`, but an
+     * API key only from `X-Api-Key` (or `Authorization: apikey <key>`). A key
+     * presented as a bearer token is answered with
+     * 401 "Could not validate credentials".
+     *
+     * @see https://docs.pasarguard.org/en/panel/api_keys
+     */
+    protected function withCredentials(\Illuminate\Http\Client\PendingRequest $client): \Illuminate\Http\Client\PendingRequest
+    {
+        $token = $this->accessToken ?? '';
+
+        if ($token === '') {
+            return $client;
+        }
+
+        return $this->tokenIsApiKey
+            ? $client->withHeaders(['X-Api-Key' => $token])
+            : $client->withToken($token);
+    }
+
+    protected function canLoginWithPassword(): bool
+    {
+        return $this->server->username_enc !== null && $this->server->password_enc !== null;
+    }
+
+    /**
+     * A PasarGuard API key is `pg_key_<uuid>`; an admin JWT is three
+     * dot-separated base64url segments. Anything that is not shaped like a JWT
+     * is treated as a key, so a future key prefix still takes the right header.
+     */
+    protected static function looksLikeApiKey(string $token): bool
+    {
+        if (str_starts_with($token, 'pg_key_')) {
+            return true;
+        }
+
+        return count(explode('.', $token)) !== 3;
     }
 
     protected function loginWithPassword(
@@ -496,6 +562,7 @@ final class PasarguardPanelClient
         }
 
         $this->accessToken = $token;
+        $this->tokenIsApiKey = false;
         self::$tokenByServer[$this->server->id] = $token;
     }
 
@@ -550,7 +617,9 @@ final class PasarguardPanelClient
         if (isset(self::$resolvedUrlByServer[$this->server->id])) {
             $this->activeUrl = self::$resolvedUrlByServer[$this->server->id];
             if (isset(self::$tokenByServer[$this->server->id])) {
+                // Only JWTs from loginWithPassword() are cached here.
                 $this->accessToken = self::$tokenByServer[$this->server->id];
+                $this->tokenIsApiKey = false;
             }
 
             return;

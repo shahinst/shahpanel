@@ -1,6 +1,36 @@
 {
     "versions": [
         {
+            "version": "3.17.0",
+            "date": "2026-10-19",
+            "notes": {
+                "fa": [
+                    "لینک اشتراک سرورهای PasarGuard که پنل مقابل آن را نسبی برمی‌گرداند، حالا کامل و قابل استفاده ذخیره می‌شود؛ پیش از این QR و لینک مشتری باز نمی‌شد",
+                    "اتصال به PasarGuard با «کلید API» درست شد: کلید در هدر مخصوص خودش فرستاده می‌شود، نه به‌جای توکن مدیر",
+                    "اگر توکن یا کلید ذخیره‌شدهٔ سرور رد شود، پنل یک بار با نام کاربری و رمز وارد می‌شود و همان توکن خراب را دوباره نمی‌فرستد",
+                    "ادمین با دسترسی محدود می‌تواند پیام «ستاره بدهید» را ببندد؛ پیش از این خطای ۴۰۳ می‌گرفت"
+                ],
+                "en": [
+                    "PasarGuard subscription links are now stored complete: panels configured without a URL prefix return a relative link, which left the customer's QR code and link unusable",
+                    "Fixed PasarGuard API-key authentication — the key is sent in its own header instead of in place of an admin token",
+                    "When a server's stored token or API key is rejected, the panel logs in once with the username and password instead of replaying the bad token",
+                    "An admin with limited sections can dismiss the star prompt; it used to answer 403"
+                ],
+                "ru": [
+                    "Ссылки подписки PasarGuard теперь сохраняются полностью: панели без префикса URL возвращают относительную ссылку, из-за чего QR-код и ссылка клиента не работали",
+                    "Исправлена авторизация PasarGuard по API-ключу — ключ отправляется в своём заголовке, а не вместо токена администратора",
+                    "Если сохранённый токен или ключ сервера отклонён, панель один раз входит по логину и паролю вместо повторной отправки неверного токена",
+                    "Администратор с ограниченными разделами может закрыть напоминание о звезде; раньше возвращалась ошибка 403"
+                ],
+                "zh": [
+                    "PasarGuard 订阅链接现已完整保存：未配置 URL 前缀的面板返回相对链接，导致客户的二维码和链接无法使用",
+                    "修复 PasarGuard API 密钥认证——密钥改用专属请求头发送，而不是替代管理员令牌",
+                    "服务器已保存的令牌或密钥被拒绝时，面板会用用户名和密码登录一次，而不是重复发送无效令牌",
+                    "权限受限的管理员现在可以关闭“给个星标”提示；此前会返回 403"
+                ]
+            }
+        },
+        {
             "version": "3.16.0",
             "date": "2026-10-18",
             "notes": {
