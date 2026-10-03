@@ -12,6 +12,8 @@ use App\Models\Server;
 use App\Models\User;
 use App\Services\PasarguardService;
 use App\Services\UserHierarchyService;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 
@@ -218,7 +220,7 @@ class PasarguardClientImportService
                 'owner_agent_id' => $agentId,
                 'package_id' => $package?->id,
                 'server_id' => $server->id,
-                    'service_type' => $package?->service_type ?? ServiceType::Pasarguard,
+                'service_type' => $package?->service_type ?? ServiceType::Pasarguard,
                 'remote_username' => $username,
                 'remote_password_enc' => Str::password(12),
                 'client_email' => $username,
@@ -259,7 +261,7 @@ class PasarguardClientImportService
     }
 
     /**
-     * @param  \Illuminate\Support\Collection<int, Package>  $packages
+     * @param  Collection<int, Package>  $packages
      */
     protected function matchPackageByTraffic($packages, ?int $bytes): ?Package
     {
@@ -296,7 +298,7 @@ class PasarguardClientImportService
     /**
      * @param  array<string, mixed>  $remote
      */
-    protected function expiryFromRemote(array $remote): ?\Illuminate\Support\Carbon
+    protected function expiryFromRemote(array $remote): ?Carbon
     {
         $expiry = $remote['expire'] ?? null;
         if ($expiry === null || $expiry === '') {
@@ -306,10 +308,10 @@ class PasarguardClientImportService
         if (is_numeric($expiry)) {
             $ts = (int) $expiry;
 
-            return \Illuminate\Support\Carbon::createFromTimestamp($ts > 9999999999 ? (int) ($ts / 1000) : $ts);
+            return Carbon::createFromTimestamp($ts > 9999999999 ? (int) ($ts / 1000) : $ts);
         }
 
-        return \Illuminate\Support\Carbon::parse((string) $expiry);
+        return Carbon::parse((string) $expiry);
     }
 
     /**

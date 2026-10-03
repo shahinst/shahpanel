@@ -6,15 +6,14 @@ use App\Enums\AccountBillingContext;
 use App\Enums\AccountCategory;
 use App\Enums\AccountStatus;
 use App\Enums\InvoiceType;
+use App\Enums\MoneyCurrency;
 use App\Enums\ServiceType;
 use App\Enums\TransactionType;
-use App\Enums\UserRole;
 use App\Exceptions\RemoteProvisionException;
 use App\Jobs\RefreshSubscriptionCacheJob;
 use App\Jobs\RemoveRemoteAccountJob;
-use App\Support\AccountNameValidator;
-use App\Support\RemoteAccountCleanupSnapshot;
 use App\Models\Account;
+use App\Models\AccountKycVerification;
 use App\Models\AccountUsageLog;
 use App\Models\Invoice;
 use App\Models\Package;
@@ -23,7 +22,13 @@ use App\Models\Server;
 use App\Models\ServerInterface;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Services\InboundReseller\InboundAllocationService;
+use App\Services\Kyc\KycService;
 use App\Services\Pasarguard\PasarguardPanelUrl;
+use App\Services\Remnawave\RemnawaveUserIdentity;
+use App\Support\AccountNameValidator;
+use App\Support\RemoteAccountCleanupSnapshot;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -105,14 +110,14 @@ class AccountService
         $invoice = null;
 
         if (! $clientPortalBilling && bccomp($buyerCharge, '0', 2) > 0) {
-            app(\App\Services\UserCurrencyService::class)->assertCanUseCurrency($seller, $package->moneyCurrency());
+            app(UserCurrencyService::class)->assertCanUseCurrency($seller, $package->moneyCurrency());
             $this->walletService->assertSufficientBalance($seller, $buyerCharge, $package->moneyCurrency());
         }
 
         $this->userPackageAssignmentService->assertUserHasPackage($seller, $package);
-        app(\App\Services\InboundReseller\InboundAllocationService::class)->assertCanProvision($package);
+        app(InboundAllocationService::class)->assertCanProvision($package);
 
-        $kycService = app(\App\Services\Kyc\KycService::class);
+        $kycService = app(KycService::class);
         $kycService->assertPackageRequiresKyc($package);
         $kycActor = ($clientData['kyc_actor'] ?? null) instanceof User
             ? $clientData['kyc_actor']
@@ -121,7 +126,7 @@ class AccountService
         if ($package->kyc_required) {
             $verificationId = (int) ($clientData['kyc_verification_id'] ?? 0);
             $kycVerification = $verificationId > 0
-                ? \App\Models\AccountKycVerification::query()->find($verificationId)
+                ? AccountKycVerification::query()->find($verificationId)
                 : null;
             $kycService->assertVerifiedForCreate($kycVerification, $package, $kycActor);
         }
@@ -166,7 +171,7 @@ class AccountService
                     $account->forceFill(['inbound_allocation_id' => $package->inbound_allocation_id])->save();
                 }
 
-                if ($kycVerification instanceof \App\Models\AccountKycVerification) {
+                if ($kycVerification instanceof AccountKycVerification) {
                     $kycService->attachToAccount($kycVerification, $account);
                 }
 
@@ -190,7 +195,7 @@ class AccountService
                     }
 
                     $this->linkTieredPurchaseTransactions($purchaseResult, $account->id);
-                    $invoice = $this->invoiceService->createInvoice($account, \App\Enums\InvoiceType::NewAccount, $buyerCharge);
+                    $invoice = $this->invoiceService->createInvoice($account, InvoiceType::NewAccount, $buyerCharge);
                     $this->linkTieredPurchaseTransactionsToInvoice($purchaseResult, $invoice->id);
 
                     $this->activityLogService->log(
@@ -313,7 +318,7 @@ class AccountService
         }
 
         app(PackageCategoryService::class)->assertPackageAvailableForRenewal($package);
-        app(\App\Services\InboundReseller\InboundAllocationService::class)->assertCanProvision($package);
+        app(InboundAllocationService::class)->assertCanProvision($package);
 
         if ($duration === null) {
             $duration = $account->packageDuration;
@@ -384,7 +389,7 @@ class AccountService
         }
 
         if (! $clientPortalBilling) {
-            app(\App\Services\UserCurrencyService::class)->assertCanUseCurrency($buyer, $billingPackage->moneyCurrency());
+            app(UserCurrencyService::class)->assertCanUseCurrency($buyer, $billingPackage->moneyCurrency());
             $this->walletService->assertSufficientBalance($buyer, $buyerCharge, $billingPackage->moneyCurrency());
         }
 
@@ -395,7 +400,6 @@ class AccountService
                 $account,
                 $actor,
                 $buyer,
-                $package,
                 $billingPackage,
                 $duration,
                 $renewalGb,
@@ -479,7 +483,7 @@ class AccountService
                     );
 
                     $this->linkTieredPurchaseTransactions($purchaseResult, $account->id);
-                    $renewalInvoice = $this->invoiceService->createInvoice($account, \App\Enums\InvoiceType::Renewal, $buyerCharge);
+                    $renewalInvoice = $this->invoiceService->createInvoice($account, InvoiceType::Renewal, $buyerCharge);
                     $this->linkTieredPurchaseTransactionsToInvoice($purchaseResult, $renewalInvoice->id);
                 }
 
@@ -598,7 +602,7 @@ class AccountService
         if ($syncRemote && $account->server !== null) {
             try {
                 $this->pushAccountToServer($account, false);
-            } catch (\Throwable $exception) {
+            } catch (Throwable $exception) {
                 // A MikroTik secret or peer has no expiry of its own -- the panel
                 // enforces it (accounts:check-expiry) -- so a failed push must not
                 // throw the new date away. Accounts imported from a router often
@@ -680,7 +684,7 @@ class AccountService
 
         try {
             $this->pushAccountToServer($account->fresh(), false);
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             Log::warning('Package assigned; remote push failed', [
                 'account_id' => $account->id,
                 'error' => $exception->getMessage(),
@@ -1235,7 +1239,7 @@ class AccountService
 
         try {
             $existing = $this->pasarguardService->getUser($server, $username);
-        } catch (\Throwable) {
+        } catch (Throwable) {
             $existing = null;
         }
 
@@ -1374,10 +1378,10 @@ class AccountService
 
         if ($stored !== '') {
             // After Remnawave 3.x upgrade, old UUID values no longer work in paths.
-            if (\App\Services\Remnawave\RemnawaveUserIdentity::isUuid($stored) && filled($account->remote_username)) {
+            if (RemnawaveUserIdentity::isUuid($stored) && filled($account->remote_username)) {
                 $remote = $this->remnawaveService->getUser($account->server, (string) $account->remote_username);
                 $migrated = $remote !== null
-                    ? \App\Services\Remnawave\RemnawaveUserIdentity::fromRemoteUser($remote)
+                    ? RemnawaveUserIdentity::fromRemoteUser($remote)
                     : null;
 
                 if ($migrated !== null && $migrated !== $stored) {
@@ -1400,7 +1404,7 @@ class AccountService
 
         $remote = $this->remnawaveService->getUser($account->server, (string) $account->remote_username);
         $identity = $remote !== null
-            ? \App\Services\Remnawave\RemnawaveUserIdentity::fromRemoteUser($remote)
+            ? RemnawaveUserIdentity::fromRemoteUser($remote)
             : null;
 
         if ($identity !== null) {
@@ -1444,7 +1448,7 @@ class AccountService
             (string) $account->remote_username,
         );
 
-        $identity = \App\Services\Remnawave\RemnawaveUserIdentity::fromRemoteUser($remote) ?? $uuid;
+        $identity = RemnawaveUserIdentity::fromRemoteUser($remote) ?? $uuid;
         $account->update(array_filter([
             'remnawave_subscription_url' => ! empty($remote['subscriptionUrl'])
                 ? (string) $remote['subscriptionUrl']
@@ -1491,7 +1495,7 @@ class AccountService
                 $account->expiry_at,
             );
             $account->update([
-                'remnawave_uuid' => \App\Services\Remnawave\RemnawaveUserIdentity::fromRemoteUser($remote)
+                'remnawave_uuid' => RemnawaveUserIdentity::fromRemoteUser($remote)
                     ?? ((string) ($account->remnawave_uuid ?? '') ?: null),
                 'remnawave_subscription_url' => (string) ($remote['subscriptionUrl'] ?? $account->remnawave_subscription_url),
             ]);
@@ -1502,7 +1506,7 @@ class AccountService
             ];
         }
 
-        $uuid = \App\Services\Remnawave\RemnawaveUserIdentity::fromRemoteUser($existing)
+        $uuid = RemnawaveUserIdentity::fromRemoteUser($existing)
             ?? trim((string) ($account->remnawave_uuid ?? ''));
         if ($uuid === '') {
             throw new RemoteProvisionException(__('services.remnawave_user_not_found_unknown_id'));
@@ -1521,7 +1525,7 @@ class AccountService
         );
 
         $account->update([
-            'remnawave_uuid' => \App\Services\Remnawave\RemnawaveUserIdentity::fromRemoteUser($remote) ?? $uuid,
+            'remnawave_uuid' => RemnawaveUserIdentity::fromRemoteUser($remote) ?? $uuid,
             'remnawave_subscription_url' => (string) ($remote['subscriptionUrl'] ?? $account->remnawave_subscription_url),
         ]);
 
@@ -2655,7 +2659,7 @@ class AccountService
         $expiryAt = array_key_exists('custom_expiry_at', $clientData)
             ? ($clientData['custom_expiry_at'] === null
                 ? null
-                : ($clientData['custom_expiry_at'] instanceof \Carbon\Carbon
+                : ($clientData['custom_expiry_at'] instanceof Carbon
                     ? $clientData['custom_expiry_at']
                     : \Illuminate\Support\Carbon::parse($clientData['custom_expiry_at'])))
             : $duration->expiryFromNow();
@@ -2707,7 +2711,7 @@ class AccountService
         if ($package->service_type === ServiceType::Wireguard && $account->wireguard_public_key) {
             try {
                 $this->pushWireguardAccount($account, true);
-            } catch (\Throwable $exception) {
+            } catch (Throwable $exception) {
                 report($exception);
             }
         }
@@ -2790,7 +2794,7 @@ class AccountService
             );
 
             return [
-                'remnawave_uuid' => \App\Services\Remnawave\RemnawaveUserIdentity::fromRemoteUser($remote),
+                'remnawave_uuid' => RemnawaveUserIdentity::fromRemoteUser($remote),
                 'remnawave_subscription_url' => (string) ($remote['subscriptionUrl'] ?? ''),
             ];
         }
@@ -3020,7 +3024,7 @@ class AccountService
 
         try {
             app(MikrotikQueueService::class)->ensurePeerQueue($server, $interfaceName, $addressCidr, $speed);
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             report($e);
         }
     }
@@ -3380,7 +3384,7 @@ class AccountService
                 $currency = $purchaseResult['buyer_transaction']?->currency
                     ?? $purchaseResult['agent_transaction']?->currency
                     ?? $purchaseResult['admin_transaction']?->currency
-                    ?? \App\Enums\MoneyCurrency::default()->value;
+                    ?? MoneyCurrency::default()->value;
 
                 $context = [
                     'related_account_id' => $accountId,
@@ -3463,6 +3467,7 @@ class AccountService
 
         Transaction::query()->whereIn('id', $ids)->update(['related_invoice_id' => $invoiceId]);
     }
+
     /**
      * @return array{action: string, message: string}
      */
@@ -3507,5 +3512,4 @@ class AccountService
     {
         $this->ocservService->syncVpnUser($account, forceEnable: $forceEnable || true);
     }
-
 }
