@@ -386,6 +386,13 @@ stage "migrate"
 if sudo -u www-data php artisan down --retry=30 >/dev/null 2>&1; then MAINTENANCE=1; fi
 MIGRATE_STARTED=1
 run sudo -u www-data php artisan migrate --force
+
+# The active-modules cache is a file, not a database row, so an update can
+# leave it listing modules by an older shape. When it goes stale the module's
+# provider is skipped: its routes and translations simply vanish, and the
+# pages an agent uses for their sales bot answer 404 with nothing in the log
+# to explain it. Rebuilding it from the database costs nothing.
+run sudo -u www-data php artisan module:sync
 ok "schema is up to date"
 
 # ── 7) Caches and permissions ────────────────────────────────────────────

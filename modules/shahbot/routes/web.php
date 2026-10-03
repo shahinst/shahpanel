@@ -96,5 +96,6 @@ foreach (['agent', 'seller'] as $role) {
         Route::post('shahbot/connect', [MyBotController::class, 'connect'])->name('shahbot.my-bot.connect');
         Route::get('shahbot/plans', [MyBotController::class, 'plans'])->name('shahbot.my-bot.plans');
         Route::post('shahbot/plans', [MyBotController::class, 'savePlans'])->name('shahbot.my-bot.plans.save');
+        Route::post('shahbot/broadcast', [MyBotController::class, 'broadcast'])->name('shahbot.my-bot.broadcast');
     });
 }

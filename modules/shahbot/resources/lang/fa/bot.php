@@ -156,6 +156,20 @@ return [
     // پیام‌های مدیر (داخل ربات)
     'admin_menu' => "⚙️ <b>مدیریت ربات</b>\n\n👥 کاربران: :users (امروز :today)\n🛒 فروش امروز: :sales_today (:count_today سفارش)\n💰 فروش ۳۰ روز: :sales_month\n🧾 رسیدهای در انتظار: :pending\n🎧 تیکت‌های باز: :tickets",
     'btn_pending_receipts' => '🧾 رسیدهای در انتظار',
+    'btn_back' => "« بازگشت",
+    'btn_my_business' => "📊 کارنامهٔ من",
+    'btn_my_sellers' => "👥 فروشنده‌های من",
+    'admin_business' => "📊 <b>:brand</b>
+
+اکانت‌ها: <b>:accounts</b> (فعال: :active)
+نزدیک انقضا (۷ روز): <b>:expiring</b>
+کاربران ربات: <b>:bot_users</b>
+فروش از ربات: <b>:bot_sales</b>
+موجودی کیف پول: <b>:balance</b>",
+    'admin_sellers_head' => "👥 فروشنده‌های شما (:count نفر):
+",
+    'admin_seller_row' => "• <b>:name</b> — اکانت: :accounts (فعال: :active) — کیف پول: :balance",
+    'admin_no_sellers' => "هنوز فروشنده‌ای زیرمجموعهٔ شما نیست.",
     'btn_open_panel' => '🖥 ورود به پنل',
     'admin_no_pending' => 'رسیدی در انتظار بررسی نیست.',
     'admin_new_receipt' => "🧾 <b>رسید جدید #:id</b>\n👤 :user (<code>:tg</code>)\n💰 مبلغ: <b>:amount</b>\n📝 :note",

@@ -4,12 +4,14 @@ namespace Modules\ShahBot\Bot;
 
 use App\Enums\AccountCategory;
 use App\Enums\AccountStatus;
+use App\Enums\UserRole;
 use App\Models\Account;
 use App\Models\PackageDuration;
 use App\Models\User;
 use App\Services\PortalLinkService;
 use App\Services\SanaeiPortalService;
 use App\Services\SubscriptionFeedService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\RateLimiter;
@@ -1422,25 +1424,116 @@ class UpdateHandler
 
     protected function showAdmin(?int $messageId = null): void
     {
-        $sales = fn ($from) => BotOrder::query()->whereIn('type', ['buy', 'renew'])->where('created_at', '>=', $from);
+        $mine = $this->ownUsers();
+        $sales = fn ($from) => BotOrder::query()->whereIn('type', ['buy', 'renew'])
+            ->whereIn('bot_user_id', $this->ownUsers()->select('id'))
+            ->where('created_at', '>=', $from);
 
         $text = __('shahbot::bot.admin_menu', [
-            'users' => persian_digits(BotUser::query()->count()),
-            'today' => persian_digits(BotUser::query()->where('created_at', '>=', today())->count()),
+            'users' => persian_digits($mine->count()),
+            'today' => persian_digits($this->ownUsers()->where('created_at', '>=', today())->count()),
             'sales_today' => format_money($sales(today())->sum('amount')),
             'count_today' => persian_digits($sales(today())->count()),
             'sales_month' => format_money($sales(now()->subDays(30))->sum('amount')),
-            'pending' => persian_digits(BotPayment::query()->where('status', BotPayment::PENDING)->count()),
-            'tickets' => persian_digits(BotTicket::query()->where('status', BotTicket::OPEN)->count()),
+            'pending' => persian_digits($this->ownPayments()->where('status', BotPayment::PENDING)->count()),
+            'tickets' => persian_digits(BotTicket::query()
+                ->whereIn('bot_user_id', $this->ownUsers()->select('id'))
+                ->where('status', BotTicket::OPEN)->count()),
         ]);
 
-        $rows = [[Keyboard::button(__('shahbot::bot.btn_pending_receipts'), 'adm:pend')]];
+        $rows = [
+            [Keyboard::button(__('shahbot::bot.btn_pending_receipts'), 'adm:pend')],
+            [Keyboard::button(__('shahbot::bot.btn_my_business'), 'adm:biz')],
+        ];
+
+        // فروشنده‌ها فقط زیر نماینده معنا دارند؛ برای فروشنده دکمه‌ای که به
+        // فهرست خالی برسد نشان نمی‌دهیم.
+        if ($this->users->owner($this->user)->role === UserRole::Agent) {
+            $rows[] = [Keyboard::button(__('shahbot::bot.btn_my_sellers'), 'adm:sellers')];
+        }
 
         if (str_starts_with((string) config('app.url'), 'https://') && Route::has('admin.shahbot.index')) {
             $rows[] = [Keyboard::url(__('shahbot::bot.btn_open_panel'), route('admin.shahbot.index'))];
         }
 
         $this->say($messageId, $text, Keyboard::inline($rows));
+    }
+
+    /**
+     * کارنامهٔ خودِ مالک ربات: اکانت‌ها، فروش و موجودی.
+     *
+     * شمارش اکانت‌ها از `ownedByHierarchy` خودِ پنل می‌گذرد، پس نماینده
+     * اکانت‌های خودش و فروشنده‌هایش را می‌بیند و فروشنده فقط خودش را — همان
+     * قاعده‌ای که در پنل هم اعمال می‌شود. سرور و inbound جایی در این صفحه
+     * نیست؛ نماینده تعرفه می‌فروشد نه ماشین.
+     */
+    protected function adminBusiness(?int $messageId = null): void
+    {
+        $owner = $this->users->owner($this->user);
+        $accounts = fn (): Builder => Account::query()->ownedByHierarchy($owner);
+
+        $sold = BotOrder::query()->whereIn('type', ['buy', 'renew'])
+            ->whereIn('bot_user_id', $this->ownUsers()->select('id'));
+
+        $this->say($messageId, __('shahbot::bot.admin_business', [
+            'brand' => e($this->settings->get('brand_name') ?: config('app.name')),
+            'accounts' => persian_digits($accounts()->count()),
+            'active' => persian_digits($accounts()->where('status', AccountStatus::Active)->count()),
+            'expiring' => persian_digits($accounts()
+                ->where('status', AccountStatus::Active)
+                ->whereNotNull('expiry_at')
+                ->whereBetween('expiry_at', [now(), now()->addDays(7)])
+                ->count()),
+            'bot_users' => persian_digits($this->ownUsers()->count()),
+            'bot_sales' => format_money($sold->sum('amount')),
+            'balance' => format_money($owner->wallet?->balance ?? '0'),
+        ]), Keyboard::inline([[Keyboard::button(__('shahbot::bot.btn_back'), 'adm:menu')]]));
+    }
+
+    /**
+     * فروشنده‌های زیرمجموعهٔ نماینده، با آمار هرکدام.
+     *
+     * فهرست از فرزندان خودِ مالک ساخته می‌شود، نه از همهٔ فروشنده‌های پنل.
+     */
+    protected function adminSellers(?int $messageId = null): void
+    {
+        $owner = $this->users->owner($this->user);
+
+        if ($owner->role !== UserRole::Agent) {
+            $this->reply(__('shahbot::bot.unknown'));
+
+            return;
+        }
+
+        $sellers = User::query()
+            ->where('parent_id', $owner->id)
+            ->where('role', UserRole::Seller)
+            ->orderBy('full_name')
+            ->limit(50)
+            ->get();
+
+        if ($sellers->isEmpty()) {
+            $this->say($messageId, __('shahbot::bot.admin_no_sellers'),
+                Keyboard::inline([[Keyboard::button(__('shahbot::bot.btn_back'), 'adm:menu')]]));
+
+            return;
+        }
+
+        $lines = [__('shahbot::bot.admin_sellers_head', ['count' => persian_digits($sellers->count())])];
+
+        foreach ($sellers as $seller) {
+            $owned = Account::query()->where('owner_seller_id', $seller->id);
+
+            $lines[] = __('shahbot::bot.admin_seller_row', [
+                'name' => e((string) ($seller->full_name ?: $seller->username)),
+                'accounts' => persian_digits((clone $owned)->count()),
+                'active' => persian_digits($owned->where('status', AccountStatus::Active)->count()),
+                'balance' => format_money($seller->wallet?->balance ?? '0'),
+            ]);
+        }
+
+        $this->say($messageId, implode("\n", $lines),
+            Keyboard::inline([[Keyboard::button(__('shahbot::bot.btn_back'), 'adm:menu')]]));
     }
 
     protected function onAdminCallback(string $data, int $messageId, array $callback): void
@@ -1452,6 +1545,8 @@ class UpdateHandler
         try {
             match ($parts[1] ?? '') {
                 'pend' => $this->adminPending(),
+                'biz' => $this->adminBusiness($messageId),
+                'sellers' => $this->adminSellers($messageId),
                 'pay' => $this->adminPayment($parts[2] ?? '', (int) ($parts[3] ?? 0), $reviewer),
                 'tk' => $this->adminTicket($parts[2] ?? '', (int) ($parts[3] ?? 0)),
                 'ag' => $this->adminAgency($parts[2] ?? '', (int) ($parts[3] ?? 0), $reviewer),
@@ -1463,9 +1558,43 @@ class UpdateHandler
         }
     }
 
+    /**
+     * کاربران همین ربات.
+     *
+     * هر چیزی که در منوی مدیریت شمرده یا نشان داده می‌شود باید از همین عبور
+     * کند. بدون این فیلتر، نمایندهٔ یک ربات آمار و رسیدهای مشتریانِ بقیهٔ
+     * ربات‌ها را می‌دید؛ هر ربات یک کسب‌وکار جداست.
+     */
+    protected function ownUsers(): Builder
+    {
+        return BotUser::query()->where('bot_id', (int) $this->user->bot_id);
+    }
+
+    /** رسیدهای کارت‌به‌کارتِ کاربران همین ربات. */
+    protected function ownPayments(): Builder
+    {
+        return BotPayment::query()->whereIn('bot_user_id', $this->ownUsers()->select('id'));
+    }
+
+    /**
+     * آیا این کاربرِ ربات مال همین ربات است؟
+     *
+     * هر چیزی که با شناسه از دکمه می‌آید — رسید، تیکت، درخواست نمایندگی،
+     * درخواست بازگشت وجه — باید از این عبور کند. دکمه را کاربر می‌فرستد، پس
+     * شناسه‌اش ورودی کاربر است نه دادهٔ مطمئن.
+     */
+    protected function ownsBotUser(?int $botUserId): bool
+    {
+        if ($botUserId === null) {
+            return false;
+        }
+
+        return $this->ownUsers()->whereKey($botUserId)->exists();
+    }
+
     protected function adminPending(): void
     {
-        $pending = BotPayment::query()->with('botUser')->where('status', BotPayment::PENDING)->oldest('id')->limit(10)->get();
+        $pending = $this->ownPayments()->with('botUser')->where('status', BotPayment::PENDING)->oldest('id')->limit(10)->get();
 
         if ($pending->isEmpty()) {
             $this->reply(__('shahbot::bot.admin_no_pending'));
@@ -1496,7 +1625,10 @@ class UpdateHandler
     {
         $payment = BotPayment::query()->find($paymentId);
 
-        if ($payment === null) {
+        // شناسه از دکمه می‌آید و دکمه را می‌توان با شناسهٔ دیگری ساخت. بدون
+        // این بررسی، ادمین یک ربات می‌توانست رسید مشتری رباتِ دیگری را تأیید
+        // کند و پول از کیف پول آن مالک برود.
+        if ($payment === null || ! $this->ownsBotUser($payment->bot_user_id)) {
             return;
         }
 
@@ -1513,7 +1645,7 @@ class UpdateHandler
     {
         $ticket = BotTicket::query()->find($ticketId);
 
-        if ($ticket === null) {
+        if ($ticket === null || ! $this->ownsBotUser($ticket->bot_user_id)) {
             return;
         }
 
@@ -1529,7 +1661,7 @@ class UpdateHandler
     {
         $request = BotAgencyRequest::query()->find($requestId);
 
-        if ($request === null) {
+        if ($request === null || ! $this->ownsBotUser($request->bot_user_id)) {
             return;
         }
 
@@ -1659,7 +1791,7 @@ class UpdateHandler
     {
         $request = BotRefundRequest::query()->find($requestId);
 
-        if ($request === null) {
+        if ($request === null || ! $this->ownsBotUser($request->bot_user_id)) {
             return;
         }
 

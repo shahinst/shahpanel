@@ -13,6 +13,7 @@ use Modules\ShahBot\Models\BotInstance;
 use Modules\ShahBot\Models\BotOrder;
 use Modules\ShahBot\Models\BotPackage;
 use Modules\ShahBot\Models\BotUser;
+use Modules\ShahBot\Services\BroadcastService;
 use Modules\ShahBot\Services\WebhookService;
 use Modules\ShahBot\Support\BotContext;
 use Modules\ShahBot\Support\BotSettings;
@@ -184,6 +185,36 @@ class MyBotController extends Controller
         }
 
         return back()->with('success', __('shahbot::admin.saved'));
+    }
+
+    /**
+     * پیام همگانی به کاربران همین ربات.
+     *
+     * شناسهٔ ربات از مالکِ لاگین‌کرده گرفته می‌شود، نه از درخواست، تا کسی
+     * نتواند با دست‌کاری فرم پیامش را به کاربران رباتِ دیگری بفرستد. خودِ
+     * سرویس از قبل بر اساس bot_id مخاطب را جدا می‌کند و ارسال را هم در
+     * context همان ربات انجام می‌دهد.
+     */
+    public function broadcast(Request $request, BotSettings $settings, BroadcastService $broadcasts): RedirectResponse
+    {
+        $user = $request->user();
+        abort_unless(in_array($user->role, [UserRole::Agent, UserRole::Seller], true), 403);
+        abort_unless($settings->bool('agent_bots_enabled'), 403);
+
+        $bot = BotInstance::query()->where('owner_user_id', $user->id)->first();
+
+        if ($bot === null || ! $bot->is_active) {
+            return back()->with('error', __('shahbot::admin.my_bot_needed_first'));
+        }
+
+        $data = $request->validate([
+            'text' => ['required', 'string', 'max:3500'],
+            'audience' => ['required', 'in:all,customers,no_service'],
+        ]);
+
+        $broadcasts->create(e($data['text']), $data['audience'], $user->username, (int) $bot->id);
+
+        return back()->with('success', __('shahbot::admin.broadcast_queued'));
     }
 
     public function connect(Request $request, BotSettings $settings, WebhookService $webhooks): RedirectResponse
