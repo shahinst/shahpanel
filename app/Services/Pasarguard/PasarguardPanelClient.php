@@ -5,6 +5,7 @@ namespace App\Services\Pasarguard;
 use App\Exceptions\RemoteConnectionException;
 use App\Models\Server;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -499,7 +500,7 @@ final class PasarguardPanelClient
      *
      * @see https://docs.pasarguard.org/en/panel/api_keys
      */
-    protected function withCredentials(\Illuminate\Http\Client\PendingRequest $client): \Illuminate\Http\Client\PendingRequest
+    protected function withCredentials(PendingRequest $client): PendingRequest
     {
         $token = $this->accessToken ?? '';
 
@@ -698,7 +699,7 @@ final class PasarguardPanelClient
         return mb_substr(trim($detail), 0, 300);
     }
 
-    protected function http(?int $timeoutSeconds = null, ?int $connectTimeoutSeconds = null): \Illuminate\Http\Client\PendingRequest
+    protected function http(?int $timeoutSeconds = null, ?int $connectTimeoutSeconds = null): PendingRequest
     {
         $timeout = $timeoutSeconds ?? (int) config('shahpanel.pasarguard.timeout_seconds', 45);
         $connect = $connectTimeoutSeconds ?? (int) config('shahpanel.pasarguard.connect_timeout_seconds', 25);
