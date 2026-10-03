@@ -9,6 +9,7 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 use InvalidArgumentException;
+use Modules\ShahBot\Models\BotGatewayPayment;
 use Modules\ShahBot\Models\BotPayment;
 use Modules\ShahBot\Services\PaymentService;
 use Modules\ShahBot\Telegram\TelegramClient;
@@ -30,6 +31,11 @@ class PaymentController extends Controller
             'payments' => $payments,
             'status' => $status,
             'counts' => BotPayment::query()->selectRaw('status, COUNT(*) as n')->groupBy('status')->pluck('n', 'status'),
+            'online' => BotGatewayPayment::query()
+                ->with(['botUser', 'gatewayPayment'])
+                ->latest('id')
+                ->limit(30)
+                ->get(),
         ]);
     }
 

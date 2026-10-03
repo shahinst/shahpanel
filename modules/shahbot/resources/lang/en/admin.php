@@ -212,4 +212,22 @@ return [
     'welcome_hint' => '{name} = user name, {brand} = panel name',
     'support_text' => 'Support prompt',
     'cron_hint' => 'The panel scheduler (cron every minute) is needed for broadcasts, reminders and long polling.',
+
+    // Online payments
+    'set_online' => 'Online payments',
+    'pay_zarinpal' => 'ZarinPal (panel gateway)',
+    'pay_crypto' => 'Crypto (NowPayments)',
+    'pay_stars' => 'Telegram Stars',
+    'stars_rate' => 'Value of one star (toman)',
+    'online_hint' => 'ZarinPal and crypto are the panel\'s own gateways (Settings › Payment gateways); they show in the bot only while the payments module is active and the gateway is configured. The amount is credited automatically once the gateway confirms.',
+    'stars_hint' => 'Stars are paid inside Telegram and the revenue goes to the bot\'s Telegram account.',
+    'method' => 'Method',
+    'method_card' => 'Card-to-card',
+    'method_stars' => 'Telegram Stars',
+    'online_payments' => 'Online payments (gateway)',
+    'gateway' => 'Gateway',
+    'net_amount' => 'Net amount',
+    'method_status_note' => 'Method status',
+    'method_on' => 'On',
+    'method_off' => 'Off',
 ];

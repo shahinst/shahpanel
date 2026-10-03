@@ -37,14 +37,16 @@ class NowPaymentsGateway implements PaymentGatewayDriverInterface
                 'amount' => persian_digits(number_format((float) $payment->amount_usdt, 2)),
             ]),
             'ipn_callback_url' => route('webhooks.nowpayments'),
-            'success_url' => route($this->panelRouteName($payment).'.return', [
-                'gatewayPayment' => $payment->uuid,
-                'status' => 'success',
-            ]),
-            'cancel_url' => route($this->panelRouteName($payment).'.return', [
-                'gatewayPayment' => $payment->uuid,
-                'status' => 'cancel',
-            ]),
+            'success_url' => \App\Support\GatewayReturnUrls::for($payment, 'success')
+                ?? route($this->panelRouteName($payment).'.return', [
+                    'gatewayPayment' => $payment->uuid,
+                    'status' => 'success',
+                ]),
+            'cancel_url' => \App\Support\GatewayReturnUrls::for($payment, 'cancel')
+                ?? route($this->panelRouteName($payment).'.return', [
+                    'gatewayPayment' => $payment->uuid,
+                    'status' => 'cancel',
+                ]),
         ];
 
         // Freezing the rate for 10 minutes is what protects the invoiced USD

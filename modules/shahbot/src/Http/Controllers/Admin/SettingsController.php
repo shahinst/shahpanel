@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\View\View;
+use Modules\ShahBot\Services\OnlinePaymentService;
 use Modules\ShahBot\Services\WebhookService;
 use Modules\ShahBot\Support\BotSettings;
 
@@ -17,6 +18,7 @@ class SettingsController extends Controller
     protected const BOOLEANS = [
         'sales_enabled', 'test_enabled', 'renew_enabled', 'show_portal_link', 'topup_enabled',
         'referral_enabled', 'referral_first_only', 'require_phone', 'iran_phone_only', 'reminder_enabled',
+        'pay_zarinpal', 'pay_crypto', 'pay_stars',
     ];
 
     public function edit(BotSettings $settings, WebhookService $webhooks): View
@@ -34,6 +36,7 @@ class SettingsController extends Controller
             // Asks Telegram, so only on the tab that shows it.
             'webhookInfo' => request('tab', 'connection') === 'connection' ? rescue(fn () => $webhooks->info(), [], false) : [],
             'tab' => request('tab', 'connection'),
+            'methods' => app(OnlinePaymentService::class)->methods(),
         ]);
     }
 
@@ -54,6 +57,7 @@ class SettingsController extends Controller
             'card_bank' => ['nullable', 'string', 'max:100'],
             'card_note' => ['nullable', 'string', 'max:500'],
             'referral_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'stars_rate' => ['nullable', 'numeric', 'min:0'],
             'channels' => ['nullable', 'string', 'max:1000'],
             'rules_text' => ['nullable', 'string', 'max:3500'],
             'reminder_days' => ['nullable', 'integer', 'min:1', 'max:30'],

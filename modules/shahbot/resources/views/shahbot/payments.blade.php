@@ -22,6 +22,7 @@
                     <th>#</th>
                     <th>{{ __('shahbot::admin.col_user') }}</th>
                     <th>{{ __('shahbot::admin.col_amount') }}</th>
+                    <th>{{ __('shahbot::admin.method') }}</th>
                     <th>{{ __('shahbot::admin.receipt') }}</th>
                     <th>{{ __('shahbot::admin.col_status') }}</th>
                     <th>{{ __('shahbot::admin.col_date') }}</th>
@@ -34,6 +35,7 @@
                         <td>{{ persian_digits($payment->id) }}</td>
                         <td><a href="{{ route('admin.shahbot.users.show', $payment->botUser) }}">{{ $payment->botUser->displayName() }}</a><div class="sb-muted">{{ $payment->botUser->telegram_id }}</div></td>
                         <td><b>{{ format_money($payment->amount) }}</b></td>
+                        <td>{{ $payment->method === 'stars' ? __('shahbot::admin.method_stars').' ('.persian_digits($payment->stars).' ⭐)' : __('shahbot::admin.method_card') }}</td>
                         <td>
                             @if ($payment->receipt_file_id)
                                 <a href="{{ route('admin.shahbot.payments.receipt', $payment) }}" target="_blank" rel="noopener"><i class="bx bx-image"></i> {{ __('shahbot::admin.view_receipt') }}</a>
@@ -63,11 +65,37 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="7" class="text-center sb-muted">{{ __('shahbot::admin.empty') }}</td></tr>
+                    <tr><td colspan="8" class="text-center sb-muted">{{ __('shahbot::admin.empty') }}</td></tr>
                 @endforelse
             </tbody>
         </table>
     </div>
 </div>
 {{ $payments->links() }}
+
+<div class="sb-box mt-3">
+    <header>{{ __('shahbot::admin.online_payments') }}</header>
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead><tr><th>#</th><th>{{ __('shahbot::admin.col_user') }}</th><th>{{ __('shahbot::admin.gateway') }}</th><th>{{ __('shahbot::admin.col_amount') }}</th><th>{{ __('shahbot::admin.net_amount') }}</th><th>{{ __('shahbot::admin.col_status') }}</th><th>{{ __('shahbot::admin.col_date') }}</th></tr></thead>
+            <tbody>
+                @forelse ($online as $link)
+                    @php $gp = $link->gatewayPayment; @endphp
+                    @continue($gp === null)
+                    <tr>
+                        <td>{{ persian_digits($gp->id) }}</td>
+                        <td>@if ($link->botUser)<a href="{{ route('admin.shahbot.users.show', $link->botUser) }}">{{ $link->botUser->displayName() }}</a>@endif</td>
+                        <td>{{ $gp->driver->label() }}@if ($gp->pay_currency) <span class="sb-muted">{{ strtoupper($gp->pay_currency) }}</span>@endif</td>
+                        <td>{{ format_money($gp->gross_toman, 'IRT') }}</td>
+                        <td>{{ format_money($gp->net_toman, 'IRT') }}</td>
+                        <td><span @class(['sb-pill', 'ok' => $gp->status->value === 'completed', 'bad' => in_array($gp->status->value, ['failed', 'expired', 'cancelled'], true)])>{{ $gp->status->label() }}</span></td>
+                        <td>{{ jalali_date($gp->created_at, 'Y/m/d H:i') }}</td>
+                    </tr>
+                @empty
+                    <tr><td colspan="7" class="text-center sb-muted">{{ __('shahbot::admin.empty') }}</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+</div>
 @endsection

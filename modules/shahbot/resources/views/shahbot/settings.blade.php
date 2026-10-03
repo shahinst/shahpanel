@@ -3,7 +3,7 @@
 @section('page_title', __('shahbot::admin.tab_settings'))
 
 @php
-    $tabs = ['connection' => 'set_connection', 'store' => 'set_store', 'wallet' => 'set_wallet', 'marketing' => 'set_marketing', 'gates' => 'set_gates', 'texts' => 'set_texts'];
+    $tabs = ['connection' => 'set_connection', 'store' => 'set_store', 'wallet' => 'set_wallet', 'online' => 'set_online', 'marketing' => 'set_marketing', 'gates' => 'set_gates', 'texts' => 'set_texts'];
     $tab = array_key_exists($tab, $tabs) ? $tab : 'connection';
     $toggle = function (string $key) use ($settings): string {
         return '<input type="hidden" name="_bool_'.$key.'" value="1">'
@@ -109,6 +109,22 @@
                     <div class="col-md-4"><label class="form-label">{{ __('shahbot::admin.card_bank') }}</label><input type="text" name="card_bank" value="{{ $settings->get('card_bank') }}" class="form-control"></div>
                     <div class="col-12"><label class="form-label">{{ __('shahbot::admin.card_note') }}</label><textarea name="card_note" rows="2" class="form-control">{{ $settings->get('card_note') }}</textarea></div>
                 </div>
+            @elseif ($tab === 'online')
+                <p class="sb-muted">{{ __('shahbot::admin.online_hint') }}</p>
+                <div class="mb-3">
+                    <b>{{ __('shahbot::admin.method_status_note') }}:</b>
+                    @foreach (['zp' => 'pay_zarinpal', 'cr' => 'pay_crypto', 'st' => 'pay_stars', 'card' => 'method_card'] as $code => $label)
+                        <span @class(['sb-pill', 'ok' => in_array($code, $methods, true)])>{{ __('shahbot::admin.'.$label) }}: {{ in_array($code, $methods, true) ? __('shahbot::admin.method_on') : __('shahbot::admin.method_off') }}</span>
+                    @endforeach
+                </div>
+                {!! $toggle('pay_zarinpal') !!}
+                {!! $toggle('pay_crypto') !!}
+                <hr>
+                {!! $toggle('pay_stars') !!}
+                <div class="row g-3">
+                    <div class="col-md-4"><label class="form-label">{{ __('shahbot::admin.stars_rate') }}</label><input type="number" min="0" step="any" name="stars_rate" value="{{ $settings->get('stars_rate') }}" class="form-control"></div>
+                </div>
+                <p class="sb-muted mt-2">{{ __('shahbot::admin.stars_hint') }}</p>
             @elseif ($tab === 'marketing')
                 {!! $toggle('referral_enabled') !!}
                 <div class="row g-3 mb-2">

@@ -53,6 +53,12 @@ class BotSettings
             'card_bank' => '',
             'card_note' => '',
 
+            // Online payments
+            'pay_zarinpal' => '1',
+            'pay_crypto' => '1',
+            'pay_stars' => '0',
+            'stars_rate' => '',
+
             // Referral
             'referral_enabled' => '0',
             'referral_percent' => '10',

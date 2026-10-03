@@ -5,21 +5,27 @@ namespace Tests\Feature;
 use App\Enums\AccountBillingContext;
 use App\Enums\TransactionType;
 use App\Models\Account;
+use App\Models\GatewayPayment;
+use App\Models\PaymentGateway;
 use App\Models\User;
 use App\Services\AccountService;
 use App\Services\ServerSelectionService;
 use App\Services\WalletService;
+use App\Support\GatewayReturnUrls;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use Mockery;
 use Modules\ShahBot\Bot\UpdateHandler;
 use Modules\ShahBot\Models\BotCode;
+use Modules\ShahBot\Models\BotGatewayPayment;
 use Modules\ShahBot\Models\BotOrder;
 use Modules\ShahBot\Models\BotPayment;
 use Modules\ShahBot\Models\BotReferralReward;
 use Modules\ShahBot\Models\BotUser;
 use Modules\ShahBot\Services\BotUserService;
 use Modules\ShahBot\Services\CodeService;
+use Modules\ShahBot\Services\OnlinePaymentService;
 use Modules\ShahBot\Services\PaymentService;
 use Modules\ShahBot\Services\ShopService;
 use Modules\ShahBot\ShahBotServiceProvider;
@@ -238,7 +244,7 @@ class ShahBotTest extends TestCase
             $this->actingAs($admin)->get(route($route))->assertOk();
         }
 
-        foreach (['connection', 'store', 'wallet', 'marketing', 'gates', 'texts'] as $tab) {
+        foreach (['connection', 'store', 'wallet', 'online', 'marketing', 'gates', 'texts'] as $tab) {
             $this->actingAs($admin)->get(route('admin.shahbot.settings', ['tab' => $tab]))->assertOk();
         }
 
@@ -351,5 +357,72 @@ class ShahBotTest extends TestCase
 
         $this->text(6006, __('shahbot::bot.menu_buy', [], 'fa'));
         Http::assertSent(fn ($r) => (string) ($r['chat_id'] ?? '') === '6006' && str_contains((string) ($r['reply_markup'] ?? ''), 'join:check'));
+    }
+
+    public function test_telegram_stars_top_up_is_credited_once(): void
+    {
+        app(BotSettings::class)->set(['pay_stars' => '1', 'stars_rate' => '1000', 'topup_min' => '1000']);
+        $this->text(7007, '/start');
+
+        // Card and Stars are both open, so the bot asks which one.
+        $this->press(7007, 'wal:amt:5000');
+        Http::assertSent(fn ($r) => str_contains((string) ($r['reply_markup'] ?? ''), 'wal:pay:st:5000'));
+
+        $this->press(7007, 'wal:pay:st:5000');
+        Http::assertSent(fn ($r) => str_contains($r->url(), '/sendInvoice') && $r['currency'] === 'XTR'
+            && str_contains((string) $r['prices'], '"amount":5'));
+
+        $payment = BotPayment::query()->where('method', 'stars')->firstOrFail();
+        $this->assertSame(5, $payment->stars);
+
+        $this->update(['pre_checkout_query' => [
+            'id' => 'pcq1', 'from' => ['id' => 7007], 'currency' => 'XTR', 'total_amount' => 5, 'invoice_payload' => 'stars:'.$payment->id,
+        ]]);
+        Http::assertSent(fn ($r) => str_contains($r->url(), '/answerPreCheckoutQuery') && $r['ok'] === 'true');
+
+        $paid = ['message' => [
+            'message_id' => 50, 'chat' => ['id' => 7007, 'type' => 'private'], 'from' => ['id' => 7007, 'first_name' => 'S'],
+            'successful_payment' => ['currency' => 'XTR', 'total_amount' => 5, 'invoice_payload' => 'stars:'.$payment->id, 'telegram_payment_charge_id' => 'ch_1'],
+        ]];
+        $this->update($paid);
+        $this->update($paid);
+
+        $user = BotUser::query()->where('telegram_id', 7007)->firstOrFail();
+        $this->assertSame('5000.00', $this->balance(app(BotUserService::class)->client($user)));
+        $this->assertSame(BotPayment::APPROVED, $payment->fresh()->status);
+
+        // A forged amount is refused at checkout.
+        $this->update(['pre_checkout_query' => [
+            'id' => 'pcq2', 'from' => ['id' => 7007], 'currency' => 'XTR', 'total_amount' => 1, 'invoice_payload' => 'stars:'.$payment->id,
+        ]]);
+        Http::assertSent(fn ($r) => str_contains($r->url(), '/answerPreCheckoutQuery') && $r['pre_checkout_query_id'] === 'pcq2' && $r['ok'] === 'false');
+    }
+
+    public function test_gateway_payment_returns_to_the_bot_and_notifies(): void
+    {
+        $user = $this->botUser(8008);
+        $client = app(BotUserService::class)->client($user);
+        $gateway = PaymentGateway::query()->firstOrCreate(['driver' => 'zarinpal'], ['display_name' => 'ZarinPal']);
+        $payment = GatewayPayment::query()->forceCreate([
+            'uuid' => (string) Str::uuid(),
+            'user_id' => $client->id,
+            'payment_gateway_id' => $gateway->id,
+            'driver' => 'zarinpal',
+            'status' => 'completed',
+            'gross_toman' => 100000,
+            'net_toman' => 100000,
+            'commission_payer' => 'user',
+        ]);
+        BotGatewayPayment::query()->create(['bot_user_id' => $user->id, 'gateway_payment_id' => $payment->id]);
+
+        // The panel's gateways send a bot client to the bot's own page.
+        $this->assertSame(route('shahbot.pay.return', $payment->uuid), GatewayReturnUrls::for($payment, 'success'));
+
+        $this->get(route('shahbot.pay.return', $payment->uuid))->assertOk()->assertSee('✅');
+        Http::assertSent(fn ($r) => str_contains($r->url(), '/sendMessage') && (string) $r['chat_id'] === '8008');
+
+        // Already told: the minute job stays quiet.
+        $this->assertSame(0, app(OnlinePaymentService::class)->notifyFinished());
+        $this->get(route('shahbot.pay.return', Str::uuid()))->assertNotFound();
     }
 }

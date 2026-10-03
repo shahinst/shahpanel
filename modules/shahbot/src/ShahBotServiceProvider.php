@@ -2,9 +2,12 @@
 
 namespace Modules\ShahBot;
 
+use App\Models\GatewayPayment;
+use App\Support\GatewayReturnUrls;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Modules\ShahBot\Models\BotUser;
 use Modules\ShahBot\Support\BotSettings;
 
 /**
@@ -32,6 +35,15 @@ class ShahBotServiceProvider extends ServiceProvider
         // The webhook carries its own secret and gets no session or CSRF.
         Route::middleware('throttle:5000,1')->group(__DIR__.'/../routes/webhook.php');
 
+        // Gateways send bot users back here instead of to a panel login.
+        if (class_exists(GatewayReturnUrls::class)) {
+            GatewayReturnUrls::register(function (GatewayPayment $payment, string $status): ?string {
+                $isBotClient = BotUser::query()->where('client_user_id', $payment->user_id)->exists();
+
+                return $isBotClient ? route('shahbot.pay.return', $payment->uuid) : null;
+            });
+        }
+
         // Admin pages need the web group (session, CSRF, $errors).
         Route::middleware('web')->group(__DIR__.'/../routes/web.php');
 
@@ -40,6 +52,7 @@ class ShahBotServiceProvider extends ServiceProvider
                 Console\PollCommand::class,
                 Console\BroadcastCommand::class,
                 Console\RemindCommand::class,
+                Console\GatewaySyncCommand::class,
             ]);
         }
 
@@ -48,6 +61,7 @@ class ShahBotServiceProvider extends ServiceProvider
 
             $schedule->command('shahbot:poll')->everyMinute()->withoutOverlapping(2)->runInBackground()->name('shahbot.poll');
             $schedule->command('shahbot:broadcast')->everyMinute()->withoutOverlapping(10)->runInBackground()->name('shahbot.broadcast');
+            $schedule->command('shahbot:gateway-sync')->everyMinute()->withoutOverlapping(5)->name('shahbot.gateway-sync');
             $schedule->command('shahbot:remind')->hourlyAt(17)->withoutOverlapping()->name('shahbot.remind');
         });
     }
