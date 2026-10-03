@@ -35,7 +35,12 @@
                 @if ($test['ok'] ?? false)
                     <x-alert type="success">{{ __('tgtunnel::tunnel.test_ok', ['http' => $test['http'] ?? '', 'bytes' => number_format((int) ($test['bytes_received'] ?? 0))]) }}</x-alert>
                 @else
-                    <x-alert type="error">{{ __('tgtunnel::tunnel.test_failed', ['error' => $test['error'] ?? ('HTTP '.($test['http'] ?? '000'))]) }}</x-alert>
+                    @php $reason = $test['reason'] ?? ''; @endphp
+                    <x-alert type="error">
+                        {{ in_array($reason, ['not_running', 'not_routed', 'no_return', 'telegram_unreachable', 'dns_not_pinned'], true)
+                            ? __('tgtunnel::tunnel.reason_'.$reason)
+                            : __('tgtunnel::tunnel.test_failed', ['error' => $test['error'] ?? ('HTTP '.($test['http'] ?? '000'))]) }}
+                    </x-alert>
                 @endif
             @endif
         </div>
