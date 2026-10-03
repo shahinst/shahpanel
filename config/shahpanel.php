@@ -58,6 +58,15 @@ return [
     ],
 
     // Upper bound for one bulk account creation (the "create in bulk" button).
+    // How long panel:prune-logs keeps housekeeping rows, in days. 0 keeps them
+    // forever. Account and money history is never pruned.
+    'retention' => [
+        'request_logs_days' => (int) env('RETENTION_REQUEST_LOGS_DAYS', 180),
+        'sync_logs_days' => (int) env('RETENTION_SYNC_LOGS_DAYS', 30),
+        'read_notifications_days' => (int) env('RETENTION_READ_NOTIFICATIONS_DAYS', 90),
+        'failed_jobs_days' => (int) env('RETENTION_FAILED_JOBS_DAYS', 30),
+    ],
+
     'bulk_account_max' => (int) env('BULK_ACCOUNT_MAX', 50),
 
     'portal_link_ttl_minutes' => (int) env('PORTAL_LINK_TTL_MINUTES', 5),

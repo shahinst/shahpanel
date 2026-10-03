@@ -48,70 +48,20 @@ Schedule::command('reports:daily-rollup')
     ->withoutOverlapping()
     ->after(fn () => Cache::put('system_health.job.reports_at', now()->timestamp, now()->addDays(3)));
 
+Schedule::command('panel:prune-logs')
+    ->dailyAt('04:10')
+    ->withoutOverlapping()
+    ->runInBackground();
+
 Schedule::command('tickets:auto-close')
     ->daily()
     ->withoutOverlapping()
     ->after(fn () => Cache::put('system_health.job.tickets_at', now()->timestamp, now()->addDays(3)));
 
-/*
-|--------------------------------------------------------------------------
-| Tunneling (desired-state system) — all heavy I/O runs inside queue jobs
-| processed by the cron-driven `queue:work --stop-when-empty` worker.
-|--------------------------------------------------------------------------
-*/
-
-// Capacity metrics for every active MikroTik (CPU/RAM/conntrack/throughput).
-Schedule::call(function (): void {
-    if (TunnelQueueHealth::pendingJobsCount() > (int) config('tunneling.queue.skip_low_priority_above', 30)) {
-        return;
-    }
-
-    \App\Models\Server::query()
-        ->active()
-        ->where('type', \App\Enums\ServerType::Mikrotik)
-        ->pluck('id')
-        ->each(fn (int $id) => \App\Jobs\Tunneling\CollectServerMetricsJob::dispatch($id));
-})->everyMinute()->name('tunneling.collect_server_metrics');
-
-// Drift detection + auto-repair on every router that has desired objects.
-Schedule::call(function (): void {
-    if (TunnelQueueHealth::pendingJobsCount() > (int) config('tunneling.queue.skip_low_priority_above', 30)) {
-        return;
-    }
-
-    \App\Models\DesiredNetworkObject::query()
-        ->select('server_id')
-        ->distinct()
-        ->pluck('server_id')
-        ->each(fn (int $id) => \App\Jobs\Tunneling\ReconcileServerJob::dispatch($id));
-})->everyFiveMinutes()->name('tunneling.reconcile');
-
-// Hourly metric rollups + retention pruning (MySQL instead of a TSDB).
-Schedule::command('tunnels:rollup-metrics')
-    ->hourlyAt(4)
-    ->withoutOverlapping();
-
-Schedule::command('tunnels:prune-metrics')
-    ->dailyAt('03:30')
-    ->withoutOverlapping();
-
-// Agent health evaluation from received probe reports (marks down agents,
-// triggers DPI switches and load-balancer reweighting).
-Schedule::call(function (): void {
-    if (TunnelQueueHealth::pendingJobsCount() > (int) config('tunneling.queue.skip_low_priority_above', 30)) {
-        return;
-    }
-
-    \App\Models\TunnelGroup::query()
-        ->whereIn('status', ['active', 'degraded', 'down'])
-        ->pluck('id')
-        ->each(fn (int $id) => \App\Jobs\Tunneling\EvaluateTunnelGroupJob::dispatch($id));
-})->everyMinute()->name('tunneling.evaluate_groups');
-
-// Capacity alarms (CPU/conntrack/throughput near cap) via Telegram.
-Schedule::call(function (): void {
-    app(\App\Services\Tunneling\CapacityAlarmService::class)->evaluate();
-})->everyFiveMinutes()->name('tunneling.capacity_alarms');
+// The tunneling schedule (metrics, reconcile, rollups, group evaluation,
+// capacity alarms) belongs to the tunneling module's service provider, which
+// registers it only while the module is active. It used to be listed here as
+// well, so every one of those jobs ran twice.
 
 // Process database queue (tunneling + default). Without this, apply/reconcile
 // jobs sit in `jobs` forever when crontab only runs schedule:run.
@@ -130,6 +80,20 @@ Schedule::command('queue:work', [
     ->withoutOverlapping(120)
     ->runInBackground()
     ->after(fn () => Cache::put('system_health.queue_worker_at', now()->timestamp, now()->addHours(6)));
+
+// Worker for the backups queue (see config/queue.php, database_long). The
+// jobs there run for up to half an hour, so they get their own worker
+// instead of blocking the one above.
+Schedule::command('queue:work', [
+    'database_long',
+    '--queue' => 'backups',
+    '--stop-when-empty',
+    '--max-time' => 55,
+    '--tries' => 1,
+])
+    ->everyMinute()
+    ->withoutOverlapping(120)
+    ->runInBackground();
 
 /*
 |--------------------------------------------------------------------------

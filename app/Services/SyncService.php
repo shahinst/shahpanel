@@ -222,14 +222,18 @@ class SyncService
         $previousUsed = $this->resolvePreviousTotalUsage($previousLog);
         $deltaUsed = $usedBytes - $previousUsed;
 
-        AccountUsageLog::query()->create([
-            'account_id' => $account->id,
-            'rx_delta_bytes' => max(0, $deltaUsed),
-            'tx_delta_bytes' => 0,
-            'rx_snapshot' => $usedBytes,
-            'tx_snapshot' => 0,
-            'recorded_at' => now(),
-        ]);
+        // An unchanged reading adds nothing to any sum, and the previous row
+        // stays the right baseline, so it is not written again.
+        if ($previousLog === null || $deltaUsed !== 0) {
+            AccountUsageLog::query()->create([
+                'account_id' => $account->id,
+                'rx_delta_bytes' => max(0, $deltaUsed),
+                'tx_delta_bytes' => 0,
+                'rx_snapshot' => $usedBytes,
+                'tx_snapshot' => 0,
+                'recorded_at' => now(),
+            ]);
+        }
 
         $account->data_used_bytes = max(0, $usedBytes);
 
@@ -291,14 +295,23 @@ class SyncService
             ? $delta['rx_delta_bytes']
             : $delta['rx_delta_bytes'] + $delta['tx_delta_bytes'];
 
-        AccountUsageLog::query()->create([
-            'account_id' => $account->id,
-            'rx_delta_bytes' => $delta['rx_delta_bytes'],
-            'tx_delta_bytes' => $delta['tx_delta_bytes'],
-            'rx_snapshot' => $currentSnapshot['rx_bytes'],
-            'tx_snapshot' => $currentSnapshot['tx_bytes'],
-            'recorded_at' => now(),
-        ]);
+        // A row per account every five minutes, most of them "nothing changed",
+        // made this the largest table in the panel. An unchanged counter adds
+        // nothing to any sum and the previous row stays the right baseline.
+        $unchanged = $previousLog !== null
+            && (int) $previousSnapshot['rx_bytes'] === (int) $currentSnapshot['rx_bytes']
+            && (int) $previousSnapshot['tx_bytes'] === (int) $currentSnapshot['tx_bytes'];
+
+        if (! $unchanged) {
+            AccountUsageLog::query()->create([
+                'account_id' => $account->id,
+                'rx_delta_bytes' => $delta['rx_delta_bytes'],
+                'tx_delta_bytes' => $delta['tx_delta_bytes'],
+                'rx_snapshot' => $currentSnapshot['rx_bytes'],
+                'tx_snapshot' => $currentSnapshot['tx_bytes'],
+                'recorded_at' => now(),
+            ]);
+        }
 
         $account->data_used_bytes = max(0, (int) $account->data_used_bytes + $totalDelta);
         $account->last_sync_at = now();
