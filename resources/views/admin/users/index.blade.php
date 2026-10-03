@@ -50,15 +50,14 @@
                                 @endforelse
                             </td>
                             <td>{{ $user->status->value }}</td>
-                            <td>
-                                <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-sm btn-light">{{ __('app.edit') }}</a>
-                                @can('impersonate', $user)
-                                    <form method="POST" action="{{ route('admin.users.impersonate', $user) }}" class="d-inline">
-                                        @csrf
-                                        <button type="submit" class="btn btn-sm btn-info">{{ __('security.impersonation_as') }}</button>
-                                    </form>
-                                @endcan
-                                @include('shared.users.delete-button', ['deleteUser' => $user, 'deleteRoute' => route('admin.users.destroy', $user)])
+                            <td class="text-nowrap">
+                                <div class="icon-actions">
+                                    <x-icon-action :href="route('admin.users.edit', $user)" icon="bx-edit" variant="primary" :label="__('app.edit')" />
+                                    @can('impersonate', $user)
+                                        <x-icon-action :action="route('admin.users.impersonate', $user)" icon="bx-log-in-circle" variant="info" :label="__('security.impersonation_as')" />
+                                    @endcan
+                                    @include('shared.users.delete-button', ['deleteUser' => $user, 'deleteRoute' => route('admin.users.destroy', $user)])
+                                </div>
                             </td>
                         </tr>
                     @empty

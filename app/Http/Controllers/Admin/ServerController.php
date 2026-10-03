@@ -161,10 +161,20 @@ class ServerController extends Controller
             return redirect($redirect)->with('error', $message);
         }
 
-        $server->interfaces()->delete();
-        $server->syncLogs()->delete();
-        $server->packages()->detach();
-        $server->delete();
+        try {
+            DB::transaction(function () use ($server): void {
+                $server->interfaces()->delete();
+                $server->syncLogs()->delete();
+                $server->packages()->detach();
+                $server->delete();
+            });
+        } catch (\Illuminate\Database\QueryException $exception) {
+            // Something in the database still points at this server. Say so
+            // instead of answering 500.
+            report($exception);
+
+            return redirect($redirect)->with('error', __('servers.delete_blocked_db'));
+        }
 
         return redirect()
             ->route('admin.servers.index')

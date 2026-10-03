@@ -219,6 +219,7 @@ return [
     'delete_has_accounts' => 'This server has :count accounts — move or delete them first.',
     'delete_has_transfer_history' => 'This server appears in the account transfer history and cannot be deleted.',
     'delete_blocked' => 'This server may not be deleted.',
+    'delete_blocked_db' => 'The server could not be deleted in the database because other records still depend on it. Details were written to the panel log.',
 
     'wireguard_interfaces' => 'WireGuard interfaces',
     'wireguard_interfaces_hint' => 'Each interface has its own client subnet. A new WireGuard account is created on the interface with the fewest peers; once an interface reaches 250 peers (panel or router), the next one is used automatically (for example wg-public2). "Peers (router)" comes from the router; "Accounts (panel)" from the database.',

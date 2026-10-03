@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'product_name' => 'ShahPanel',
     'title' => 'Обновление панели',
     'menu' => 'Обновления',
     'banner' => 'Вышла новая версия ShahPanel (:version). Нажмите, чтобы посмотреть изменения и обновиться.',

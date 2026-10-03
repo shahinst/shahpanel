@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'product_name' => 'ShahPanel',
     'title' => '面板更新',
     'menu' => '更新',
     'banner' => 'ShahPanel 新版本已发布（:version）。点击查看更新内容并更新。',

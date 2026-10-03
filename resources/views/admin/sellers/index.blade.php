@@ -40,20 +40,16 @@
                             <td>{{ $settle->label() }}</td>
                             <td>{{ format_money($settleWallet?->balance ?? 0, $settle) }}</td>
                             <td>{{ $seller->status->value }}</td>
-                            <td>
-                                <a href="{{ route('admin.sellers.edit', $seller) }}" class="btn btn-sm btn-light">{{ __('app.edit') }}</a>
-                                @can('impersonate', $seller)
-                                    <form method="POST" action="{{ route('admin.sellers.impersonate', $seller) }}" class="d-inline">
-                                        @csrf
-                                        <button type="submit" class="btn btn-sm btn-info">{{ __('security.impersonation_as') }}</button>
-                                    </form>
-                                @endcan
-                                <form method="POST" action="{{ route('admin.sellers.promote', $seller) }}" style="display:inline;"
-                                      onsubmit="return confirm('{{ __('sellers.promote_confirm') }}')">
-                                    @csrf
-                                    <button type="submit" class="btn btn-sm btn-warning">{{ __('sellers.promote') }}</button>
-                                </form>
-                                @include('shared.users.delete-button', ['deleteUser' => $seller, 'deleteRoute' => route('admin.sellers.destroy', $seller)])
+                            <td class="text-nowrap">
+                                <div class="icon-actions">
+                                    <x-icon-action :href="route('admin.sellers.edit', $seller)" icon="bx-edit" variant="primary" :label="__('app.edit')" />
+                                    @can('impersonate', $seller)
+                                        <x-icon-action :action="route('admin.sellers.impersonate', $seller)" icon="bx-log-in-circle" variant="info" :label="__('security.impersonation_as')" />
+                                    @endcan
+                                    <x-icon-action :action="route('admin.sellers.promote', $seller)" icon="bx-up-arrow-circle" variant="warning"
+                                                   :label="__('sellers.promote')" :confirm="__('sellers.promote_confirm')" />
+                                    @include('shared.users.delete-button', ['deleteUser' => $seller, 'deleteRoute' => route('admin.sellers.destroy', $seller)])
+                                </div>
                             </td>
                         </tr>
                     @empty

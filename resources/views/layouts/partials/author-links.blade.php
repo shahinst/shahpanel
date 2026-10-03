@@ -5,6 +5,9 @@
     $variant = $variant ?? 'footer';
 @endphp
 <div class="author-links author-links--{{ $variant }}">
+    @if ($variant === 'auth')
+        <div class="author-links__brand">{{ __('updates.product_name') }}</div>
+    @endif
     <div class="author-links__icons">
         @if (! empty($authorLinks['github']))
             <a href="{{ $authorLinks['github'] }}" target="_blank" rel="noopener" title="GitHub" aria-label="GitHub">
@@ -36,5 +39,9 @@
     .author-links--menu a svg { width: 20px; height: 20px; }
     .author-links--menu .author-links__version { margin-top: 8px; }
     .author-links--footer { justify-content: space-between; }
+    .author-links--auth { flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 22px 0 18px; color: #64748b; }
+    .author-links--auth .author-links__brand { font-weight: 800; font-size: 1rem; color: #334155; letter-spacing: .2px; }
+    .author-links--auth .author-links__icons { justify-content: center; gap: 20px; }
+    .author-links--auth a svg { width: 22px; height: 22px; }
 </style>
 @endonce
