@@ -4,6 +4,7 @@
         ['admin.shahbot.users.index', 'bx-group', 'tab_users', ['admin.shahbot.users.*']],
         ['admin.shahbot.payments.index', 'bx-receipt', 'tab_payments', ['admin.shahbot.payments.*']],
         ['admin.shahbot.orders', 'bx-cart', 'tab_orders', ['admin.shahbot.orders']],
+        ['admin.shahbot.refunds.index', 'bx-undo', 'tab_refunds', ['admin.shahbot.refunds.*']],
         ['admin.shahbot.codes.index', 'bx-purchase-tag', 'tab_codes', ['admin.shahbot.codes.*']],
         ['admin.shahbot.agents.index', 'bx-briefcase', 'tab_agents', ['admin.shahbot.agents.*']],
         ['admin.shahbot.lotteries.index', 'bx-trophy', 'tab_fun', ['admin.shahbot.lotteries.*']],
@@ -15,6 +16,7 @@
     ];
     $pendingCount = \Modules\ShahBot\Models\BotPayment::query()->where('status', 'pending')->count();
     $openTickets = \Modules\ShahBot\Models\BotTicket::query()->where('status', 'open')->count();
+    $pendingRefunds = \Modules\ShahBot\Models\BotRefundRequest::query()->where('status', 'pending')->count();
 @endphp
 <div class="sb-head">
     <div>
@@ -27,6 +29,7 @@
         <a href="{{ route($route) }}" @class(['sb-tab', 'is-active' => request()->routeIs(...$patterns)])>
             <i class="bx {{ $icon }}"></i> {{ __('shahbot::admin.'.$label) }}
             @if ($route === 'admin.shahbot.payments.index' && $pendingCount > 0)<span class="sb-badge">{{ persian_digits($pendingCount) }}</span>@endif
+            @if ($route === 'admin.shahbot.refunds.index' && $pendingRefunds > 0)<span class="sb-badge">{{ persian_digits($pendingRefunds) }}</span>@endif
             @if ($route === 'admin.shahbot.tickets.index' && $openTickets > 0)<span class="sb-badge">{{ persian_digits($openTickets) }}</span>@endif
         </a>
     @endforeach

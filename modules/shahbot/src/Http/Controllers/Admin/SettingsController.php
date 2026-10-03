@@ -18,7 +18,7 @@ class SettingsController extends Controller
     protected const BOOLEANS = [
         'sales_enabled', 'test_enabled', 'renew_enabled', 'show_portal_link', 'topup_enabled',
         'referral_enabled', 'referral_first_only', 'require_phone', 'iran_phone_only', 'reminder_enabled',
-        'pay_zarinpal', 'pay_crypto', 'pay_stars', 'agency_enabled', 'agent_bots_enabled', 'mini_app_enabled', 'wheel_enabled', 'wheel_buyers_only',
+        'pay_zarinpal', 'pay_crypto', 'pay_stars', 'agency_enabled', 'agent_bots_enabled', 'mini_app_enabled', 'wheel_enabled', 'wheel_buyers_only', 'transfer_enabled', 'location_enabled', 'refund_enabled',
     ];
 
     public function edit(BotSettings $settings, WebhookService $webhooks): View
@@ -62,6 +62,7 @@ class SettingsController extends Controller
             'agency_discount' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'bulk_max' => ['nullable', 'integer', 'min:1', 'max:100'],
             'wheel_cooldown_hours' => ['nullable', 'integer', 'min:1', 'max:720'],
+            'location_fee' => ['nullable', 'numeric', 'min:0'],
             'wheel_prizes' => ['nullable', 'string', 'max:3000'],
             'channels' => ['nullable', 'string', 'max:1000'],
             'rules_text' => ['nullable', 'string', 'max:3500'],

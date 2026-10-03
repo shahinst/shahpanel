@@ -19,6 +19,7 @@ use Modules\ShahBot\Models\BotAgencyRequest;
 use Modules\ShahBot\Models\BotOrder;
 use Modules\ShahBot\Models\BotPayment;
 use Modules\ShahBot\Models\BotReferralReward;
+use Modules\ShahBot\Models\BotRefundRequest;
 use Modules\ShahBot\Models\BotTicket;
 use Modules\ShahBot\Models\BotTutorial;
 use Modules\ShahBot\Models\BotUser;
@@ -30,6 +31,7 @@ use Modules\ShahBot\Services\FunService;
 use Modules\ShahBot\Services\OnlinePaymentService;
 use Modules\ShahBot\Services\PaymentService;
 use Modules\ShahBot\Services\ResellerService;
+use Modules\ShahBot\Services\ServiceOpsService;
 use Modules\ShahBot\Services\ShopService;
 use Modules\ShahBot\Services\TicketService;
 use Modules\ShahBot\Support\BotContext;
@@ -65,6 +67,7 @@ class UpdateHandler
         protected AgencyService $agency,
         protected ResellerService $resellers,
         protected FunService $fun,
+        protected ServiceOpsService $ops,
     ) {}
 
     public function handle(array $update): void
@@ -489,6 +492,8 @@ class UpdateHandler
                 'support' => $this->stepSupport($text),
                 'agency_note' => $this->stepAgency($text),
                 'rs_gb' => $this->stepResellerGb($text),
+                'transfer_to' => $this->stepTransferTo($text),
+                'refund_reason' => $this->stepRefundReason($text),
                 'admin_reply' => $this->stepAdminReply($text),
                 default => $this->cancelStep(),
             };
@@ -924,6 +929,12 @@ class UpdateHandler
             'rn' => $this->showRenewOptions($account, $messageId),
             'rnd' => $this->confirmRenew($account, (int) ($parts[3] ?? 0), $messageId),
             'rnok' => $this->doRenew($account, (int) ($parts[3] ?? 0), $messageId),
+            'loc' => $this->showLocations($account, $messageId),
+            'lc' => $this->confirmLocation($account, (int) ($parts[3] ?? 0), $messageId),
+            'lcok' => $this->doLocation($account, (int) ($parts[3] ?? 0), $messageId),
+            'tr' => $this->askFor('transfer_to', __('shahbot::bot.transfer_ask'), ['account' => $account->id]),
+            'trok' => $this->doTransfer($account, (int) ($parts[3] ?? 0), $messageId),
+            'rf' => $this->askFor('refund_reason', __('shahbot::bot.refund_ask'), ['account' => $account->id]),
             default => null,
         };
     }
@@ -986,6 +997,20 @@ class UpdateHandler
                 Keyboard::button(__('shahbot::bot.btn_renew'), 'svc:rn:'.$account->id),
                 Keyboard::button(__('shahbot::bot.btn_auto_renew', ['state' => __($account->auto_renew ? 'shahbot::bot.on' : 'shahbot::bot.off')]), 'svc:ar:'.$account->id),
             ];
+        }
+
+        $ops = [];
+        if ($this->settings->bool('location_enabled') && $this->ops->locations($account)->isNotEmpty()) {
+            $ops[] = Keyboard::button(__('shahbot::bot.btn_location'), 'svc:loc:'.$account->id);
+        }
+        if ($this->settings->bool('transfer_enabled')) {
+            $ops[] = Keyboard::button(__('shahbot::bot.btn_transfer'), 'svc:tr:'.$account->id);
+        }
+        if ($this->settings->bool('refund_enabled') && $account->refunded_at === null && ! $account->packageDuration?->tier->isTest()) {
+            $ops[] = Keyboard::button(__('shahbot::bot.btn_refund'), 'svc:rf:'.$account->id);
+        }
+        foreach (Keyboard::grid($ops, 2) as $opsRow) {
+            $rows[] = $opsRow;
         }
 
         $row = [];
@@ -1377,6 +1402,7 @@ class UpdateHandler
                 'pay' => $this->adminPayment($parts[2] ?? '', (int) ($parts[3] ?? 0), $reviewer),
                 'tk' => $this->adminTicket($parts[2] ?? '', (int) ($parts[3] ?? 0)),
                 'ag' => $this->adminAgency($parts[2] ?? '', (int) ($parts[3] ?? 0), $reviewer),
+                'rf' => $this->adminRefund($parts[2] ?? '', (int) ($parts[3] ?? 0), $reviewer),
                 default => $this->showAdmin($messageId),
             };
         } catch (InvalidArgumentException $e) {
@@ -1460,6 +1486,136 @@ class UpdateHandler
         } elseif ($action === 'no') {
             $this->agency->reject($request, $reviewer);
             $this->notifier->admins(__('shahbot::bot.admin_agency_rejected', ['id' => $requestId, 'by' => e($reviewer)]));
+        }
+    }
+
+    // --- Service operations ------------------------------------------------
+
+    protected function showLocations(Account $account, int $messageId): void
+    {
+        $servers = $this->ops->locations($account);
+
+        if ($servers->isEmpty()) {
+            throw new InvalidArgumentException(__('shahbot::bot.location_unavailable'));
+        }
+
+        $buttons = $servers->map(fn ($server) => [Keyboard::button('📍 '.$server->name, 'svc:lc:'.$account->id.':'.$server->id)])->all();
+        $buttons[] = [Keyboard::button(__('shahbot::bot.back'), 'svc:v:'.$account->id)];
+
+        $this->say($messageId, __('shahbot::bot.location_choose', [
+            'name' => e($this->accountName($account)),
+            'current' => e((string) ($account->server?->name ?? '—')),
+        ]), Keyboard::inline($buttons));
+    }
+
+    protected function confirmLocation(Account $account, int $serverId, int $messageId): void
+    {
+        $server = $this->ops->locations($account)->first(fn ($s) => (int) $s->id === $serverId);
+
+        if ($server === null) {
+            throw new InvalidArgumentException(__('shahbot::bot.location_unavailable'));
+        }
+
+        $fee = (float) $this->settings->get('location_fee');
+
+        $this->say($messageId, __('shahbot::bot.location_confirm', [
+            'name' => e($this->accountName($account)),
+            'server' => e($server->name),
+            'fee' => $fee > 0 ? format_money($fee) : __('shahbot::bot.free'),
+        ]), Keyboard::inline([
+            [Keyboard::button(__('shahbot::bot.btn_confirm'), 'svc:lcok:'.$account->id.':'.$serverId)],
+            [Keyboard::button(__('shahbot::bot.back'), 'svc:loc:'.$account->id)],
+        ]));
+    }
+
+    protected function doLocation(Account $account, int $serverId, int $messageId): void
+    {
+        $lock = Cache::lock('shahbot:buy:'.$this->user->id, 120);
+
+        if (! $lock->get()) {
+            return;
+        }
+
+        try {
+            $this->say($messageId, __('shahbot::bot.location_moving'));
+            $moved = $this->ops->changeLocation($this->user, $account, $serverId);
+            $this->reply(__('shahbot::bot.location_done', ['server' => e((string) $moved->server?->name)]), $this->serviceKeyboard($moved));
+        } catch (InvalidArgumentException $e) {
+            throw $e;
+        } catch (Throwable $e) {
+            report($e);
+            $this->reply(__('shahbot::bot.error', ['message' => e($e->getMessage())]));
+        } finally {
+            $lock->release();
+        }
+    }
+
+    protected function stepTransferTo(string $text): void
+    {
+        $account = Account::query()->find((int) $this->user->stepValue('account'));
+
+        if ($account === null) {
+            $this->cancelStep();
+
+            return;
+        }
+
+        $this->shop->assertOwnsAccount($this->user, $account);
+        $recipient = $this->ops->findRecipient($this->user, $text);
+        $this->user->setStep(null);
+
+        $this->reply(__('shahbot::bot.home_hint'), $this->mainMenu());
+        $this->reply(__('shahbot::bot.transfer_confirm', [
+            'name' => e($this->accountName($account)),
+            'to' => e($recipient->displayName()),
+            'id' => $recipient->telegram_id,
+        ]), Keyboard::inline([
+            [Keyboard::button(__('shahbot::bot.btn_confirm'), 'svc:trok:'.$account->id.':'.$recipient->id)],
+            [Keyboard::button(__('shahbot::bot.cancel'), 'svc:v:'.$account->id)],
+        ]));
+    }
+
+    protected function doTransfer(Account $account, int $recipientId, int $messageId): void
+    {
+        $recipient = BotUser::query()->find($recipientId);
+
+        if ($recipient === null) {
+            throw new InvalidArgumentException(__('shahbot::bot.transfer_no_user'));
+        }
+
+        $this->ops->transfer($this->user, $account, $recipient);
+        $this->say($messageId, __('shahbot::bot.transfer_done', ['name' => e($this->accountName($account)), 'to' => e($recipient->displayName())]));
+    }
+
+    protected function stepRefundReason(string $text): void
+    {
+        $account = Account::query()->find((int) $this->user->stepValue('account'));
+
+        if ($account === null || mb_strlen(trim($text)) < 3) {
+            $this->reply(__('shahbot::bot.agency_note_short'));
+
+            return;
+        }
+
+        $this->ops->requestRefund($this->user, $account, $text);
+        $this->user->setStep(null);
+        $this->reply(__('shahbot::bot.refund_sent'), $this->mainMenu());
+    }
+
+    protected function adminRefund(string $action, int $requestId, string $reviewer): void
+    {
+        $request = BotRefundRequest::query()->find($requestId);
+
+        if ($request === null) {
+            return;
+        }
+
+        if ($action === 'ok') {
+            $done = $this->ops->approveRefund($request, $reviewer);
+            $this->notifier->admins(__('shahbot::bot.admin_refund_approved', ['id' => $requestId, 'by' => e($reviewer), 'amount' => format_money($done->amount)]));
+        } elseif ($action === 'no') {
+            $this->ops->rejectRefund($request, $reviewer);
+            $this->notifier->admins(__('shahbot::bot.admin_refund_rejected', ['id' => $requestId, 'by' => e($reviewer)]));
         }
     }
 

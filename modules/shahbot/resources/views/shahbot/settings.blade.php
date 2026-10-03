@@ -88,6 +88,12 @@
                 {!! $toggle('mini_app_enabled') !!}
                 <p class="sb-muted">{{ __('shahbot::admin.mini_app_hint') }}</p>
                 <hr>
+                {!! $toggle('transfer_enabled') !!}
+                {!! $toggle('location_enabled') !!}
+                <div class="mb-2" style="max-width:260px"><label class="form-label">{{ __('shahbot::admin.location_fee') }}</label><input type="number" min="0" step="any" name="location_fee" value="{{ $settings->get('location_fee') }}" class="form-control"></div>
+                {!! $toggle('refund_enabled') !!}
+                <p class="sb-muted">{{ __('shahbot::admin.ops_hint') }}</p>
+                <hr>
                 {!! $toggle('test_enabled') !!}
                 <div class="mb-2" style="max-width:520px">
                     <label class="form-label">{{ __('shahbot::admin.test_duration') }}</label>

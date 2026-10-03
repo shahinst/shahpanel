@@ -82,6 +82,12 @@ class BotSettings
             'reminder_days' => '2',
             'low_traffic_percent' => '10',
 
+            // Service operations
+            'transfer_enabled' => '1',
+            'location_enabled' => '1',
+            'location_fee' => '0',
+            'refund_enabled' => '1',
+
             // Lucky wheel
             'wheel_enabled' => '0',
             'wheel_cooldown_hours' => '24',
