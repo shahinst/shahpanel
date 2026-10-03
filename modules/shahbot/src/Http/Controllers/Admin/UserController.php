@@ -24,6 +24,7 @@ class UserController extends Controller
         $search = trim((string) $request->query('q', ''));
 
         $users = BotUser::query()
+            ->with('bot.owner')
             ->withCount(['orders as paid_orders_count' => fn ($q) => $q->whereIn('type', ['buy', 'renew'])])
             ->withSum(['orders as paid_total' => fn ($q) => $q->whereIn('type', ['buy', 'renew'])], 'amount')
             ->when($search !== '', function ($q) use ($search): void {
@@ -97,7 +98,7 @@ class UserController extends Controller
                 }
 
                 $client = $users->client($botUser);
-                $owner = $users->owner();
+                $owner = $users->owner($botUser);
                 $wallets->debit($client, $amount, TransactionType::Adjustment, ['description' => $note, 'source_user_id' => $owner->id]);
                 $wallets->credit($owner, $amount, TransactionType::Adjustment, ['description' => $note, 'source_user_id' => $client->id]);
             });

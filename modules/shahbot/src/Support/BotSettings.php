@@ -36,6 +36,13 @@ class BotSettings
             'owner_user_id' => '',
             'admin_chat_ids' => '',
 
+            // Agents
+            'agency_enabled' => '0',
+            'agency_text' => 'برای همکاری در فروش، توضیح کوتاهی دربارهٔ خودتان و میزان فروش‌تان بنویسید.',
+            'agency_discount' => '10',
+            'agent_bots_enabled' => '0',
+            'bulk_max' => '20',
+
             // Store
             'sales_enabled' => '1',
             'closed_text' => 'فروش در حال حاضر متوقف است. کمی بعد دوباره سر بزنید.',
@@ -111,7 +118,25 @@ class BotSettings
 
     public function get(string $key, ?string $default = null): string
     {
+        $bot = app(BotContext::class)->bot();
+
+        if ($bot !== null) {
+            $overrides = $bot->overrides();
+
+            if (array_key_exists($key, $overrides)) {
+                return $overrides[$key];
+            }
+        }
+
         return (string) ($this->all()[$key] ?? $default ?? '');
+    }
+
+    /**
+     * The main bot's own value, ignoring the bot in context.
+     */
+    public function main(string $key): string
+    {
+        return (string) ($this->all()[$key] ?? '');
     }
 
     public function bool(string $key): bool
@@ -174,7 +199,7 @@ class BotSettings
     {
         $secret = $this->get('webhook_secret');
 
-        if ($secret === '') {
+        if ($secret === '' && app(BotContext::class)->bot() === null) {
             $secret = Str::random(40);
             $this->set(['webhook_secret' => $secret]);
         }

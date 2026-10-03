@@ -5,6 +5,7 @@
         ['admin.shahbot.payments.index', 'bx-receipt', 'tab_payments', ['admin.shahbot.payments.*']],
         ['admin.shahbot.orders', 'bx-cart', 'tab_orders', ['admin.shahbot.orders']],
         ['admin.shahbot.codes.index', 'bx-purchase-tag', 'tab_codes', ['admin.shahbot.codes.*']],
+        ['admin.shahbot.agents.index', 'bx-briefcase', 'tab_agents', ['admin.shahbot.agents.*']],
         ['admin.shahbot.broadcasts.index', 'bx-broadcast', 'tab_broadcasts', ['admin.shahbot.broadcasts.*']],
         ['admin.shahbot.tickets.index', 'bx-support', 'tab_tickets', ['admin.shahbot.tickets.*']],
         ['admin.shahbot.tutorials.index', 'bx-book-open', 'tab_tutorials', ['admin.shahbot.tutorials.*']],

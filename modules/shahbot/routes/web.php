@@ -3,6 +3,7 @@
 use App\Http\Middleware\RestrictAdminByIp;
 use App\Support\PortalPaths;
 use Illuminate\Support\Facades\Route;
+use Modules\ShahBot\Http\Controllers\Admin\AgentController;
 use Modules\ShahBot\Http\Controllers\Admin\BroadcastController;
 use Modules\ShahBot\Http\Controllers\Admin\CodeController;
 use Modules\ShahBot\Http\Controllers\Admin\DashboardController;
@@ -11,6 +12,7 @@ use Modules\ShahBot\Http\Controllers\Admin\SettingsController;
 use Modules\ShahBot\Http\Controllers\Admin\TicketController;
 use Modules\ShahBot\Http\Controllers\Admin\TutorialController;
 use Modules\ShahBot\Http\Controllers\Admin\UserController;
+use Modules\ShahBot\Http\Controllers\Panel\MyBotController;
 
 /*
 | The bot's admin section. The admin group is rebuilt exactly as the core
@@ -58,9 +60,23 @@ Route::prefix(PortalPaths::slug('admin'))->name('admin.')->middleware($adminMidd
         Route::post('tickets/{ticket}/reply', [TicketController::class, 'reply'])->name('tickets.reply');
         Route::post('tickets/{ticket}/close', [TicketController::class, 'close'])->name('tickets.close');
 
+        Route::get('agents', [AgentController::class, 'index'])->name('agents.index');
+        Route::post('agents/requests/{agencyRequest}/approve', [AgentController::class, 'approve'])->name('agents.approve');
+        Route::post('agents/requests/{agencyRequest}/reject', [AgentController::class, 'reject'])->name('agents.reject');
+        Route::post('agents/bots/{bot}/toggle', [AgentController::class, 'toggleBot'])->name('agents.bots.toggle');
+
         Route::get('tutorials', [TutorialController::class, 'index'])->name('tutorials.index');
         Route::post('tutorials', [TutorialController::class, 'store'])->name('tutorials.store');
         Route::put('tutorials/{tutorial}', [TutorialController::class, 'update'])->name('tutorials.update');
         Route::delete('tutorials/{tutorial}', [TutorialController::class, 'destroy'])->name('tutorials.destroy');
     });
 });
+
+// "My sales bot" for agents and sellers, rebuilt on their panels' groups.
+foreach (['agent', 'seller'] as $role) {
+    Route::prefix(PortalPaths::slug($role))->name($role.'.')->middleware(['auth', 'role:'.$role, 'log.activity'])->group(function (): void {
+        Route::get('shahbot', [MyBotController::class, 'edit'])->name('shahbot.my-bot');
+        Route::post('shahbot', [MyBotController::class, 'update'])->name('shahbot.my-bot.update');
+        Route::post('shahbot/connect', [MyBotController::class, 'connect'])->name('shahbot.my-bot.connect');
+    });
+}

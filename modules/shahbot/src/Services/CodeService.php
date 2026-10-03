@@ -125,7 +125,7 @@ class CodeService
         }
 
         $client = $this->users->client($user);
-        $owner = $this->users->owner();
+        $owner = $this->users->owner($user);
         $context = ['description' => $description, 'source_user_id' => $client->id];
 
         $this->wallets->debit($owner, $amount, TransactionType::Adjustment, $context, allowNegative: true);

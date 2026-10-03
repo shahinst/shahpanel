@@ -133,6 +133,23 @@ class TelegramClient
         }
     }
 
+    public function sendDocumentBytes(int|string $chatId, string $bytes, string $filename, ?string $caption = null): array
+    {
+        try {
+            $response = $this->request(30)
+                ->attach('document', $bytes, $filename)
+                ->post('https://api.telegram.org/bot'.$this->token().'/sendDocument', array_filter([
+                    'chat_id' => (string) $chatId,
+                    'caption' => $caption,
+                    'parse_mode' => 'HTML',
+                ], fn ($v) => $v !== null));
+
+            return $response->json() ?? ['ok' => false];
+        } catch (Throwable $e) {
+            return ['ok' => false, 'description' => $e->getMessage()];
+        }
+    }
+
     public function sendPhotoId(int|string $chatId, string $fileId, ?string $caption = null, ?array $keyboard = null): array
     {
         return $this->call('sendPhoto', [

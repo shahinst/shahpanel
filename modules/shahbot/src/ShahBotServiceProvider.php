@@ -21,6 +21,7 @@ class ShahBotServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(BotSettings::class);
+        $this->app->singleton(Support\BotContext::class);
     }
 
     public function boot(): void

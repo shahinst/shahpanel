@@ -33,4 +33,6 @@
         :active="request()->routeIs(str_replace('.index', '.*', str_replace('.edit', '.*', $link['route'])).'*') || request()->routeIs($link['route'])" />
 @endforeach
 
+@include('layouts.partials.nav-shahbot', ['panel' => $panel])
+
 @include('layouts.partials.nav-panel-settings', ['panel' => $panel])

@@ -3,7 +3,7 @@
 @section('page_title', __('shahbot::admin.tab_settings'))
 
 @php
-    $tabs = ['connection' => 'set_connection', 'store' => 'set_store', 'wallet' => 'set_wallet', 'online' => 'set_online', 'marketing' => 'set_marketing', 'gates' => 'set_gates', 'texts' => 'set_texts'];
+    $tabs = ['connection' => 'set_connection', 'store' => 'set_store', 'wallet' => 'set_wallet', 'online' => 'set_online', 'agents' => 'set_agents', 'marketing' => 'set_marketing', 'gates' => 'set_gates', 'texts' => 'set_texts'];
     $tab = array_key_exists($tab, $tabs) ? $tab : 'connection';
     $toggle = function (string $key) use ($settings): string {
         return '<input type="hidden" name="_bool_'.$key.'" value="1">'
@@ -125,6 +125,17 @@
                     <div class="col-md-4"><label class="form-label">{{ __('shahbot::admin.stars_rate') }}</label><input type="number" min="0" step="any" name="stars_rate" value="{{ $settings->get('stars_rate') }}" class="form-control"></div>
                 </div>
                 <p class="sb-muted mt-2">{{ __('shahbot::admin.stars_hint') }}</p>
+            @elseif ($tab === 'agents')
+                {!! $toggle('agency_enabled') !!}
+                <p class="sb-muted">{{ __('shahbot::admin.agency_hint') }}</p>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-8"><label class="form-label">{{ __('shahbot::admin.agency_text') }}</label><textarea name="agency_text" rows="2" class="form-control">{{ $settings->get('agency_text') }}</textarea></div>
+                    <div class="col-md-2"><label class="form-label">{{ __('shahbot::admin.agency_discount') }}</label><input type="number" min="0" max="100" step="any" name="agency_discount" value="{{ $settings->get('agency_discount') }}" class="form-control"></div>
+                    <div class="col-md-2"><label class="form-label">{{ __('shahbot::admin.bulk_max') }}</label><input type="number" min="1" max="100" name="bulk_max" value="{{ $settings->get('bulk_max') }}" class="form-control"></div>
+                </div>
+                <hr>
+                {!! $toggle('agent_bots_enabled') !!}
+                <p class="sb-muted">{{ __('shahbot::admin.agent_bots_hint') }}</p>
             @elseif ($tab === 'marketing')
                 {!! $toggle('referral_enabled') !!}
                 <div class="row g-3 mb-2">
