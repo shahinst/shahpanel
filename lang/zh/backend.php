@@ -140,4 +140,8 @@ return [
     // 钱包
     'wallet_insufficient_balance' => '您的钱包余额不足。请在「充值申请」菜单中增加余额。',
 
+    'notify_low_balance_title' => '钱包余额不足',
+    'notify_low_balance_body' => '您的钱包余额为 :balance。请及时充值，以免续费和购买中断。',
+    'notify_auto_renew_failed_title' => '自动续费失败',
+    'notify_auto_renew_failed_body' => '账户 :username 自动续费失败，已过期：:error',
 ];

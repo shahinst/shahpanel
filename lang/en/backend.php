@@ -140,4 +140,8 @@ return [
     // Wallet
     'wallet_insufficient_balance' => 'Your wallet balance is not enough. Add balance from the "Top-up requests" menu.',
 
+    'notify_low_balance_title' => 'Low wallet balance',
+    'notify_low_balance_body' => 'Your wallet balance is :balance. Top it up so renewals and purchases keep working.',
+    'notify_auto_renew_failed_title' => 'Auto-renew failed',
+    'notify_auto_renew_failed_body' => 'Account :username could not be auto-renewed and has expired: :error',
 ];

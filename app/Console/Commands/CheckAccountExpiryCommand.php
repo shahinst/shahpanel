@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\AccountBillingContext;
 use App\Enums\AccountStatus;
 use App\Enums\NotificationType;
 use App\Models\Account;
@@ -16,6 +17,41 @@ class CheckAccountExpiryCommand extends Command
 
     protected $description = 'Disable accounts that have passed their expiry date';
 
+    /**
+     * Renew an auto-renew account from its owner's wallet, at its current
+     * package and period. False when that is not possible (no money, package
+     * withdrawn...), so the caller expires it as usual and the owner is told.
+     */
+    protected function autoRenew(Account $account, AccountService $accountService, PanelAlertService $alerts): bool
+    {
+        $owner = $account->ownerSeller;
+
+        if ($owner === null) {
+            return false;
+        }
+
+        try {
+            $accountService->renewAccount($account, null, AccountBillingContext::Staff, $owner);
+            $this->line("Auto-renewed account #{$account->id} ({$account->remote_username})");
+
+            return true;
+        } catch (Throwable $exception) {
+            $alerts->notifyAccountAlert(
+                $owner,
+                NotificationType::Warning,
+                trans_for($owner, 'backend.notify_auto_renew_failed_title'),
+                trans_for($owner, 'backend.notify_auto_renew_failed_body', [
+                    'username' => $account->remote_username,
+                    'error' => $exception->getMessage(),
+                ]),
+                $account,
+                'autorenew:'.$account->id,
+            );
+
+            return false;
+        }
+    }
+
     public function handle(AccountService $accountService, PanelAlertService $alerts): int
     {
         $expired = Account::query()
@@ -26,6 +62,10 @@ class CheckAccountExpiryCommand extends Command
             ->get();
 
         foreach ($expired as $account) {
+            if ($account->auto_renew && $this->autoRenew($account, $accountService, $alerts)) {
+                continue;
+            }
+
             try {
                 // Renewed while this list was being worked through.
                 if ($accountService->expireAccount($account)->status !== AccountStatus::Expired) {

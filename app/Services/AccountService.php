@@ -2788,7 +2788,7 @@ class AccountService
                 $server,
                 $email,
                 $uuid,
-                limitIp: (int) ($clientData['limit_ip'] ?? 0),
+                limitIp: (int) ($clientData['limit_ip'] ?? $package->sanaei_limit_ip ?? 0),
                 totalGB: $totalGB,
                 expiryTime: $expiryMs,
                 inboundIds: $inboundIds,

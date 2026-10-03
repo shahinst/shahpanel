@@ -140,4 +140,8 @@ return [
     // Wallet
     'wallet_insufficient_balance' => 'موجودی کیف پول کافی نیست. از منوی «درخواست‌های شارژ» موجودی را افزایش دهید.',
 
+    'notify_low_balance_title' => 'موجودی کیف پول کم است',
+    'notify_low_balance_body' => 'موجودی کیف پول شما :balance است. برای اینکه تمدید و خرید اکانت‌ها متوقف نشود، کیف پول را شارژ کنید.',
+    'notify_auto_renew_failed_title' => 'تمدید خودکار انجام نشد',
+    'notify_auto_renew_failed_body' => 'اکانت :username تمدید خودکار نشد و منقضی شد: :error',
 ];

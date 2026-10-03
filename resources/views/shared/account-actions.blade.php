@@ -43,6 +43,15 @@
         </form>
     @endif
 @endif
+@if (! $account->isRefunded() && Route::has($prefix.'.accounts.auto-renew'))
+    <form method="POST" action="{{ route($prefix.'.accounts.auto-renew', $account) }}" style="display:inline;"
+          data-confirm="{{ $account->auto_renew ? __('accounts.auto_renew_off_confirm') : __('accounts.auto_renew_on_confirm') }}">
+        @csrf
+        <button type="submit" class="btn btn-sm {{ $account->auto_renew ? 'btn-outline-success' : 'btn-outline-secondary' }}">
+            <i class="bx bx-revision"></i> {{ $account->auto_renew ? __('accounts.auto_renew_on') : __('accounts.auto_renew_off') }}
+        </button>
+    </form>
+@endif
 @if (Route::has($prefix.'.accounts.portal-link'))
     <a href="{{ route($prefix.'.accounts.portal-link', $account) }}" class="btn btn-sm btn-info" target="_blank">{{ __('menu.portal_link') }}</a>
 @endif

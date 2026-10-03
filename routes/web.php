@@ -281,6 +281,7 @@ Route::prefix($adminPath)->name('admin.')->middleware($adminMiddleware)->group(f
     Route::post('accounts/{account}/renew', [AdminAccountController::class, 'renew'])->middleware('throttle:money-actions')->name('accounts.renew');
     Route::post('accounts/{account}/disable', [AdminAccountController::class, 'disable'])->name('accounts.disable');
     Route::post('accounts/{account}/enable', [AdminAccountController::class, 'enable'])->name('accounts.enable');
+    Route::post('accounts/{account}/auto-renew', [AdminAccountController::class, 'toggleAutoRenew'])->name('accounts.auto-renew');
     Route::get('accounts/{account}/portal-link', [AdminAccountController::class, 'openPortalLink'])->name('accounts.portal-link');
     Route::post('accounts/{account}/portal-link/regenerate', [AdminAccountController::class, 'regeneratePortalLink'])->middleware('throttle:money-actions')->name('accounts.portal-link.regenerate');
     Route::post('accounts/{account}/config-cache/refresh', [AdminAccountController::class, 'refreshConfigCache'])->middleware('throttle:money-actions')->name('accounts.config-cache.refresh');
@@ -298,6 +299,7 @@ Route::prefix($adminPath)->name('admin.')->middleware($adminMiddleware)->group(f
     Route::post('accounts/{account}/reactivate', [AdminAccountController::class, 'reactivate'])->middleware('throttle:money-actions')->name('accounts.reactivate');
     Route::post('accounts/{account}/wireguard-keys/reissue', [AdminAccountController::class, 'reissueWireguardKeys'])->name('accounts.wireguard-keys.reissue');
     Route::delete('accounts/bulk', [AdminAccountController::class, 'bulkDestroy'])->name('accounts.bulk-destroy');
+    Route::post('accounts/bulk-action', [AdminAccountController::class, 'bulkAction'])->middleware('throttle:money-actions')->name('accounts.bulk-action');
     Route::delete('accounts/{account}', [AdminAccountController::class, 'destroy'])->name('accounts.destroy');
 
     Route::get('payment-requests', [AdminPaymentRequestController::class, 'index'])->name('payment-requests.index');
@@ -472,6 +474,7 @@ Route::prefix($agentPath)->name('agent.')->middleware(['auth', 'role:agent', 'lo
     Route::post('accounts/{account}/renew', [AgentAccountController::class, 'renew'])->middleware('throttle:money-actions')->name('accounts.renew');
     Route::post('accounts/{account}/disable', [AgentAccountController::class, 'disable'])->name('accounts.disable');
     Route::post('accounts/{account}/enable', [AgentAccountController::class, 'enable'])->name('accounts.enable');
+    Route::post('accounts/{account}/auto-renew', [AgentAccountController::class, 'toggleAutoRenew'])->name('accounts.auto-renew');
     Route::get('accounts/{account}/portal-link', [AgentAccountController::class, 'openPortalLink'])->name('accounts.portal-link');
     Route::post('accounts/{account}/portal-link/regenerate', [AgentAccountController::class, 'regeneratePortalLink'])->middleware('throttle:money-actions')->name('accounts.portal-link.regenerate');
     Route::post('accounts/{account}/config-cache/refresh', [AgentAccountController::class, 'refreshConfigCache'])->middleware('throttle:money-actions')->name('accounts.config-cache.refresh');
@@ -580,6 +583,7 @@ Route::prefix($sellerPath)->name('seller.')->middleware(['auth', 'role:seller', 
     Route::post('accounts/{account}/renew', [SellerAccountController::class, 'renew'])->middleware('throttle:money-actions')->name('accounts.renew');
     Route::post('accounts/{account}/disable', [SellerAccountController::class, 'disable'])->name('accounts.disable');
     Route::post('accounts/{account}/enable', [SellerAccountController::class, 'enable'])->name('accounts.enable');
+    Route::post('accounts/{account}/auto-renew', [SellerAccountController::class, 'toggleAutoRenew'])->name('accounts.auto-renew');
     Route::post('accounts/{account}/refund', [SellerAccountController::class, 'refund'])->middleware('throttle:money-actions')->name('accounts.refund');
     Route::get('accounts/{account}/portal-link', [SellerAccountController::class, 'openPortalLink'])->name('accounts.portal-link');
     Route::post('accounts/{account}/portal-link/regenerate', [SellerAccountController::class, 'regeneratePortalLink'])->middleware('throttle:money-actions')->name('accounts.portal-link.regenerate');

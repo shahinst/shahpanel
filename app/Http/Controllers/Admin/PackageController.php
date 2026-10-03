@@ -431,6 +431,7 @@ class PackageController extends Controller
             $sanaeiRules = $request->validate([
                 'sanaei_inbound_ids' => ['nullable', 'array'],
                 'sanaei_inbound_ids.*' => ['integer', 'min:1'],
+                'sanaei_limit_ip' => ['nullable', 'integer', 'min:0', 'max:1000'],
             ]);
             $validated = array_merge($validated, $sanaeiRules);
             $sanaeiInboundIds = array_values(array_unique(array_map('intval', $sanaeiRules['sanaei_inbound_ids'] ?? [])));
@@ -471,6 +472,9 @@ class PackageController extends Controller
                 : null,
             'sanaei_inbound_ids' => ($hasSanaei && $serviceTypeEnum->isSanaei() && $sanaeiInboundIds !== [])
                 ? $sanaeiInboundIds
+                : null,
+            'sanaei_limit_ip' => ($hasSanaei && $serviceTypeEnum->isSanaei() && (int) ($validated['sanaei_limit_ip'] ?? 0) > 0)
+                ? (int) $validated['sanaei_limit_ip']
                 : null,
             'sort_order' => $validated['sort_order'] ?? 0,
             'is_active' => $this->resolvePackageActiveState($request, $validated),

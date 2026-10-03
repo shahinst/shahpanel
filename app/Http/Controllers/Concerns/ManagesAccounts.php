@@ -564,6 +564,20 @@ trait ManagesAccounts
         return back()->with('success', __('app.renewed'));
     }
 
+    /**
+     * Turn automatic renewal from the owner's wallet on or off.
+     */
+    public function toggleAutoRenew(Account $account): RedirectResponse
+    {
+        $this->authorize('update', $account);
+
+        $account->update(['auto_renew' => ! $account->auto_renew]);
+
+        return back()->with('success', $account->auto_renew
+            ? __('accounts.auto_renew_enabled')
+            : __('accounts.auto_renew_disabled'));
+    }
+
     protected function toggleAccountViaService(Account $account, AccountService $accountService, string $action): RedirectResponse
     {
         try {

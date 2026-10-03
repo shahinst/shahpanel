@@ -316,6 +316,12 @@
                     </small>
                 </x-form.group>
             </div>
+            <div class="col-md-6">
+                <x-form.group :label="__('packages.sanaei_limit_ip')" for="sanaei_limit_ip" :hint="__('packages.sanaei_limit_ip_hint')" wide>
+                    <input type="number" min="0" max="1000" step="1" id="sanaei_limit_ip" name="sanaei_limit_ip" dir="ltr"
+                           value="{{ old('sanaei_limit_ip', $package?->sanaei_limit_ip) }}" class="form-control" placeholder="0">
+                </x-form.group>
+            </div>
         </div>
     </div>
 </div>

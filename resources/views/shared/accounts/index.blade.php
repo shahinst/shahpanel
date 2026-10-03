@@ -115,6 +115,17 @@
                                 (<span data-bulk-delete-count>0</span>)
                             </button>
                         </form>
+                        @foreach ([
+                            'renew' => ['bx-refresh', 'btn-primary', __('accounts.bulk_renew'), __('accounts.bulk_renew_confirm')],
+                            'enable' => ['bx-play-circle', 'btn-success', __('accounts.bulk_enable'), __('app.confirm_action')],
+                            'disable' => ['bx-pause-circle', 'btn-warning', __('accounts.bulk_disable'), __('app.confirm_action')],
+                        ] as $bulkAction => [$bulkIcon, $bulkClass, $bulkLabel, $bulkConfirm])
+                            <form method="POST" action="{{ route('admin.accounts.bulk-action') }}" data-bulk-ids-form data-confirm="{{ $bulkConfirm }}">
+                                @csrf
+                                <input type="hidden" name="action" value="{{ $bulkAction }}">
+                                <button type="submit" class="btn {{ $bulkClass }} btn-sm"><i class="bx {{ $bulkIcon }}"></i> {{ $bulkLabel }}</button>
+                            </form>
+                        @endforeach
                     </div>
                 @endif
 

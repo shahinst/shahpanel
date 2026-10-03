@@ -7,6 +7,10 @@ return [
     'section_system' => '系统',
 
     'fields' => [
+        'alert_telegram_enabled' => '将通知发送到用户的 Telegram（通过备份机器人，适用于在个人资料中填写数字 Telegram ID 的用户）',
+        'alert_expiry_days' => '到期前几天提醒',
+        'alert_clients_enabled' => '同时向客户发送到期和流量提醒',
+        'alert_low_balance_amount' => '钱包余额不足提醒（金额）',
         'site_name' => '站点名称',
         'site_url' => '站点地址',
         'timezone' => '时区',
@@ -29,6 +33,8 @@ return [
     ],
 
     'hints' => [
+        'alert_expiry_days' => '默认：3 天。',
+        'alert_low_balance_amount' => '代理和销售员余额低于此金额时每天收到一次通知。留空或 0 表示关闭。',
         'site_name' => '显示在页面标题和邮件中。',
         'site_url' => '带 https 的完整地址。',
         'timezone' => '推荐：Asia/Tehran',
@@ -82,4 +88,5 @@ return [
         'info' => '信息',
         'debug' => '调试',
     ],
+    'section_alerts' => '提醒',
 ];
