@@ -28,6 +28,14 @@ class ResellerCryptoService
 {
     public const API = 'https://api.nowpayments.io/v1';
 
+    /** NowPayments' sandbox: its own account and keys, no real money. */
+    public const SANDBOX_API = 'https://api-sandbox.nowpayments.io/v1';
+
+    public function endpoint(BotInstance $bot): string
+    {
+        return (($bot->settings ?? [])['np_sandbox'] ?? '') === '1' ? self::SANDBOX_API : self::API;
+    }
+
     public function __construct(protected PaymentService $payments) {}
 
     public function configured(?BotInstance $bot): bool
@@ -69,7 +77,7 @@ class ResellerCryptoService
         $payment = $this->payments->startForOrder($user, (string) $toman, $order);
         $payment->forceFill(['method' => 'nowpayments', 'status' => BotPayment::PENDING])->save();
 
-        $response = Http::timeout(20)->withHeaders(['x-api-key' => $this->apiKey($bot)])->post(self::API.'/invoice', [
+        $response = Http::timeout(20)->withHeaders(['x-api-key' => $this->apiKey($bot)])->post($this->endpoint($bot).'/invoice', [
             'price_amount' => (float) $usd,
             'price_currency' => 'usd',
             'order_id' => 'sb-'.$payment->id,

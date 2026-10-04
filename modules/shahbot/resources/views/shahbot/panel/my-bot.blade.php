@@ -60,6 +60,8 @@
                         <input type="password" name="np_api_key" dir="ltr" autocomplete="off" class="form-control" placeholder="{{ $bot && app(\Modules\ShahBot\Services\ResellerCryptoService::class)->configured($bot) ? __('shahbot::admin.np_saved') : '' }}"></div>
                     <div class="col-md-6"><label class="form-label">{{ __('shahbot::admin.np_ipn_secret') }}</label>
                         <input type="password" name="np_ipn_secret" dir="ltr" autocomplete="off" class="form-control"></div>
+                    <div class="col-12"><label class="form-check"><input type="checkbox" name="np_sandbox" value="1" class="form-check-input" @checked(($values['np_sandbox'] ?? '') === '1')> {{ __('shahbot::admin.np_sandbox') }}</label>
+                        <div class="form-text">{{ __('shahbot::admin.np_sandbox_hint') }}</div></div>
                     <div class="col-12"><label class="form-check"><input type="checkbox" name="np_clear" value="1" class="form-check-input"> {{ __('shahbot::admin.np_clear') }}</label></div>
                 <div class="col-12">
                     <label class="form-label">{{ __('shahbot::admin.brand_name') }}</label>

@@ -417,4 +417,6 @@ return [
     'nav_group_resellers' => 'نمایندگی',
     'nav_group_engage' => 'ارتباط با کاربران',
     'nav_group_setup' => 'پیکربندی',
+    'np_sandbox' => 'حالت آزمایشی (Sandbox)',
+    'np_sandbox_hint' => 'سفارش‌ها به سرور آزمایشی NowPayments می‌روند و پول واقعی جابه‌جا نمی‌شود. کلیدهای حساب sandbox (account-sandbox.nowpayments.io) را وارد کنید، نه حساب اصلی را.',
 ];

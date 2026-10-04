@@ -408,4 +408,6 @@ return [
     'nav_group_resellers' => 'Resellers',
     'nav_group_engage' => 'Engagement',
     'nav_group_setup' => 'Setup',
+    'np_sandbox' => 'Test mode (Sandbox)',
+    'np_sandbox_hint' => 'Orders go to NowPayments\' test server and no real money moves. Enter the keys of your sandbox account (account-sandbox.nowpayments.io), not your live account.',
 ];

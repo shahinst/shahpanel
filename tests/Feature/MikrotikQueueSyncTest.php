@@ -170,4 +170,24 @@ class MikrotikQueueSyncTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->app->make(MikrotikInterfaceRemovalService::class)->removePpp($server, $builtin);
     }
+
+    public function test_no_speed_field_joins_a_row_form_from_outside_it(): void
+    {
+        $this->app->instance(MikrotikService::class, Mockery::mock(MikrotikService::class)->shouldIgnoreMissing([]));
+        $server = $this->makeServer();
+
+        foreach (['wireguard' => 'wg', 'ppp' => 'ppp'] as $category => $prefix) {
+            ServerInterface::query()->create([
+                'server_id' => $server->id, 'category' => $category, 'name' => $prefix.'zz',
+                'remote_key' => $prefix.':'.$prefix.'zz', 'is_enabled' => true,
+                'meta' => ['subnet' => '10.88.0.0/29', 'speed_limit_mbps' => 10],
+            ]);
+        }
+
+        $html = $this->actingAs($this->makeAdmin())->get(route('admin.servers.show', $server))->assertOk()->getContent();
+
+        // The create forms' empty select used to carry form="<last row>", so
+        // saving that row sent a second, empty speed that overrode the chosen one.
+        $this->assertDoesNotMatchRegularExpression('/form="(wg|ppp)-update-/', $html);
+    }
 }
