@@ -413,4 +413,8 @@ return [
     'customers_filter_owner' => 'ربات نماینده/فروشنده',
     'customers_main_bot' => 'ربات اصلی',
     'customers_role' => 'نقش صاحب ربات',
+    'nav_group_sales' => 'فروش',
+    'nav_group_resellers' => 'نمایندگی',
+    'nav_group_engage' => 'ارتباط با کاربران',
+    'nav_group_setup' => 'پیکربندی',
 ];

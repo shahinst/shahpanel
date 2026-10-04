@@ -404,4 +404,8 @@ return [
     'customers_filter_owner' => 'Reseller\'s bot',
     'customers_main_bot' => 'Main bot',
     'customers_role' => 'Bot owner\'s role',
+    'nav_group_sales' => 'Sales',
+    'nav_group_resellers' => 'Resellers',
+    'nav_group_engage' => 'Engagement',
+    'nav_group_setup' => 'Setup',
 ];
