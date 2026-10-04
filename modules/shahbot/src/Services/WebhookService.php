@@ -67,7 +67,11 @@ class WebhookService
         if ($this->settings->main('mode') === 'polling') {
             $result = $this->telegram->call('deleteWebhook');
 
-            return ['ok' => (bool) ($result['ok'] ?? false), 'message' => (string) ($result['description'] ?? '')];
+            if (! ($result['ok'] ?? false)) {
+                return ['ok' => false, 'message' => (string) ($result['description'] ?? '')];
+            }
+
+            return $this->sendTestMessage($username);
         }
 
         $result = $this->telegram->call('setWebhook', [
@@ -78,7 +82,71 @@ class WebhookService
             'drop_pending_updates' => 'true',
         ]);
 
-        return ['ok' => (bool) ($result['ok'] ?? false), 'message' => (string) ($result['description'] ?? '')];
+        if (! ($result['ok'] ?? false)) {
+            return ['ok' => false, 'message' => (string) ($result['description'] ?? '')];
+        }
+
+        return $this->sendTestMessage($username);
+    }
+
+    /**
+     * Proves the connection end to end by messaging the bot's admins.
+     *
+     * getMe and setWebhook both succeed while the bot is still useless: they
+     * only show the panel can reach Telegram, not that the admin hears from
+     * the bot. A message in the admin's own chat is the one check nobody has
+     * to interpret. Telegram refuses it until that admin has pressed /start
+     * once, so that case is named rather than shown as a bare "chat not found".
+     *
+     * @return array{ok: bool, message: string}
+     */
+    public function sendTestMessage(string $username = ''): array
+    {
+        $chats = $this->settings->adminChatIds();
+
+        if ($chats === []) {
+            return ['ok' => false, 'message' => __('shahbot::admin.test_no_admins')];
+        }
+
+        $sent = 0;
+        $errors = [];
+
+        foreach ($chats as $chat) {
+            $reply = $this->telegram->sendMessage($chat, __('shahbot::admin.test_message', [
+                'bot' => $username !== '' ? '@'.$username : config('app.name'),
+                'time' => now()->format('Y-m-d H:i:s'),
+            ]));
+
+            if ($reply['ok'] ?? false) {
+                $sent++;
+
+                continue;
+            }
+
+            $error = (string) ($reply['description'] ?? 'unknown error');
+            $errors[] = $chat.': '.(str_contains(strtolower($error), 'chat not found')
+                ? __('shahbot::admin.test_start_first')
+                : $error);
+        }
+
+        if ($sent === 0) {
+            return ['ok' => false, 'message' => __('shahbot::admin.test_failed', ['errors' => implode(' | ', $errors)])];
+        }
+
+        $message = __('shahbot::admin.test_sent', ['count' => $sent]);
+
+        return ['ok' => true, 'message' => $errors === [] ? $message : $message.' '.__('shahbot::admin.test_partial', ['errors' => implode(' | ', $errors)])];
+    }
+
+    /**
+     * Telegram's side of the webhook says it cannot open a connection to this
+     * server: the panel is behind a filter or a firewall Telegram cannot pass.
+     */
+    public static function webhookUnreachable(array $info): bool
+    {
+        $error = strtolower((string) ($info['last_error_message'] ?? ''));
+
+        return $error !== '' && preg_match('/timed out|timeout|connection refused|no route|network is unreachable|connection reset/', $error) === 1;
     }
 
     public function info(): array

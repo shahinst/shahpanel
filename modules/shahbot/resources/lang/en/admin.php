@@ -370,4 +370,11 @@ return [
     'bot_access_on' => 'Allowed',
     'bot_access_off' => 'Not allowed',
     'bot_access_my_sellers' => 'Sellers\' access',
+    'test_message' => '✅ Test message from the panel: the bot :bot is connected and messages reach you. (:time)',
+    'test_sent' => 'A test message was sent to :count admin(s); check Telegram.',
+    'test_partial' => 'It did not reach some: :errors',
+    'test_failed' => 'The bot connected but the test message reached no admin: :errors',
+    'test_no_admins' => 'No admin chat id is set, so no test message was sent. Put your numeric chat id in the admin chat ids.',
+    'test_start_first' => 'this admin has not started the bot yet; press /start in Telegram once and connect again.',
+    'webhook_unreachable_hint' => 'Telegram cannot open a connection to the panel server (usually a filter or firewall), so the bot receives nothing. Set the connection mode to Polling and press connect again: the panel then fetches messages from Telegram every minute, and Telegram never has to reach your server.',
 ];

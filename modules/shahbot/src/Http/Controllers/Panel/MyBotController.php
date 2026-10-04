@@ -231,7 +231,7 @@ class MyBotController extends Controller
 
         return back()->with(
             $result['ok'] ? 'success' : 'error',
-            $result['ok'] ? __('shahbot::admin.connected') : __('shahbot::admin.connect_failed', ['error' => $result['message']])
+            $result['ok'] ? __('shahbot::admin.connected').' '.$result['message'] : __('shahbot::admin.connect_failed', ['error' => $result['message']])
         );
     }
 }

@@ -46,12 +46,39 @@ class MikrotikQueueSyncTest extends TestCase
             ['name' => 'wg1', 'target' => 'wg1', 'max-limit' => '500M/500M'],
         ]);
 
-        $this->assertSame(['added' => 1, 'updated' => 1, 'removed' => 1, 'unchanged' => 2, 'errors' => []], $result);
+        $this->assertSame(['added' => 0, 'updated' => 2, 'removed' => 0, 'unchanged' => 2, 'errors' => []], $result);
         $this->assertSame([
-            '/queue/simple/add wg1-3-10',
+            '/queue/simple/set wg1-3-10',   // the old 5M queue on that address, rewritten in place
             '/queue/simple/set wg1-4-10',   // was disabled
-            '/queue/simple/remove *3',       // the old 5M queue
         ], $writes);
+    }
+
+    public function test_a_speed_change_rewrites_each_queue_in_place(): void
+    {
+        $server = $this->makeServer();
+        $writes = [];
+
+        $router = Mockery::mock(MikrotikService::class)->makePartial()->shouldAllowMockingProtectedMethods();
+        $router->shouldReceive('queryRouter')->once()->andReturn([
+            ['.id' => '*1', 'name' => 'wg1', 'target' => 'wg1', 'max-limit' => '500000000/500000000', 'parent' => 'none', 'disabled' => 'false'],
+            ['.id' => '*2', 'name' => 'wg1-2-10', 'target' => '10.0.0.2/32', 'max-limit' => '10000000/10000000', 'parent' => 'wg1', 'disabled' => 'false'],
+            ['.id' => '*3', 'name' => 'wg1-3-10', 'target' => '10.0.0.3/32', 'max-limit' => '10000000/10000000', 'parent' => 'wg1', 'disabled' => 'false'],
+        ]);
+        $router->shouldReceive('execute')->andReturnUsing(function ($s, string $path, array $attrs) use (&$writes) {
+            $writes[] = $path.' '.($attrs['.id'] ?? '').' '.($attrs['name'] ?? '');
+
+            return [];
+        });
+
+        $result = $router->syncInterfaceQueues($server, 'wg1', [
+            ['name' => 'wg1', 'target' => 'wg1', 'max-limit' => '500M/500M'],
+            ['name' => 'wg1-2-20', 'target' => '10.0.0.2', 'max-limit' => '20M/20M', 'parent' => 'wg1'],
+            ['name' => 'wg1-3-20', 'target' => '10.0.0.3', 'max-limit' => '20M/20M', 'parent' => 'wg1'],
+        ]);
+
+        // Nothing added, nothing removed: both queues were renamed and re-limited where they stand.
+        $this->assertSame(['added' => 0, 'updated' => 2, 'removed' => 0, 'unchanged' => 1, 'errors' => []], $result);
+        $this->assertSame(['/queue/simple/set *2 wg1-2-20', '/queue/simple/set *3 wg1-3-20'], $writes);
     }
 
     public function test_a_failed_queue_is_reported_and_the_rest_still_written(): void
