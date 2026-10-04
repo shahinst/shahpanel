@@ -737,3 +737,18 @@ body.portal-body--gate {
         transform: none;
     }
 }
+
+/* PPP connection details: address, username, password, protocols. */
+.portal-ppp-hint { color: var(--portal-muted); font-size: 0.82rem; margin: 0 0 0.75rem; }
+.portal-ppp-creds { margin: 0; display: grid; gap: 0.5rem; }
+.portal-ppp-creds > div { display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;
+    padding: 0.55rem 0.7rem; border: 1px solid var(--portal-border); border-radius: 10px; background: #f8fafc; }
+.portal-ppp-creds dt { color: var(--portal-muted); font-size: 0.82rem; }
+.portal-ppp-creds dd { margin: 0; }
+.portal-ppp-creds code { font-size: 0.92rem; font-weight: 700; user-select: all; word-break: break-all; }
+.portal-ppp-sub { font-size: 0.9rem; margin: 1rem 0 0.5rem; }
+.portal-ppp-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+.portal-ppp-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; padding: 0.5rem 0.7rem;
+    border: 1px solid var(--portal-border); border-radius: 10px; }
+.portal-ppp-list span { color: var(--portal-muted); font-size: 0.8rem; }
+.portal-ppp-list a { margin-inline-start: auto; }

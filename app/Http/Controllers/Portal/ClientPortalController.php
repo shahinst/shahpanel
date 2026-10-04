@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Portal;
 
+use App\Enums\AccountCategory;
 use App\Enums\InvoiceType;
 use App\Enums\ServiceType;
 use App\Http\Controllers\Controller;
@@ -9,20 +10,24 @@ use App\Models\Account;
 use App\Models\ClientPortalView;
 use App\Models\Invoice;
 use App\Services\AccountService;
+use App\Services\ClientAccountDetailService;
 use App\Services\LoginCaptchaService;
-use App\Services\PortalPanelTrafficService;
+use App\Services\PortalCustomizationService;
 use App\Services\PortalLinkService;
+use App\Services\PortalPanelTrafficService;
 use App\Services\SanaeiPortalService;
+use App\Services\ServerOvpnProfileService;
 use App\Services\SyncService;
 use App\Services\WireGuardConfigService;
 use App\Support\PortalCaptchaGate;
+use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Throwable;
 
 class ClientPortalController extends Controller
@@ -69,7 +74,7 @@ class ClientPortalController extends Controller
             try {
                 $config = $configService->buildConfig($account);
                 $qrBase64 = base64_encode($configService->buildQrPng($account));
-            } catch (\Throwable $exception) {
+            } catch (Throwable $exception) {
                 // The reason is kept and shown. Swallowing it left the customer
                 // with "not available at the moment", which reads as a passing
                 // glitch and sends them back to retry — while the real cause,
@@ -88,12 +93,30 @@ class ClientPortalController extends Controller
             $sanaei = $sanaeiPortalService->portalAssets($account);
         }
 
-        $portalCustomization = app(\App\Services\PortalCustomizationService::class);
+        $portalCustomization = app(PortalCustomizationService::class);
         $portalAnnouncements = $portalCustomization->announcements();
         $portalAppCategories = $portalCustomization->suggestedAppCategories();
         $isWireguard = $account->service_type === ServiceType::Wireguard;
 
+        // PPP accounts (L2TP, PPTP, SSTP, OpenVPN) have no config file: the
+        // customer needs the server address, their username and password and
+        // the protocols on offer. The portal showed none of it, so a customer
+        // with a working account had nothing to connect with. This is the same
+        // detail the staff account page shows, from the same service.
+        $ppp = null;
+
+        if ($account->service_type->accountCategory() === AccountCategory::Ppp) {
+            $ppp = rescue(fn () => app(ClientAccountDetailService::class)->build($account)['ppp'] ?? null, null);
+
+            if (is_array($ppp)) {
+                $ppp['ovpn_download_route'] = $account->server?->hasOvpnProfile()
+                    ? route('portal.ovpn.download', $account->portal_token)
+                    : null;
+            }
+        }
+
         return view('portal.client', compact(
+            'ppp',
             'account',
             'invoice',
             'config',
@@ -105,6 +128,15 @@ class ClientPortalController extends Controller
             'portalSnapshot',
             'isWireguard',
         ));
+    }
+
+    public function downloadOvpn(Request $request, string $token, ServerOvpnProfileService $ovpnProfiles): BinaryFileResponse
+    {
+        $account = $this->findAccount($token);
+        $this->assertCaptchaSolved($request, $token);
+        abort_unless($account->service_type->accountCategory() === AccountCategory::Ppp && $account->server?->hasOvpnProfile(), 404);
+
+        return $ovpnProfiles->downloadResponse($account);
     }
 
     public function downloadConfig(Request $request, string $token, WireGuardConfigService $configService): Response

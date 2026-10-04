@@ -165,6 +165,39 @@
         </section>
     @endif
 
+    @if (! empty($ppp))
+        @php
+            $pppSecret = trim((string) ($ppp['ipsec_secret'] ?? ''));
+            $pppHost = (string) ($ppp['server_host'] ?? '');
+        @endphp
+        <section class="portal-card">
+            <h2 class="portal-card__title">{{ __('accounts.connection_info') }}</h2>
+            <p class="portal-ppp-hint">{{ __('accounts.connection_info_multi_protocol_hint') }}</p>
+            <dl class="portal-ppp-creds">
+                <div><dt>{{ __('accounts.server_host') }}</dt><dd dir="ltr"><code>{{ $pppHost !== '' ? $pppHost : '—' }}</code></dd></div>
+                <div><dt>{{ __('accounts.service_username') }}</dt><dd dir="ltr"><code>{{ $ppp['username'] ?? $account->remote_username }}</code></dd></div>
+                <div><dt>{{ __('accounts.service_password') }}</dt><dd dir="ltr"><code>{{ $ppp['password'] ?? '—' }}</code></dd></div>
+                @if ($pppSecret !== '')
+                    <div><dt>{{ __('accounts.connection_ipsec_secret_label') }}</dt><dd dir="ltr"><code>{{ $pppSecret }}</code></dd></div>
+                @endif
+            </dl>
+            @if (! empty($ppp['services']))
+                <h3 class="portal-ppp-sub">{{ __('accounts.connection_available_protocols') }}</h3>
+                <ul class="portal-ppp-list">
+                    @foreach ($ppp['services'] as $svc)
+                        <li>
+                            <strong>{{ $svc['label'] }}</strong>
+                            <span dir="ltr">{{ $svc['transport'] }} · {{ $svc['port'] }}</span>
+                            @if (! empty($svc['needs_file']) && ! empty($ppp['ovpn_download_route']))
+                                <a href="{{ $ppp['ovpn_download_route'] }}" class="portal-action-btn portal-action-btn--primary">{{ __('accounts.download_openvpn_profile_btn') }}</a>
+                            @endif
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
+        </section>
+    @endif
+
     @if ($isWireguard)
         <section class="portal-card">
             <h2 class="portal-card__title">{{ __('accounts.config_title') }}</h2>

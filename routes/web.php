@@ -143,6 +143,7 @@ Route::middleware('noindex')->group(function (): void {
         ->name('portal.stats');
     Route::get('/portal/{token}/config/download', [ClientPortalController::class, 'downloadConfig'])->name('portal.config.download');
     Route::get('/portal/{token}/config/qr', [ClientPortalController::class, 'downloadQr'])->name('portal.config.qr');
+    Route::get('/portal/{token}/ovpn', [ClientPortalController::class, 'downloadOvpn'])->name('portal.ovpn.download');
 });
 
 // نشانی اشتراک باید دقیقاً /sub/{token} باشد؛ ربات‌های واسط (مانند WizWiz) با
