@@ -314,6 +314,10 @@ class SyncService
         }
 
         $account->data_used_bytes = max(0, (int) $account->data_used_bytes + $totalDelta);
+        // The all-time total only ever grows: a renewal resets data_used_bytes,
+        // a router reboot or a reconnect resets the router's counter, and
+        // neither may take traffic the customer already used off the record.
+        $account->lifetime_used_bytes = max(0, (int) $account->lifetime_used_bytes + $totalDelta);
         $account->last_sync_at = now();
         $account->save();
 

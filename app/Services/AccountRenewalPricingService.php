@@ -266,12 +266,10 @@ class AccountRenewalPricingService
             return $gb;
         }
 
-        if ($gb <= $current) {
-            throw new InvalidArgumentException(__('accounts.renew_upgrade_gb_must_exceed', [
-                'current' => rtrim(rtrim(number_format($current, 2, '.', ''), '0'), '.'),
-            ]));
-        }
-
+        // No "must exceed the current volume" rule any more: this mode is
+        // billed for the whole new volume and starts it from zero usage, so
+        // setting a smaller volume is as fair as a larger one -- and it is
+        // the only way to give an account an exact volume.
         if ($gb < $min || ($max !== null && $gb > $max)) {
             throw new InvalidArgumentException(__('packages.elastic_gb_out_of_range', [
                 'min' => rtrim(rtrim(number_format($min, 2, '.', ''), '0'), '.'),
