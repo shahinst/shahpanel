@@ -19,6 +19,10 @@
     $canRenew = ! $account->isRefunded()
         && $account->package !== null
         && app(PackageCategoryService::class)->isPackageAvailableForRenewal($account->package);
+    // Entries from modules; each module decides who may see its own.
+    $extensionItems = in_array($prefix, ['admin', 'agent', 'seller'], true)
+        ? \App\Support\PanelExtensions::accountMenuItems($account, $prefix)
+        : [];
 @endphp
 
 <div class="dropdown account-actions" data-account-actions>
@@ -81,6 +85,9 @@
                 </form>
             </li>
         @endif
+        @foreach ($extensionItems as $item)
+            <li><a class="dropdown-item" href="{{ $item['url'] }}"><i class="bx {{ $item['icon'] }}"></i> {{ $item['label'] }}</a></li>
+        @endforeach
         <li><hr class="dropdown-divider"></li>
         <li><a class="dropdown-item" href="{{ route($prefix.'.accounts.portal-link', $account) }}" target="_blank"><i class="bx bx-link-external"></i> {{ __('menu.portal_link') }}</a></li>
     </ul>

@@ -35,4 +35,5 @@
 
 @include('layouts.partials.nav-shahbot', ['panel' => $panel])
 
+@include('layouts.partials.nav-extensions', ['panel' => $panel])
 @include('layouts.partials.nav-panel-settings', ['panel' => $panel])
