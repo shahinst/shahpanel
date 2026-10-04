@@ -4,6 +4,7 @@
 
 @section('panel_content')
     <x-page-header :title="__('shahbot::admin.bot_access')">
+        <a href="{{ $panel === 'admin' ? route('admin.shahbot.index') : route('agent.shahbot.my-bot') }}" class="btn btn-outline-secondary"><i class="bx bx-arrow-back"></i> {{ __('app.back') }}</a>
         <p class="text-muted mb-0">{{ __($panel === 'admin' ? 'shahbot::admin.bot_access_admin_hint' : 'shahbot::admin.bot_access_agent_hint') }}</p>
     </x-page-header>
 

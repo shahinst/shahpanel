@@ -1,6 +1,36 @@
 {
     "versions": [
         {
+            "version": "3.26.0",
+            "date": "2026-10-31",
+            "notes": {
+                "fa": [
+                    "نماینده می‌تواند فروشنده‌هایش را از کیف پول خودش شارژ کند — هم از پنل (صفحهٔ فروشنده‌ها) و هم از ربات (فهرست فروشنده‌ها). مبلغ از نماینده کم و به فروشنده اضافه می‌شود و در حسابداری هر دو با «از پنل» یا «از ربات» ثبت می‌شود.",
+                    "مالک ربات می‌تواند یکی از اکانت‌هایش را به خریداری که ربات را استارت کرده بدهد؛ خریدار در ربات اعلان می‌گیرد و اکانت را در «سرویس‌های من» می‌بیند، مدیریت و تمدید می‌کند.",
+                    "راهنمای ساخت ربات تلگرام در صفحهٔ «ربات من» که هر وقت بخواهید می‌بندید.",
+                    "دکمهٔ بازگشت در صفحهٔ دسترسی به ربات."
+                ],
+                "en": [
+                    "An agent can charge their sellers from their own wallet, from the panel (Sellers page) or the bot (seller list). The amount moves from agent to seller and both statements record whether it came from the panel or the bot.",
+                    "A bot owner can give one of their accounts to a buyer who started the bot; the buyer is notified in the bot and can see, manage and renew it under \"My services\".",
+                    "A dismissible guide to building a Telegram bot on \"My bot\".",
+                    "A back button on the bot-access page."
+                ],
+                "ru": [
+                    "An agent can charge their sellers from their own wallet, from the panel (Sellers page) or the bot (seller list). The amount moves from agent to seller and both statements record whether it came from the panel or the bot.",
+                    "A bot owner can give one of their accounts to a buyer who started the bot; the buyer is notified in the bot and can see, manage and renew it under \"My services\".",
+                    "A dismissible guide to building a Telegram bot on \"My bot\".",
+                    "A back button on the bot-access page."
+                ],
+                "zh": [
+                    "An agent can charge their sellers from their own wallet, from the panel (Sellers page) or the bot (seller list). The amount moves from agent to seller and both statements record whether it came from the panel or the bot.",
+                    "A bot owner can give one of their accounts to a buyer who started the bot; the buyer is notified in the bot and can see, manage and renew it under \"My services\".",
+                    "A dismissible guide to building a Telegram bot on \"My bot\".",
+                    "A back button on the bot-access page."
+                ]
+            }
+        },
+        {
             "version": "3.25.0",
             "date": "2026-10-30",
             "notes": {

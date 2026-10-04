@@ -460,6 +460,7 @@ Route::prefix($agentPath)->name('agent.')->middleware(['auth', 'role:agent', 'lo
         ->middleware('throttle:impersonation')
         ->name('sellers.impersonate');
     Route::resource('sellers', AgentSellerController::class)->except(['show', 'destroy']);
+    Route::post('sellers/{seller}/charge', [AgentSellerController::class, 'charge'])->name('sellers.charge')->middleware('throttle:money-actions');
     Route::post('sellers/{seller}', [AgentSellerController::class, 'update']);
     Route::get('clients', [AgentClientController::class, 'index'])->name('clients.index');
     Route::get('clients/create', [AgentClientController::class, 'create'])->name('clients.create');

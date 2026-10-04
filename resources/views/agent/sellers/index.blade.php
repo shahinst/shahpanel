@@ -48,6 +48,12 @@
                             @endcan
                             <x-icon-action icon="bx-edit" variant="primary" :label="__('app.edit')" :href="route('agent.sellers.edit', $seller)" />
                         </div>
+                        <form method="POST" action="{{ route('agent.sellers.charge', $seller) }}" class="d-inline-flex gap-1 mt-1"
+                              data-confirm="{{ __('wallet.seller_charge_confirm', ['name' => $seller->username]) }}">
+                            @csrf
+                            <input type="number" name="amount" min="1" step="1" required dir="ltr" class="form-control form-control-sm" style="width:8rem" placeholder="{{ __('wallet.seller_charge_amount_label') }}">
+                            <button type="submit" class="btn btn-sm btn-outline-success" title="{{ __('wallet.seller_charge') }}"><i class="bx bx-wallet"></i></button>
+                        </form>
                     </td>
                 </tr>
             @empty
