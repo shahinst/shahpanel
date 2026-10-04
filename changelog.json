@@ -1,6 +1,24 @@
 {
     "versions": [
         {
+            "version": "3.27.1",
+            "date": "2026-11-02",
+            "notes": {
+                "fa": [
+                    "منوی بخش مدیریت ربات تلگرام دیگر یک نوار کشویی چپ‌به‌راست نیست: بخش‌ها به‌صورت کاشی در چهار گروه (فروش، نمایندگی، ارتباط با کاربران، پیکربندی) چیده می‌شوند و روی هر صفحه‌ای همه یک‌جا دیده می‌شوند."
+                ],
+                "en": [
+                    "The Telegram bot admin menu is no longer a sideways-scrolling strip: its sections are tiles in four groups (sales, resellers, engagement, setup), all visible at once on any screen."
+                ],
+                "ru": [
+                    "The Telegram bot admin menu is no longer a sideways-scrolling strip: its sections are tiles in four groups (sales, resellers, engagement, setup), all visible at once on any screen."
+                ],
+                "zh": [
+                    "The Telegram bot admin menu is no longer a sideways-scrolling strip: its sections are tiles in four groups (sales, resellers, engagement, setup), all visible at once on any screen."
+                ]
+            }
+        },
+        {
             "version": "3.27.0",
             "date": "2026-11-01",
             "notes": {

@@ -25,14 +25,35 @@
         <p>{{ __('shahbot::admin.subtitle') }}</p>
     </div>
 </div>
-<nav class="sb-tabs">
-    @foreach ($tabs as [$route, $icon, $label, $patterns])
-        <a href="{{ route($route) }}" @class(['sb-tab', 'is-active' => request()->routeIs(...$patterns)])>
-            <i class="bx {{ $icon }}"></i> {{ __('shahbot::admin.'.$label) }}
-            @if ($route === 'admin.shahbot.payments.index' && $pendingCount > 0)<span class="sb-badge">{{ persian_digits($pendingCount) }}</span>@endif
-            @if ($route === 'admin.shahbot.refunds.index' && $pendingRefunds > 0)<span class="sb-badge">{{ persian_digits($pendingRefunds) }}</span>@endif
-            @if ($route === 'admin.shahbot.tickets.index' && $openTickets > 0)<span class="sb-badge">{{ persian_digits($openTickets) }}</span>@endif
-        </a>
+{{-- A grid of grouped tiles that wraps onto as many rows as it needs. It
+     used to be one strip that scrolled sideways, so on a laptop half the
+     sections sat off screen and on a phone the strip slid left and right. --}}
+@php
+    $groups = [
+        'nav_group_sales' => ['tab_dashboard', 'tab_users', 'tab_payments', 'tab_orders', 'tab_refunds', 'tab_codes'],
+        'nav_group_resellers' => ['tab_agents', 'bot_access'],
+        'nav_group_engage' => ['tab_fun', 'tab_broadcasts', 'tab_tickets', 'tab_tutorials'],
+        'nav_group_setup' => ['tab_editor', 'tab_settings'],
+    ];
+    $byLabel = collect($tabs)->keyBy(fn ($t) => $t[2]);
+@endphp
+<nav class="sb-nav">
+    @foreach ($groups as $groupLabel => $labels)
+        <section class="sb-nav-group">
+            <h2>{{ __('shahbot::admin.'.$groupLabel) }}</h2>
+            <div class="sb-tabs">
+                @foreach ($labels as $label)
+                    @php [$route, $icon, , $patterns] = $byLabel[$label]; @endphp
+                    <a href="{{ route($route) }}" @class(['sb-tab', 'is-active' => request()->routeIs(...$patterns)])>
+                        <i class="bx {{ $icon }}"></i>
+                        <span>{{ __('shahbot::admin.'.$label) }}</span>
+                        @if ($route === 'admin.shahbot.payments.index' && $pendingCount > 0)<span class="sb-badge">{{ persian_digits($pendingCount) }}</span>@endif
+                        @if ($route === 'admin.shahbot.refunds.index' && $pendingRefunds > 0)<span class="sb-badge">{{ persian_digits($pendingRefunds) }}</span>@endif
+                        @if ($route === 'admin.shahbot.tickets.index' && $openTickets > 0)<span class="sb-badge">{{ persian_digits($openTickets) }}</span>@endif
+                    </a>
+                @endforeach
+            </div>
+        </section>
     @endforeach
 </nav>
 
@@ -43,10 +64,16 @@
     .sb-head h1 { font-size:1.35rem; font-weight:800; margin:0 0 .25rem; display:flex; align-items:center; gap:.5rem; }
     .sb-head h1 i { color:#229ED9; font-size:1.7rem; }
     .sb-head p { margin:0; color:var(--bs-secondary-color, #6b7280); font-size:.9rem; }
-    .sb-tabs { display:flex; gap:.35rem; overflow-x:auto; padding-bottom:.4rem; margin-bottom:1.1rem; border-bottom:1px solid rgba(127,127,127,.18); }
-    .sb-tab { display:inline-flex; align-items:center; gap:.35rem; white-space:nowrap; padding:.5rem .85rem; border-radius:.6rem; color:inherit; text-decoration:none; font-size:.88rem; opacity:.8; }
-    .sb-tab:hover { background:rgba(34,158,217,.08); opacity:1; }
-    .sb-tab.is-active { background:#229ED9; color:#fff; opacity:1; }
+    .sb-nav { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:.9rem; margin-bottom:1.2rem; padding-bottom:1rem; border-bottom:1px solid rgba(127,127,127,.18); }
+    .sb-nav-group h2 { font-size:.72rem; font-weight:700; letter-spacing:.02em; text-transform:uppercase; color:var(--bs-secondary-color, #6b7280); margin:0 0 .45rem; }
+    .sb-tabs { display:grid; grid-template-columns:repeat(auto-fill, minmax(118px, 1fr)); gap:.4rem; }
+    .sb-tab { position:relative; display:flex; align-items:center; gap:.45rem; min-width:0; padding:.55rem .65rem; border:1px solid rgba(127,127,127,.18); border-radius:.65rem; background:var(--bs-body-bg, #fff); color:inherit; text-decoration:none; font-size:.84rem; transition:background .15s, border-color .15s; }
+    .sb-tab span:not(.sb-badge) { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .sb-tab i { font-size:1.15rem; color:#229ED9; flex:none; }
+    .sb-tab:hover { border-color:#229ED9; background:rgba(34,158,217,.06); }
+    .sb-tab.is-active { background:#229ED9; border-color:#229ED9; color:#fff; }
+    .sb-tab.is-active i { color:#fff; }
+    .sb-tab .sb-badge { margin-inline-start:auto; flex:none; }
     .sb-badge { background:#ef4444; color:#fff; border-radius:999px; font-size:.7rem; padding:.05rem .45rem; }
     .sb-cards { display:grid; grid-template-columns:repeat(auto-fit, minmax(190px, 1fr)); gap:.8rem; margin-bottom:1.1rem; }
     .sb-card { border:1px solid rgba(127,127,127,.18); border-radius:.9rem; padding:1rem; background:var(--bs-body-bg, #fff); display:flex; gap:.75rem; align-items:center; }
@@ -72,7 +99,7 @@
     .sb-msg.admin { background:#e0f2fe; color:#0c4a6e; margin-inline-start:auto; }
     .sb-msg small { display:block; opacity:.7; font-size:.72rem; margin-top:.25rem; }
     .sb-muted { color:var(--bs-secondary-color, #6b7280); font-size:.82rem; }
-    @media (max-width: 576px) { .sb-head { flex-direction:column; align-items:flex-start; } }
+    @media (max-width: 576px) { .sb-head { flex-direction:column; align-items:flex-start; } .sb-nav { grid-template-columns:1fr; } .sb-tabs { grid-template-columns:repeat(2, minmax(0, 1fr)); } }
 </style>
 @endpush
 @endonce
