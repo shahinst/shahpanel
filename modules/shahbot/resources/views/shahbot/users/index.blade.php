@@ -8,6 +8,23 @@
 <form method="GET" class="d-flex flex-wrap gap-2 mb-2">
     <input type="text" name="q" value="{{ $search }}" class="form-control" style="max-width:320px" placeholder="{{ __('shahbot::admin.search_hint') }}">
     <input type="hidden" name="filter" value="{{ request('filter') }}">
+    <select name="owner" class="form-select" style="max-width:220px">
+        <option value="">{{ __('shahbot::admin.customers_filter_owner') }}</option>
+        @foreach ($resellers ?? [] as $r)
+            <option value="{{ $r->id }}" @selected((int) request('owner') === $r->id)>{{ $r->full_name ?: $r->username }} — {{ $r->role->label() }}</option>
+        @endforeach
+    </select>
+    <select name="role" class="form-select" style="max-width:180px">
+        <option value="">{{ __('shahbot::admin.customers_role') }}</option>
+        <option value="agent" @selected(request('role') === 'agent')>{{ \App\Enums\UserRole::Agent->label() }}</option>
+        <option value="seller" @selected(request('role') === 'seller')>{{ \App\Enums\UserRole::Seller->label() }}</option>
+    </select>
+    <select name="bot" class="form-select" style="max-width:160px">
+        <option value="">{{ __('shahbot::admin.customers_all_bots') }}</option>
+        <option value="main" @selected(request('bot') === 'main')>{{ __('shahbot::admin.customers_main_bot') }}</option>
+    </select>
+    <input type="date" name="from" value="{{ request('from') }}" class="form-control" style="max-width:170px" dir="ltr">
+    <input type="date" name="to" value="{{ request('to') }}" class="form-control" style="max-width:170px" dir="ltr">
     <button class="btn btn-primary"><i class="bx bx-search"></i> {{ __('shahbot::admin.search') }}</button>
 </form>
 <div class="sb-filters">

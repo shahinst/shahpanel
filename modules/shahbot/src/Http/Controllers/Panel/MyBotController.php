@@ -7,6 +7,7 @@ use App\Services\ClientDisplayPricingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Modules\ShahBot\Models\BotInstance;
@@ -18,6 +19,7 @@ use Modules\ShahBot\Services\WebhookService;
 use Modules\ShahBot\Support\BotAccess;
 use Modules\ShahBot\Support\BotContext;
 use Modules\ShahBot\Support\BotSettings;
+use Modules\ShahBot\Support\StartImage;
 
 /**
  * "My sales bot" for agents and sellers: their own bot token, admins, card
@@ -97,13 +99,25 @@ class MyBotController extends Controller
         $secrets = [];
         foreach (['np_api_key', 'np_ipn_secret'] as $field) {
             $value = trim((string) $request->input($field, ''));
-            $secrets[$field.'_enc'] = $value !== '' ? \Illuminate\Support\Facades\Crypt::encryptString($value) : ($previous[$field.'_enc'] ?? null);
+            $secrets[$field.'_enc'] = $value !== '' ? Crypt::encryptString($value) : ($previous[$field.'_enc'] ?? null);
         }
         if ($request->boolean('np_clear')) {
             $secrets = ['np_api_key_enc' => null, 'np_ipn_secret_enc' => null];
         }
         $bot->settings = array_merge(array_map(fn ($v) => (string) ($v ?? ''), $data), array_filter($secrets, fn ($v) => $v !== null));
         $bot->save();
+
+        if ($request->boolean('start_image_clear')) {
+            StartImage::clear($bot);
+        }
+
+        if ($request->hasFile('start_image')) {
+            try {
+                StartImage::store($bot, $request->file('start_image'), $user);
+            } catch (\InvalidArgumentException $e) {
+                return back()->with('error', $e->getMessage());
+            }
+        }
 
         return back()->with('success', __('shahbot::admin.saved'));
     }

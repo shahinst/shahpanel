@@ -18,6 +18,7 @@
 <x-page-header :title="__('shahbot::admin.my_bot')">
     <p class="text-muted mb-0">{{ __('shahbot::admin.my_bot_subtitle') }}</p>
     <a href="{{ route($prefix.'.plans') }}" class="btn btn-outline-primary"><i class="bx bx-package"></i> {{ __('shahbot::admin.my_plans') }}</a>
+    <a href="{{ route($panel.'.shahbot.customers') }}" class="btn btn-outline-primary"><i class="bx bx-group"></i> {{ __('shahbot::admin.customers') }}</a>
     @if ($panel === 'agent')
         <a href="{{ route('agent.shahbot.access') }}" class="btn btn-outline-primary"><i class="bx bx-key"></i> {{ __('shahbot::admin.bot_access_my_sellers') }}</a>
     @endif
@@ -46,7 +47,7 @@
     <div class="card">
         <div class="card-body">
             <p class="text-muted">{{ __('shahbot::admin.my_bot_steps') }}</p>
-            <form method="POST" action="{{ route($prefix.'.update') }}" class="row g-3">
+            <form method="POST" action="{{ route($prefix.'.update') }}" class="row g-3" enctype="multipart/form-data">
                 @csrf
                     <div class="col-12"><hr><h6 class="mb-2"><i class="bx bx-bitcoin"></i> {{ __('shahbot::admin.np_title') }}</h6>
                         <div class="alert alert-info small mb-2">{!! nl2br(e(__('shahbot::admin.np_guide'))) !!}</div>
@@ -95,6 +96,12 @@
                 <div class="col-md-6">
                     <label class="form-label">{{ __('shahbot::admin.welcome_text') }}</label>
                     <textarea name="welcome_text" rows="4" class="form-control">{{ old('welcome_text', $values['welcome_text'] ?? '') }}</textarea>
+                    <label class="form-label mt-2">{{ __('shahbot::admin.start_image') }}</label>
+                    <input type="file" name="start_image" accept="image/png,image/jpeg" class="form-control">
+                    <div class="form-text">{{ __('shahbot::admin.start_image_hint') }}</div>
+                    @if ($bot && \Modules\ShahBot\Support\StartImage::path($bot))
+                        <label class="form-check mt-1"><input type="checkbox" name="start_image_clear" value="1" class="form-check-input"> {{ __('shahbot::admin.start_image_clear') }}</label>
+                    @endif
                     <div class="text-muted small">{{ __('shahbot::admin.welcome_hint') }}</div>
                 </div>
                 <div class="col-md-6">

@@ -1,6 +1,40 @@
 {
     "versions": [
         {
+            "version": "3.27.0",
+            "date": "2026-11-01",
+            "notes": {
+                "fa": [
+                    "نماینده در ربات خودش اکانت‌های خودش و هرکدام از فروشنده‌هایش را می‌بیند و همان‌جا فعال یا غیرفعال می‌کند؛ اکانتی بیرون از زیرمجموعه‌اش در دسترس نیست.",
+                    "بخش «حسابداری» در ربات: موجودی و آخرین تراکنش‌های کیف پول، همان ردیف‌هایی که حسابداری پنل نشان می‌دهد.",
+                    "صفحهٔ «مشتری‌های ربات» برای فروشنده (اعضای ربات خودش) و نماینده (اعضای ربات خودش و فروشنده‌هایش)، با جستجو بر اساس آیدی، یوزرنیم، نام و تلفن، خرید کرده/نکرده و بازهٔ تاریخ؛ ادمین هم بر اساس ربات، نقش صاحب ربات و تاریخ فیلتر می‌کند.",
+                    "هر ربات نمایندگی می‌تواند تصویر پیام شروع داشته باشد. فقط PNG/JPG واقعی تا ۲ مگابایت پذیرفته می‌شود و فایل با محتوایش سنجیده و از نو ساخته می‌شود؛ هر فایل ردشده فوراً به ادمین گزارش می‌شود.",
+                    "دکمهٔ «مشتری‌های ربات» در منوی مدیریت ربات هم اضافه شد."
+                ],
+                "en": [
+                    "In their own bot an agent sees their accounts and each of their sellers', and disables or enables them right there; nothing outside their subtree is reachable.",
+                    "\"Ledger\" in the bot: wallet balance and latest transactions, the same rows the panel's accounting shows.",
+                    "A \"Bot customers\" page for sellers (their bot's members) and agents (theirs and their sellers'), searchable by id, username, name and phone, bought or not, and date range; admins also filter by bot, owner's role and date.",
+                    "Each reseller bot can have a start image. Only a real PNG/JPG up to 2 MB is accepted, judged by its content and re-encoded; every rejected file is reported to the admin at once.",
+                    "A \"Bot customers\" button was added to the bot's admin menu too."
+                ],
+                "ru": [
+                    "In their own bot an agent sees their accounts and each of their sellers', and disables or enables them right there; nothing outside their subtree is reachable.",
+                    "\"Ledger\" in the bot: wallet balance and latest transactions, the same rows the panel's accounting shows.",
+                    "A \"Bot customers\" page for sellers (their bot's members) and agents (theirs and their sellers'), searchable by id, username, name and phone, bought or not, and date range; admins also filter by bot, owner's role and date.",
+                    "Each reseller bot can have a start image. Only a real PNG/JPG up to 2 MB is accepted, judged by its content and re-encoded; every rejected file is reported to the admin at once.",
+                    "A \"Bot customers\" button was added to the bot's admin menu too."
+                ],
+                "zh": [
+                    "In their own bot an agent sees their accounts and each of their sellers', and disables or enables them right there; nothing outside their subtree is reachable.",
+                    "\"Ledger\" in the bot: wallet balance and latest transactions, the same rows the panel's accounting shows.",
+                    "A \"Bot customers\" page for sellers (their bot's members) and agents (theirs and their sellers'), searchable by id, username, name and phone, bought or not, and date range; admins also filter by bot, owner's role and date.",
+                    "Each reseller bot can have a start image. Only a real PNG/JPG up to 2 MB is accepted, judged by its content and re-encoded; every rejected file is reported to the admin at once.",
+                    "A \"Bot customers\" button was added to the bot's admin menu too."
+                ]
+            }
+        },
+        {
             "version": "3.26.0",
             "date": "2026-10-31",
             "notes": {

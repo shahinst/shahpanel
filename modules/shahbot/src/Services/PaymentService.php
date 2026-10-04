@@ -154,7 +154,7 @@ class PaymentService
             $order = $payment->order;
 
             try {
-                $bought = app(\Modules\ShahBot\Services\ShopService::class)->purchase($payment->botUser, (int) $order['duration'],
+                $bought = app(ShopService::class)->purchase($payment->botUser, (int) $order['duration'],
                     isset($order['gb']) ? (float) $order['gb'] : null, $order['code'] ?? null, $order['name'] ?? null);
                 $this->notifier->user($payment->botUser, fn () => __('shahbot::bot.card_order_done', ['id' => $bought->id]));
 
