@@ -75,6 +75,17 @@ class MiniAppController extends Controller
                         'sub_url' => $account->service_type->accountCategory() === AccountCategory::V2ray ? $feed->urlFor($account) : null,
                     ];
                 })->values(),
+                // The store, same rows and prices the bot's buy menu shows, so the
+                // mini app is no longer an account viewer with nothing to buy.
+                'plans' => rescue(fn () => $shop->groups($user)->map(fn (array $group): array => [
+                    'label' => (string) $group['label'],
+                    'rows' => $group['rows']->map(fn (array $row): array => [
+                        'id' => (int) $row['duration']->id,
+                        'name' => (string) $row['package']->name,
+                        'period' => $row['duration']->tier->label(),
+                        'price' => format_money($row['display_price']),
+                    ])->values(),
+                ])->values(), [], true),
             ]);
         });
     }

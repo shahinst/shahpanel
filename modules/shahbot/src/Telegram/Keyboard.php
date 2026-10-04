@@ -41,9 +41,22 @@ class Keyboard
      */
     public static function reply(array $rows): array
     {
+        // At most two buttons a row. A layout row holding three or more long
+        // Persian labels made Telegram squeeze them into a strip that slid
+        // sideways on phones; two keep every label whole and the grid steady.
+        $grid = [];
+        foreach ($rows as $row) {
+            $buttons = array_map(fn ($t) => is_array($t) ? $t : ['text' => (string) $t], array_values($row));
+            foreach (array_chunk($buttons, 2) as $chunk) {
+                $grid[] = $chunk;
+            }
+        }
+
         return [
-            'keyboard' => array_map(fn (array $row) => array_map(fn ($t) => is_array($t) ? $t : ['text' => (string) $t], $row), $rows),
+            'keyboard' => $grid,
             'resize_keyboard' => true,
+            // Stays open instead of collapsing behind the input box after each tap.
+            'is_persistent' => true,
         ];
     }
 

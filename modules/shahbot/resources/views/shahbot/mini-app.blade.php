@@ -105,6 +105,12 @@
                 + '<div class="bal"><div><small>' + esc(t.balance) + '</small><br><strong>' + esc(data.balance) + '</strong></div>'
                 + '<small>' + esc(t.orders) + ': ' + fa(data.orders) + '</small></div></div>';
 
+            (data.plans || []).forEach(g => {
+                html += '<div class="title">' + esc(g.label) + '</div>';
+                g.rows.forEach(r => {
+                    html += '<div class="card"><strong>' + esc(r.name) + '</strong><br><small>' + esc(r.period) + ' — ' + esc(r.price) + '</small></div>';
+                });
+            });
             html += '<div class="title">' + esc(t.services) + ' <span class="pill">' + fa(data.services.length) + '</span></div>';
 
             if (data.services.length === 0) {

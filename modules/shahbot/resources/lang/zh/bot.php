@@ -310,4 +310,13 @@ return [
     'cfg_closed_text' => '目前暂停销售，请稍后再来。',
     'cfg_agency_text' => '如需成为代理，请简单介绍您自己和您的销售情况。',
     'wallet_panel' => "💼 Your panel wallet (:name)\n\nBalance: :balance\n\nThis is your wallet in the panel and always shows the same figure. It is charged from the panel.",
+    'buy_choose_plan' => 'Category ":category" — choose a plan:',
+    'buy_choose_period' => 'Plan ":plan" — choose a period:',
+    'ask_service_name' => 'Send a name for this service (up to 60 characters). It is how the service appears in your list.',
+    'service_name_invalid' => 'The service name must be 1 to 60 characters.',
+    'service_name_set' => 'Service name: :name',
+    'btn_service_name' => '✏️ Name this service',
+    'invoice_service_name' => 'Service name: :name',
+    'wg_caption' => "🛡 :name\nScan this QR in the WireGuard app.\n\nService page:\n:url",
+    'wg_unavailable' => "The WireGuard config could not be built: :error",
 ];

@@ -173,7 +173,7 @@ class ShopService
      * the same transaction, so a failed purchase takes it back with everything
      * else.
      */
-    public function purchase(BotUser $user, int $durationId, ?float $gb = null, ?string $code = null): BotOrder
+    public function purchase(BotUser $user, int $durationId, ?float $gb = null, ?string $code = null, ?string $label = null): BotOrder
     {
         $this->assertSalesOpen();
         $quote = $this->quote($user, $durationId, $gb, $code);
@@ -183,12 +183,19 @@ class ShopService
             throw new InvalidArgumentException(__('shahbot::bot.balance_low'));
         }
 
-        $order = DB::transaction(function () use ($user, $client, $quote): BotOrder {
+        $order = DB::transaction(function () use ($user, $client, $quote, $label): BotOrder {
             if ($quote['code'] !== null && (float) $quote['discount'] > 0) {
                 $this->codes->consumeDiscount($user, $quote['code'], $quote['discount']);
             }
 
             $account = $this->purchases->purchase($client, $quote['row']['package'], $quote['row']['duration'], $quote['gb']);
+
+            // The name the buyer chose is the account's label in the panel and
+            // the bot; the remote username stays the panel's own, so a name
+            // can never collide with or impersonate another account.
+            if ($label !== null && trim($label) !== '') {
+                $account->forceFill(['display_label' => mb_substr(trim($label), 0, 60)])->save();
+            }
 
             return BotOrder::query()->create([
                 'bot_user_id' => $user->id,
