@@ -309,4 +309,5 @@ Wallet balance: <b>:balance</b>",
     'cfg_support_text' => 'Write your message and send it; our support team will answer as soon as possible.',
     'cfg_closed_text' => 'Sales are paused right now. Please check back a little later.',
     'cfg_agency_text' => 'To become a reseller, write a short note about yourself and how much you sell.',
+    'wallet_panel' => "💼 Your panel wallet (:name)\n\nBalance: :balance\n\nThis is your wallet in the panel and always shows the same figure. It is charged from the panel.",
 ];

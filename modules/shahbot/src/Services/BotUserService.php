@@ -118,6 +118,36 @@ class BotUserService
         });
     }
 
+    /**
+     * The panel account whose wallet this Telegram user actually holds.
+     *
+     * Every bot user is backed by an auto-made customer ("TG name"), and the
+     * wallet menu used to show that customer's balance -- for an agent or
+     * seller too, so the figure in their bot never matched the one in their
+     * panel. A reseller made through an agency request holds their seller
+     * account's wallet, and the owner of an agent bot, writing from one of
+     * that bot's admin chats, holds their own. Everyone else is a customer.
+     */
+    public function walletHolder(BotUser $botUser, bool $isAdminChat): User
+    {
+        if ($botUser->reseller_user_id !== null && ($reseller = $botUser->reseller) !== null) {
+            return $reseller;
+        }
+
+        if ($isAdminChat && (int) $botUser->bot_id > 0) {
+            return $this->owner($botUser);
+        }
+
+        return $this->client($botUser);
+    }
+
+    public function walletBalance(User $holder): string
+    {
+        $wallet = $this->wallets->getOrCreateWallet($holder)->fresh();
+
+        return number_format((float) $wallet->balance, 2, '.', '');
+    }
+
     public function balance(BotUser $botUser): string
     {
         $wallet = $this->wallets->getOrCreateWallet($this->client($botUser))->fresh();

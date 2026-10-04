@@ -309,4 +309,5 @@ return [
     'cfg_support_text' => '请写下您的消息并发送，客服会尽快回复。',
     'cfg_closed_text' => '目前暂停销售，请稍后再来。',
     'cfg_agency_text' => '如需成为代理，请简单介绍您自己和您的销售情况。',
+    'wallet_panel' => "💼 Your panel wallet (:name)\n\nBalance: :balance\n\nThis is your wallet in the panel and always shows the same figure. It is charged from the panel.",
 ];

@@ -309,4 +309,5 @@ return [
     'cfg_support_text' => 'Напишите и отправьте сообщение; поддержка ответит как можно скорее.',
     'cfg_closed_text' => 'Продажи сейчас приостановлены. Загляните чуть позже.',
     'cfg_agency_text' => 'Чтобы стать реселлером, коротко расскажите о себе и объёме продаж.',
+    'wallet_panel' => "💼 Your panel wallet (:name)\n\nBalance: :balance\n\nThis is your wallet in the panel and always shows the same figure. It is charged from the panel.",
 ];
