@@ -134,7 +134,7 @@ class BotUserService
             return $reseller;
         }
 
-        if ($isAdminChat && (int) $botUser->bot_id > 0) {
+        if ($isAdminChat) {
             return $this->owner($botUser);
         }
 

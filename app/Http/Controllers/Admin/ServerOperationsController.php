@@ -511,7 +511,7 @@ class ServerOperationsController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:32', 'regex:/^[a-zA-Z][a-zA-Z0-9_-]*$/'],
-            'speed_limit_mbps' => ['nullable', 'integer', 'in:5,10,20,30,40,50'],
+            'speed_limit_mbps' => ['required', 'integer', 'in:0,5,10,20,30,40,50'],
             'is_enabled' => ['required', 'boolean'],
         ]);
 
@@ -522,7 +522,7 @@ class ServerOperationsController extends Controller
                 $server,
                 $serverInterface,
                 $validated['name'],
-                isset($validated['speed_limit_mbps']) ? (int) $validated['speed_limit_mbps'] : null,
+                ((int) $validated['speed_limit_mbps']) ?: null,
                 $request->boolean('is_enabled'),
             );
             $interface = $result['interface'];
@@ -684,8 +684,10 @@ class ServerOperationsController extends Controller
         $this->authorize('update', $server);
         abort_unless($serverInterface->server_id === $server->id && $serverInterface->category === 'ppp', 404);
 
-        $data = $request->validate(['speed_limit_mbps' => ['nullable', 'integer', 'in:5,10,20,30,40,50']]);
-        $speed = isset($data['speed_limit_mbps']) ? (int) $data['speed_limit_mbps'] : null;
+        $data = $request->validate(['speed_limit_mbps' => ['required', 'integer', 'in:0,5,10,20,30,40,50']]);
+        // "0" is the explicit "unlimited"; a missing speed is refused above
+        // rather than read as "remove the limit".
+        $speed = ((int) $data['speed_limit_mbps']) ?: null;
         $meta = $serverInterface->meta ?? [];
 
         if (trim((string) ($meta['subnet'] ?? '')) === '' && $speed !== null) {

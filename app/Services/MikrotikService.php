@@ -2030,11 +2030,27 @@ class MikrotikService
         $secret = $this->findSecret($server, $identifier);
 
         if ($secret !== null) {
+            // A PPP secret carries no traffic counters at all -- reading
+            // bytes-in/bytes-out off it returned 0 for every L2TP, OpenVPN,
+            // SSTP and PPTP account, so their usage never moved. The bytes
+            // live on the dynamic interface the router creates for the live
+            // session, "<l2tp-name>" and the like. With no session there is no
+            // interface and the reading is 0; the sync treats a drop as a
+            // counter reset and keeps what it has already stored.
+            $session = $this->queryRouter($server, '/ppp/active/print', ['name' => $identifier])[0] ?? null;
+            $stats = ['rx_bytes' => 0, 'tx_bytes' => 0];
+
+            if ($session !== null && ($service = (string) ($session['service'] ?? '')) !== '') {
+                $stats = $this->readInterfaceStats($server, '<'.$service.'-'.$identifier.'>');
+            }
+
+            // The interface counts from the router's side: what it received
+            // is the customer's upload, what it sent is their download.
             return [
-                'rx_bytes' => (int) ($secret['bytes-in'] ?? 0),
-                'tx_bytes' => (int) ($secret['bytes-out'] ?? 0),
-                'rx_snapshot' => (int) ($secret['bytes-in'] ?? 0),
-                'tx_snapshot' => (int) ($secret['bytes-out'] ?? 0),
+                'rx_bytes' => $stats['rx_bytes'],
+                'tx_bytes' => $stats['tx_bytes'],
+                'rx_snapshot' => $stats['rx_bytes'],
+                'tx_snapshot' => $stats['tx_bytes'],
             ];
         }
 

@@ -39,62 +39,48 @@
                     $formId = 'wg-update-'.$iface->id;
                 @endphp
                 <tr>
-                    @can('update', $server)
-                        <td>
-                            <input type="text" name="name" form="{{ $formId }}"
-                                   class="form-control form-control-sm" required
-                                   pattern="[A-Za-z][A-Za-z0-9_-]*"
-                                   value="{{ old('name.'.$iface->id, $iface->name) }}">
-                        </td>
-                    @else
-                        <td><code>{{ $iface->name }}</code></td>
-                    @endcan
+                    <td><code>{{ $iface->name }}</code></td>
                     <td><code>{{ $subnet }}</code></td>
                     <td><code class="small">{{ $gateway }}</code></td>
                     <td>{{ $iface->port ? persian_digits($iface->port) : '—' }}</td>
                     <td>{{ is_numeric($peerRouter) ? persian_digits($peerRouter) : $peerRouter }}</td>
                     <td>{{ is_numeric($peerPanel) ? persian_digits($peerPanel) : $peerPanel }}</td>
                     <td>
-                        @can('update', $server)
-                            @include('admin.servers.partials.speed-limit-select', [
-                                'fieldName' => 'speed_limit_mbps',
-                                'selected' => old('speed_limit_mbps.'.$iface->id, $speedMbps),
-                                'inputId' => 'wg-speed-'.$iface->id,
-                                'formId' => $formId,
-                            ])
+                        @if ($speedMbps && (int) $speedMbps > 0)
+                            {{ persian_digits((int) $speedMbps) }} {{ __('servers.speed_limit_mbps_unit') }}
                         @else
-                            @if ($speedMbps && (int) $speedMbps > 0)
-                                {{ persian_digits((int) $speedMbps) }} {{ __('servers.speed_limit_mbps_unit') }}
-                            @else
-                                {{ __('servers.speed_limit_unlimited') }}
-                            @endif
-                        @endcan
+                            {{ __('servers.speed_limit_unlimited') }}
+                        @endif
                     </td>
                     <td>
-                        @can('update', $server)
-                            <select name="is_enabled" form="{{ $formId }}" class="form-select form-select-sm">
-                                <option value="1" @selected($iface->is_enabled)>
-                                    {{ __('accounts.status_active') }}
-                                </option>
-                                <option value="0" @selected(! $iface->is_enabled)>
-                                    {{ __('accounts.status_disabled') }}
-                                </option>
-                            </select>
+                        @if ($iface->is_enabled)
+                            <span class="badge bg-success">{{ __('accounts.status_active') }}</span>
                         @else
-                            @if ($iface->is_enabled)
-                                <span class="badge bg-success">{{ __('accounts.status_active') }}</span>
-                            @else
-                                <span class="badge bg-secondary">{{ __('accounts.status_disabled') }}</span>
-                            @endif
-                        @endcan
+                            <span class="badge bg-secondary">{{ __('accounts.status_disabled') }}</span>
+                        @endif
                     </td>
                     <td>{{ $iface->synced_at ? jalali_date($iface->synced_at) : '—' }}</td>
                     <td>
                         @can('update', $server)
-                            <form method="POST" id="{{ $formId }}"
+                            {{-- The fields live inside the form. They used to sit in other
+                                 cells, tied to it with the form="" attribute, and a speed that
+                                 never reached the server was read as "remove the limit". --}}
+                            <form method="POST" id="{{ $formId }}" class="d-flex flex-wrap gap-1 align-items-center mb-1"
                                   action="{{ route('admin.servers.wireguard-interfaces.update', [$server, $iface]) }}">
                                 @csrf
                                 @method('PUT')
+                                <input type="text" name="name" class="form-control form-control-sm" style="width:9rem" required
+                                       pattern="[A-Za-z][A-Za-z0-9_-]*" value="{{ $iface->name }}" title="{{ __('servers.name') }}">
+                                <select name="speed_limit_mbps" class="form-select form-select-sm" style="width:auto" title="{{ __('servers.speed_limit') }}">
+                                    <option value="0" @selected(! $speedMbps)>{{ __('servers.speed_limit_unlimited') }}</option>
+                                    @foreach ([5, 10, 20, 30, 40, 50] as $mbps)
+                                        <option value="{{ $mbps }}" @selected((int) $speedMbps === $mbps)>{{ persian_digits($mbps) }} {{ __('servers.speed_limit_mbps_unit') }}</option>
+                                    @endforeach
+                                </select>
+                                <select name="is_enabled" class="form-select form-select-sm" style="width:auto">
+                                    <option value="1" @selected($iface->is_enabled)>{{ __('accounts.status_active') }}</option>
+                                    <option value="0" @selected(! $iface->is_enabled)>{{ __('accounts.status_disabled') }}</option>
+                                </select>
                                 <button type="submit" class="btn btn-sm btn-outline-primary">
                                     <i class="bx bx-save"></i> {{ __('servers.row_update') }}
                                 </button>

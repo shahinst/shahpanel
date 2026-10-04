@@ -1,6 +1,40 @@
 {
     "versions": [
         {
+            "version": "3.23.0",
+            "date": "2026-10-28",
+            "notes": {
+                "fa": [
+                    "تنظیم سرعت اینترفیس وایرگارد و پروفایل PPP دیگر به «نامحدود» برنمی‌گردد: فیلد سرعت بیرون از فرم ذخیره بود و در برخی مرورگرها ارسال نمی‌شد. حالا همه در خود فرم است و «نامحدود» باید صریح انتخاب شود.",
+                    "بازگشت وجه درخواست‌شده در ربات یک نماینده یا فروشنده فقط با تأیید خود او انجام می‌شود، نه از پنل ادمین.",
+                    "ادمینی که در تنظیمات ربات معرفی شده، در منوی کیف پول موجودی واقعی پنل را می‌بیند.",
+                    "تمدید با «تعیین حجم و زمان دقیق»: هر حجمی (کمتر یا بیشتر) و هر دوره‌ای قابل انتخاب است؛ مصرف قبلی صفر می‌شود و دوره از همان لحظه شروع می‌شود، نه بعد از روزهای باقی‌مانده.",
+                    "مصرف اکانت‌های L2TP، OpenVPN، SSTP و PPTP همیشه صفر ثبت می‌شد چون از جایی خوانده می‌شد که روتر شمارنده ندارد. حالا از جلسهٔ زندهٔ کاربر خوانده می‌شود؛ قطع‌ووصل یا ریست روتر مقدار ذخیره‌شده را صفر نمی‌کند و مصرف کل همیشه رو به افزایش است."
+                ],
+                "en": [
+                    "Setting a WireGuard interface or PPP profile speed no longer falls back to \"unlimited\": the speed field sat outside the save form and some browsers did not send it. Everything is inside the form now, and unlimited has to be chosen explicitly.",
+                    "A refund requested in an agent's or seller's bot is approved only by that agent or seller, not from the admin panel.",
+                    "An admin listed in the bot settings now sees the panel's real balance in the wallet menu.",
+                    "Renewal with \"set exact data and time\": any volume, smaller or larger, and any period; previous usage is reset and the period starts now instead of after the remaining days.",
+                    "L2TP, OpenVPN, SSTP and PPTP usage was always recorded as zero because it was read where the router keeps no counters. It is now read from the user's live session; a reconnect or router reset does not wipe what was stored, and lifetime usage only grows."
+                ],
+                "ru": [
+                    "Setting a WireGuard interface or PPP profile speed no longer falls back to \"unlimited\": the speed field sat outside the save form and some browsers did not send it. Everything is inside the form now, and unlimited has to be chosen explicitly.",
+                    "A refund requested in an agent's or seller's bot is approved only by that agent or seller, not from the admin panel.",
+                    "An admin listed in the bot settings now sees the panel's real balance in the wallet menu.",
+                    "Renewal with \"set exact data and time\": any volume, smaller or larger, and any period; previous usage is reset and the period starts now instead of after the remaining days.",
+                    "L2TP, OpenVPN, SSTP and PPTP usage was always recorded as zero because it was read where the router keeps no counters. It is now read from the user's live session; a reconnect or router reset does not wipe what was stored, and lifetime usage only grows."
+                ],
+                "zh": [
+                    "Setting a WireGuard interface or PPP profile speed no longer falls back to \"unlimited\": the speed field sat outside the save form and some browsers did not send it. Everything is inside the form now, and unlimited has to be chosen explicitly.",
+                    "A refund requested in an agent's or seller's bot is approved only by that agent or seller, not from the admin panel.",
+                    "An admin listed in the bot settings now sees the panel's real balance in the wallet menu.",
+                    "Renewal with \"set exact data and time\": any volume, smaller or larger, and any period; previous usage is reset and the period starts now instead of after the remaining days.",
+                    "L2TP, OpenVPN, SSTP and PPTP usage was always recorded as zero because it was read where the router keeps no counters. It is now read from the user's live session; a reconnect or router reset does not wipe what was stored, and lifetime usage only grows."
+                ]
+            }
+        },
+        {
             "version": "3.22.3",
             "date": "2026-10-27",
             "notes": {

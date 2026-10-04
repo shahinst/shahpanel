@@ -50,14 +50,7 @@
                     <td>{{ is_numeric($routerSecrets) ? persian_digits($routerSecrets) : $routerSecrets }}</td>
                     <td>{{ is_numeric($panelAccounts) ? persian_digits($panelAccounts) : $panelAccounts }}</td>
                     <td>
-                        @can('update', $server)
-                            @include('admin.servers.partials.speed-limit-select', [
-                                'fieldName' => 'speed_limit_mbps',
-                                'selected' => $speedMbps,
-                                'inputId' => 'ppp-speed-'.$profile->id,
-                                'formId' => $formId,
-                            ])
-                        @elseif ($speedMbps && (int) $speedMbps > 0)
+                        @if ($speedMbps && (int) $speedMbps > 0)
                             {{ persian_digits((int) $speedMbps) }} {{ __('servers.speed_limit_mbps_unit') }}
                         @else
                             {{ __('servers.speed_limit_unlimited') }}
@@ -77,6 +70,12 @@
                                   action="{{ route('admin.servers.ppp-profiles.update', [$server, $profile]) }}">
                                 @csrf
                                 @method('PUT')
+                                <select name="speed_limit_mbps" class="form-select form-select-sm d-inline-block" style="width:auto">
+                                    <option value="0" @selected(! $speedMbps)>{{ __('servers.speed_limit_unlimited') }}</option>
+                                    @foreach ([5, 10, 20, 30, 40, 50] as $mbps)
+                                        <option value="{{ $mbps }}" @selected((int) $speedMbps === $mbps)>{{ persian_digits($mbps) }} {{ __('servers.speed_limit_mbps_unit') }}</option>
+                                    @endforeach
+                                </select>
                                 <button type="submit" class="btn btn-sm btn-outline-primary" title="{{ __('servers.row_update') }}"><i class="bx bx-save"></i></button>
                             </form>
                             <form method="POST" class="d-inline" data-confirm="{{ __('servers.interface_delete_confirm', ['name' => $profile->name]) }}"

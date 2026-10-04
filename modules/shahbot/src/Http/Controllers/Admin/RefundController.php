@@ -29,6 +29,13 @@ class RefundController extends Controller
 
     public function approve(Request $request, BotRefundRequest $refund, ServiceOpsService $ops): RedirectResponse
     {
+        // A refund in a reseller's bot pays back out of that reseller's sale,
+        // so it is theirs to approve -- from their bot's admin chat. The panel
+        // admin only approves refunds of the main bot.
+        if ((int) $refund->botUser?->bot_id !== 0) {
+            return back()->with('error', __('shahbot::admin.refund_owner_only'));
+        }
+
         try {
             $done = $ops->approveRefund($refund, 'panel:'.$request->user()->username, $request->user());
         } catch (InvalidArgumentException $e) {

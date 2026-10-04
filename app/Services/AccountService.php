@@ -436,7 +436,10 @@ class AccountService
                 // Renew from the account's own end date when it is still valid, so
                 // renewing early carries the unused days over instead of losing them.
                 // Already expired (or no expiry yet) → start from now.
-                $renewalBase = $account->expiry_at !== null && $account->expiry_at->isFuture()
+                // Setting a volume replaces the account's volume and usage, and
+                // its time with it: the admin chose an exact volume and period,
+                // so the days left are not stacked on top.
+                $renewalBase = $renewalMode !== 'upgrade_volume' && $account->expiry_at !== null && $account->expiry_at->isFuture()
                     ? $account->expiry_at->copy()
                     : now();
 
