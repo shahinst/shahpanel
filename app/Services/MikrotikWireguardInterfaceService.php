@@ -265,9 +265,11 @@ class MikrotikWireguardInterfaceService
 
         $iface = $iface->fresh();
         $queuesApplied = 0;
+        $queueReport = null;
 
         if ($speedLimitMbps !== null && $speedLimitMbps > 0) {
             $queuesApplied = $queueService->applyInterfaceSpeedQueues($server, $iface);
+            $queueReport = $queueService->lastReport;
         }
 
         if ($newName !== $oldName && $subnet !== '') {
@@ -285,6 +287,7 @@ class MikrotikWireguardInterfaceService
         return [
             'interface' => $iface,
             'queues_applied' => $queuesApplied,
+            'queue_report' => $queueReport,
             'speed_limit_mbps' => $speedLimitMbps,
         ];
     }

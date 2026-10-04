@@ -387,4 +387,6 @@ return [
     'interface_deleted' => '«:name» از روتر و پنل حذف شد.',
     'ppp_profile_updated' => 'سرعت پروفایل «:name» ذخیره و روی روتر اعمال شد.',
     'ppp_speed_needs_subnet' => '«:name» زیرشبکهٔ مشخصی ندارد، پس نمی‌شود برای تک‌تک آدرس‌هایش صف ساخت.',
+    'speed_queues_verified' => 'بررسی روی روتر: :ok از :total صف آدرس با سرعت جدید فعال است.',
+    'speed_fasttrack_exempted' => 'FastTrack روی این روتر روشن است و صف‌های ساده را دور می‌زند؛ برای «:name» دو قانون استثنا بالای FastTrack اضافه شد تا محدودیت سرعت واقعاً اعمال شود.',
 ];
