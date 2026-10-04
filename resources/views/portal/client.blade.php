@@ -165,6 +165,27 @@
         </section>
     @endif
 
+    @if (! empty($anyconnect))
+        @php $ac = $anyconnect; @endphp
+        <section class="portal-card">
+            <h2 class="portal-card__title">{{ __('accounts.anyconnect_connection_info') }}</h2>
+            <dl class="portal-ppp-creds">
+                <div><dt>{{ __('accounts.anyconnect_server_address') }}</dt><dd dir="ltr"><code>{{ $ac['server_host'] ?? '—' }}</code></dd></div>
+                @if (($ac['show_port'] ?? true) && ! empty($ac['port']))
+                    <div><dt>{{ __('accounts.anyconnect_port') }}</dt><dd dir="ltr"><code>{{ $ac['port'] }}</code></dd></div>
+                @endif
+                <div><dt>{{ __('accounts.service_username') }}</dt><dd dir="ltr"><code>{{ $ac['username'] ?? $account->remote_username }}</code></dd></div>
+                <div><dt>{{ __('accounts.service_password') }}</dt><dd dir="ltr"><code>{{ $ac['password'] ?? '—' }}</code></dd></div>
+                @if (! empty($ac['group_policy']))
+                    <div><dt>{{ __('accounts.anyconnect_group_policy') }}</dt><dd dir="ltr"><code>{{ $ac['group_policy'] }}</code></dd></div>
+                @endif
+                @if (! empty($ac['tunnel_group']))
+                    <div><dt>{{ __('accounts.anyconnect_tunnel_group') }}</dt><dd dir="ltr"><code>{{ $ac['tunnel_group'] }}</code></dd></div>
+                @endif
+            </dl>
+        </section>
+    @endif
+
     @if (! empty($ppp))
         @php
             $pppSecret = trim((string) ($ppp['ipsec_secret'] ?? ''));

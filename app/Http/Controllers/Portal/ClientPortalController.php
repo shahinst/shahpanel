@@ -115,7 +115,14 @@ class ClientPortalController extends Controller
             }
         }
 
+        // OpenConnect (ocserv and Cisco AnyConnect) had the same gap as PPP:
+        // no file, and no section telling the customer where to connect.
+        $anyconnect = $account->service_type->isAnyconnectFamily()
+            ? rescue(fn () => app(ClientAccountDetailService::class)->build($account)['anyconnect'] ?? null, null)
+            : null;
+
         return view('portal.client', compact(
+            'anyconnect',
             'ppp',
             'account',
             'invoice',

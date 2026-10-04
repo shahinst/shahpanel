@@ -36,6 +36,27 @@ class PortalPppTest extends TestCase
             ->assertSee('S3cret-pass');
     }
 
+    public function test_the_portal_shows_an_openconnect_account_how_to_connect(): void
+    {
+        $this->app->instance(SyncService::class, Mockery::mock(SyncService::class)->shouldIgnoreMissing());
+
+        $account = $this->makeAccount($this->makeAgent(), $this->makeServer('ocserv'), [
+            'service_type' => ServiceType::Ocserv,
+            'remote_username' => 'oc-reza',
+            'remote_password_enc' => 'Oc-Pass-9',
+            'portal_token_expires_at' => now()->addDay(),
+        ]);
+        $token = $account->portal_token;
+        $solved = [hash_hmac('sha256', $token, (string) config('app.key')) => now()->addHour()->getTimestamp()];
+
+        $this->withSession(['portal_captcha_solved' => $solved])
+            ->get(route('portal.show', $token))
+            ->assertOk()
+            ->assertSee(__('accounts.anyconnect_connection_info'))
+            ->assertSee('oc-reza')
+            ->assertSee('Oc-Pass-9');
+    }
+
     public function test_the_portal_does_not_hand_out_an_openvpn_file_without_the_captcha(): void
     {
         $account = $this->makeAccount($this->makeAgent(), $this->makeServer(), [

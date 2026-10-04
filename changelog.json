@@ -1,6 +1,24 @@
 {
     "versions": [
         {
+            "version": "3.28.3",
+            "date": "2026-11-07",
+            "notes": {
+                "fa": [
+                    "صفحهٔ پرتال مشتری برای اکانت‌های OpenConnect (ocserv و Cisco AnyConnect) حالا «اطلاعات اتصال» را نشان می‌دهد: آدرس سرور، پورت، نام کاربری، رمز و در صورت وجود group policy و tunnel group. این بخش قبلاً برای این اکانت‌ها وجود نداشت."
+                ],
+                "en": [
+                    "The customer portal now shows connection details for OpenConnect accounts (ocserv and Cisco AnyConnect): server address, port, username, password and, where set, group policy and tunnel group. The section did not exist for these accounts before."
+                ],
+                "ru": [
+                    "The customer portal now shows connection details for OpenConnect accounts (ocserv and Cisco AnyConnect): server address, port, username, password and, where set, group policy and tunnel group. The section did not exist for these accounts before."
+                ],
+                "zh": [
+                    "The customer portal now shows connection details for OpenConnect accounts (ocserv and Cisco AnyConnect): server address, port, username, password and, where set, group policy and tunnel group. The section did not exist for these accounts before."
+                ]
+            }
+        },
+        {
             "version": "3.28.2",
             "date": "2026-11-06",
             "notes": {
