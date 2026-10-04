@@ -38,6 +38,18 @@
             <p class="text-muted">{{ __('shahbot::admin.my_bot_steps') }}</p>
             <form method="POST" action="{{ route($prefix.'.update') }}" class="row g-3">
                 @csrf
+                    <div class="col-12"><hr><h6 class="mb-2"><i class="bx bx-bitcoin"></i> {{ __('shahbot::admin.np_title') }}</h6>
+                        <div class="alert alert-info small mb-2">{!! nl2br(e(__('shahbot::admin.np_guide'))) !!}</div>
+                        @if ($bot)
+                            <label class="form-label small">{{ __('shahbot::admin.np_callback') }}</label>
+                            <input type="text" readonly dir="ltr" class="form-control form-control-sm mb-2" value="{{ app(\Modules\ShahBot\Services\ResellerCryptoService::class)->callbackUrl($bot) }}" onclick="this.select()">
+                        @endif
+                    </div>
+                    <div class="col-md-6"><label class="form-label">{{ __('shahbot::admin.np_api_key') }}</label>
+                        <input type="password" name="np_api_key" dir="ltr" autocomplete="off" class="form-control" placeholder="{{ $bot && app(\Modules\ShahBot\Services\ResellerCryptoService::class)->configured($bot) ? __('shahbot::admin.np_saved') : '' }}"></div>
+                    <div class="col-md-6"><label class="form-label">{{ __('shahbot::admin.np_ipn_secret') }}</label>
+                        <input type="password" name="np_ipn_secret" dir="ltr" autocomplete="off" class="form-control"></div>
+                    <div class="col-12"><label class="form-check"><input type="checkbox" name="np_clear" value="1" class="form-check-input"> {{ __('shahbot::admin.np_clear') }}</label></div>
                 <div class="col-12">
                     <label class="form-label">{{ __('shahbot::admin.brand_name') }}</label>
                     <input type="text" name="brand_name" value="{{ old('brand_name', $values['brand_name'] ?? '') }}" class="form-control" maxlength="80">

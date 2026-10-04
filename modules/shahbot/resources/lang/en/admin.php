@@ -378,4 +378,11 @@ return [
     'test_start_first' => 'this admin has not started the bot yet; press /start in Telegram once and connect again.',
     'webhook_unreachable_hint' => 'Telegram cannot open a connection to the panel server (usually a filter or firewall), so the bot receives nothing. Set the connection mode to Polling and press connect again: the panel then fetches messages from Telegram every minute, and Telegram never has to reach your server.',
     'refund_owner_only' => 'This request belongs to an agent\'s or seller\'s bot; its refund is approved only by them, from their own bot\'s admin chat.',
+    'np_title' => "Your own crypto gateway (NowPayments)",
+    'np_api_key' => "API Key",
+    'np_ipn_secret' => "IPN Secret",
+    'np_callback' => "Callback URL (paste this into NowPayments)",
+    'np_saved' => "Saved — enter a new value to change it",
+    'np_clear' => "Remove the NowPayments keys",
+    'np_guide' => "1. Sign up at nowpayments.io and set your payout wallet under Settings > Payments > Payout wallet (for example USDT TRC20).\n2. Create an API key under Settings > Payments > API keys and enter it here.\n3. Create an IPN secret under Settings > Payments > Instant payment notifications, enter it here, and paste the callback URL below there.\n4. Save. The \"Pay with crypto\" button then appears in your bot.\nThe money goes straight to your own wallet; when a payment is confirmed, the amount is taken from your panel balance for the customer and their service is created, exactly like approving a card receipt.",
 ];

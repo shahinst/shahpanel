@@ -26,13 +26,26 @@ class PaymentService
         protected BotNotifier $notifier,
     ) {}
 
-    public function start(BotUser $user, string $amount): BotPayment
+    /**
+     * A card payment for one order. The receipt goes to the bot's owner like a
+     * top-up, and the account is built only when they approve it.
+     */
+    public function startForOrder(BotUser $user, string $amount, array $order): BotPayment
+    {
+        $payment = $this->start($user, $amount, enforceRange: false);
+        $payment->forceFill(['order' => $order])->save();
+
+        return $payment;
+    }
+
+    public function start(BotUser $user, string $amount, bool $enforceRange = true): BotPayment
     {
         if (! $this->settings->bool('topup_enabled')) {
             throw new InvalidArgumentException(__('shahbot::bot.topup_disabled'));
         }
 
-        $amount = $this->validAmount($amount);
+        // An order is paid in full whatever the top-up range says.
+        $amount = $enforceRange ? $this->validAmount($amount) : max(1.0, (float) $amount);
 
         // One open request at a time; an older unpaid one is simply replaced.
         BotPayment::query()
@@ -133,6 +146,26 @@ class PaymentService
 
             return $locked;
         });
+
+        // A payment made for an order buys it now: the money just landed in
+        // the customer's wallet, and the purchase spends it from there, so the
+        // usual price checks and stock rules still apply.
+        if (is_array($payment->order) && ($payment->order['duration'] ?? 0) > 0) {
+            $order = $payment->order;
+
+            try {
+                $bought = app(\Modules\ShahBot\Services\ShopService::class)->purchase($payment->botUser, (int) $order['duration'],
+                    isset($order['gb']) ? (float) $order['gb'] : null, $order['code'] ?? null, $order['name'] ?? null);
+                $this->notifier->user($payment->botUser, fn () => __('shahbot::bot.card_order_done', ['id' => $bought->id]));
+
+                return $payment;
+            } catch (\Throwable $e) {
+                report($e);
+                $this->notifier->user($payment->botUser, fn () => __('shahbot::bot.card_order_failed', ['error' => e($e->getMessage())]));
+
+                return $payment;
+            }
+        }
 
         $this->notifier->user($payment->botUser, fn () => __('shahbot::bot.payment_approved', [
             'amount' => format_money($payment->amount),
