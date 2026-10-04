@@ -18,6 +18,21 @@
         'plans' => __('shahbot::bot.app_plans', [], 'fa'),
         'no_plans' => __('shahbot::bot.app_no_plans', [], 'fa'),
         'hello' => __('shahbot::bot.app_hello', [], 'fa'),
+        'details' => __('shahbot::bot.app_details', [], 'fa'),
+        'config' => __('shahbot::bot.app_config', [], 'fa'),
+        'qr' => __('shahbot::bot.app_qr', [], 'fa'),
+        'send_files' => __('shahbot::bot.app_send_files', [], 'fa'),
+        'download_qr' => __('shahbot::bot.app_download_qr', [], 'fa'),
+        'download_conf' => __('shahbot::bot.app_download_conf', [], 'fa'),
+        'copy_config' => __('shahbot::bot.app_copy_config', [], 'fa'),
+        'renew_title' => __('shahbot::bot.app_renew_title', [], 'fa'),
+        'renew_none' => __('shahbot::bot.app_renew_none', [], 'fa'),
+        'renew_confirm' => __('shahbot::bot.app_renew_confirm', [], 'fa'),
+        'renew_low' => __('shahbot::bot.app_renew_low', [], 'fa'),
+        'page' => __('shahbot::bot.app_page', [], 'fa'),
+        'close' => __('shahbot::bot.app_close', [], 'fa'),
+        'loading' => __('shahbot::bot.app_loading', [], 'fa'),
+        'balance_now' => __('shahbot::bot.app_balance_now', [], 'fa'),
     ];
 @endphp
 <!DOCTYPE html>
@@ -103,6 +118,21 @@
         .toast { position: fixed; left: 50%; bottom: calc(100px + env(safe-area-inset-bottom)); transform: translateX(-50%); background: #fff; color: #111;
             padding: 8px 16px; border-radius: 999px; font-weight: 700; font-size: 13px; opacity: 0; transition: opacity .2s; pointer-events: none; }
         .toast.show { opacity: .95; }
+        .sheet-bg { position: fixed; inset: 0; background: rgba(3,6,18,.62); backdrop-filter: blur(4px); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 20; }
+        .sheet-bg.on { opacity: 1; pointer-events: auto; }
+        .sheet { position: fixed; inset: auto 0 0 0; max-width: 520px; margin: 0 auto; max-height: 88vh; overflow-y: auto; z-index: 21;
+            background: #111836; border: 1px solid var(--line); border-bottom: 0; border-radius: 24px 24px 0 0; padding: 10px 16px calc(20px + env(safe-area-inset-bottom));
+            transform: translateY(105%); transition: transform .25s ease; }
+        .sheet.on { transform: none; }
+        .grip { width: 44px; height: 5px; border-radius: 9px; background: rgba(255,255,255,.18); margin: 2px auto 12px; }
+        .qr { display: block; width: 220px; max-width: 70%; margin: 6px auto 10px; background: #fff; padding: 10px; border-radius: 18px; }
+        .conf { direction: ltr; text-align: left; white-space: pre-wrap; word-break: break-all; font: 12px/1.6 ui-monospace, Menlo, Consolas, monospace;
+            background: rgba(0,0,0,.35); border: 1px solid var(--line); border-radius: 14px; padding: 12px; max-height: 210px; overflow: auto; margin: 6px 0 10px; }
+        .sec { font-weight: 800; margin: 14px 0 6px; }
+        .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .renew { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .renew[disabled] { opacity: .45; }
+        .card[data-open] { cursor: pointer; }
         @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
         @keyframes shine { to { background-position: -200% 0; } }
         @media (prefers-reduced-motion: reduce) { .card, .plan, .skeleton { animation: none; } }
@@ -119,6 +149,8 @@
         <button class="tab" data-tab="shop"><i>🛍</i>{{ $texts['shop'] }}</button>
     </nav>
     <div class="toast" id="toast"></div>
+    <div class="sheet-bg" id="sheet-bg"></div>
+    <div class="sheet" id="sheet"><div class="grip"></div><div id="sheet-body"></div></div>
 
     <script>
     (function () {
@@ -139,15 +171,19 @@
         tg.ready(); tg.expand();
         try { tg.setHeaderColor('#0b0f1e'); tg.setBackgroundColor('#0b0f1e'); } catch (e) {}
 
-        fetch(@json(route('shahbot.app.me', ['bot' => $botId])), {
+        const post = (url, body) => fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-            body: JSON.stringify({ initData: tg.initData }),
-        }).then(r => r.ok ? r.json() : Promise.reject(r.status)).then(render).catch(() => { app.innerHTML = '<div class="error">' + esc(t.outside) + '</div>'; });
+            body: JSON.stringify(Object.assign({ initData: tg.initData }, body || {})),
+        }).then(r => r.json().then(j => (r.ok ? j : Promise.reject(j.error || j.message || r.status))));
+        const SERVICE_URL = @json(route('shahbot.app.service', ['bot' => $botId]));
+        const load = () => post(@json(route('shahbot.app.me', ['bot' => $botId]))).then(render)
+            .catch(() => { app.innerHTML = '<div class="error">' + esc(t.outside) + '</div>'; });
+        load();
 
         function serviceCard(s, i) {
             const hot = s.percent >= 85;
-            return '<div class="card" style="animation-delay:' + (i * 40) + 'ms">'
+            return '<div class="card" data-open="' + s.id + '" style="animation-delay:' + (i * 40) + 'ms">'
                 + '<div class="row"><h3>' + esc(s.name) + '</h3><span class="badge ' + esc(s.status) + '">' + esc(s.status_label) + '</span></div>'
                 + (s.package ? '<div class="muted">' + esc(s.package) + '</div>' : '')
                 + '<div class="bar' + (hot ? ' hot' : '') + '"><i style="width:' + Math.max(2, Math.min(100, s.percent || 0)) + '%"></i></div>'
@@ -156,7 +192,7 @@
                 + (s.expiry ? '<div class="muted">' + esc(t.expiry) + ': ' + fa(esc(s.expiry)) + '</div>' : '')
                 + '<div class="actions">'
                 + (s.sub_url ? '<button class="btn ghost" data-copy="' + i + '">🔗 ' + esc(t.copy) + '</button>' : '<span></span>')
-                + '<button class="btn" data-bot>🔄 ' + esc(t.renew) + '</button></div></div>';
+                + '<button class="btn" data-open="' + s.id + '">🔄 ' + esc(t.renew) + '</button></div></div>';
         }
 
         function render(data) {
@@ -202,10 +238,84 @@
 
         function bind(data) {
             app.querySelectorAll('[data-bot]').forEach(el => el.addEventListener('click', openBot));
-            app.querySelectorAll('[data-copy]').forEach(el => el.addEventListener('click', () => {
-                tap();
+            app.querySelectorAll('[data-open]').forEach(el => el.addEventListener('click', (e) => {
+                if (e.target.closest('[data-copy]')) return;
+                e.stopPropagation(); tap(); openService(Number(el.dataset.open));
+            }));
+            app.querySelectorAll('[data-copy]').forEach(el => el.addEventListener('click', (e) => {
+                e.stopPropagation(); tap();
                 const url = data.services[Number(el.dataset.copy)].sub_url;
                 navigator.clipboard.writeText(url).then(() => toast(t.copied), () => toast(url));
+            }));
+        }
+
+        const sheet = document.getElementById('sheet');
+        const sheetBg = document.getElementById('sheet-bg');
+        const body = document.getElementById('sheet-body');
+        const closeSheet = () => { sheet.classList.remove('on'); sheetBg.classList.remove('on'); try { tg.BackButton.hide(); } catch (e) {} };
+        sheetBg.addEventListener('click', closeSheet);
+        try { tg.BackButton.onClick(closeSheet); } catch (e) {}
+
+        function openService(id) {
+            body.innerHTML = '<div class="skeleton" style="height:220px"></div>';
+            sheet.classList.add('on'); sheetBg.classList.add('on');
+            try { tg.BackButton.show(); } catch (e) {}
+            post(SERVICE_URL, { account: id, action: 'show' }).then(d => renderService(id, d))
+                .catch(err => { body.innerHTML = '<div class="error">' + esc(typeof err === 'string' ? err : t.outside) + '</div>'; });
+        }
+
+        function download(href, name) {
+            const a = document.createElement('a'); a.href = href; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+        }
+
+        function renderService(id, d) {
+            let h = '<div class="row"><h3>' + esc(t.details) + '</h3><button class="btn ghost" data-close>✕</button></div>';
+            if (d.qr) h += '<div class="sec">' + esc(t.qr) + '</div><img class="qr" src="' + esc(d.qr) + '" alt="QR">';
+            if (d.config) {
+                h += '<div class="sec">' + esc(t.config) + '</div><div class="conf" id="conf">' + esc(d.config) + '</div>'
+                    + '<div class="grid2"><button class="btn ghost" data-act="copy">📋 ' + esc(t.copy_config) + '</button>'
+                    + (d.wireguard ? '<button class="btn ghost" data-act="dlconf">⬇️ ' + esc(t.download_conf) + '</button>' : '<span></span>') + '</div>';
+                if (d.wireguard) {
+                    h += '<div class="grid2" style="margin-top:8px"><button class="btn ghost" data-act="dlqr">🖼 ' + esc(t.download_qr) + '</button>'
+                        + '<button class="btn" data-act="send">📩 ' + esc(t.send_files) + '</button></div>';
+                }
+            } else if (d.config_error) {
+                h += '<div class="error">' + esc(d.config_error) + '</div>';
+            }
+            if (d.page) h += '<div style="margin-top:8px"><button class="btn ghost" style="width:100%" data-act="page">🌐 ' + esc(t.page) + '</button></div>';
+
+            h += '<div class="sec">' + esc(t.renew_title) + ' <span class="muted">(' + esc(t.balance_now) + ': ' + fa(esc(d.balance)) + ')</span></div>';
+            if (!d.renewals || !d.renewals.length) h += '<div class="muted">' + esc(t.renew_none) + '</div>';
+            (d.renewals || []).forEach(r => {
+                h += '<button class="btn renew' + (r.affordable ? '' : ' ghost') + '" data-renew="' + r.id + '" data-label="' + esc(r.period + ' — ' + r.price) + '"'
+                    + (r.affordable ? '' : ' data-low="1"') + '><span>⏳ ' + esc(r.period) + '</span><b>' + fa(esc(r.price)) + '</b></button>';
+            });
+            body.innerHTML = h;
+
+            body.querySelector('[data-close]').addEventListener('click', closeSheet);
+            body.querySelectorAll('[data-act]').forEach(el => el.addEventListener('click', () => {
+                tap();
+                const act = el.dataset.act;
+                if (act === 'copy') navigator.clipboard.writeText(d.config).then(() => toast(t.copied), () => toast(t.copied));
+                if (act === 'dlconf') download('data:text/plain;charset=utf-8,' + encodeURIComponent(d.config), d.filename || 'wireguard.conf');
+                if (act === 'dlqr') download(d.qr, (d.filename || 'wireguard').replace(/\.conf$/, '') + '.png');
+                if (act === 'page') { try { tg.openLink(d.page); } catch (e) { window.open(d.page, '_blank'); } }
+                if (act === 'send') {
+                    el.disabled = true;
+                    post(SERVICE_URL, { account: id, action: 'send' }).then(r => toast(r.message)).catch(e => toast(String(e))).finally(() => { el.disabled = false; });
+                }
+            }));
+            body.querySelectorAll('[data-renew]').forEach(el => el.addEventListener('click', () => {
+                tap();
+                if (el.dataset.low) { toast(t.renew_low); return; }
+                const go = () => {
+                    el.disabled = true;
+                    post(SERVICE_URL, { account: id, action: 'renew', duration: Number(el.dataset.renew) })
+                        .then(r => { toast(r.message); try { tg.HapticFeedback.notificationOccurred('success'); } catch (e) {} closeSheet(); load(); })
+                        .catch(e => { toast(String(e)); el.disabled = false; });
+                };
+                const q = t.renew_confirm.replace(':plan', el.dataset.label);
+                try { tg.showConfirm(q, ok => ok && go()); } catch (e) { if (confirm(q)) go(); }
             }));
         }
 

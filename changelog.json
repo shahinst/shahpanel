@@ -1,6 +1,32 @@
 {
     "versions": [
         {
+            "version": "3.28.1",
+            "date": "2026-11-05",
+            "notes": {
+                "fa": [
+                    "در مینی‌اپ با زدن روی هر سرویس، صفحهٔ مشخصات آن باز می‌شود: QR کد و متن کامل کانفیگ وایرگارد، کپی کانفیگ، دانلود فایل کانفیگ و QR، و ارسال هر دو در چت ربات.",
+                    "تمدید حالا کاملاً داخل خود مینی‌اپ انجام می‌شود: گزینه‌های تمدید با قیمت و موجودی نشان داده می‌شوند و پس از تأیید، از کیف پول تمدید می‌شود.",
+                    "مینی‌اپ فقط سرویس‌های خود همان کاربر تلگرام را باز می‌کند و هر درخواست با امضای تلگرام بررسی می‌شود."
+                ],
+                "en": [
+                    "In the mini app, tapping a service opens its details: the WireGuard QR code and full config, copy config, download the config file and the QR, and send both to the bot chat.",
+                    "Renewing now happens entirely inside the mini app: renewal options are listed with price and balance, and after confirming, the service is renewed from the wallet.",
+                    "The mini app opens only that Telegram user's own services, and every request is checked against Telegram's signature."
+                ],
+                "ru": [
+                    "In the mini app, tapping a service opens its details: the WireGuard QR code and full config, copy config, download the config file and the QR, and send both to the bot chat.",
+                    "Renewing now happens entirely inside the mini app: renewal options are listed with price and balance, and after confirming, the service is renewed from the wallet.",
+                    "The mini app opens only that Telegram user's own services, and every request is checked against Telegram's signature."
+                ],
+                "zh": [
+                    "In the mini app, tapping a service opens its details: the WireGuard QR code and full config, copy config, download the config file and the QR, and send both to the bot chat.",
+                    "Renewing now happens entirely inside the mini app: renewal options are listed with price and balance, and after confirming, the service is renewed from the wallet.",
+                    "The mini app opens only that Telegram user's own services, and every request is checked against Telegram's signature."
+                ]
+            }
+        },
+        {
             "version": "3.28.0",
             "date": "2026-11-04",
             "notes": {

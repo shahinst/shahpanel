@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Modules\ShahBot\Http\Controllers\MiniAppController;
 use Modules\ShahBot\Http\Controllers\PaymentReturnController;
+use Modules\ShahBot\Http\Controllers\ResellerIpnController;
 use Modules\ShahBot\Http\Controllers\WebhookController;
 
 Route::post('/shahbot/webhook/{secret}', WebhookController::class)
@@ -21,9 +22,13 @@ Route::post('/shahbot/app/{bot}/me', [MiniAppController::class, 'me'])
     ->whereNumber('bot')
     ->middleware('throttle:60,1')
     ->name('shahbot.app.me');
+Route::post('/shahbot/app/{bot}/service', [MiniAppController::class, 'service'])
+    ->whereNumber('bot')
+    ->middleware('throttle:60,1')
+    ->name('shahbot.app.service');
 
 // A reseller's own NowPayments callback (one URL per bot, shown on "My bot").
-Route::post('/shahbot/np/{bot}/{secret}', \Modules\ShahBot\Http\Controllers\ResellerIpnController::class)
+Route::post('/shahbot/np/{bot}/{secret}', ResellerIpnController::class)
     ->whereNumber('bot')
     ->where('secret', '[A-Za-z0-9]{20,100}')
     ->middleware('throttle:120,1')

@@ -114,4 +114,45 @@ class ResellerBotPanelTest extends TestCase
         $this->assertStringContainsString('initData: tg.initData', $html);
         $this->assertStringContainsString('Vazirmatn', $html);
     }
+
+    private function initData(int $telegramId, string $token): string
+    {
+        $fields = ['auth_date' => (string) time(), 'user' => json_encode(['id' => $telegramId, 'first_name' => 'u'])];
+        ksort($fields);
+        $check = implode("\n", array_map(fn ($k, $v) => $k.'='.$v, array_keys($fields), $fields));
+        $secret = hash_hmac('sha256', $token, 'WebAppData', true);
+        $fields['hash'] = hash_hmac('sha256', $check, $secret);
+
+        return http_build_query($fields);
+    }
+
+    public function test_the_mini_app_opens_only_the_users_own_service(): void
+    {
+        // A seller's bot runs only while their agent also holds bot access.
+        $agent = $this->makeAgent();
+        DB::table('shahbot_bot_access')->insert(['user_id' => $agent->id, 'created_at' => now(), 'updated_at' => now()]);
+        $seller = $this->makeSeller($agent);
+        $bot = $this->bot($seller);
+        $token = '424242:'.str_repeat('t', 35);
+        $bot->setToken($token);
+        $bot->save();
+
+        $client = $this->makeClient($seller);
+        $server = $this->makeServer();
+        $mine = $this->makeAccount($seller, $server, ['client_user_id' => $client->id]);
+        $other = $this->makeAccount($seller, $server, ['client_user_id' => $this->makeClient($seller)->id]);
+        BotUser::query()->create(['bot_id' => $bot->id, 'telegram_id' => 9001, 'first_name' => 'u', 'client_user_id' => $client->id]);
+
+        $url = route('shahbot.app.service', ['bot' => $bot->id]);
+        $auth = $this->initData(9001, $token);
+
+        $this->postJson($url, ['initData' => $auth, 'account' => $mine->id])
+            ->assertOk()->assertJsonPath('ok', true)->assertJsonPath('id', $mine->id)->assertJsonStructure(['renewals', 'balance']);
+
+        // Another customer's account, even on the same bot, is not there.
+        $this->postJson($url, ['initData' => $auth, 'account' => $other->id])->assertNotFound();
+
+        // A forged signature gets nothing.
+        $this->postJson($url, ['initData' => $this->initData(9001, 'wrong:token'), 'account' => $mine->id])->assertUnauthorized();
+    }
 }
