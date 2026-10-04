@@ -917,6 +917,92 @@ class MikrotikService
     }
 
     /**
+     * Keep an interface's traffic out of FastTrack so its simple queues apply.
+     *
+     * RouterOS's default firewall fasttracks established connections, and a
+     * fasttracked connection skips simple queues altogether: the queues are
+     * on the router, look right, and limit nothing -- the customer runs
+     * unlimited. Two rules accepting the subnet's established/related traffic
+     * are placed above the first FastTrack rule. Those connections would be
+     * accepted a line later anyway, so no firewall decision changes; they are
+     * only kept off the fast path.
+     *
+     * @return bool whether the router fasttracks at all
+     */
+    public function exemptFromFasttrack(Server $server, string $interfaceName, string $subnet): bool
+    {
+        $comment = 'shahpanel-noft:'.$interfaceName;
+        $rules = $this->queryRouter($server, '/ip/firewall/filter/print');
+        $fasttrack = null;
+        $have = [];
+
+        foreach ($rules as $rule) {
+            if ($fasttrack === null && ($rule['action'] ?? '') === 'fasttrack-connection' && ($rule['disabled'] ?? 'false') !== 'true') {
+                $fasttrack = $rule['.id'] ?? null;
+            }
+
+            if (($rule['comment'] ?? '') === $comment) {
+                $have[] = $rule;
+            }
+        }
+
+        if ($fasttrack === null) {
+            return false;
+        }
+
+        // Rebuilt rather than patched, so a subnet change or a rule someone
+        // moved below the FastTrack line is put right.
+        foreach ($have as $rule) {
+            $this->execute($server, '/ip/firewall/filter/remove', ['.id' => $rule['.id']]);
+        }
+
+        foreach (['src-address', 'dst-address'] as $side) {
+            $this->execute($server, '/ip/firewall/filter/add', [
+                'chain' => 'forward',
+                'action' => 'accept',
+                'connection-state' => 'established,related',
+                $side => $subnet,
+                'comment' => $comment,
+                'place-before' => $fasttrack,
+            ]);
+        }
+
+        return true;
+    }
+
+    public function removeFasttrackExemption(Server $server, string $interfaceName): int
+    {
+        return $this->removeMatching($server, '/ip/firewall/filter', 'comment', 'shahpanel-noft:'.$interfaceName);
+    }
+
+    /**
+     * Child queues of an interface as the router reports them now, so a save
+     * can say what is really there instead of what it meant to write.
+     *
+     * @return array{total: int, at_speed: int}
+     */
+    public function countInterfaceQueues(Server $server, string $interfaceName, string $maxLimit): array
+    {
+        $total = 0;
+        $atSpeed = 0;
+
+        foreach ($this->queryRouter($server, '/queue/simple/print') as $row) {
+            if (($row['parent'] ?? '') !== $interfaceName || preg_match('/-acct-\d+$/', (string) ($row['name'] ?? ''))) {
+                continue;
+            }
+
+            $total++;
+
+            if (($row['disabled'] ?? 'false') !== 'true'
+                && ! $this->queueDiffers($row, ['name' => (string) ($row['name'] ?? ''), 'target' => (string) ($row['target'] ?? ''), 'max-limit' => $maxLimit, 'parent' => $interfaceName])) {
+                $atSpeed++;
+            }
+        }
+
+        return ['total' => $total, 'at_speed' => $atSpeed];
+    }
+
+    /**
      * RouterOS prints limits in bits ("10000000/10000000") while the panel
      * writes "10M/10M", so both sides are reduced to numbers first.
      *

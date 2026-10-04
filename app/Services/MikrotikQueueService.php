@@ -88,11 +88,28 @@ class MikrotikQueueService
             ]));
         }
 
+        $this->lastReport = [
+            'fasttrack' => $this->mikrotik->exemptFromFasttrack($server, $name, $subnet),
+            'verified' => $this->mikrotik->countInterfaceQueues($server, $name, $peerLimit),
+            'expected' => count($desired) - 1,
+        ];
+
         return count($desired);
     }
 
+    /**
+     * What the last applyInterfaceSpeedQueues() found on the router: whether
+     * FastTrack had to be worked around, and how many address queues really
+     * carry the new speed.
+     *
+     * @var array{fasttrack: bool, verified: array{total: int, at_speed: int}, expected: int}|null
+     */
+    public ?array $lastReport = null;
+
     public function removeInterfaceSpeedQueues(Server $server, string $interfaceName): int
     {
+        rescue(fn () => $this->mikrotik->removeFasttrackExemption($server, $interfaceName), 0, false);
+
         return $this->mikrotik->removeWireguardInterfaceQueues($server, $interfaceName);
     }
 

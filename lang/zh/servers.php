@@ -387,4 +387,6 @@ return [
     'interface_deleted' => '":name" was removed from the router and the panel.',
     'ppp_profile_updated' => 'The speed of profile ":name" was saved and applied on the router.',
     'ppp_speed_needs_subnet' => '":name" has no known subnet, so per-address queues cannot be built for it.',
+    'speed_queues_verified' => 'Checked on the router: :ok of :total address queues are active at the new speed.',
+    'speed_fasttrack_exempted' => 'FastTrack is on on this router and bypasses simple queues; two exemption rules for ":name" were placed above it so the speed limit actually applies.',
 ];

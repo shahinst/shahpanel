@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\ServerType;
 use App\Http\Controllers\Controller;
 use App\Models\Server;
 use App\Models\ServerInterface;
@@ -190,7 +191,7 @@ class ServerOperationsController extends Controller
                 dryRun: false,
                 syncInbounds: true,
             );
-        } catch (\Throwable $e) {
+        } catch (Throwable $e) {
             return redirect()
                 ->route('admin.servers.show', $server)
                 ->with('error', $e->getMessage());
@@ -425,9 +426,9 @@ class ServerOperationsController extends Controller
                 $lines[] = "[{$step}] ".implode(' | ', $parts);
             }
             $logFile = match ($server->type) {
-                \App\Enums\ServerType::Pasarguard => 'storage/logs/pasarguard.log',
-                \App\Enums\ServerType::Sanaei => 'storage/logs/sanaei.log',
-                \App\Enums\ServerType::Remnawave => 'storage/logs/remnawave.log',
+                ServerType::Pasarguard => 'storage/logs/pasarguard.log',
+                ServerType::Sanaei => 'storage/logs/sanaei.log',
+                ServerType::Remnawave => 'storage/logs/remnawave.log',
                 default => 'storage/logs/laravel.log',
             };
             $lines[] = __('backend.server_log_full_log', ['file' => $logFile]);
@@ -464,7 +465,7 @@ class ServerOperationsController extends Controller
                 isset($validated['listen_port']) ? (int) $validated['listen_port'] : null,
                 isset($validated['speed_limit_mbps']) ? (int) $validated['speed_limit_mbps'] : null,
             );
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             report($exception);
 
             return redirect()
@@ -525,7 +526,7 @@ class ServerOperationsController extends Controller
                 $request->boolean('is_enabled'),
             );
             $interface = $result['interface'];
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             report($exception);
 
             return redirect()
@@ -541,6 +542,18 @@ class ServerOperationsController extends Controller
                 'count' => persian_digits((int) $result['queues_applied']),
                 'speed' => persian_digits((int) $result['speed_limit_mbps']),
             ]);
+
+            // What the router reports after the write, not what was sent.
+            if (is_array($report = $result['queue_report'] ?? null)) {
+                $log[] = __('servers.speed_queues_verified', [
+                    'ok' => persian_digits($report['verified']['at_speed']),
+                    'total' => persian_digits($report['expected']),
+                ]);
+
+                if ($report['fasttrack']) {
+                    $log[] = __('servers.speed_fasttrack_exempted', ['name' => $interface->name]);
+                }
+            }
         } elseif ($result['speed_limit_mbps'] === null) {
             $log[] = __('servers.speed_queues_removed', ['name' => $interface->name]);
         }
@@ -583,7 +596,7 @@ class ServerOperationsController extends Controller
                 $validated['pool_name'] ?? null,
                 isset($validated['speed_limit_mbps']) ? (int) $validated['speed_limit_mbps'] : null,
             );
-        } catch (\Throwable $exception) {
+        } catch (Throwable $exception) {
             report($exception);
 
             return redirect()

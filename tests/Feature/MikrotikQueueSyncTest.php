@@ -81,6 +81,41 @@ class MikrotikQueueSyncTest extends TestCase
         $this->assertSame(['/queue/simple/set *2 wg1-2-20', '/queue/simple/set *3 wg1-3-20'], $writes);
     }
 
+    public function test_fasttrack_is_worked_around_above_its_own_rule(): void
+    {
+        $server = $this->makeServer();
+        $writes = [];
+        $router = Mockery::mock(MikrotikService::class)->makePartial()->shouldAllowMockingProtectedMethods();
+        $router->shouldReceive('queryRouter')->andReturn([
+            ['.id' => '*A', 'chain' => 'input', 'action' => 'accept'],
+            ['.id' => '*B', 'chain' => 'forward', 'action' => 'fasttrack-connection', 'disabled' => 'false'],
+            // Left from an earlier subnet: rebuilt, not kept.
+            ['.id' => '*C', 'chain' => 'forward', 'action' => 'accept', 'comment' => 'shahpanel-noft:wg1'],
+        ]);
+        $router->shouldReceive('execute')->andReturnUsing(function ($s, string $path, array $attrs) use (&$writes) {
+            $writes[] = [$path, $attrs];
+
+            return [];
+        });
+
+        $this->assertTrue($router->exemptFromFasttrack($server, 'wg1', '10.0.0.0/24'));
+        $this->assertSame('/ip/firewall/filter/remove', $writes[0][0]);
+        $this->assertSame('*C', $writes[0][1]['.id']);
+
+        foreach ([1 => 'src-address', 2 => 'dst-address'] as $i => $side) {
+            $this->assertSame('/ip/firewall/filter/add', $writes[$i][0]);
+            $this->assertSame('10.0.0.0/24', $writes[$i][1][$side]);
+            $this->assertSame('established,related', $writes[$i][1]['connection-state']);
+            $this->assertSame('*B', $writes[$i][1]['place-before']);
+        }
+
+        // A router without FastTrack is left untouched.
+        $quiet = Mockery::mock(MikrotikService::class)->makePartial()->shouldAllowMockingProtectedMethods();
+        $quiet->shouldReceive('queryRouter')->andReturn([['.id' => '*A', 'chain' => 'forward', 'action' => 'accept']]);
+        $quiet->shouldNotReceive('execute');
+        $this->assertFalse($quiet->exemptFromFasttrack($server, 'wg1', '10.0.0.0/24'));
+    }
+
     public function test_a_failed_queue_is_reported_and_the_rest_still_written(): void
     {
         $server = $this->makeServer();
