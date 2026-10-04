@@ -96,6 +96,7 @@
                     <button class="btn btn-success"><i class="bx bxl-telegram"></i> {{ __('shahbot::admin.connect') }}</button>
                     @if (! empty($webhookInfo['url']))<span class="badge bg-success ms-2">{{ __('shahbot::admin.webhook_ok') }}</span>@endif
                     @if (! empty($webhookInfo['last_error_message']))<div class="text-danger small mt-1">{{ __('shahbot::admin.webhook_error', ['error' => $webhookInfo['last_error_message']]) }}</div>@endif
+                    @if (\Modules\ShahBot\Services\WebhookService::webhookUnreachable($webhookInfo))<div class="alert alert-warning small mt-2 mb-0">{{ __('shahbot::admin.webhook_unreachable_hint') }}</div>@endif
                 </form>
             @endif
         </div>

@@ -1,6 +1,32 @@
 {
     "versions": [
         {
+            "version": "3.22.1",
+            "date": "2026-10-25",
+            "notes": {
+                "fa": [
+                    "تغییر سرعت یک اینترفیس دیگر صف‌ها را از روی میکروتیک پاک نمی‌کند: صفِ هر آدرس سر جای خودش با سرعت جدید بازنویسی می‌شود، پس در هیچ لحظه‌ای آدرسی بدون صف نمی‌ماند و ادمین هر وقت بخواهد می‌تواند سرعت را عوض کند.",
+                    "«اتصال» ربات تلگرام حالا بلافاصله یک پیام تست برای ادمین‌های ربات می‌فرستد. اگر نرسد، خطای واقعی نشان داده می‌شود؛ مثلاً اینکه ادمین هنوز ربات را /start نکرده یا آیدی ادمینی ثبت نشده.",
+                    "وقتی تلگرام نمی‌تواند به سرور پنل برسد (مثلاً «Connection timed out» در وضعیت وب‌هوک)، صفحهٔ اتصال توضیح می‌دهد که ربات پیامی دریافت نمی‌کند و حالت Polling را پیشنهاد می‌دهد."
+                ],
+                "en": [
+                    "Changing an interface's speed no longer wipes its queues off the MikroTik: each address's queue is rewritten in place with the new speed, so no address is ever left without a queue and the speed can be changed at any time.",
+                    "Connecting the Telegram bot now sends a test message to the bot's admins at once. If it does not arrive, the real reason is shown, such as the admin not having pressed /start yet or no admin chat id being set.",
+                    "When Telegram cannot reach the panel server (for example \"Connection timed out\" in the webhook status), the connection page explains that the bot receives nothing and suggests polling mode."
+                ],
+                "ru": [
+                    "Changing an interface's speed no longer wipes its queues off the MikroTik: each address's queue is rewritten in place with the new speed, so no address is ever left without a queue and the speed can be changed at any time.",
+                    "Connecting the Telegram bot now sends a test message to the bot's admins at once. If it does not arrive, the real reason is shown, such as the admin not having pressed /start yet or no admin chat id being set.",
+                    "When Telegram cannot reach the panel server (for example \"Connection timed out\" in the webhook status), the connection page explains that the bot receives nothing and suggests polling mode."
+                ],
+                "zh": [
+                    "Changing an interface's speed no longer wipes its queues off the MikroTik: each address's queue is rewritten in place with the new speed, so no address is ever left without a queue and the speed can be changed at any time.",
+                    "Connecting the Telegram bot now sends a test message to the bot's admins at once. If it does not arrive, the real reason is shown, such as the admin not having pressed /start yet or no admin chat id being set.",
+                    "When Telegram cannot reach the panel server (for example \"Connection timed out\" in the webhook status), the connection page explains that the bot receives nothing and suggests polling mode."
+                ]
+            }
+        },
+        {
             "version": "3.22.0",
             "date": "2026-10-24",
             "notes": {

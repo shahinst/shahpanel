@@ -849,10 +849,34 @@ class MikrotikService
         usort($desired, fn (array $a, array $b): int => (int) isset($a['parent']) <=> (int) isset($b['parent']));
         $wanted = [];
 
+        // A speed change renames every per-address queue ("wg1-5-10" becomes
+        // "wg1-5-20"). Matching by name alone meant adding a whole new set
+        // and then removing the old one -- twice the calls, and a save that
+        // stopped in the middle left addresses without a queue. The queue
+        // already sitting on that address is rewritten in place instead, so
+        // no address is ever left unlimited while the speed changes.
+        $byTarget = [];
+
+        foreach ($existing as $name => $row) {
+            if ($name !== $interfaceName && ! preg_match('/-acct-\d+$/', $name)) {
+                $byTarget[$this->queueTargetKey((string) ($row['target'] ?? ''))] ??= $name;
+            }
+        }
+
         foreach ($desired as $queue) {
             $wanted[$queue['name']] = true;
             $payload = array_filter($queue, fn ($v) => $v !== null && $v !== '');
             $row = $existing[$queue['name']] ?? null;
+
+            if ($row === null && isset($queue['parent'])) {
+                $previous = $byTarget[$this->queueTargetKey($queue['target'])] ?? null;
+
+                if ($previous !== null && ! isset($wanted[$previous])) {
+                    $row = $existing[$previous];
+                    $wanted[$previous] = true;
+                    unset($byTarget[$this->queueTargetKey($queue['target'])]);
+                }
+            }
 
             try {
                 if ($row === null) {
@@ -887,6 +911,11 @@ class MikrotikService
         return $result;
     }
 
+    protected function queueTargetKey(string $target): string
+    {
+        return preg_replace('#/32$#', '', trim($target));
+    }
+
     /**
      * RouterOS prints limits in bits ("10000000/10000000") while the panel
      * writes "10M/10M", so both sides are reduced to numbers first.
@@ -907,7 +936,8 @@ class MikrotikService
         $target = fn (string $t): string => preg_replace('#/32$#', '', trim($t));
         $parent = (string) ($queue['parent'] ?? '');
 
-        return $target((string) ($row['target'] ?? '')) !== $target($queue['target'])
+        return (string) ($row['name'] ?? '') !== $queue['name']
+            || $target((string) ($row['target'] ?? '')) !== $target($queue['target'])
             || $bits((string) ($row['max-limit'] ?? '0/0')) !== $bits($queue['max-limit'])
             || (($row['parent'] ?? 'none') === 'none' ? '' : (string) $row['parent']) !== $parent
             || ($row['disabled'] ?? 'false') === 'true';

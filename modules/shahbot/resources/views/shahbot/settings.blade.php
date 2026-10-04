@@ -73,6 +73,7 @@
                             @endif
                             @if (! empty($webhookInfo['pending_update_count']))<span class="sb-muted">{{ __('shahbot::admin.webhook_pending', ['count' => persian_digits($webhookInfo['pending_update_count'])]) }}</span>@endif
                             @if (! empty($webhookInfo['last_error_message']))<div class="text-danger small">{{ __('shahbot::admin.webhook_error', ['error' => $webhookInfo['last_error_message']]) }}</div>@endif
+                    @if (\Modules\ShahBot\Services\WebhookService::webhookUnreachable($webhookInfo))<div class="alert alert-warning small mt-2 mb-0">{{ __('shahbot::admin.webhook_unreachable_hint') }}</div>@endif
                         </div>
                     </div>
                 </div>
