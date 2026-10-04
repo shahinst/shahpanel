@@ -1,6 +1,36 @@
 {
     "versions": [
         {
+            "version": "3.28.0",
+            "date": "2026-11-04",
+            "notes": {
+                "fa": [
+                    "نماینده‌ها و فروشنده‌ها صفحهٔ «پرداخت‌ها و فیش‌ها» دارند: فیش‌های کارت‌به‌کارت با تصویر رسید، پرداخت‌های کریپتو و استارز، با فیلتر وضعیت و تأیید یا رد از همان‌جا. نماینده پرداخت‌های ربات فروشنده‌هایش را هم می‌بیند، ولی تأیید فقط با مالک همان ربات است چون از کیف پول او کم می‌شود.",
+                    "تصویر رسیدی که در ربات یک نماینده فرستاده شده حالا در پنل ادمین هم باز می‌شود؛ قبلاً با توکن ربات اصلی دریافت می‌شد و خطا می‌داد.",
+                    "صفحه‌های «ربات فروش من» (تنظیمات، پلن‌ها، پرداخت‌ها، مشتری‌ها، دسترسی فروشنده‌ها) با یک سربرگ و کاشی‌های ناوبری یکسان، هم‌سبک بخش ادمین بازطراحی شدند.",
+                    "مینی‌اپ با فونت وزیرمتن و طراحی تازهٔ تیره و شیشه‌ای: کارت موجودی، سرویس‌ها با نوار مصرف و روزهای باقی‌مانده، فروشگاه پلن‌ها، و نوار پایینی سه‌بخشی."
+                ],
+                "en": [
+                    "Agents and sellers get a \"Payments and receipts\" page: card-to-card receipts with the receipt image, crypto and Stars payments, a status filter, and approve or reject on the spot. An agent also sees their sellers' bot payments, but only the bot's owner can approve, since it is their wallet that is charged.",
+                    "A receipt sent to a reseller's bot now opens in the admin panel too; it used to be fetched with the main bot's token and failed.",
+                    "The \"My sales bot\" pages (settings, plans, payments, customers, sellers' access) share one header and navigation tiles, in the same style as the admin section.",
+                    "The mini app uses Vazirmatn and a new dark, glass design: a balance card, services with a usage bar and days left, a plan shop, and a three-tab bottom bar."
+                ],
+                "ru": [
+                    "Agents and sellers get a \"Payments and receipts\" page: card-to-card receipts with the receipt image, crypto and Stars payments, a status filter, and approve or reject on the spot. An agent also sees their sellers' bot payments, but only the bot's owner can approve, since it is their wallet that is charged.",
+                    "A receipt sent to a reseller's bot now opens in the admin panel too; it used to be fetched with the main bot's token and failed.",
+                    "The \"My sales bot\" pages (settings, plans, payments, customers, sellers' access) share one header and navigation tiles, in the same style as the admin section.",
+                    "The mini app uses Vazirmatn and a new dark, glass design: a balance card, services with a usage bar and days left, a plan shop, and a three-tab bottom bar."
+                ],
+                "zh": [
+                    "Agents and sellers get a \"Payments and receipts\" page: card-to-card receipts with the receipt image, crypto and Stars payments, a status filter, and approve or reject on the spot. An agent also sees their sellers' bot payments, but only the bot's owner can approve, since it is their wallet that is charged.",
+                    "A receipt sent to a reseller's bot now opens in the admin panel too; it used to be fetched with the main bot's token and failed.",
+                    "The \"My sales bot\" pages (settings, plans, payments, customers, sellers' access) share one header and navigation tiles, in the same style as the admin section.",
+                    "The mini app uses Vazirmatn and a new dark, glass design: a balance card, services with a usage bar and days left, a plan shop, and a three-tab bottom bar."
+                ]
+            }
+        },
+        {
             "version": "3.27.2",
             "date": "2026-11-03",
             "notes": {

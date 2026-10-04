@@ -5,6 +5,7 @@
 @php $prefix = $panel.'.shahbot.my-bot'; @endphp
 
 @section('panel_content')
+<div class="sbp-page">
     <div class="alert alert-info alert-dismissible" id="bot-guide" hidden>
         <h6 class="mb-2"><i class="bx bx-bulb"></i> {{ __('shahbot::admin.bot_guide_title') }}</h6>
         <div class="small">{!! nl2br(e(__('shahbot::admin.bot_guide'))) !!}</div>
@@ -15,17 +16,7 @@
         // Shown until the reseller closes it; remembered on this browser.
         if (localStorage.getItem('shahbot-guide-closed') !== '1') document.getElementById('bot-guide').hidden = false;
     </script>
-<x-page-header :title="__('shahbot::admin.my_bot')">
-    <p class="text-muted mb-0">{{ __('shahbot::admin.my_bot_subtitle') }}</p>
-    <a href="{{ route($prefix.'.plans') }}" class="btn btn-outline-primary"><i class="bx bx-package"></i> {{ __('shahbot::admin.my_plans') }}</a>
-    <a href="{{ route($panel.'.shahbot.customers') }}" class="btn btn-outline-primary"><i class="bx bx-group"></i> {{ __('shahbot::admin.customers') }}</a>
-    @if ($panel === 'agent')
-        <a href="{{ route('agent.shahbot.access') }}" class="btn btn-outline-primary"><i class="bx bx-key"></i> {{ __('shahbot::admin.bot_access_my_sellers') }}</a>
-    @endif
-    @if ($bot && $bot->is_active && $bot->token() !== '')
-        <a href="#my-broadcast" class="btn btn-outline-secondary"><i class="bx bx-broadcast"></i> {{ __('shahbot::admin.my_broadcast') }}</a>
-    @endif
-</x-page-header>
+@include('shahbot::panel._nav', ['panel' => $panel])
 
 @if (! $enabled)
     <x-alert type="warning">{{ __('shahbot::admin.my_bot_disabled') }}</x-alert>
@@ -162,4 +153,5 @@
         </div>
     @endif
 @endif
+</div>
 @endsection
