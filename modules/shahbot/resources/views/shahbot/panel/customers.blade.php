@@ -3,9 +3,8 @@
 @section('page_title', __('shahbot::admin.customers'))
 
 @section('panel_content')
-    <x-page-header :title="__('shahbot::admin.customers')">
-        <a href="{{ route($panel.'.shahbot.my-bot') }}" class="btn btn-light"><i class="bx bx-arrow-back"></i> {{ __('app.back') }}</a>
-    </x-page-header>
+<div class="sbp-page">
+    @include('shahbot::panel._nav', ['panel' => $panel])
 
     <form method="GET" class="row g-2 mb-3">
         <div class="col-md-3"><input type="text" name="q" value="{{ request('q') }}" class="form-control" placeholder="{{ __('shahbot::admin.customers_search') }}"></div>
@@ -56,4 +55,5 @@
         </div>
     </div>
     <div class="mt-3">{{ $users->links() }}</div>
+</div>
 @endsection

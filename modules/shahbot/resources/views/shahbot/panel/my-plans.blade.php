@@ -5,10 +5,8 @@
 @php $prefix = $panel.'.shahbot.my-bot'; @endphp
 
 @section('panel_content')
-<x-page-header :title="__('shahbot::admin.my_plans')">
-    <p class="text-muted mb-0">{{ __('shahbot::admin.my_plans_subtitle') }}</p>
-    <a href="{{ route($prefix) }}" class="btn btn-outline-secondary"><i class="bx bx-arrow-back"></i> {{ __('shahbot::admin.my_bot') }}</a>
-</x-page-header>
+<div class="sbp-page">
+@include('shahbot::panel._nav', ['panel' => $panel])
 
 @if (! $enabled)
     <x-alert type="warning">{{ __('shahbot::admin.my_bot_disabled') }}</x-alert>
@@ -66,4 +64,5 @@
         </div>
     </form>
 @endif
+</div>
 @endsection

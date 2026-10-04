@@ -44,7 +44,10 @@ class PaymentController extends Controller
         abort_if($payment->receipt_file_id === null, 404);
 
         $bytes = Cache::remember('shahbot:receipt:'.$payment->id, now()->addHour(),
-            fn () => ($b = $telegram->downloadFile($payment->receipt_file_id)) !== null ? base64_encode($b) : null);
+            // The file id belongs to the bot that received the photo, so a
+            // reseller bot's receipt must be fetched with that bot's token.
+            fn () => app(\Modules\ShahBot\Support\BotContext::class)->run($payment->botUser?->bot_id ?: null,
+                fn () => ($b = app(TelegramClient::class)->downloadFile($payment->receipt_file_id)) !== null ? base64_encode($b) : null));
 
         abort_if($bytes === null, 404);
 

@@ -351,4 +351,9 @@ return [
     'ledger_row' => "• :date | :type | :amount ← مانده :after\n  :note",
     'ledger_empty' => "تراکنشی ثبت نشده.",
     'customers_head' => "👥 مشتری‌های ربات شما (کل: :count) — آخرین ۲۰ نفر:",
+    'app_tab_home' => 'خانه',
+    'app_tab_shop' => 'فروشگاه',
+    'app_plans' => 'پلن‌ها',
+    'app_no_plans' => 'فعلاً پلنی برای فروش نیست.',
+    'app_hello' => 'سلام،',
 ];

@@ -2,12 +2,15 @@
 
 namespace Tests\Feature;
 
+use App\Enums\TransactionType;
 use App\Enums\UserRole;
+use App\Services\WalletService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Modules\ShahBot\Models\BotInstance;
+use Modules\ShahBot\Models\BotPayment;
 use Modules\ShahBot\Models\BotUser;
 use Modules\ShahBot\ShahBotServiceProvider;
 use Modules\ShahBot\Support\StartImage;
@@ -81,5 +84,34 @@ class ResellerBotPanelTest extends TestCase
 
         $this->actingAs($seller)->get(route('seller.shahbot.customers'))->assertOk()->assertSee('702')->assertDontSee('701');
         $this->assertSame(UserRole::Seller, $seller->role);
+    }
+
+    public function test_receipts_are_shown_to_their_owner_and_approved_only_by_them(): void
+    {
+        $agent = $this->makeAgent();
+        $seller = $this->makeSeller($agent);
+        $user = BotUser::query()->create(['bot_id' => $this->bot($seller)->id, 'telegram_id' => 811, 'first_name' => 'buyer']);
+        $payment = BotPayment::query()->create(['bot_user_id' => $user->id, 'amount' => '12345.00', 'method' => 'card', 'status' => BotPayment::PENDING]);
+        app(WalletService::class)->credit($seller, '50000.00', TransactionType::Charge);
+
+        $this->actingAs($seller)->get(route('seller.shahbot.payments'))->assertOk()->assertSee('buyer');
+
+        // The agent sees their seller's receipt but may not spend the seller's wallet.
+        $this->actingAs($agent)->get(route('agent.shahbot.payments'))->assertOk()->assertSee('buyer');
+        $this->actingAs($agent)->post(route('agent.shahbot.payments.approve', $payment))->assertForbidden();
+
+        // Someone outside the tree cannot even fetch the receipt.
+        $this->actingAs($this->makeAgent())->get(route('agent.shahbot.payments.receipt', $payment))->assertNotFound();
+
+        $this->actingAs($seller)->post(route('seller.shahbot.payments.approve', $payment))->assertRedirect();
+        $this->assertSame(BotPayment::APPROVED, $payment->fresh()->status);
+    }
+
+    public function test_the_mini_app_posts_the_field_the_server_reads(): void
+    {
+        $html = view('shahbot::mini-app', ['brand' => 'Shop', 'botUsername' => 'shopbot', 'botId' => 0])->render();
+
+        $this->assertStringContainsString('initData: tg.initData', $html);
+        $this->assertStringContainsString('Vazirmatn', $html);
     }
 }
