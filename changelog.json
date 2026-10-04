@@ -1,6 +1,28 @@
 {
     "versions": [
         {
+            "version": "3.28.2",
+            "date": "2026-11-06",
+            "notes": {
+                "fa": [
+                    "صفحهٔ پرتال مشتری برای اکانت‌های PPP (L2TP، PPTP، SSTP و OpenVPN) حالا «اطلاعات اتصال» را نشان می‌دهد: آدرس سرور، نام کاربری، رمز، کلید IPsec و پروتکل‌های قابل استفاده. قبلاً این بخش اصلاً برای این اکانت‌ها وجود نداشت.",
+                    "اگر سرور پروفایل OpenVPN داشته باشد، مشتری فایل آن را از همان پرتال دانلود می‌کند؛ این دانلود هم مثل بقیهٔ پرتال پشت کپچا است."
+                ],
+                "en": [
+                    "The customer portal now shows connection details for PPP accounts (L2TP, PPTP, SSTP and OpenVPN): server address, username, password, IPsec key and the protocols on offer. The section did not exist for these accounts before.",
+                    "When the server has an OpenVPN profile, the customer downloads it from the portal; like the rest of the portal, the download sits behind the captcha."
+                ],
+                "ru": [
+                    "The customer portal now shows connection details for PPP accounts (L2TP, PPTP, SSTP and OpenVPN): server address, username, password, IPsec key and the protocols on offer. The section did not exist for these accounts before.",
+                    "When the server has an OpenVPN profile, the customer downloads it from the portal; like the rest of the portal, the download sits behind the captcha."
+                ],
+                "zh": [
+                    "The customer portal now shows connection details for PPP accounts (L2TP, PPTP, SSTP and OpenVPN): server address, username, password, IPsec key and the protocols on offer. The section did not exist for these accounts before.",
+                    "When the server has an OpenVPN profile, the customer downloads it from the portal; like the rest of the portal, the download sits behind the captcha."
+                ]
+            }
+        },
+        {
             "version": "3.28.1",
             "date": "2026-11-05",
             "notes": {
