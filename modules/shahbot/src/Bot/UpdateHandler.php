@@ -8,7 +8,10 @@ use App\Enums\ServiceType;
 use App\Enums\UserRole;
 use App\Models\Account;
 use App\Models\PackageDuration;
+use App\Models\Transaction;
 use App\Models\User;
+use App\Services\AccountService;
+use App\Services\AgentSellerChargeService;
 use App\Services\PortalLinkService;
 use App\Services\SanaeiPortalService;
 use App\Services\SubscriptionFeedService;
@@ -20,6 +23,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use InvalidArgumentException;
 use Modules\ShahBot\Models\BotAgencyRequest;
+use Modules\ShahBot\Models\BotInstance;
 use Modules\ShahBot\Models\BotOrder;
 use Modules\ShahBot\Models\BotPayment;
 use Modules\ShahBot\Models\BotReferralReward;
@@ -34,6 +38,7 @@ use Modules\ShahBot\Services\CodeService;
 use Modules\ShahBot\Services\FunService;
 use Modules\ShahBot\Services\OnlinePaymentService;
 use Modules\ShahBot\Services\PaymentService;
+use Modules\ShahBot\Services\ResellerCryptoService;
 use Modules\ShahBot\Services\ResellerService;
 use Modules\ShahBot\Services\ServiceOpsService;
 use Modules\ShahBot\Services\ShopService;
@@ -43,6 +48,7 @@ use Modules\ShahBot\Support\BotLocale;
 use Modules\ShahBot\Support\BotSettings;
 use Modules\ShahBot\Support\BotTexts;
 use Modules\ShahBot\Support\MenuLayout;
+use Modules\ShahBot\Support\StartImage;
 use Modules\ShahBot\Telegram\Keyboard;
 use Modules\ShahBot\Telegram\TelegramClient;
 use Throwable;
@@ -422,6 +428,21 @@ class UpdateHandler
             '{name}' => e($this->user->first_name ?: $this->user->displayName()),
             '{brand}' => e(app_display_name()),
         ]);
+
+        $image = (int) $this->user->bot_id > 0
+            ? StartImage::path(BotInstance::query()->find((int) $this->user->bot_id))
+            : null;
+
+        // The image goes as its own photo with the welcome as caption when it
+        // fits; a caption is capped at 1024 characters, a message is not.
+        if ($image !== null) {
+            $caption = mb_strlen($text) <= 1000 ? $text : null;
+            $sent = rescue(fn () => $this->tg->sendPhotoBytes($this->chatId, (string) file_get_contents($image), basename($image), $caption, $caption !== null ? $this->mainMenu() : null), [], false);
+
+            if (($sent['ok'] ?? false) && $caption !== null) {
+                return;
+            }
+        }
 
         $this->reply($text, $this->mainMenu());
     }
@@ -946,7 +967,7 @@ class UpdateHandler
         if ($this->settings->get('card_number') !== '') {
             $rows[] = [Keyboard::button(__('shahbot::bot.btn_pay_card'), 'buy:card')];
         }
-        if (app(\Modules\ShahBot\Services\ResellerCryptoService::class)->configured($this->currentBot())) {
+        if (app(ResellerCryptoService::class)->configured($this->currentBot())) {
             $rows[] = [Keyboard::button(__('shahbot::bot.btn_pay_np'), 'buy:np')];
         }
         $chosenName = $this->pendingPurchase()['name'] ?? null;
@@ -1445,16 +1466,16 @@ class UpdateHandler
         $this->reply(__('shahbot::bot.home_hint'), $this->mainMenu());
     }
 
-    protected function currentBot(): ?\Modules\ShahBot\Models\BotInstance
+    protected function currentBot(): ?BotInstance
     {
-        return (int) $this->user->bot_id > 0 ? \Modules\ShahBot\Models\BotInstance::query()->find((int) $this->user->bot_id) : null;
+        return (int) $this->user->bot_id > 0 ? BotInstance::query()->find((int) $this->user->bot_id) : null;
     }
 
     protected function payPurchaseByCrypto(): void
     {
         $cart = $this->pendingPurchase();
         $quote = $this->shop->quote($this->user, (int) $cart['duration'], $this->pendingGb(), $cart['code'] ?? null);
-        $result = app(\Modules\ShahBot\Services\ResellerCryptoService::class)
+        $result = app(ResellerCryptoService::class)
             ->invoice($this->currentBot(), $this->user, (float) $quote['payable'], $cart);
 
         $this->reply(__('shahbot::bot.np_invoice', [
@@ -1624,6 +1645,8 @@ class UpdateHandler
             [Keyboard::button(__('shahbot::bot.btn_pending_receipts'), 'adm:pend')],
             [Keyboard::button(__('shahbot::bot.btn_my_business'), 'adm:biz')],
             [Keyboard::button(__('shahbot::bot.btn_give_account'), 'adm:give')],
+            [Keyboard::button(__('shahbot::bot.btn_accounts'), 'adm:acc'), Keyboard::button(__('shahbot::bot.btn_ledger'), 'adm:tx')],
+            [Keyboard::button(__('shahbot::bot.btn_customers'), 'adm:cu')],
         ];
 
         // فروشنده‌ها فقط زیر نماینده معنا دارند؛ برای فروشنده دکمه‌ای که به
@@ -1675,6 +1698,122 @@ class UpdateHandler
      *
      * فهرست از فرزندان خودِ مالک ساخته می‌شود، نه از همهٔ فروشنده‌های پنل.
      */
+    /**
+     * Whose accounts this admin chat may look at: the owner's own, or one of
+     * their direct sellers'. Anything else -- another agent's seller, a forged
+     * id -- falls back to the owner, so a callback cannot widen the view.
+     */
+    protected function accountScopeOwner(int $sellerId): User
+    {
+        $owner = $this->users->owner($this->user);
+
+        if ($sellerId > 0 && $owner->role === UserRole::Agent) {
+            $seller = User::query()->whereKey($sellerId)->where('parent_id', $owner->id)->where('role', UserRole::Seller)->first();
+
+            if ($seller !== null) {
+                return $seller;
+            }
+        }
+
+        return $owner;
+    }
+
+    protected function adminAccounts(int $sellerId, ?int $messageId): void
+    {
+        $holder = $this->accountScopeOwner($sellerId);
+        $accounts = Account::query()->ownedByHierarchy($holder)->latest('id')->limit(15)->get();
+
+        if ($accounts->isEmpty()) {
+            $this->say($messageId, __('shahbot::bot.accounts_none'), Keyboard::inline([[Keyboard::button(__('shahbot::bot.btn_back'), 'adm:menu')]]));
+
+            return;
+        }
+
+        $lines = [__('shahbot::bot.accounts_head', ['name' => e($holder->full_name ?: $holder->username), 'count' => Account::query()->ownedByHierarchy($holder)->count()])];
+        $rows = [];
+
+        foreach ($accounts as $account) {
+            $used = round(((int) $account->data_used_bytes) / 1073741824, 2);
+            $limit = (int) $account->data_limit_bytes > 0 ? round($account->data_limit_bytes / 1073741824, 2).' GB' : '∞';
+            $lines[] = __('shahbot::bot.accounts_row', [
+                'name' => e($account->display_label ?: $account->remote_username),
+                'status' => $account->status->value,
+                'used' => $used,
+                'limit' => $limit,
+                'expiry' => $account->expiry_at ? $account->expiry_at->format('Y-m-d') : '∞',
+            ]);
+            $active = $account->status === AccountStatus::Active;
+            $rows[] = [Keyboard::button(
+                ($active ? '⏸ ' : '▶️ ').mb_substr($account->display_label ?: $account->remote_username, 0, 24),
+                'adm:ac:'.($active ? 'off' : 'on').':'.$account->id
+            )];
+        }
+
+        $rows[] = [Keyboard::button(__('shahbot::bot.btn_back'), 'adm:menu')];
+        $this->say($messageId, implode("\n", $lines), Keyboard::inline($rows));
+    }
+
+    /**
+     * Enabling or disabling an account from the bot. The account must sit in
+     * the owner's own subtree -- a seller's account is in an agent's subtree --
+     * which is the same rule the panel's account policy uses.
+     */
+    protected function adminAccountAction(string $action, int $accountId, ?int $messageId): void
+    {
+        $owner = $this->users->owner($this->user);
+        $account = Account::query()->ownedByHierarchy($owner)->whereKey($accountId)->first();
+
+        if ($account === null || ! in_array($action, ['on', 'off'], true)) {
+            return;
+        }
+
+        $service = app(AccountService::class);
+        $action === 'off' ? $service->disableAccount($account) : $service->enableAccount($account);
+
+        $this->reply(__($action === 'off' ? 'shahbot::bot.account_disabled' : 'shahbot::bot.account_enabled', ['name' => e($account->display_label ?: $account->remote_username)]));
+        $sellerId = (int) $account->owner_seller_id !== (int) $owner->id ? (int) $account->owner_seller_id : 0;
+        $this->adminAccounts($sellerId, null);
+    }
+
+    /**
+     * The owner's own wallet ledger: the same rows the panel's accounting
+     * reads, so the two can never disagree.
+     */
+    protected function adminLedger(?int $messageId): void
+    {
+        $owner = $this->users->owner($this->user);
+        $rows = Transaction::query()->where('user_id', $owner->id)->latest('id')->limit(15)->get();
+        $lines = [__('shahbot::bot.ledger_head', ['balance' => format_money($this->users->walletBalance($owner))])];
+
+        foreach ($rows as $tx) {
+            $lines[] = __('shahbot::bot.ledger_row', [
+                'date' => $tx->created_at?->format('m-d H:i'),
+                'type' => $tx->type instanceof \BackedEnum ? $tx->type->value : (string) $tx->type,
+                'amount' => format_money($tx->amount),
+                'after' => format_money($tx->balance_after),
+                'note' => e(mb_substr((string) $tx->description, 0, 60)),
+            ]);
+        }
+
+        if ($rows->isEmpty()) {
+            $lines[] = __('shahbot::bot.ledger_empty');
+        }
+
+        $this->say($messageId, implode("\n", $lines), Keyboard::inline([[Keyboard::button(__('shahbot::bot.btn_back'), 'adm:menu')]]));
+    }
+
+    protected function adminCustomers(?int $messageId): void
+    {
+        $users = $this->ownUsers()->latest('id')->limit(20)->get();
+        $lines = [__('shahbot::bot.customers_head', ['count' => $this->ownUsers()->count()])];
+
+        foreach ($users as $u) {
+            $lines[] = '• '.e($u->displayName()).($u->username ? ' @'.e($u->username) : '').' — <code>'.$u->telegram_id.'</code>';
+        }
+
+        $this->say($messageId, implode("\n", $lines), Keyboard::inline([[Keyboard::button(__('shahbot::bot.btn_back'), 'adm:menu')]]));
+    }
+
     protected function adminSellers(?int $messageId = null): void
     {
         $owner = $this->users->owner($this->user);
@@ -1712,8 +1851,10 @@ class UpdateHandler
             ]);
         }
 
-        $buttons = $sellers->map(fn ($seller) => [Keyboard::button(
-            __('shahbot::bot.btn_charge_seller', ['name' => $seller->username]), 'adm:sc:'.$seller->id)])->all();
+        $buttons = $sellers->map(fn ($seller) => [
+            Keyboard::button(__('shahbot::bot.btn_charge_seller', ['name' => $seller->username]), 'adm:sc:'.$seller->id),
+            Keyboard::button(__('shahbot::bot.btn_seller_accounts'), 'adm:acc:'.$seller->id),
+        ])->all();
         $buttons[] = [Keyboard::button(__('shahbot::bot.btn_back'), 'adm:menu')];
         $this->say($messageId, implode("\n", $lines), Keyboard::inline($buttons));
     }
@@ -1763,7 +1904,7 @@ class UpdateHandler
         $account->forceFill(['client_user_id' => $client->id])->save();
         $this->user->setStep(null);
         $this->reply(__('shahbot::bot.give_done', ['account' => e($account->display_label ?: $account->remote_username)]), $this->mainMenu());
-        app(\Modules\ShahBot\Services\BotNotifier::class)->user($target, fn () => __('shahbot::bot.give_received', [
+        app(BotNotifier::class)->user($target, fn () => __('shahbot::bot.give_received', [
             'bot' => e($this->settings->get('brand_name') ?: config('app.name')),
             'account' => e($account->display_label ?: $account->remote_username),
         ]));
@@ -1772,14 +1913,14 @@ class UpdateHandler
     protected function stepSellerCharge(string $text): void
     {
         $owner = $this->users->owner($this->user);
-        $seller = \App\Models\User::query()->whereKey((int) ($this->user->stepValue('seller') ?? 0))->first();
+        $seller = User::query()->whereKey((int) ($this->user->stepValue('seller') ?? 0))->first();
         $amount = preg_replace('/[^\d.]/', '', strtr($text, ['۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4', '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9', ',' => '', '٬' => '']));
 
         if ($seller === null || $amount === '') {
             throw new InvalidArgumentException(__('wallet.seller_charge_amount'));
         }
 
-        app(\App\Services\AgentSellerChargeService::class)->charge($owner, $seller, $amount, \App\Services\AgentSellerChargeService::FROM_BOT);
+        app(AgentSellerChargeService::class)->charge($owner, $seller, $amount, AgentSellerChargeService::FROM_BOT);
         $this->user->setStep(null);
         $this->reply(__('wallet.seller_charge_done', ['name' => $seller->username, 'amount' => format_money($amount)]), $this->mainMenu());
     }
@@ -1796,6 +1937,10 @@ class UpdateHandler
                 'biz' => $this->adminBusiness($messageId),
                 'sellers' => $this->adminSellers($messageId),
                 'give' => $this->adminGive($parts[2] ?? null, $messageId),
+                'acc' => $this->adminAccounts((int) ($parts[2] ?? 0), $messageId),
+                'ac' => $this->adminAccountAction($parts[2] ?? '', (int) ($parts[3] ?? 0), $messageId),
+                'tx' => $this->adminLedger($messageId),
+                'cu' => $this->adminCustomers($messageId),
                 'sc' => $this->askFor('seller_charge', __('shahbot::bot.seller_charge_ask'), ['seller' => (int) ($parts[2] ?? 0)]),
                 'pay' => $this->adminPayment($parts[2] ?? '', (int) ($parts[3] ?? 0), $reviewer),
                 'tk' => $this->adminTicket($parts[2] ?? '', (int) ($parts[3] ?? 0)),

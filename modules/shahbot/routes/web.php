@@ -16,6 +16,7 @@ use Modules\ShahBot\Http\Controllers\Admin\TicketController;
 use Modules\ShahBot\Http\Controllers\Admin\TutorialController;
 use Modules\ShahBot\Http\Controllers\Admin\UserController;
 use Modules\ShahBot\Http\Controllers\Panel\BotAccessController;
+use Modules\ShahBot\Http\Controllers\Panel\CustomersController;
 use Modules\ShahBot\Http\Controllers\Panel\MyBotController;
 
 /*
@@ -102,6 +103,7 @@ foreach (['agent', 'seller'] as $role) {
         Route::post('shahbot/broadcast', [MyBotController::class, 'broadcast'])->name('shahbot.my-bot.broadcast');
         // Agents only; the controller refuses sellers.
         Route::get('shahbot/access', [BotAccessController::class, 'agent'])->name('shahbot.access');
+        Route::get('shahbot/customers', [CustomersController::class, 'index'])->name('shahbot.customers');
         Route::post('shahbot/access', [BotAccessController::class, 'update'])->name('shahbot.access.update');
     });
 }

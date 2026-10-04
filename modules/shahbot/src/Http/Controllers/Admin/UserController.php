@@ -3,6 +3,7 @@
 namespace Modules\ShahBot\Http\Controllers\Admin;
 
 use App\Enums\TransactionType;
+use App\Models\User;
 use App\Services\WalletService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -10,6 +11,7 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use InvalidArgumentException;
+use Modules\ShahBot\Models\BotInstance;
 use Modules\ShahBot\Models\BotUser;
 use Modules\ShahBot\Services\BotNotifier;
 use Modules\ShahBot\Services\BotUserService;
@@ -35,13 +37,20 @@ class UserController extends Controller
                         ->orWhere('phone', 'like', '%'.western_digits($search).'%');
                 });
             })
+            ->when($request->query('bot') === 'main', fn ($q) => $q->where('bot_id', 0))
+            ->when((int) $request->query('owner') > 0, fn ($q) => $q->whereHas('bot', fn ($b) => $b->where('owner_user_id', (int) $request->query('owner'))))
+            ->when(in_array($request->query('role'), ['agent', 'seller'], true), fn ($q) => $q->whereHas('bot.owner', fn ($o) => $o->where('role', $request->query('role'))))
+            ->when($request->query('from'), fn ($q, $d) => $q->whereDate('created_at', '>=', $d))
+            ->when($request->query('to'), fn ($q, $d) => $q->whereDate('created_at', '<=', $d))
             ->when($request->query('filter') === 'blocked', fn ($q) => $q->where('is_blocked', true))
             ->when($request->query('filter') === 'customers', fn ($q) => $q->whereHas('orders', fn ($o) => $o->whereIn('type', ['buy', 'renew'])))
             ->latest('id')
             ->paginate(30)
             ->withQueryString();
 
-        return view('shahbot::users.index', ['users' => $users, 'search' => $search]);
+        return view('shahbot::users.index', ['users' => $users, 'search' => $search,
+            'resellers' => User::query()->whereIn('id', BotInstance::query()->select('owner_user_id'))
+                ->orderBy('full_name')->get(['id', 'full_name', 'username', 'role'])]);
     }
 
     public function show(BotUser $botUser, BotUserService $users, ShopService $shop): View
