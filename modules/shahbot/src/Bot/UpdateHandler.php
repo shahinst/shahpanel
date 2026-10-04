@@ -1200,6 +1200,20 @@ class UpdateHandler
 
     protected function showWallet(?int $messageId = null): void
     {
+        $holder = $this->users->walletHolder($this->user, $this->settings->isAdminChat($this->user->telegram_id));
+
+        // An agent's or seller's own wallet is the panel's wallet, read live
+        // from the panel. Top-ups made here go to a customer wallet, so they
+        // are not offered for it: that wallet is charged from the panel.
+        if ($holder->role !== UserRole::Client) {
+            $this->say($messageId, __('shahbot::bot.wallet_panel', [
+                'name' => $holder->full_name ?: $holder->username,
+                'balance' => format_money($this->users->walletBalance($holder)),
+            ]));
+
+            return;
+        }
+
         $balance = $this->users->balance($this->user);
         $rows = [];
 

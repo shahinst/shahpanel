@@ -1,6 +1,24 @@
 {
     "versions": [
         {
+            "version": "3.22.2",
+            "date": "2026-10-26",
+            "notes": {
+                "fa": [
+                    "موجودی کیف پولی که ربات به نماینده یا فروشنده نشان می‌دهد حالا دقیقاً همان موجودی کیف پول او در پنل است. قبلاً یک کیف پول مشتریِ جداگانه نشان داده می‌شد که ربطی به حساب پنل نداشت."
+                ],
+                "en": [
+                    "The wallet balance the bot shows an agent or seller is now exactly their panel wallet. It used to show a separate customer wallet unrelated to their panel account."
+                ],
+                "ru": [
+                    "The wallet balance the bot shows an agent or seller is now exactly their panel wallet. It used to show a separate customer wallet unrelated to their panel account."
+                ],
+                "zh": [
+                    "The wallet balance the bot shows an agent or seller is now exactly their panel wallet. It used to show a separate customer wallet unrelated to their panel account."
+                ]
+            }
+        },
+        {
             "version": "3.22.1",
             "date": "2026-10-25",
             "notes": {

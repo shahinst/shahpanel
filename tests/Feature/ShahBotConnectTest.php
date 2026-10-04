@@ -2,16 +2,22 @@
 
 namespace Tests\Feature;
 
+use App\Services\WalletService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
+use Modules\ShahBot\Models\BotInstance;
+use Modules\ShahBot\Models\BotUser;
+use Modules\ShahBot\Services\BotUserService;
 use Modules\ShahBot\Services\WebhookService;
 use Modules\ShahBot\ShahBotServiceProvider;
 use Modules\ShahBot\Support\BotSettings;
+use Tests\Concerns\CreatesPanelData;
 use Tests\TestCase;
 
 class ShahBotConnectTest extends TestCase
 {
+    use CreatesPanelData;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -64,6 +70,31 @@ class ShahBotConnectTest extends TestCase
 
         $this->assertFalse($result['ok']);
         $this->assertStringContainsString('blocked', $result['message']);
+    }
+
+    public function test_the_bot_wallet_of_an_agent_is_their_panel_wallet(): void
+    {
+        $agent = $this->makeAgent();
+        app(WalletService::class)->getOrCreateWallet($agent)->forceFill(['balance' => '123456.78'])->save();
+
+        $bot = BotInstance::query()->create([
+            'owner_user_id' => $agent->id, 'webhook_secret' => str_repeat('s', 40), 'is_active' => true,
+        ]);
+        $user = BotUser::query()->create(['bot_id' => $bot->id, 'telegram_id' => 555]);
+        $users = app(BotUserService::class);
+
+        // The owner writing from an admin chat holds the panel wallet, to the cent.
+        $holder = $users->walletHolder($user, true);
+        $this->assertSame($agent->id, $holder->id);
+        $this->assertSame('123456.78', $users->walletBalance($holder));
+
+        // The same Telegram account as an ordinary customer of that bot does not.
+        $this->assertNotSame($agent->id, $users->walletHolder($user, false)->id);
+
+        // A reseller made by an agency request holds their seller wallet.
+        $seller = $this->makeSeller($agent);
+        $user->forceFill(['reseller_user_id' => $seller->id])->save();
+        $this->assertSame($seller->id, $users->walletHolder($user->fresh(), false)->id);
     }
 
     public function test_a_timed_out_webhook_is_recognised(): void
