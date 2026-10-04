@@ -70,6 +70,7 @@
         :active="request()->routeIs(str_replace('.index', '.*', $link['route']).'*') || request()->routeIs($link['route'])" />
 @endforeach
 
+@include('layouts.partials.nav-extensions', ['panel' => 'admin'])
 @include('layouts.partials.nav-admin-automation')
 
 @include('layouts.partials.nav-admin-settings')

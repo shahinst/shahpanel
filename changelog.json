@@ -1,6 +1,24 @@
 {
     "versions": [
         {
+            "version": "3.28.4",
+            "date": "2026-11-08",
+            "notes": {
+                "fa": [
+                    "ماژول‌ها حالا می‌توانند بدون تغییر هستهٔ پنل به منوی کناری پنل‌ها و به منوی عملیات اکانت گزینه اضافه کنند."
+                ],
+                "en": [
+                    "Modules can now add entries to the panels' side menu and to an account's actions menu without changing the core."
+                ],
+                "ru": [
+                    "Modules can now add entries to the panels' side menu and to an account's actions menu without changing the core."
+                ],
+                "zh": [
+                    "Modules can now add entries to the panels' side menu and to an account's actions menu without changing the core."
+                ]
+            }
+        },
+        {
             "version": "3.28.3",
             "date": "2026-11-07",
             "notes": {
