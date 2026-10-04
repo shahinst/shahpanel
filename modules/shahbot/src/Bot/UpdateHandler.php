@@ -857,6 +857,8 @@ class UpdateHandler
             'code' => $this->askFor('buy_code', __('shahbot::bot.ask_discount'), $this->pendingPurchase()),
             'nocode' => $this->showInvoice((int) $this->pendingPurchase()['duration'], $this->pendingGb(), null, $messageId),
             'pay' => $this->payPurchase($messageId),
+            'card' => $this->payPurchaseByCard(),
+            'np' => $this->payPurchaseByCrypto(),
             'top' => $this->chooseMethod((string) ($parts[2] ?? '0')),
             default => null,
         };
@@ -939,6 +941,12 @@ class UpdateHandler
         $rows[] = [$code === null
             ? Keyboard::button(__('shahbot::bot.btn_discount'), 'buy:code')
             : Keyboard::button(__('shahbot::bot.btn_remove_discount'), 'buy:nocode')];
+        if ($this->settings->get('card_number') !== '') {
+            $rows[] = [Keyboard::button(__('shahbot::bot.btn_pay_card'), 'buy:card')];
+        }
+        if (app(\Modules\ShahBot\Services\ResellerCryptoService::class)->configured($this->currentBot())) {
+            $rows[] = [Keyboard::button(__('shahbot::bot.btn_pay_np'), 'buy:np')];
+        }
         $chosenName = $this->pendingPurchase()['name'] ?? null;
         if ($chosenName !== null) {
             $text .= "\n".__('shahbot::bot.invoice_service_name', ['name' => e($chosenName)]);
@@ -1433,6 +1441,44 @@ class UpdateHandler
             Keyboard::url(__('shahbot::bot.btn_pay_now'), (string) $url),
         ]]));
         $this->reply(__('shahbot::bot.home_hint'), $this->mainMenu());
+    }
+
+    protected function currentBot(): ?\Modules\ShahBot\Models\BotInstance
+    {
+        return (int) $this->user->bot_id > 0 ? \Modules\ShahBot\Models\BotInstance::query()->find((int) $this->user->bot_id) : null;
+    }
+
+    protected function payPurchaseByCrypto(): void
+    {
+        $cart = $this->pendingPurchase();
+        $quote = $this->shop->quote($this->user, (int) $cart['duration'], $this->pendingGb(), $cart['code'] ?? null);
+        $result = app(\Modules\ShahBot\Services\ResellerCryptoService::class)
+            ->invoice($this->currentBot(), $this->user, (float) $quote['payable'], $cart);
+
+        $this->reply(__('shahbot::bot.np_invoice', [
+            'amount' => format_money($quote['payable']),
+            'usd' => $result['usd'],
+        ]), Keyboard::inline([[Keyboard::url(__('shahbot::bot.btn_open_np'), $result['url'])]]));
+    }
+
+    protected function payPurchaseByCard(): void
+    {
+        if ($this->settings->get('card_number') === '') {
+            throw new InvalidArgumentException(__('shahbot::bot.card_missing'));
+        }
+
+        $cart = $this->pendingPurchase();
+        $quote = $this->shop->quote($this->user, (int) $cart['duration'], $this->pendingGb(), $cart['code'] ?? null);
+        $payment = $this->payments->startForOrder($this->user, (string) $quote['payable'], $cart);
+        $this->user->setStep('topup_receipt', ['payment' => $payment->id]);
+        $note = $this->settings->get('card_note');
+        $this->reply(__('shahbot::bot.card_order_info')."\n\n".__('shahbot::bot.card_info', [
+            'amount' => format_money($payment->amount),
+            'card' => e(trim(chunk_split(preg_replace('/\D/', '', $this->settings->get('card_number')), 4, ' '))),
+            'holder' => e($this->settings->get('card_holder') ?: '—'),
+            'bank' => e($this->settings->get('card_bank')),
+            'note' => $note !== '' ? "\n".e($note)."\n" : '',
+        ]), Keyboard::reply([[__('shahbot::bot.cancel')]]));
     }
 
     protected function startTopup(string $amount): void

@@ -261,3 +261,6 @@ Schedule::call(function (): void {
 Schedule::command('firewall prune')->everyFifteenMinutes()->withoutOverlapping();
 Schedule::command('firewall resync')->hourly()->withoutOverlapping();
 Schedule::command('firewall:sync-country-data')->weeklyOn(1, '03:30')->withoutOverlapping();
+
+// USDT -> Toman for crypto payments, three times a day (panel:sync-usdt-rate).
+Schedule::command('panel:sync-usdt-rate')->cron('5 0,8,16 * * *')->withoutOverlapping();

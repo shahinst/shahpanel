@@ -35,12 +35,14 @@ class BotPayment extends Model
         'reviewed_by',
         'reviewed_at',
         'reject_reason',
+        'order',
     ];
 
     protected function casts(): array
     {
         return [
             'amount' => 'decimal:2',
+            'order' => 'array',
             'stars' => 'integer',
             'reviewed_at' => 'datetime',
         ];

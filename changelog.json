@@ -1,6 +1,40 @@
 {
     "versions": [
         {
+            "version": "3.25.0",
+            "date": "2026-10-30",
+            "notes": {
+                "fa": [
+                    "پرداخت کارت‌به‌کارت برای خود سفارش: خریدار مبلغ سفارش را واریز و فیش را در ربات می‌فرستد و سرویس فقط بعد از تأیید نماینده یا فروشنده ساخته می‌شود.",
+                    "هر نماینده یا فروشنده می‌تواند درگاه NowPayments خودش را در «ربات من» وصل کند؛ پول مستقیم به کیف پول خودش می‌رود و با تأیید پرداخت، سرویس خریدار خودکار ساخته می‌شود.",
+                    "هر ربات آدرس Callback اختصاصی خودش را دارد و یک پرداخت فقط با امضای معتبر همان نماینده تأیید می‌شود؛ تأیید تکراری یا از ربات دیگر بی‌اثر است.",
+                    "راهنمای قدم‌به‌قدم اتصال کیف پول NowPayments در صفحهٔ «ربات من».",
+                    "نرخ تتر به تومان روزی سه بار خودکار از بازار گرفته می‌شود و اگر منابع جواب ندهند، نرخ قبلی حفظ می‌شود."
+                ],
+                "en": [
+                    "Card-transfer payment for the order itself: the buyer transfers the order amount and sends the receipt in the bot, and the service is created only after the agent or seller approves it.",
+                    "Each agent or seller can connect their own NowPayments gateway on \"My bot\"; the money goes straight to their wallet, and the buyer's service is created automatically once payment is confirmed.",
+                    "Every bot has its own callback URL, and a payment is confirmed only by that reseller's valid signature; a repeated callback or one from another bot does nothing.",
+                    "A step-by-step guide for connecting a NowPayments wallet on \"My bot\".",
+                    "The USDT to Toman rate is fetched from the market three times a day; if no source answers, the previous rate is kept."
+                ],
+                "ru": [
+                    "Card-transfer payment for the order itself: the buyer transfers the order amount and sends the receipt in the bot, and the service is created only after the agent or seller approves it.",
+                    "Each agent or seller can connect their own NowPayments gateway on \"My bot\"; the money goes straight to their wallet, and the buyer's service is created automatically once payment is confirmed.",
+                    "Every bot has its own callback URL, and a payment is confirmed only by that reseller's valid signature; a repeated callback or one from another bot does nothing.",
+                    "A step-by-step guide for connecting a NowPayments wallet on \"My bot\".",
+                    "The USDT to Toman rate is fetched from the market three times a day; if no source answers, the previous rate is kept."
+                ],
+                "zh": [
+                    "Card-transfer payment for the order itself: the buyer transfers the order amount and sends the receipt in the bot, and the service is created only after the agent or seller approves it.",
+                    "Each agent or seller can connect their own NowPayments gateway on \"My bot\"; the money goes straight to their wallet, and the buyer's service is created automatically once payment is confirmed.",
+                    "Every bot has its own callback URL, and a payment is confirmed only by that reseller's valid signature; a repeated callback or one from another bot does nothing.",
+                    "A step-by-step guide for connecting a NowPayments wallet on \"My bot\".",
+                    "The USDT to Toman rate is fetched from the market three times a day; if no source answers, the previous rate is kept."
+                ]
+            }
+        },
+        {
             "version": "3.24.0",
             "date": "2026-10-29",
             "notes": {

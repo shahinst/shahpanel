@@ -21,3 +21,10 @@ Route::post('/shahbot/app/{bot}/me', [MiniAppController::class, 'me'])
     ->whereNumber('bot')
     ->middleware('throttle:60,1')
     ->name('shahbot.app.me');
+
+// A reseller's own NowPayments callback (one URL per bot, shown on "My bot").
+Route::post('/shahbot/np/{bot}/{secret}', \Modules\ShahBot\Http\Controllers\ResellerIpnController::class)
+    ->whereNumber('bot')
+    ->where('secret', '[A-Za-z0-9]{20,100}')
+    ->middleware('throttle:120,1')
+    ->name('shahbot.np.ipn');

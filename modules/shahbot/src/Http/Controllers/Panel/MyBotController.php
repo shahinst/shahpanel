@@ -63,6 +63,8 @@ class MyBotController extends Controller
             'support_text' => ['nullable', 'string', 'max:1000'],
             'channels' => ['nullable', 'string', 'max:500'],
             'rules_text' => ['nullable', 'string', 'max:3500'],
+            'np_api_key' => ['nullable', 'string', 'max:200'],
+            'np_ipn_secret' => ['nullable', 'string', 'max:200'],
             'brand_name' => ['nullable', 'string', 'max:80'],
             'about_text' => ['nullable', 'string', 'max:3500'],
             'contact_text' => ['nullable', 'string', 'max:1000'],
@@ -89,7 +91,18 @@ class MyBotController extends Controller
         }
 
         unset($data['bot_token']);
-        $bot->settings = array_map(fn ($v) => (string) ($v ?? ''), $data);
+        $previous = (array) ($bot->settings ?? []);
+        // Keys are kept encrypted and an empty field leaves the saved one in
+        // place, so the form never has to show a secret back.
+        $secrets = [];
+        foreach (['np_api_key', 'np_ipn_secret'] as $field) {
+            $value = trim((string) $request->input($field, ''));
+            $secrets[$field.'_enc'] = $value !== '' ? \Illuminate\Support\Facades\Crypt::encryptString($value) : ($previous[$field.'_enc'] ?? null);
+        }
+        if ($request->boolean('np_clear')) {
+            $secrets = ['np_api_key_enc' => null, 'np_ipn_secret_enc' => null];
+        }
+        $bot->settings = array_merge(array_map(fn ($v) => (string) ($v ?? ''), $data), array_filter($secrets, fn ($v) => $v !== null));
         $bot->save();
 
         return back()->with('success', __('shahbot::admin.saved'));
