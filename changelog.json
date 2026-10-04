@@ -1,6 +1,28 @@
 {
     "versions": [
         {
+            "version": "3.27.2",
+            "date": "2026-11-03",
+            "notes": {
+                "fa": [
+                    "ذخیرهٔ سرعت اینترفیس وایرگارد و پروفایل PPP درست شد. فیلد سرعتِ خالیِ فرم «ساخت اینترفیس» پایین جدول به فرم ذخیرهٔ آخرین ردیف می‌چسبید و سرعت انتخاب‌شده را پاک می‌کرد. قبل از ۳.۲۳ این یعنی حذف صف‌ها و نامحدود شدن، و از ۳.۲۳ خطای «فیلد speed limit mbps الزامی است».",
+                    "درگاه NowPayments هر نماینده حالت آزمایشی (Sandbox) دارد: سفارش‌ها به سرور آزمایشی NowPayments می‌روند و پول واقعی جابه‌جا نمی‌شود."
+                ],
+                "en": [
+                    "Saving the speed of a WireGuard interface or PPP profile works again. The empty speed field of the \"create\" form under the table attached itself to the last row's save form and overwrote the chosen speed: before 3.23 that removed the queues, since 3.23 it failed as \"speed limit mbps is required\".",
+                    "A reseller's NowPayments gateway has a test mode (Sandbox): orders go to NowPayments' test server and no real money moves."
+                ],
+                "ru": [
+                    "Saving the speed of a WireGuard interface or PPP profile works again. The empty speed field of the \"create\" form under the table attached itself to the last row's save form and overwrote the chosen speed: before 3.23 that removed the queues, since 3.23 it failed as \"speed limit mbps is required\".",
+                    "A reseller's NowPayments gateway has a test mode (Sandbox): orders go to NowPayments' test server and no real money moves."
+                ],
+                "zh": [
+                    "Saving the speed of a WireGuard interface or PPP profile works again. The empty speed field of the \"create\" form under the table attached itself to the last row's save form and overwrote the chosen speed: before 3.23 that removed the queues, since 3.23 it failed as \"speed limit mbps is required\".",
+                    "A reseller's NowPayments gateway has a test mode (Sandbox): orders go to NowPayments' test server and no real money moves."
+                ]
+            }
+        },
+        {
             "version": "3.27.1",
             "date": "2026-11-02",
             "notes": {

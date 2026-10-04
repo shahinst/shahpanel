@@ -67,6 +67,7 @@ class MyBotController extends Controller
             'rules_text' => ['nullable', 'string', 'max:3500'],
             'np_api_key' => ['nullable', 'string', 'max:200'],
             'np_ipn_secret' => ['nullable', 'string', 'max:200'],
+            'np_sandbox' => ['nullable', 'boolean'],
             'brand_name' => ['nullable', 'string', 'max:80'],
             'about_text' => ['nullable', 'string', 'max:3500'],
             'contact_text' => ['nullable', 'string', 'max:1000'],
@@ -104,6 +105,7 @@ class MyBotController extends Controller
         if ($request->boolean('np_clear')) {
             $secrets = ['np_api_key_enc' => null, 'np_ipn_secret_enc' => null];
         }
+        $data['np_sandbox'] = $request->boolean('np_sandbox') ? '1' : '0';
         $bot->settings = array_merge(array_map(fn ($v) => (string) ($v ?? ''), $data), array_filter($secrets, fn ($v) => $v !== null));
         $bot->save();
 
