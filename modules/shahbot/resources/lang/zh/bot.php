@@ -329,4 +329,12 @@ return [
     'np_not_configured' => "Crypto payment is not enabled for this bot.",
     'np_rate_missing' => "The dollar rate is not set yet; please choose another method.",
     'np_invoice_failed' => "Creating the payment invoice failed: :error",
+    'btn_charge_seller' => "💰 Charge :name",
+    'seller_charge_ask' => "Send the amount in Toman. It is taken from your wallet.",
+    'btn_give_account' => "🎁 Give an account to a buyer",
+    'give_pick_account' => "Which account do you want to give to a buyer?",
+    'give_ask_user' => "Send the buyer's numeric Telegram id or username (they must have started your bot).",
+    'give_user_not_found' => "That user is not in your bot; they have to start it first.",
+    'give_done' => "Account \":account\" was given to the buyer and they were notified.",
+    'give_received' => "🎁 Bot :bot added account \":account\" for you. See, manage and renew it under \"My services\".",
 ];

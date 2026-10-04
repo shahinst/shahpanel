@@ -101,6 +101,22 @@ class SellerController extends Controller
             ->with('success', __('app.saved'));
     }
 
+    /**
+     * Moves money from the agent's own wallet to one of their sellers.
+     */
+    public function charge(Request $request, User $seller, \App\Services\AgentSellerChargeService $charges): RedirectResponse
+    {
+        $data = $request->validate(['amount' => ['required', 'numeric', 'min:1', 'max:99999999999']]);
+
+        try {
+            $charges->charge($request->user(), $seller, (string) $data['amount'], \App\Services\AgentSellerChargeService::FROM_PANEL);
+        } catch (\InvalidArgumentException $e) {
+            return back()->with('error', $e->getMessage());
+        }
+
+        return back()->with('success', __('wallet.seller_charge_done', ['name' => $seller->username, 'amount' => format_money($data['amount'])]));
+    }
+
     public function edit(Request $request, User $seller): View
     {
         $this->authorize('update', $seller);

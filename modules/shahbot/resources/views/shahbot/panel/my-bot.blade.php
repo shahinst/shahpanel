@@ -5,6 +5,16 @@
 @php $prefix = $panel.'.shahbot.my-bot'; @endphp
 
 @section('panel_content')
+    <div class="alert alert-info alert-dismissible" id="bot-guide" hidden>
+        <h6 class="mb-2"><i class="bx bx-bulb"></i> {{ __('shahbot::admin.bot_guide_title') }}</h6>
+        <div class="small">{!! nl2br(e(__('shahbot::admin.bot_guide'))) !!}</div>
+        <button type="button" class="btn-close" aria-label="close"
+                onclick="localStorage.setItem('shahbot-guide-closed', '1'); this.parentElement.hidden = true;"></button>
+    </div>
+    <script>
+        // Shown until the reseller closes it; remembered on this browser.
+        if (localStorage.getItem('shahbot-guide-closed') !== '1') document.getElementById('bot-guide').hidden = false;
+    </script>
 <x-page-header :title="__('shahbot::admin.my_bot')">
     <p class="text-muted mb-0">{{ __('shahbot::admin.my_bot_subtitle') }}</p>
     <a href="{{ route($prefix.'.plans') }}" class="btn btn-outline-primary"><i class="bx bx-package"></i> {{ __('shahbot::admin.my_plans') }}</a>

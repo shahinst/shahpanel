@@ -543,6 +543,8 @@ class UpdateHandler
                 'buy_gb' => $this->stepBuyGb($text),
                 'buy_code' => $this->stepBuyCode($text),
                 'buy_name' => $this->stepBuyName($text),
+                'give_account' => $this->stepGiveAccount($text),
+                'seller_charge' => $this->stepSellerCharge($text),
                 'topup_amount' => $this->chooseMethod($text),
                 'topup_receipt' => $this->stepReceipt($message),
                 'gift_code' => $this->stepGift($text),
@@ -1621,6 +1623,7 @@ class UpdateHandler
         $rows = [
             [Keyboard::button(__('shahbot::bot.btn_pending_receipts'), 'adm:pend')],
             [Keyboard::button(__('shahbot::bot.btn_my_business'), 'adm:biz')],
+            [Keyboard::button(__('shahbot::bot.btn_give_account'), 'adm:give')],
         ];
 
         // فروشنده‌ها فقط زیر نماینده معنا دارند؛ برای فروشنده دکمه‌ای که به
@@ -1709,8 +1712,76 @@ class UpdateHandler
             ]);
         }
 
-        $this->say($messageId, implode("\n", $lines),
-            Keyboard::inline([[Keyboard::button(__('shahbot::bot.btn_back'), 'adm:menu')]]));
+        $buttons = $sellers->map(fn ($seller) => [Keyboard::button(
+            __('shahbot::bot.btn_charge_seller', ['name' => $seller->username]), 'adm:sc:'.$seller->id)])->all();
+        $buttons[] = [Keyboard::button(__('shahbot::bot.btn_back'), 'adm:menu')];
+        $this->say($messageId, implode("\n", $lines), Keyboard::inline($buttons));
+    }
+
+    /**
+     * The owner hands one of their accounts to someone who joined their bot.
+     * Only accounts in the owner's own subtree and only users of this bot can
+     * be picked, so nothing can be given across resellers.
+     */
+    protected function adminGive(?string $arg, int $messageId): void
+    {
+        $owner = $this->users->owner($this->user);
+        $accounts = Account::query()->ownedByHierarchy($owner)->latest('id')->limit(20)->get();
+
+        if ($arg === null) {
+            $rows = $accounts->map(fn (Account $a) => [Keyboard::button(
+                '🔑 '.($a->display_label ?: $a->remote_username), 'adm:give:'.$a->id)])->all();
+            $rows[] = [Keyboard::button(__('shahbot::bot.btn_back'), 'adm:menu')];
+            $this->say($messageId, __('shahbot::bot.give_pick_account'), Keyboard::inline($rows));
+
+            return;
+        }
+
+        $account = Account::query()->ownedByHierarchy($owner)->whereKey((int) $arg)->first();
+
+        if ($account === null) {
+            return;
+        }
+
+        $this->askFor('give_account', __('shahbot::bot.give_ask_user'), ['account' => $account->id]);
+    }
+
+    protected function stepGiveAccount(string $text): void
+    {
+        $owner = $this->users->owner($this->user);
+        $account = Account::query()->ownedByHierarchy($owner)->whereKey((int) ($this->user->stepValue('account') ?? 0))->first();
+        $needle = ltrim(trim($text), '@');
+        $target = BotUser::query()->where('bot_id', $this->user->bot_id)
+            ->where(fn ($q) => $q->where('telegram_id', ctype_digit($needle) ? (int) $needle : -1)->orWhere('username', $needle))
+            ->first();
+
+        if ($account === null || $target === null) {
+            throw new InvalidArgumentException(__('shahbot::bot.give_user_not_found'));
+        }
+
+        $client = $this->users->client($target);
+        $account->forceFill(['client_user_id' => $client->id])->save();
+        $this->user->setStep(null);
+        $this->reply(__('shahbot::bot.give_done', ['account' => e($account->display_label ?: $account->remote_username)]), $this->mainMenu());
+        app(\Modules\ShahBot\Services\BotNotifier::class)->user($target, fn () => __('shahbot::bot.give_received', [
+            'bot' => e($this->settings->get('brand_name') ?: config('app.name')),
+            'account' => e($account->display_label ?: $account->remote_username),
+        ]));
+    }
+
+    protected function stepSellerCharge(string $text): void
+    {
+        $owner = $this->users->owner($this->user);
+        $seller = \App\Models\User::query()->whereKey((int) ($this->user->stepValue('seller') ?? 0))->first();
+        $amount = preg_replace('/[^\d.]/', '', strtr($text, ['۰' => '0', '۱' => '1', '۲' => '2', '۳' => '3', '۴' => '4', '۵' => '5', '۶' => '6', '۷' => '7', '۸' => '8', '۹' => '9', ',' => '', '٬' => '']));
+
+        if ($seller === null || $amount === '') {
+            throw new InvalidArgumentException(__('wallet.seller_charge_amount'));
+        }
+
+        app(\App\Services\AgentSellerChargeService::class)->charge($owner, $seller, $amount, \App\Services\AgentSellerChargeService::FROM_BOT);
+        $this->user->setStep(null);
+        $this->reply(__('wallet.seller_charge_done', ['name' => $seller->username, 'amount' => format_money($amount)]), $this->mainMenu());
     }
 
     protected function onAdminCallback(string $data, int $messageId, array $callback): void
@@ -1724,6 +1795,8 @@ class UpdateHandler
                 'pend' => $this->adminPending(),
                 'biz' => $this->adminBusiness($messageId),
                 'sellers' => $this->adminSellers($messageId),
+                'give' => $this->adminGive($parts[2] ?? null, $messageId),
+                'sc' => $this->askFor('seller_charge', __('shahbot::bot.seller_charge_ask'), ['seller' => (int) ($parts[2] ?? 0)]),
                 'pay' => $this->adminPayment($parts[2] ?? '', (int) ($parts[3] ?? 0), $reviewer),
                 'tk' => $this->adminTicket($parts[2] ?? '', (int) ($parts[3] ?? 0)),
                 'ag' => $this->adminAgency($parts[2] ?? '', (int) ($parts[3] ?? 0), $reviewer),

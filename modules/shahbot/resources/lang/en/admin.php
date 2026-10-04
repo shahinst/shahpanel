@@ -385,4 +385,6 @@ return [
     'np_saved' => "Saved — enter a new value to change it",
     'np_clear' => "Remove the NowPayments keys",
     'np_guide' => "1. Sign up at nowpayments.io and set your payout wallet under Settings > Payments > Payout wallet (for example USDT TRC20).\n2. Create an API key under Settings > Payments > API keys and enter it here.\n3. Create an IPN secret under Settings > Payments > Instant payment notifications, enter it here, and paste the callback URL below there.\n4. Save. The \"Pay with crypto\" button then appears in your bot.\nThe money goes straight to your own wallet; when a payment is confirmed, the amount is taken from your panel balance for the customer and their service is created, exactly like approving a card receipt.",
+    'bot_guide_title' => "How to build your Telegram bot",
+    'bot_guide' => "1. Message @BotFather in Telegram and send /newbot.\n2. Choose a name and a username ending in \"bot\"; BotFather gives you a token.\n3. Paste the token into \"Bot token\" on this page.\n4. Message @userinfobot to see your numeric id and put it in \"Admin ids\"; that makes you the bot's admin.\n5. Save and press \"Connect\"; a test message is sent to your Telegram.\n6. Open your bot in Telegram and press /start. Set your brand, welcome text, card and plans on this page too.",
 ];
