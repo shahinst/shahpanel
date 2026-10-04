@@ -1,6 +1,44 @@
 {
     "versions": [
         {
+            "version": "3.24.0",
+            "date": "2026-10-29",
+            "notes": {
+                "fa": [
+                    "خرید در ربات حالا سه‌مرحله‌ای است: دسته ← پلن (مثلاً وایرگارد ۱۰، ۲۰ مگ یا نامحدود) ← مدت با قیمت؛ بعد خلاصهٔ سفارش و بعد پرداخت.",
+                    "هر دستهٔ سرویس در ربات آیکن مخصوص نوع خودش را دارد.",
+                    "خریدار پیش از پرداخت می‌تواند برای سرویسش نام بگذارد و اکانت با همان نام ثبت می‌شود.",
+                    "دکمهٔ «لینک اشتراک و QR» برای اکانت وایرگارد، QR خود کانفیگ را می‌فرستد و زیرش لینک صفحهٔ سرویس.",
+                    "منوی اصلی ربات حداکثر دو دکمه در هر ردیف دارد و دیگر روی گوشی به چپ و راست نمی‌لغزد؛ منو هم ثابت باز می‌ماند.",
+                    "مینی‌اپ حالا پلن‌ها و قیمت‌ها را هم نشان می‌دهد."
+                ],
+                "en": [
+                    "Buying in the bot is now three steps: category, then plan (for example WireGuard 10M, 20M or unlimited), then period with its price; then an order summary, then payment.",
+                    "Each service category in the bot has an icon for its kind.",
+                    "The buyer can name the service before paying, and the account is created with that name.",
+                    "\"Subscription link and QR\" for a WireGuard account sends the config's own QR, with the service page link underneath.",
+                    "The bot's main menu holds at most two buttons a row and no longer slides sideways on phones; it also stays open.",
+                    "The mini app now shows plans and prices too."
+                ],
+                "ru": [
+                    "Buying in the bot is now three steps: category, then plan (for example WireGuard 10M, 20M or unlimited), then period with its price; then an order summary, then payment.",
+                    "Each service category in the bot has an icon for its kind.",
+                    "The buyer can name the service before paying, and the account is created with that name.",
+                    "\"Subscription link and QR\" for a WireGuard account sends the config's own QR, with the service page link underneath.",
+                    "The bot's main menu holds at most two buttons a row and no longer slides sideways on phones; it also stays open.",
+                    "The mini app now shows plans and prices too."
+                ],
+                "zh": [
+                    "Buying in the bot is now three steps: category, then plan (for example WireGuard 10M, 20M or unlimited), then period with its price; then an order summary, then payment.",
+                    "Each service category in the bot has an icon for its kind.",
+                    "The buyer can name the service before paying, and the account is created with that name.",
+                    "\"Subscription link and QR\" for a WireGuard account sends the config's own QR, with the service page link underneath.",
+                    "The bot's main menu holds at most two buttons a row and no longer slides sideways on phones; it also stays open.",
+                    "The mini app now shows plans and prices too."
+                ]
+            }
+        },
+        {
             "version": "3.23.0",
             "date": "2026-10-28",
             "notes": {

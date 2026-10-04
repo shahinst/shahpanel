@@ -4,6 +4,7 @@ namespace Modules\ShahBot\Bot;
 
 use App\Enums\AccountCategory;
 use App\Enums\AccountStatus;
+use App\Enums\ServiceType;
 use App\Enums\UserRole;
 use App\Models\Account;
 use App\Models\PackageDuration;
@@ -11,6 +12,7 @@ use App\Models\User;
 use App\Services\PortalLinkService;
 use App\Services\SanaeiPortalService;
 use App\Services\SubscriptionFeedService;
+use App\Services\WireGuardConfigService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Cache;
@@ -540,6 +542,7 @@ class UpdateHandler
             match ($step) {
                 'buy_gb' => $this->stepBuyGb($text),
                 'buy_code' => $this->stepBuyCode($text),
+                'buy_name' => $this->stepBuyName($text),
                 'topup_amount' => $this->chooseMethod($text),
                 'topup_receipt' => $this->stepReceipt($message),
                 'gift_code' => $this->stepGift($text),
@@ -587,6 +590,23 @@ class UpdateHandler
         $this->user->setStep(null);
         $this->reply(__('shahbot::bot.discount_applied'), $this->mainMenu());
         $this->showInvoice($durationId, $gb !== null ? (float) $gb : null, CodeService::normalize($text));
+    }
+
+    protected function stepBuyName(string $text): void
+    {
+        $name = trim(strip_tags($text));
+
+        if ($name === '' || mb_strlen($name) > 60) {
+            throw new InvalidArgumentException(__('shahbot::bot.service_name_invalid'));
+        }
+
+        $cart = $this->pendingPurchase();
+        $cart['name'] = $name;
+        Cache::put('shahbot:cart:'.$this->user->id, $cart, now()->addHour());
+
+        $this->user->setStep(null);
+        $this->reply(__('shahbot::bot.service_name_set', ['name' => e($name)]), $this->mainMenu());
+        $this->showInvoice((int) $cart['duration'], $this->pendingGb(), $cart['code'] ?? null);
     }
 
     protected function stepReceipt(array $message): void
@@ -732,12 +752,18 @@ class UpdateHandler
 
         $buttons = [];
         foreach ($groups as $index => $group) {
-            $buttons[] = [Keyboard::button('🗂 '.$group['label'].' ('.persian_digits($group['rows']->count()).')', 'buy:c:'.$index)];
+            $buttons[] = [Keyboard::button($this->categoryIcon($group).' '.$group['label'], 'buy:c:'.$index)];
         }
 
         $this->say($messageId, __('shahbot::bot.buy_choose_category'), Keyboard::inline($buttons));
     }
 
+    /**
+     * Category -> plan -> period. A category used to open straight onto every
+     * "plan · period · price" row at once, so a WireGuard group with three
+     * speeds and four periods was twelve near-identical buttons. The plan is
+     * chosen first, then its periods with their prices.
+     */
     protected function showProducts(int $index, ?int $messageId): void
     {
         $groups = $this->shop->groups($this->user);
@@ -749,16 +775,72 @@ class UpdateHandler
             return;
         }
 
+        $packages = $group['rows']->groupBy(fn (array $row) => (int) $row['package']->id);
+
+        if ($packages->count() === 1) {
+            $this->showPeriods((int) $packages->keys()->first(), $index, $messageId);
+
+            return;
+        }
+
         $buttons = [];
-        foreach ($group['rows'] as $row) {
-            $buttons[] = [Keyboard::button($this->shop->rowLabel($row), 'buy:d:'.$row['duration']->id)];
+        foreach ($packages as $packageId => $rows) {
+            $buttons[] = [Keyboard::button($this->categoryIcon($group).' '.$rows->first()['package']->name, 'buy:p:'.$packageId.':'.$index)];
         }
 
         if ($groups->count() > 1) {
             $buttons[] = [Keyboard::button(__('shahbot::bot.back'), 'buy:cats')];
         }
 
-        $this->say($messageId, __('shahbot::bot.buy_choose_product', ['category' => e($group['label'])]), Keyboard::inline($buttons));
+        $this->say($messageId, __('shahbot::bot.buy_choose_plan', ['category' => e($group['label'])]), Keyboard::inline($buttons));
+    }
+
+    protected function showPeriods(int $packageId, int $index, ?int $messageId): void
+    {
+        $rows = $this->shop->groups($this->user)
+            ->flatMap(fn (array $group) => $group['rows'])
+            ->filter(fn (array $row): bool => (int) $row['package']->id === $packageId)
+            ->values();
+
+        if ($rows->isEmpty()) {
+            $this->say($messageId, __('shahbot::bot.product_unavailable'));
+
+            return;
+        }
+
+        $package = $rows->first()['package'];
+        $buttons = [];
+        foreach ($rows as $row) {
+            $price = $package->isElastic()
+                ? __('shahbot::bot.per_gb', ['price' => format_money($row['display_price'])])
+                : format_money($row['display_price']);
+            $buttons[] = [Keyboard::button('⏳ '.$row['duration']->tier->label().' — '.$price, 'buy:d:'.$row['duration']->id)];
+        }
+
+        $buttons[] = [Keyboard::button(__('shahbot::bot.back'), 'buy:c:'.$index)];
+
+        $this->say($messageId, __('shahbot::bot.buy_choose_period', ['plan' => e($package->name)]), Keyboard::inline($buttons));
+    }
+
+    /**
+     * An icon that tells the categories apart at a glance, read from the kind
+     * of service in the group rather than from its name.
+     */
+    protected function categoryIcon(array $group): string
+    {
+        $type = $group['rows']->first()['package']->service_type ?? null;
+        $value = $type instanceof \BackedEnum ? $type->value : (string) $type;
+
+        return match (true) {
+            str_contains($value, 'wireguard') => '🛡',
+            str_contains($value, 'sanaei'), str_contains($value, 'pasarguard'),
+            str_contains($value, 'remnawave'), str_contains($value, 'v2ray') => '🚀',
+            str_contains($value, 'l2tp'), str_contains($value, 'ppp'), str_contains($value, 'pptp'),
+            str_contains($value, 'sstp') => '🔐',
+            str_contains($value, 'ovpn'), str_contains($value, 'openvpn') => '🔒',
+            str_contains($value, 'anyconnect'), str_contains($value, 'cisco'), str_contains($value, 'ocserv') => '🌐',
+            default => '📦',
+        };
     }
 
     protected function buyCallback(array $parts, int $messageId): void
@@ -768,6 +850,9 @@ class UpdateHandler
         match ($action) {
             'cats' => $this->showCategories($messageId),
             'c' => $this->showProducts((int) ($parts[2] ?? 0), $messageId),
+            'p' => $this->showPeriods((int) ($parts[2] ?? 0), (int) ($parts[3] ?? 0), $messageId),
+            'nm' => $this->askFor('buy_name', __('shahbot::bot.ask_service_name'), $this->pendingPurchase()),
+            'nonm' => $this->showInvoice((int) $this->pendingPurchase()['duration'], $this->pendingGb(), $this->pendingPurchase()['code'] ?? null, $messageId),
             'd' => $this->chooseProduct((int) ($parts[2] ?? 0), $messageId),
             'code' => $this->askFor('buy_code', __('shahbot::bot.ask_discount'), $this->pendingPurchase()),
             'nocode' => $this->showInvoice((int) $this->pendingPurchase()['duration'], $this->pendingGb(), null, $messageId),
@@ -820,7 +905,9 @@ class UpdateHandler
     protected function showInvoice(int $durationId, ?float $gb, ?string $code, ?int $messageId = null): void
     {
         $quote = $this->shop->quote($this->user, $durationId, $gb, $code);
-        Cache::put('shahbot:cart:'.$this->user->id, ['duration' => $durationId, 'gb' => $quote['gb'], 'code' => $code], now()->addHour());
+        $previous = $this->pendingPurchase();
+        Cache::put('shahbot:cart:'.$this->user->id, ['duration' => $durationId, 'gb' => $quote['gb'], 'code' => $code,
+            'name' => (int) ($previous['duration'] ?? 0) === $durationId ? ($previous['name'] ?? null) : null], now()->addHour());
 
         $row = $quote['row'];
         $package = $row['package'];
@@ -852,6 +939,11 @@ class UpdateHandler
         $rows[] = [$code === null
             ? Keyboard::button(__('shahbot::bot.btn_discount'), 'buy:code')
             : Keyboard::button(__('shahbot::bot.btn_remove_discount'), 'buy:nocode')];
+        $chosenName = $this->pendingPurchase()['name'] ?? null;
+        if ($chosenName !== null) {
+            $text .= "\n".__('shahbot::bot.invoice_service_name', ['name' => e($chosenName)]);
+        }
+        $rows[] = [Keyboard::button(__('shahbot::bot.btn_service_name'), 'buy:nm')];
         $rows[] = [Keyboard::button(__('shahbot::bot.back'), 'buy:cats')];
 
         $this->say($messageId, $text, Keyboard::inline($rows));
@@ -874,7 +966,7 @@ class UpdateHandler
 
         try {
             $this->say($messageId, __('shahbot::bot.buying'));
-            $order = $this->shop->purchase($this->user, (int) $cart['duration'], $this->pendingGb(), $cart['code']);
+            $order = $this->shop->purchase($this->user, (int) $cart['duration'], $this->pendingGb(), $cart['code'], $cart['name'] ?? null);
             Cache::forget('shahbot:cart:'.$this->user->id);
 
             $this->reply(__('shahbot::bot.bought', ['details' => $this->serviceText($order->account)]), $this->serviceKeyboard($order->account));
@@ -1090,6 +1182,31 @@ class UpdateHandler
 
     protected function sendSubscription(Account $account): void
     {
+        // A WireGuard account has no subscription URL: what the customer
+        // scans is the config itself. The QR goes out with the link to the
+        // service page underneath, where the config can also be downloaded.
+        if ($account->service_type === ServiceType::Wireguard) {
+            $page = rescue(fn () => app(PortalLinkService::class)->ensure($account), null, false);
+            $caption = __('shahbot::bot.wg_caption', ['name' => e($this->accountName($account)), 'url' => e((string) $page)]);
+
+            try {
+                $png = app(WireGuardConfigService::class)->buildQrPng($account);
+                $result = $this->tg->sendPhotoBytes($this->chatId, $png, 'wireguard.png', $caption);
+
+                if ($result['ok'] ?? false) {
+                    return;
+                }
+            } catch (Throwable $e) {
+                $this->reply(__('shahbot::bot.wg_unavailable', ['error' => e($e->getMessage())]).($page ? "\n".e($page) : ''));
+
+                return;
+            }
+
+            $this->reply($caption);
+
+            return;
+        }
+
         if ($account->service_type->accountCategory() !== AccountCategory::V2ray) {
             $this->reply(__('shahbot::bot.sub_credentials', [
                 'name' => e($this->accountName($account)),
