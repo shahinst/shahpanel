@@ -282,9 +282,18 @@ class Package extends Model
         return $this->belongsTo(User::class, 'owner_agent_id');
     }
 
-    /** A package an inbound reseller built on their own allocation. */
+    /**
+     * A package an agent built for themselves: on an inbound allocation, or on
+     * their own dedicated server. The panel takes no cut of either; the agent
+     * sells at their own price.
+     */
     public function isAgentOwned(): bool
     {
-        return $this->inbound_allocation_id !== null && $this->owner_agent_id !== null;
+        return $this->owner_agent_id !== null;
+    }
+
+    public function isDedicatedPackage(): bool
+    {
+        return $this->owner_agent_id !== null && $this->inbound_allocation_id === null;
     }
 }

@@ -98,7 +98,6 @@ class UserPackageAssignmentService
 
         return Package::query()
             ->where('owner_agent_id', $ownerId)
-            ->whereNotNull('inbound_allocation_id')
             ->where('is_active', true)
             ->pluck('id')
             ->map(fn ($id): int => (int) $id)

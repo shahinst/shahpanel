@@ -18,11 +18,13 @@ use App\Services\WalletService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Mockery;
+use Tests\Concerns\BootsDedicatedModule;
 use Tests\Concerns\CreatesPanelData;
 use Tests\TestCase;
 
 class InboundResellerTest extends TestCase
 {
+    use BootsDedicatedModule;
     use CreatesPanelData;
     use RefreshDatabase;
 
@@ -39,6 +41,7 @@ class InboundResellerTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->bootDedicatedModule();
         Queue::fake();
 
         $this->admin = $this->makeAdmin();

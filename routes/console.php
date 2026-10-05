@@ -51,6 +51,7 @@ Schedule::command('reports:daily-rollup')
 // Inbound resellers pay for traffic, not per account: meter what the usage
 // sync recorded, charge whole gigabytes and enforce quota and credit.
 Schedule::command('inbound:bill')
+    ->when(fn (): bool => module_active('dedicated'))
     ->everyTenMinutes()
     ->withoutOverlapping(30)
     ->runInBackground();
