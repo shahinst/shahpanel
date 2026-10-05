@@ -6,6 +6,7 @@ use App\Enums\TransactionType;
 use App\Enums\UserRole;
 use App\Models\InboundAllocation;
 use App\Models\PackageDuration;
+use App\Models\ServerInterface;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Models\UserPackageDurationPrice;
@@ -158,5 +159,62 @@ class InboundVolumeTest extends TestCase
         $this->actingAs($admin)->get(route('admin.users.index'))
             ->assertOk()->assertSee($regular->username)->assertDontSee($inbound->username)->assertDontSee($dedicated->username);
         $this->actingAs($admin)->get(route('admin.inbound-agents.index'))->assertOk()->assertSee($inbound->username);
+    }
+
+    public function test_an_inbound_agent_is_made_on_its_own_page_and_set_up_on_theirs(): void
+    {
+        $admin = $this->makeAdmin();
+        $server = $this->makeServer('sanaei');
+        ServerInterface::query()->create(['server_id' => $server->id, 'remote_key' => 'inbound:3', 'name' => 'vless-3', 'category' => 'inbound']);
+
+        $this->actingAs($admin)->get(route('admin.inbound-agents.create'))->assertOk()->assertSee('vless-3');
+
+        $response = $this->actingAs($admin)->post(route('admin.inbound-agents.store'), [
+            'full_name' => 'Inbound One', 'username' => 'inbound-one', 'email' => 'in1@example.test',
+            'password' => 'secret-pass', 'server_id' => $server->id, 'inbound_ids' => [3], 'quota_gb' => 20,
+        ]);
+
+        $agent = User::query()->where('username', 'inbound-one')->firstOrFail();
+        $allocation = InboundAllocation::query()->where('agent_user_id', $agent->id)->firstOrFail();
+        $response->assertRedirect(route('admin.inbound-agents.edit', $agent));
+        $this->assertSame(20 * InboundAllocation::GB, (int) $allocation->quota_bytes);
+        $this->assertSame([3], $allocation->inboundIdList());
+
+        // The list is a table of agents; the settings live on the agent's own page.
+        $this->actingAs($admin)->get(route('admin.inbound-agents.index'))->assertOk()
+            ->assertSee('inbound-one')->assertSee(route('admin.inbound-agents.edit', $agent));
+        $this->actingAs($admin)->get(route('admin.inbound-agents.edit', $agent))->assertOk()->assertSee('vless-3');
+        $this->actingAs($admin)->get(route('admin.inbound-agents.volume'))->assertOk();
+
+        $this->actingAs($admin)->put(route('admin.inbound-agents.inbounds.update', ['allocation' => $allocation]), [
+            'title' => 'Main', 'inbound_ids' => [3], 'quota_gb' => 50,
+        ])->assertSessionHasNoErrors();
+        $this->assertSame(50 * InboundAllocation::GB, (int) $allocation->fresh()->quota_bytes);
+
+        // A regular agent has no inbound settings page.
+        $this->actingAs($admin)->get(route('admin.inbound-agents.edit', $this->makeAgent()))->assertNotFound();
+    }
+
+    public function test_a_dedicated_agent_is_made_with_a_server_and_keeps_at_least_one(): void
+    {
+        $admin = $this->makeAdmin();
+        $server = $this->makeServer('mikrotik');
+
+        $this->actingAs($admin)->post(route('admin.dedicated.store'), [
+            'full_name' => 'Own Server', 'username' => 'own-server', 'email' => 'own@example.test',
+            'password' => 'secret-pass', 'server_id' => $server->id, 'meter_interface' => 'ether1',
+        ])->assertSessionHasNoErrors();
+
+        $agent = User::query()->where('username', 'own-server')->firstOrFail();
+        $row = DedicatedServer::query()->where('agent_user_id', $agent->id)->firstOrFail();
+        $this->assertSame($server->id, (int) $row->server_id);
+
+        $this->actingAs($admin)->get(route('admin.dedicated.index'))->assertOk()
+            ->assertSee('own-server')->assertSee(route('admin.dedicated.edit', $agent));
+        $this->actingAs($admin)->get(route('admin.dedicated.edit', $agent))->assertOk()->assertSee($server->name);
+
+        // Taking away the only server would leave an agent with nothing to run.
+        $this->actingAs($admin)->delete(route('admin.dedicated.destroy', $row));
+        $this->assertTrue(DedicatedServer::query()->whereKey($row->id)->exists());
     }
 }
