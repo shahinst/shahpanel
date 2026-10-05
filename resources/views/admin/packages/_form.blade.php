@@ -587,10 +587,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const remnawaveType = @json(\App\Enums\ServiceType::Remnawave->value);
     const ciscoAnyconnectType = @json(\App\Enums\ServiceType::CiscoAnyconnect->value);
     const ocservType = @json(\App\Enums\ServiceType::Ocserv->value);
-    const sanaeiTypes = @json(array_map(
+    {{-- array_values: array_filter keeps the enum's own indices, and @json
+         turns a non-sequential array into an object, which has no includes(). --}}
+    const sanaeiTypes = @json(array_values(array_map(
         fn ($t) => $t->value,
         array_filter(\App\Enums\ServiceType::cases(), fn ($t) => $t->isSanaei())
-    ));
+    )));
     const pasarguardGroupsByServer = @json($pasarguardGroupsByServer);
     const mikrotikProfilesByServer = @json($mikrotikProfilesByServer);
     const wireguardServiceType = @json(\App\Enums\ServiceType::Wireguard->value);

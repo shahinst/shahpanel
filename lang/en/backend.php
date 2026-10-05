@@ -129,6 +129,8 @@ return [
     'server_log_status' => 'Status: :status',
     'server_log_accounts_synced' => 'Accounts synced: :count',
     'server_log_errors_count' => 'Errors: :count',
+    'server_log_sanaei_api_modern' => 'Client API: new generation (3.7 and later) — one client across inbounds, every protocol',
+    'server_log_sanaei_api_legacy' => 'Client API: older generation (2.x) — one client per inbound; VMess, VLESS and Trojan only',
     'server_log_permissions_allowed' => 'Granted permissions: :list',
     'server_log_permissions_denied' => 'Restricted permissions: :list',
     'server_log_tried_urls' => 'URLs tried: :list',

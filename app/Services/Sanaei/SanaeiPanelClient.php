@@ -101,6 +101,7 @@ final class SanaeiPanelClient
                 'panel_url' => $this->url()->displayAddress(),
                 'api_prefix' => $prefix,
                 'global_clients' => $this->supportsGlobalClientApi(),
+                'panel_version' => $this->panelVersion(),
                 'debug' => $this->debugLog,
             ];
 
@@ -199,6 +200,32 @@ final class SanaeiPanelClient
             __('services.sanaei_api_not_found', ['list' => implode(', ', $candidates)])
             .($this->server->web_base_path ? '' : ' — '.__('services.sanaei_web_base_path_hint'))
         );
+    }
+
+    /**
+     * The 3x-ui version the panel reports about itself, or '' when it does
+     * not say. Shown to the admin on the connection test; the panel is never
+     * driven by this string. Behaviour follows the routes a server actually
+     * answers (supportsGlobalClientApi), because forks and intermediate
+     * builds change the version text without changing the API.
+     */
+    public function panelVersion(): string
+    {
+        try {
+            $response = $this->apiGet($this->resolveApiPrefix(), '/server/status');
+        } catch (\Throwable) {
+            return '';
+        }
+
+        if (! $this->responseIsPanelApiJson($response)) {
+            return '';
+        }
+
+        $version = trim((string) ($response->json('obj.panelVersion') ?? $response->json('obj.xuiVersion') ?? ''));
+
+        $this->logStep('panel_version', ['version' => $version]);
+
+        return $version;
     }
 
     /**

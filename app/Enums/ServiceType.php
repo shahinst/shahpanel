@@ -11,6 +11,15 @@ enum ServiceType: string
     case SanaeiVmess = 'sanaei_vmess';
     case SanaeiVless = 'sanaei_vless';
     case SanaeiTrojan = 'sanaei_trojan';
+    // Protocols 3x-ui serves per client besides the three above. Each one is
+    // a client of an inbound, sold and renewed exactly like VLESS; only the
+    // config link differs, and that link is taken from the panel itself.
+    case SanaeiShadowsocks = 'sanaei_shadowsocks';
+    case SanaeiHysteria = 'sanaei_hysteria';
+    case SanaeiTuic = 'sanaei_tuic';
+    case SanaeiWireguard = 'sanaei_wireguard';
+    case SanaeiAmneziawg = 'sanaei_amneziawg';
+    case SanaeiMtproto = 'sanaei_mtproto';
     /** پکیج/اکانت متصل به پنل PasarGuard (نمایندگی یا ادمین). */
     case Pasarguard = 'pasarguard';
     /** پکیج/اکانت متصل به پنل Remnawave. */
@@ -36,7 +45,52 @@ enum ServiceType: string
             self::SanaeiVmess,
             self::SanaeiVless,
             self::SanaeiTrojan,
+            self::SanaeiShadowsocks,
+            self::SanaeiHysteria,
+            self::SanaeiTuic,
+            self::SanaeiWireguard,
+            self::SanaeiAmneziawg,
+            self::SanaeiMtproto,
         ], true);
+    }
+
+    /**
+     * The 3x-ui inbound protocol behind a Sanaei service type, null for
+     * anything else.
+     */
+    public function sanaeiProtocol(): ?string
+    {
+        return match ($this) {
+            self::SanaeiVmess => 'vmess',
+            self::SanaeiVless => 'vless',
+            self::SanaeiTrojan => 'trojan',
+            self::SanaeiShadowsocks => 'shadowsocks',
+            self::SanaeiHysteria => 'hysteria',
+            self::SanaeiTuic => 'tuic',
+            self::SanaeiWireguard => 'wireguard',
+            self::SanaeiAmneziawg => 'amneziawg',
+            self::SanaeiMtproto => 'mtproto',
+            default => null,
+        };
+    }
+
+    /** Sanaei service type for a 3x-ui inbound protocol, null when 3x-ui has no per-client form of it. */
+    public static function fromSanaeiProtocol(string $protocol): ?self
+    {
+        $protocol = strtolower(trim($protocol));
+
+        // 3x-ui names Hysteria 2 inbounds "hysteria" as well; older builds wrote "hysteria2".
+        if ($protocol === 'hysteria2') {
+            $protocol = 'hysteria';
+        }
+
+        foreach (self::cases() as $case) {
+            if ($case->sanaeiProtocol() === $protocol) {
+                return $case;
+            }
+        }
+
+        return null;
     }
 
     public function isPasarguard(): bool
@@ -73,9 +127,13 @@ enum ServiceType: string
 
     public function accountCategory(): AccountCategory
     {
+        if ($this->isSanaei()) {
+            return AccountCategory::V2ray;
+        }
+
         return match ($this) {
             self::Wireguard => AccountCategory::Wireguard,
-            self::SanaeiVmess, self::SanaeiVless, self::SanaeiTrojan, self::Pasarguard, self::Remnawave => AccountCategory::V2ray,
+            self::Pasarguard, self::Remnawave => AccountCategory::V2ray,
             self::CiscoAnyconnect, self::Ocserv => AccountCategory::Anyconnect,
             default => AccountCategory::Ppp,
         };
@@ -91,6 +149,12 @@ enum ServiceType: string
             self::SanaeiVmess => 'VMess',
             self::SanaeiVless => 'VLESS',
             self::SanaeiTrojan => 'Trojan',
+            self::SanaeiShadowsocks => 'Shadowsocks',
+            self::SanaeiHysteria => 'Hysteria2',
+            self::SanaeiTuic => 'TUIC',
+            self::SanaeiWireguard => 'WireGuard (3x-ui)',
+            self::SanaeiAmneziawg => 'AmneziaWG',
+            self::SanaeiMtproto => 'MTProto',
             self::Pasarguard => __('packages.service_type_pasarguard'),
             self::Remnawave => __('packages.service_type_remnawave'),
             self::CiscoAnyconnect => __('packages.service_type_cisco_anyconnect'),
@@ -108,6 +172,12 @@ enum ServiceType: string
             self::SanaeiVmess => 'vm-',
             self::SanaeiVless => 'vl-',
             self::SanaeiTrojan => 'tr-',
+            self::SanaeiShadowsocks => 'ss-',
+            self::SanaeiHysteria => 'hy-',
+            self::SanaeiTuic => 'tu-',
+            self::SanaeiWireguard => 'xw-',
+            self::SanaeiAmneziawg => 'aw-',
+            self::SanaeiMtproto => 'mt-',
             self::Pasarguard => 'pg-',
             self::Remnawave => 'rw-',
             self::CiscoAnyconnect => 'ac-',

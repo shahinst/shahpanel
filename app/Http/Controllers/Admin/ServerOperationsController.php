@@ -361,6 +361,14 @@ class ServerOperationsController extends Controller
             }
         }
 
+        // Which client API this 3x-ui speaks decides how accounts are made on
+        // it, so the admin sees it on the test rather than finding out later.
+        if (array_key_exists('global_clients', $details) && $server->isSanaei()) {
+            $lines[] = $details['global_clients']
+                ? __('backend.server_log_sanaei_api_modern')
+                : __('backend.server_log_sanaei_api_legacy');
+        }
+
         if (! empty($details['permissions']) && is_array($details['permissions'])) {
             $allowed = array_keys(array_filter($details['permissions']));
             $denied = array_keys(array_filter($details['permissions'], fn ($v) => ! $v));

@@ -129,6 +129,8 @@ return [
     'server_log_status' => 'Статус: :status',
     'server_log_accounts_synced' => 'Синхронизировано аккаунтов: :count',
     'server_log_errors_count' => 'Ошибок: :count',
+    'server_log_sanaei_api_modern' => 'API клиентов: новое поколение (3.7 и новее) — один клиент на несколько входящих, все протоколы',
+    'server_log_sanaei_api_legacy' => 'API клиентов: старое поколение (2.x) — клиент на каждый входящий; только VMess, VLESS и Trojan',
     'server_log_permissions_allowed' => 'Предоставленные права доступа: :list',
     'server_log_permissions_denied' => 'Ограниченные права доступа: :list',
     'server_log_tried_urls' => 'Опробованные URL: :list',

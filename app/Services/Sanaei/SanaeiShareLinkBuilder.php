@@ -255,6 +255,7 @@ class SanaeiShareLinkBuilder
         // پسوند «-i{id}» همان الگوی SanaeiService::inboundClientEmail است: یک
         // اکانت روی چند inbound ناچار چند ایمیل دارد چون 3x-ui ایمیل را در کل
         // پنل یکتا می‌داند.
+        $fromPanel = null;
         $aliasPrefix = $email.'-i';
         $links = [];
         $found = false;
@@ -305,6 +306,11 @@ class SanaeiShareLinkBuilder
 
                 if ($link !== null) {
                     $links[] = $link;
+                } elseif ($fromPanel === null) {
+                    // A protocol this panel does not build itself: take the
+                    // links 3x-ui renders, once for all of this client's inbounds.
+                    $fromPanel = $this->sanaeiService->fetchClientLinks($server, (string) ($client['email'] ?? $email));
+                    array_push($links, ...$fromPanel);
                 }
 
                 // هر inbound فقط یک کلاینتِ این اکانت دارد.
@@ -358,10 +364,19 @@ class SanaeiShareLinkBuilder
             }
         }
 
+        // The link schemes 3x-ui itself writes for each protocol
+        // (sub/subService.go). Only the first three are ever built locally;
+        // every other protocol is taken from the panel's own output, so the
+        // scheme is all that is needed to pick it out.
         $prefix = match ($account->service_type) {
             ServiceType::SanaeiVmess => 'vmess://',
             ServiceType::SanaeiVless => 'vless://',
             ServiceType::SanaeiTrojan => 'trojan://',
+            ServiceType::SanaeiShadowsocks => 'ss://',
+            ServiceType::SanaeiHysteria => 'hysteria2://',
+            ServiceType::SanaeiTuic => 'tuic://',
+            ServiceType::SanaeiWireguard, ServiceType::SanaeiAmneziawg => 'wireguard://',
+            ServiceType::SanaeiMtproto => 'tg://',
             default => null,
         };
 

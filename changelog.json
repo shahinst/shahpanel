@@ -1,6 +1,44 @@
 {
     "versions": [
         {
+            "version": "3.31.0",
+            "date": "2026-11-06",
+            "notes": {
+                "fa": [
+                    "سازگاری با ثنایی (3x-ui) نسخه‌های ۳.۸ و ۳.۹.",
+                    "همهٔ پروتکل‌هایی که ثنایی برای هر کاربر ارائه می‌کند اضافه شد: Shadowsocks، Hysteria2، TUIC، WireGuard، AmneziaWG و MTProto؛ لینک کانفیگ این‌ها مستقیم از خود پنل ثنایی گرفته می‌شود.",
+                    "اینباند ناشناخته دیگر به اشتباه VLESS ثبت نمی‌شود.",
+                    "تمدید یا ویرایش اکانت دیگر رمز، کلید و تنظیمات اختصاصی پروتکل را در ثنایی پاک نمی‌کند.",
+                    "تست اتصال سرور ثنایی نسخهٔ پنل و نسل API آن را نشان می‌دهد و پنل خودکار بر اساس همان کار می‌کند.",
+                    "حذف اکانت روی ثنایی ۳.۹ دیگر بی‌صدا شکست نمی‌خورد؛ پنل حذف واقعی کلاینت را بررسی می‌کند."
+                ],
+                "en": [
+                    "Compatible with Sanaei (3x-ui) 3.8 and 3.9.",
+                    "Every protocol Sanaei serves per user is now supported: Shadowsocks, Hysteria2, TUIC, WireGuard, AmneziaWG and MTProto; their config links come straight from the Sanaei panel.",
+                    "An unknown inbound is no longer recorded as VLESS by mistake.",
+                    "Renewing or editing an account no longer wipes the protocol password, keys or settings on Sanaei.",
+                    "The Sanaei connection test shows the panel version and its API generation, and the panel adapts to it automatically.",
+                    "Deleting an account on Sanaei 3.9 no longer fails silently; the panel checks the client is really gone."
+                ],
+                "ru": [
+                    "Совместимость с Sanaei (3x-ui) 3.8 и 3.9.",
+                    "Поддерживаются все протоколы Sanaei для пользователей: Shadowsocks, Hysteria2, TUIC, WireGuard, AmneziaWG и MTProto; ссылки берутся прямо из панели Sanaei.",
+                    "Неизвестный входящий больше не записывается как VLESS по ошибке.",
+                    "Продление или изменение аккаунта больше не стирает пароль, ключи и настройки протокола в Sanaei.",
+                    "Проверка подключения Sanaei показывает версию панели и поколение её API, панель подстраивается автоматически.",
+                    "Удаление аккаунта на Sanaei 3.9 больше не проваливается молча: панель проверяет, что клиент действительно удалён."
+                ],
+                "zh": [
+                    "兼容 Sanaei (3x-ui) 3.8 和 3.9。",
+                    "现已支持 Sanaei 为每个用户提供的全部协议：Shadowsocks、Hysteria2、TUIC、WireGuard、AmneziaWG 和 MTProto；其配置链接直接取自 Sanaei 面板。",
+                    "未知入站不再被错误记录为 VLESS。",
+                    "续费或编辑账户不再清除 Sanaei 上的协议密码、密钥和设置。",
+                    "Sanaei 连接测试会显示面板版本及其 API 代次，面板会自动适配。",
+                    "在 Sanaei 3.9 上删除账户不再静默失败；面板会确认客户端已真正删除。"
+                ]
+            }
+        },
+        {
             "version": "3.30.1",
             "date": "2026-11-05",
             "notes": {

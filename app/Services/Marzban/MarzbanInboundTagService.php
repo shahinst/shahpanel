@@ -60,6 +60,9 @@ class MarzbanInboundTagService
         return match ($serviceType) {
             ServiceType::SanaeiVmess => 'vmess',
             ServiceType::SanaeiTrojan => 'trojan',
+            // Marzban's protocol set stops at these four; every other 3x-ui
+            // protocol is grouped under vless, as before.
+            ServiceType::SanaeiShadowsocks => 'shadowsocks',
             default => 'vless',
         };
     }
