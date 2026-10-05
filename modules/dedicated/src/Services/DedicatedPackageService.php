@@ -34,7 +34,7 @@ class DedicatedPackageService
     {
         return match ($server->type) {
             ServerType::Mikrotik => [ServiceType::Wireguard, ServiceType::Ppp, ServiceType::L2tp, ServiceType::Openvpn],
-            ServerType::Sanaei => [ServiceType::SanaeiVless, ServiceType::SanaeiVmess, ServiceType::SanaeiTrojan],
+            ServerType::Sanaei => array_values(array_filter(ServiceType::cases(), fn (ServiceType $type): bool => $type->isSanaei())),
             ServerType::Pasarguard => [ServiceType::Pasarguard],
             ServerType::Remnawave => [ServiceType::Remnawave],
             ServerType::CiscoAnyconnect => [ServiceType::CiscoAnyconnect],

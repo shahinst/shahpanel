@@ -17,6 +17,17 @@ use Throwable;
 
 class SanaeiService
 {
+    /**
+     * Client fields the panel does not manage but must send back untouched,
+     * because 3x-ui overwrites the whole client on update. Taken from the
+     * Client model of 3x-ui itself (internal/database/model/model.go).
+     */
+    protected const PRESERVED_CLIENT_FIELDS = [
+        'security', 'password', 'auth', 'secret', 'adTag', 'reverse',
+        'privateKey', 'publicKey', 'allowedIPs', 'allowedIPsByInbound', 'preSharedKey', 'keepAlive', 'forwardedPorts',
+        'group', 'resetDay', 'resetWeekday', 'resetMax', 'trafficReset', 'trafficResetDay',
+    ];
+
     use RetriesApiCalls;
 
     /** @var array<int, SanaeiPanelClient> */
@@ -383,12 +394,12 @@ class SanaeiService
 
     public function serviceTypeFromProtocol(string $protocol): ServiceType
     {
-        return match (strtolower(trim($protocol))) {
-            'vmess' => ServiceType::SanaeiVmess,
-            'vless' => ServiceType::SanaeiVless,
-            'trojan' => ServiceType::SanaeiTrojan,
-            default => ServiceType::SanaeiVless,
-        };
+        // Every protocol 3x-ui serves per client maps to its own type. Falling
+        // back to VLESS for anything unknown labelled a Shadowsocks or TUIC
+        // inbound as VLESS, and the panel then built a vless:// link for it.
+        // VLESS stays the answer only for what 3x-ui has no client form of
+        // (http, mixed, tunnel), which can never be sold anyway.
+        return ServiceType::fromSanaeiProtocol($protocol) ?? ServiceType::SanaeiVless;
     }
 
     /**
@@ -474,6 +485,46 @@ class SanaeiService
     /**
      * @return array{client: array<string, mixed>, inbound_ids: list<int>}|null
      */
+    /**
+     * Config links 3x-ui itself renders for one client, on every inbound it
+     * is attached to.
+     *
+     * Shadowsocks, Hysteria2, TUIC, WireGuard, AmneziaWG and MTProto links
+     * depend on inbound settings this panel does not model (cipher keys,
+     * obfuscation, certificates, reserved bytes), so they are asked of the
+     * panel rather than rebuilt here. Only panels with the per-client API
+     * (3.7 and later) have this route; older ones give an empty list.
+     *
+     * @return list<string>
+     */
+    public function fetchClientLinks(Server $server, string $email): array
+    {
+        $email = trim($email);
+
+        if ($email === '' || ! $this->client($server)->supportsGlobalClientApi()) {
+            return [];
+        }
+
+        try {
+            $prefix = $this->client($server)->resolveApiPrefix();
+            $response = $this->apiRequest($server, 'get', $prefix, '/clients/links/'.rawurlencode($email));
+        } catch (\Throwable) {
+            return [];
+        }
+
+        if (! $response->successful() || $response->json('success') === false) {
+            return [];
+        }
+
+        $obj = $response->json('obj');
+        $lines = is_array($obj) ? $obj : preg_split('/\R/', (string) $obj);
+
+        return array_values(array_unique(array_filter(
+            array_map(fn ($line): string => trim((string) $line), $lines),
+            fn (string $line): bool => preg_match('#^[a-z][a-z0-9+.\-]*://#i', $line) === 1,
+        )));
+    }
+
     public function getGlobalClient(Server $server, string $email): ?array
     {
         $email = trim($email);
@@ -1160,7 +1211,18 @@ class SanaeiService
             return false;
         }
 
-        return $this->panelMutationSucceeded($response);
+        if (! $this->panelMutationSucceeded($response)) {
+            return false;
+        }
+
+        // From 3x-ui 3.9 the inbound update no longer touches an inbound's
+        // clients: it answers success and leaves the client exactly where it
+        // was. Taking that answer at its word reported a delete that never
+        // happened, and the customer kept a working config after removal. The
+        // client has to be gone, not merely the request accepted.
+        $this->inboundListMemo = [];
+
+        return $this->findClientOnInbound($server, $inboundId, $uuid) === null;
     }
 
     public function disableClient(Server $server, string $email, string $uuid, ?int $legacyInboundId = null): void
@@ -2454,7 +2516,16 @@ class SanaeiService
             $normalized['subId'] = scalar_string($changes['subId']);
         }
 
-        return [
+        // 3x-ui replaces the whole client row on update, so anything left out
+        // is erased. The fields below are the protocol credentials and the
+        // panel's own schedules: a Trojan or TUIC password, a Hysteria auth,
+        // an MTProto secret, a WireGuard key pair. Sending only the fields
+        // this panel manages wiped them on the first renewal and the
+        // customer's config stopped connecting. They are carried over from
+        // the client as the panel holds it.
+        $kept = array_intersect_key($normalized, array_flip(self::PRESERVED_CLIENT_FIELDS));
+
+        return $kept + [
             'id' => $uuid,
             'email' => scalar_string($normalized['email'] ?? ''),
             'limitIp' => scalar_int($normalized['limitIp'] ?? 0),

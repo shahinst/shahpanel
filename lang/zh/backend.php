@@ -129,6 +129,8 @@ return [
     'server_log_status' => '状态：:status',
     'server_log_accounts_synced' => '已同步账号：:count',
     'server_log_errors_count' => '错误：:count',
+    'server_log_sanaei_api_modern' => '客户端 API：新一代（3.7 及以上）— 一个客户端可用于多个入站，支持全部协议',
+    'server_log_sanaei_api_legacy' => '客户端 API：旧一代（2.x）— 每个入站一个客户端；仅支持 VMess、VLESS 和 Trojan',
     'server_log_permissions_allowed' => '已授予的权限：:list',
     'server_log_permissions_denied' => '受限的权限：:list',
     'server_log_tried_urls' => '已尝试的 URL：:list',

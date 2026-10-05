@@ -105,11 +105,10 @@ class SanaeiToRemnawaveMigrationService
             ->whereNull('refunded_at')
             ->whereNotIn('status', [AccountStatus::Pending])
             ->where(function ($q): void {
-                $q->whereIn('service_type', [
-                    ServiceType::SanaeiVmess,
-                    ServiceType::SanaeiVless,
-                    ServiceType::SanaeiTrojan,
-                ])->orWhereNotNull('sanaei_client_uuid');
+                $q->whereIn('service_type', array_values(array_filter(
+                    ServiceType::cases(),
+                    fn (ServiceType $type): bool => $type->isSanaei(),
+                )))->orWhereNotNull('sanaei_client_uuid');
             })
             ->orderBy('id');
 

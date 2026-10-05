@@ -129,6 +129,8 @@ return [
     'server_log_status' => 'وضعیت: :status',
     'server_log_accounts_synced' => 'اکانت‌های سینک‌شده: :count',
     'server_log_errors_count' => 'خطاها: :count',
+    'server_log_sanaei_api_modern' => 'API کلاینت: نسل جدید (۳.۷ به بعد) — یک کلاینت روی چند اینباند، همهٔ پروتکل‌ها',
+    'server_log_sanaei_api_legacy' => 'API کلاینت: نسل قدیمی (۲.x) — یک کلاینت برای هر اینباند؛ فقط VMess، VLESS و Trojan',
     'server_log_permissions_allowed' => 'دسترسی‌های فعال: :list',
     'server_log_permissions_denied' => 'دسترسی‌های محدود: :list',
     'server_log_tried_urls' => 'آدرس‌های امتحان‌شده: :list',
