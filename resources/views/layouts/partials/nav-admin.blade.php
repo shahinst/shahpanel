@@ -2,9 +2,9 @@
     $panel = 'admin';
     $mainLinks = [
         ['route' => 'admin.dashboard', 'section' => 'dashboard', 'label' => __('menu.dashboard'), 'icon' => 'bx-home-alt'],
-        ['route' => 'admin.users.index', 'section' => 'agents', 'label' => __('menu.agents'), 'icon' => 'bx-user-pin'],
-        module_active('dedicated') ? ['route' => 'admin.dedicated.index', 'section' => 'agents', 'label' => __('dedicated::admin.menu'), 'icon' => 'bx-server', 'also_active' => ['admin.dedicated.*']] : null,
-        module_active('dedicated') ? ['route' => 'admin.inbound-allocations.index', 'section' => 'agents', 'label' => __('inbound_resellers.menu_admin'), 'icon' => 'bx-transfer-alt'] : null,
+        // One fixed group for every kind of agent; the kinds a module adds sit
+        // under it as children (layouts.partials.nav-agents).
+        ['group' => 'agents', 'route' => 'admin.users.index', 'section' => 'agents'],
         ['route' => 'admin.sellers.index', 'section' => 'sellers', 'label' => __('menu.sellers'), 'icon' => 'bx-user'],
         ['route' => 'admin.clients.index', 'section' => 'clients', 'label' => __('menu.clients'), 'icon' => 'bx-group'],
         ['route' => 'admin.packages.index', 'section' => 'packages', 'label' => __('menu.packages'), 'icon' => 'bx-package', 'also_active' => ['admin.package-categories.*']],
@@ -38,6 +38,10 @@
 @endphp
 
 @foreach ($mainLinks as $link)
+    @if (($link['group'] ?? null) === 'agents')
+        @include('layouts.partials.nav-agents')
+        @continue
+    @endif
     @php
         $isActive = request()->routeIs(str_replace('.index', '.*', $link['route']).'*')
             || request()->routeIs($link['route']);

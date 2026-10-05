@@ -1,6 +1,40 @@
 {
     "versions": [
         {
+            "version": "3.30.0",
+            "date": "2026-11-04",
+            "notes": {
+                "fa": [
+                    "منوی نمایندگان حالا یک گروه ثابت است با سه زیرمجموعه: نمایندگان عادی، نمایندگان اختصاصی و نمایندگان اینباندی.",
+                    "نماینده‌های اختصاصی و اینباندی در همان صفحهٔ خودشان ساخته می‌شوند و از فهرست نمایندگان عادی جدا هستند.",
+                    "نمایندگان اینباندی حجم اینباندشان را از پنل خودشان با بسته‌هایی که ادمین تعریف می‌کند درخواست می‌دهند؛ ادمین حجم را تأیید می‌کند، مبلغ از کیف پول نماینده کم و در درآمد ادمین ثبت می‌شود.",
+                    "داشبورد نمایندهٔ اینباندی مصرف دقیق اینباند را با نمودار ۱۴ روزه نشان می‌دهد.",
+                    "سیستم پورسانت برای نمایندگان اختصاصی و اینباندی: هر نماینده قیمت هر فروشنده‌اش را جدا یا با درصد تعیین می‌کند."
+                ],
+                "en": [
+                    "The Agents menu is now a fixed group with three entries: regular, dedicated and inbound agents.",
+                    "Dedicated and inbound agents are created on their own pages and kept out of the regular agents list.",
+                    "Inbound agents request inbound volume from their own panel using packs the admin defines; the admin approves the volume, the price comes out of the agent's wallet and is booked as the admin's revenue.",
+                    "The inbound agent's dashboard shows the inbound's exact usage with a 14-day chart.",
+                    "Commission for dedicated and inbound agents: each agent sets a price per seller, directly or as a percentage."
+                ],
+                "ru": [
+                    "Меню агентов теперь постоянная группа из трёх пунктов: обычные, выделенные и inbound-агенты.",
+                    "Выделенные и inbound-агенты создаются на своих страницах и не смешиваются с обычными.",
+                    "Inbound-агенты запрашивают объём в своей панели по пакетам администратора; после одобрения сумма списывается с кошелька агента и учитывается как доход администратора.",
+                    "Панель inbound-агента показывает точный расход inbound с графиком за 14 дней.",
+                    "Комиссия для выделенных и inbound-агентов: агент задаёт цену для каждого продавца напрямую или в процентах."
+                ],
+                "zh": [
+                    "代理菜单现在是固定分组，包含三项：普通代理、专属代理和入站代理。",
+                    "专属代理和入站代理在各自页面创建，与普通代理列表分开。",
+                    "入站代理可在自己的面板中按管理员定义的流量包申请入站流量；管理员批准后，费用从代理钱包扣除并记为管理员收入。",
+                    "入站代理仪表盘显示入站的精确用量和 14 天图表。",
+                    "专属和入站代理的佣金：代理可为每个卖家单独或按百分比设置价格。"
+                ]
+            }
+        },
+        {
             "version": "3.29.1",
             "date": "2026-11-03",
             "notes": {

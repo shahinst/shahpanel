@@ -31,6 +31,9 @@ class UserController extends Controller
 
         $users = User::query()
             ->role(UserRole::Agent)
+            // Agents a module manages on its own page (dedicated, inbound)
+            // are listed there, not here.
+            ->whereNotIn('id', \App\Support\PanelExtensions::excludedAgentIds() ?: [0])
             ->with('wallets')
             ->when($request->filled('search'), function ($query) use ($request): void {
                 $search = $request->string('search')->toString();

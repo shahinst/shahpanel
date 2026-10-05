@@ -14,7 +14,8 @@
             @csrf
             <div class="col-md-4">
                 <label class="form-label">{{ __('dedicated::admin.agent') }}</label>
-                <select name="agent_user_id" class="form-select" required>
+                <select name="agent_user_id" id="ded-agent" class="form-select">
+                    <option value="">{{ __('dedicated::admin.new_agent_option') }}</option>
                     @foreach ($agents as $agent)
                         <option value="{{ $agent->id }}">{{ $agent->full_name ?: $agent->username }} ({{ $agent->username }})</option>
                     @endforeach
@@ -33,7 +34,27 @@
                 <input type="text" name="meter_interface" class="form-control" dir="ltr" placeholder="ether1">
             </div>
             <div class="col-md-2"><button class="btn btn-primary w-100"><i class="bx bx-plus"></i> {{ __('dedicated::admin.assign_btn') }}</button></div>
+            <div class="col-12 row g-2 m-0 p-0" id="ded-new-agent">
+                <div class="col-md-4"><label class="form-label">{{ __('dedicated::admin.full_name') }}</label><input name="full_name" class="form-control" value="{{ old('full_name') }}"></div>
+                <div class="col-md-4"><label class="form-label">{{ __('dedicated::admin.username') }}</label><input name="username" class="form-control" dir="ltr" value="{{ old('username') }}"></div>
+                <div class="col-md-4"><label class="form-label">{{ __('dedicated::admin.email') }}</label><input type="email" name="email" class="form-control" dir="ltr" value="{{ old('email') }}"></div>
+                <div class="col-md-4"><label class="form-label">{{ __('dedicated::admin.phone') }}</label><input name="phone" class="form-control" dir="ltr" value="{{ old('phone') }}"></div>
+                <div class="col-md-4"><label class="form-label">{{ __('dedicated::admin.password') }}</label><input type="password" name="password" class="form-control" dir="ltr" minlength="8"></div>
+            </div>
         </form>
+        <script>
+            (function () {
+                const select = document.getElementById('ded-agent');
+                const box = document.getElementById('ded-new-agent');
+                const sync = () => {
+                    const isNew = select.value === '';
+                    box.style.display = isNew ? '' : 'none';
+                    box.querySelectorAll('input').forEach((input) => { input.disabled = ! isNew; });
+                };
+                select.addEventListener('change', sync);
+                sync();
+            })();
+        </script>
         <p class="text-muted small mt-2 mb-0">{{ __('dedicated::admin.meter_hint') }}</p>
     </div>
 </div>
