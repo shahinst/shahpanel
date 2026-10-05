@@ -7,6 +7,9 @@ use App\Support\PortalPaths;
 use Illuminate\Support\Facades\Route;
 use Modules\Dedicated\Http\Controllers\AdminController;
 use Modules\Dedicated\Http\Controllers\AgentController;
+use Modules\Dedicated\Http\Controllers\CommissionController;
+use Modules\Dedicated\Http\Controllers\InboundAgentController;
+use Modules\Dedicated\Http\Controllers\InboundVolumeController;
 
 // Rebuilt exactly as the core admin group, so the section gate, the IP
 // allowlist and the activity log apply to everything below.
@@ -32,6 +35,15 @@ Route::prefix(PortalPaths::slug('admin'))->name('admin.')->middleware($adminMidd
     Route::post('inbound-allocations/{inboundAllocation}/suspend', [InboundAllocationController::class, 'suspend'])->name('inbound-allocations.suspend');
     Route::post('inbound-allocations/{inboundAllocation}/resume', [InboundAllocationController::class, 'resume'])->name('inbound-allocations.resume');
     Route::post('inbound-allocations/{inboundAllocation}/bill', [InboundAllocationController::class, 'bill'])->name('inbound-allocations.bill');
+
+    // Inbound agents: created with their inbound, fed by volume packs.
+    Route::get('inbound-agents', [InboundAgentController::class, 'index'])->name('inbound-agents.index');
+    Route::post('inbound-agents', [InboundAgentController::class, 'store'])->name('inbound-agents.store');
+    Route::post('inbound-agents/packs', [InboundAgentController::class, 'storePack'])->name('inbound-agents.packs.store');
+    Route::put('inbound-agents/packs/{pack}', [InboundAgentController::class, 'updatePack'])->name('inbound-agents.packs.update');
+    Route::delete('inbound-agents/packs/{pack}', [InboundAgentController::class, 'destroyPack'])->name('inbound-agents.packs.destroy');
+    Route::post('inbound-agents/requests/{chargeRequest}/approve', [InboundAgentController::class, 'approve'])->name('inbound-agents.requests.approve')->middleware('throttle:money-actions');
+    Route::post('inbound-agents/requests/{chargeRequest}/reject', [InboundAgentController::class, 'reject'])->name('inbound-agents.requests.reject');
 });
 
 Route::prefix(PortalPaths::slug('agent'))->name('agent.')->middleware(['auth', 'role:agent', 'log.activity'])->group(function (): void {
@@ -42,10 +54,16 @@ Route::prefix(PortalPaths::slug('agent'))->name('agent.')->middleware(['auth', '
     Route::put('dedicated/packages/{package}', [AgentController::class, 'updatePackage'])->name('dedicated.packages.update');
     Route::delete('dedicated/packages/{package}', [AgentController::class, 'destroyPackage'])->name('dedicated.packages.destroy');
 
+    // Commission terms for the agent's sellers on the agent's own packages.
+    Route::get('commissions', [CommissionController::class, 'index'])->name('dedicated.commissions');
+    Route::post('commissions/{seller}', [CommissionController::class, 'update'])->name('dedicated.commissions.update');
+
     Route::get('inbounds', [InboundController::class, 'index'])->name('inbounds.index');
     Route::get('inbounds/{allocation}/packages/create', [InboundController::class, 'createPackage'])->name('inbounds.packages.create');
     Route::post('inbounds/{allocation}/packages', [InboundController::class, 'storePackage'])->name('inbounds.packages.store');
     Route::get('inbounds/packages/{package}/edit', [InboundController::class, 'editPackage'])->name('inbounds.packages.edit');
     Route::put('inbounds/packages/{package}', [InboundController::class, 'updatePackage'])->name('inbounds.packages.update');
     Route::delete('inbounds/packages/{package}', [InboundController::class, 'destroyPackage'])->name('inbounds.packages.destroy');
+    Route::get('inbound-volume', [InboundVolumeController::class, 'index'])->name('inbound-volume.index');
+    Route::post('inbound-volume/{allocation}', [InboundVolumeController::class, 'store'])->name('inbound-volume.store');
 });

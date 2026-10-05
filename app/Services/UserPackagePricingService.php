@@ -712,7 +712,18 @@ class UserPackagePricingService
         }
 
         if ($user->role === UserRole::Seller && (int) $user->parent_id === $ownerId) {
-            return number_format((float) $duration->price, 2, '.', '');
+            // The agent's own commission terms for this seller: a price the
+            // agent set per tier, the same per-user wholesale row the core
+            // uses for every other reseller. Without one the seller pays the
+            // package's list price. Whatever the seller pays is the agent's.
+            $own = Schema::hasTable('user_package_duration_prices')
+                ? UserPackageDurationPrice::query()
+                    ->where('user_id', $user->id)
+                    ->where('package_duration_id', $duration->id)
+                    ->value('wholesale_price')
+                : null;
+
+            return number_format((float) ($own ?? $duration->price), 2, '.', '');
         }
 
         return null;

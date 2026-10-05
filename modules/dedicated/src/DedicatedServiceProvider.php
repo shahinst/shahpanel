@@ -3,6 +3,8 @@
 namespace Modules\Dedicated;
 
 use App\Enums\ServiceType;
+use App\Models\InboundAllocation;
+use App\Models\Package;
 use App\Models\Server;
 use App\Models\User;
 use App\Support\PanelExtensions;
@@ -42,6 +44,40 @@ class DedicatedServiceProvider extends ServiceProvider
             ];
         });
 
+        // An inbound agent sees their inbound's volume and can ask for more.
+        PanelExtensions::navItem(function (string $panel): ?array {
+            $user = auth()->user();
+
+            if ($panel !== 'agent' || $user === null
+                || ! InboundAllocation::query()->where('agent_user_id', $user->id)->exists()) {
+                return null;
+            }
+
+            return [
+                'label' => __('dedicated::admin.my_inbound'),
+                'url' => route('agent.inbound-volume.index'),
+                'icon' => 'bx-transfer-alt',
+                'active' => request()->routeIs('agent.inbound-volume.*'),
+            ];
+        });
+
+        // Either kind of agent sets what each of their sellers pays.
+        PanelExtensions::navItem(function (string $panel): ?array {
+            $user = auth()->user();
+
+            if ($panel !== 'agent' || $user === null
+                || ! Package::query()->where('owner_agent_id', $user->id)->exists()) {
+                return null;
+            }
+
+            return [
+                'label' => __('dedicated::admin.commissions'),
+                'url' => route('agent.dedicated.commissions'),
+                'icon' => 'bx-percent',
+                'active' => request()->routeIs('agent.dedicated.commissions*'),
+            ];
+        });
+
         // A dedicated agent sells only on their own servers, so the accounts
         // menu shows just the kinds those servers carry. Their sellers sell
         // the same packages and get the same narrowing.
@@ -52,12 +88,23 @@ class DedicatedServiceProvider extends ServiceProvider
                 default => null,
             };
 
-            if ($agent === null || ! DedicatedServer::isDedicatedAgent($agent)) {
+            if ($agent === null) {
+                return null;
+            }
+
+            // An inbound agent sells on the servers of their inbounds, a
+            // dedicated agent on their own servers; both only there.
+            $serverIds = array_merge(
+                DedicatedServer::serverIdsOf($agent),
+                InboundAllocation::query()->where('agent_user_id', $agent->id)->pluck('server_id')->all(),
+            );
+
+            if ($serverIds === []) {
                 return null;
             }
 
             return Server::query()
-                ->whereIn('id', DedicatedServer::serverIdsOf($agent))
+                ->whereIn('id', $serverIds)
                 ->get()
                 ->flatMap(fn (Server $server): array => DedicatedPackageService::serviceTypesFor($server))
                 ->map(fn (ServiceType $type): string => $type->accountCategory()->value)
@@ -65,6 +112,13 @@ class DedicatedServiceProvider extends ServiceProvider
                 ->values()
                 ->all();
         });
+
+        // Dedicated and inbound agents are managed on this module's pages, so
+        // the regular agents list leaves them out.
+        PanelExtensions::agentListExclusions(fn (): array => array_merge(
+            DedicatedServer::query()->pluck('agent_user_id')->all(),
+            InboundAllocation::query()->pluck('agent_user_id')->all(),
+        ));
 
         if ($this->app->runningInConsole()) {
             $this->commands([MeterCommand::class]);

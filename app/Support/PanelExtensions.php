@@ -26,6 +26,9 @@ class PanelExtensions
     /** @var list<callable> */
     protected static array $categoryResolvers = [];
 
+    /** @var list<callable> */
+    protected static array $agentExclusionResolvers = [];
+
     /**
      * @param  callable(Account, string): ?array  $resolver  $prefix is admin, agent or seller
      */
@@ -89,6 +92,36 @@ class PanelExtensions
         }
 
         return $categories;
+    }
+
+    /**
+     * Agents a module manages on its own pages.
+     *
+     * The resolver returns the user ids it looks after. They are left out of
+     * the regular agents list so each kind of agent is managed in one place,
+     * not half here and half there.
+     */
+    public static function agentListExclusions(callable $resolver): void
+    {
+        static::$agentExclusionResolvers[] = $resolver;
+    }
+
+    /**
+     * @return list<int>
+     */
+    public static function excludedAgentIds(): array
+    {
+        $ids = [];
+
+        foreach (static::$agentExclusionResolvers as $resolver) {
+            try {
+                $ids = array_merge($ids, array_map('intval', (array) $resolver()));
+            } catch (Throwable $e) {
+                report($e);
+            }
+        }
+
+        return array_values(array_unique($ids));
     }
 
     public static function navItems(string $panel): array
