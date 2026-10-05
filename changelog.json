@@ -1,6 +1,32 @@
 {
     "versions": [
         {
+            "version": "3.32.0",
+            "date": "2026-11-07",
+            "notes": {
+                "fa": [
+                    "نماینده‌های اختصاصی و اینباندی حالا پکیج را دقیقاً با همان فرم و همان قواعد صفحهٔ پکیج ادمین می‌سازند: مدل قیمت ثابت یا حجمی، حجم، همهٔ دوره‌ها، پروفایل میکروتیک، اینباند ثنایی و گروه پاسارگارد.",
+                    "فرم فقط سرورهای خود نماینده را نشان می‌دهد و روی سرور اینباندی فقط اینباندهای سهم خودش قابل انتخاب است؛ انتخاب سرور یا اینباند دیگران رد می‌شود.",
+                    "پکیج نماینده بیرون از دسته‌بندی و حسابداری ادمین می‌ماند و نمایندهٔ دیگر نمی‌تواند آن را باز یا ویرایش کند."
+                ],
+                "en": [
+                    "Dedicated and inbound agents now build packages on exactly the admin's package form and rules: fixed or per-GB pricing, data, every duration, MikroTik profiles, Sanaei inbounds and PasarGuard groups.",
+                    "The form shows only the agent's own servers, and on an inbound server only the inbounds of their own allocation; anything else is refused.",
+                    "An agent's package stays outside the admin's categories and accounting, and no other agent can open or edit it."
+                ],
+                "ru": [
+                    "Выделенные и инбаунд-агенты теперь создают пакеты точно на форме и по правилам администратора: фиксированная или поГБ цена, объём, все сроки, профили MikroTik, инбаунды Sanaei и группы PasarGuard.",
+                    "Форма показывает только серверы самого агента, а на инбаунд-сервере — только инбаунды его выделения; всё остальное отклоняется.",
+                    "Пакет агента остаётся вне категорий и бухгалтерии администратора, и другой агент не может его открыть или изменить."
+                ],
+                "zh": [
+                    "专属代理和入站代理现在使用与管理员完全相同的套餐表单和规则创建套餐：固定或按GB定价、流量、所有时长、MikroTik 配置、Sanaei 入站和 PasarGuard 分组。",
+                    "表单只显示代理自己的服务器；在入站服务器上只能选择其分配中的入站，其他选择会被拒绝。",
+                    "代理的套餐不进入管理员的分类和账务，其他代理无法打开或编辑。"
+                ]
+            }
+        },
+        {
             "version": "3.31.0",
             "date": "2026-11-06",
             "notes": {

@@ -150,4 +150,6 @@ return [
     'volume_and_requests' => 'Volume packs and requests',
     'volume_pack' => 'Volume',
     'volume_page_intro' => 'The volume packs inbound agents can buy, and their requests.',
+    'one_inbound_server' => 'A package on your inbound server must use that one server only.',
+    'pick_your_inbounds' => 'On your inbound server, pick your own inbounds.',
 ];
