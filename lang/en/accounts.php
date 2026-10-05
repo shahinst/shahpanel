@@ -380,4 +380,5 @@ TEXT,
     'auto_renew_on_confirm' => 'Turn auto-renew on? The renewal is charged to the owner\'s wallet when the account expires.',
     'auto_renew_off_confirm' => 'Turn auto-renew off?',
     'admin_report_tx_inbound_usage' => 'Inbound traffic charge',
+    'export_csv' => 'Export CSV',
 ];

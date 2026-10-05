@@ -1,6 +1,36 @@
 {
     "versions": [
         {
+            "version": "3.33.0",
+            "date": "2026-11-09",
+            "notes": {
+                "fa": [
+                    "ماژول جدید «درصد سود نماینده»: نماینده به‌جای قیمت دستی، یک درصد سود روی قیمت خودش برای فروشنده‌ها می‌گذارد و قیمت فروشنده خودکار با قیمت نماینده جابه‌جا می‌شود.",
+                    "ادمین سقف درصد سود را تعیین می‌کند و سود ۳۰ روز اخیر هر نماینده و فروشنده را می‌بیند.",
+                    "قیمت فروشنده هرگز زیر قیمت نماینده‌اش نمی‌رود؛ پس سهم پنل از هر فروش همان قیمت نماینده است.",
+                    "خروجی CSV (قابل باز شدن در اکسل) از فهرست اکانت‌ها برای ادمین، نماینده و فروشنده — دقیقاً با همان فیلترهای صفحه و فقط اکانت‌های خودِ هر نفر."
+                ],
+                "en": [
+                    "New “Agent markup” module: an agent sets a percentage on top of their own price for sellers instead of typing prices, and seller prices follow the agent's price automatically.",
+                    "The admin sets the maximum markup and sees each agent and seller’s profit for the last 30 days.",
+                    "A seller's price never falls below their agent's, so the panel's share of every sale stays the agent's price.",
+                    "CSV export (opens in Excel) of the accounts list for admins, agents and sellers — with the page's own filters and only each person's own accounts."
+                ],
+                "ru": [
+                    "Новый модуль «Наценка агента»: агент задаёт процент сверх своей цены для продавцов, и цены продавцов следуют за ценой агента автоматически.",
+                    "Администратор задаёт максимальную наценку и видит прибыль каждого агента и продавца за 30 дней.",
+                    "Цена продавца никогда не опускается ниже цены его агента.",
+                    "Экспорт списка аккаунтов в CSV для администратора, агентов и продавцов — с фильтрами страницы и только своими аккаунтами."
+                ],
+                "zh": [
+                    "新增“代理加价”模块：代理在自身价格上为下级卖家设置百分比加价，卖家价格自动跟随代理价格变化。",
+                    "管理员设置加价上限，并可查看每个代理和卖家近 30 天的利润。",
+                    "卖家价格永远不会低于其代理的价格。",
+                    "账户列表可导出为 CSV（可用 Excel 打开），适用于管理员、代理和卖家，沿用页面筛选且只包含本人账户。"
+                ]
+            }
+        },
+        {
             "version": "3.32.3",
             "date": "2026-11-08",
             "notes": {
