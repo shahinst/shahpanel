@@ -7,7 +7,8 @@
     ];
 
     // Only agents the admin made inbound resellers see their inbounds page.
-    if (\Illuminate\Support\Facades\Schema::hasTable('inbound_allocations')
+    if (\Illuminate\Support\Facades\Route::has('agent.inbounds.index')
+        && \Illuminate\Support\Facades\Schema::hasTable('inbound_allocations')
         && \App\Models\InboundAllocation::query()->where('agent_user_id', auth()->id())->exists()) {
         $links[] = ['route' => 'agent.inbounds.index', 'label' => __('inbound_resellers.menu_agent'), 'icon' => 'bx-transfer-alt'];
     }

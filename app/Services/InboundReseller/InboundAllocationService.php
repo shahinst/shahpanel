@@ -38,7 +38,7 @@ class InboundAllocationService
      */
     public function assertCanProvision(?Package $package): void
     {
-        if ($package === null || ! $package->isAgentOwned()) {
+        if ($package === null || $package->inbound_allocation_id === null) {
             return;
         }
 
