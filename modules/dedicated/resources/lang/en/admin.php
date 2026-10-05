@@ -152,4 +152,9 @@ return [
     'volume_page_intro' => 'The volume packs inbound agents can buy, and their requests.',
     'one_inbound_server' => 'A package on your inbound server must use that one server only.',
     'pick_your_inbounds' => 'On your inbound server, pick your own inbounds.',
+    'package_page_intro' => 'You build the package on the admin\'s own form and rules; only your servers and inbounds can be chosen, and the prices are entirely yours.',
+    'package_chip_servers' => ':count servers of yours',
+    'package_chip_private' => 'Only for you and your sellers',
+    'package_chip_prices' => 'Free pricing',
+    'package_save_note' => 'Changes apply to your sales right away.',
 ];
