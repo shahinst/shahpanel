@@ -2,7 +2,9 @@
 
 namespace Modules\Dedicated\Http\Controllers;
 
+use App\Enums\AccountStatus;
 use App\Enums\PackageDurationTier;
+use App\Models\Account;
 use App\Models\Package;
 use App\Models\Server;
 use Illuminate\Http\RedirectResponse;
@@ -28,13 +30,30 @@ class AgentController extends Controller
         $ids = $rows->pluck('server_id');
         $days = DB::table('dedicated_usage_days')->whereIn('server_id', $ids);
 
+        // Every one of the last 14 days, so a quiet day shows as a zero bar
+        // instead of silently closing the gap between its neighbours.
+        $byDay = (clone $days)->where('day', '>=', today()->subDays(13)->toDateString())
+            ->selectRaw('day, SUM(rx_bytes) as rx')->groupBy('day')->pluck('rx', 'day');
+        $chart = collect(range(13, 0))->mapWithKeys(function (int $back) use ($byDay): array {
+            $day = today()->subDays($back)->toDateString();
+
+            return [$day => (int) ($byDay[$day] ?? 0)];
+        });
+
+        $accounts = Account::query()->whereIn('server_id', $ids);
+        $perServer = (clone $accounts)->selectRaw('server_id, COUNT(*) as n')->groupBy('server_id')->pluck('n', 'server_id');
+        $todayPer = (clone $days)->where('day', today()->toDateString())->pluck('rx_bytes', 'server_id');
+
         return view('dedicated::agent.index', [
             'rows' => $rows,
+            'accountsTotal' => (clone $accounts)->count(),
+            'accountsActive' => (clone $accounts)->where('status', AccountStatus::Active)->count(),
+            'perServer' => $perServer,
+            'todayPer' => $todayPer,
             'total' => (int) $rows->sum('total_rx_bytes'),
             'today' => (int) (clone $days)->where('day', today()->toDateString())->sum('rx_bytes'),
             'month' => (int) (clone $days)->where('day', '>=', today()->subDays(29)->toDateString())->sum('rx_bytes'),
-            'chart' => (clone $days)->where('day', '>=', today()->subDays(13)->toDateString())
-                ->selectRaw('day, SUM(rx_bytes) as rx')->groupBy('day')->orderBy('day')->pluck('rx', 'day'),
+            'chart' => $chart,
             'packages' => Package::query()->with('durations')->where('owner_agent_id', $agent->id)
                 ->whereNull('inbound_allocation_id')->orderBy('name')->get(),
         ]);

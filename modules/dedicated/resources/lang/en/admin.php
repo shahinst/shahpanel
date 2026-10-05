@@ -43,4 +43,12 @@ return [
     'bad_service_type' => 'This service type is not supported on this server.',
     'profile_required' => 'For MikroTik pick a profile of the same service type.',
     'duration_required' => 'Enable at least one period.',
+    'dash_servers_ok' => ':ok of :all servers healthy',
+    'dash_accounts' => 'Active accounts',
+    'dash_servers' => 'My servers',
+    'chart_empty' => 'No usage recorded yet.',
+    'meter_off' => 'The meter is off; the admin has not set this server\'s internet interface.',
+    'no_servers' => 'No server has been given to you yet.',
+    'unlimited_short' => 'Unlimited',
+    'delete' => 'Delete',
 ];

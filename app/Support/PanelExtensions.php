@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\Account;
+use App\Models\User;
 use Throwable;
 
 /**
@@ -21,6 +22,9 @@ class PanelExtensions
 
     /** @var list<callable(string): ?array> */
     protected static array $navResolvers = [];
+
+    /** @var list<callable> */
+    protected static array $categoryResolvers = [];
 
     /**
      * @param  callable(Account, string): ?array  $resolver  $prefix is admin, agent or seller
@@ -49,6 +53,44 @@ class PanelExtensions
     /**
      * @return list<array{label: string, url: string, icon: string, active: bool}>
      */
+    /**
+     * Narrow which account categories (wireguard, ppp, v2ray, anyconnect)
+     * the side menu offers a user.
+     *
+     * The resolver receives the panel and the signed-in user and returns the
+     * category values it allows, or null when it has no opinion. When several
+     * resolvers answer, only categories every one of them allows are shown.
+     * This is about the menu only; what a user may open is still decided by
+     * the account policies.
+     */
+    public static function accountCategories(callable $resolver): void
+    {
+        static::$categoryResolvers[] = $resolver;
+    }
+
+    /**
+     * @param  list<string>  $categories
+     * @return list<string>
+     */
+    public static function allowedAccountCategories(string $panel, ?User $user, array $categories): array
+    {
+        foreach (static::$categoryResolvers as $resolver) {
+            try {
+                $allowed = $resolver($panel, $user);
+            } catch (Throwable $e) {
+                report($e);
+
+                continue;
+            }
+
+            if (is_array($allowed)) {
+                $categories = array_values(array_intersect($categories, $allowed));
+            }
+        }
+
+        return $categories;
+    }
+
     public static function navItems(string $panel): array
     {
         return array_map(

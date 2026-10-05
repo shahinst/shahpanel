@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\ServiceType;
 use App\Models\ServerInterface;
 use App\Services\UserPackageAssignmentService;
+use App\Support\PanelExtensions;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use InvalidArgumentException;
 use Modules\Dedicated\Models\DedicatedServer;
@@ -104,5 +105,26 @@ class DedicatedAgentTest extends TestCase
         $this->actingAs($agent)->get(route('agent.dedicated.index'))
             ->assertOk()->assertSee('srv-mine')->assertDontSee('srv-theirs');
         $this->actingAs($this->makeAgent())->get(route('agent.dedicated.index'))->assertForbidden();
+    }
+
+    public function test_the_accounts_menu_shows_only_what_the_own_servers_carry(): void
+    {
+        $all = ['wireguard', 'ppp', 'v2ray', 'anyconnect'];
+        $agent = $this->makeAgent();
+        $mine = $this->makeServer('mikrotik');
+        DedicatedServer::query()->create(['agent_user_id' => $agent->id, 'server_id' => $mine->id]);
+
+        // A MikroTik carries WireGuard and the PPP family, nothing else.
+        $this->assertSame(['wireguard', 'ppp'], PanelExtensions::allowedAccountCategories('agent', $agent, $all));
+        $this->assertSame(['wireguard', 'ppp'], PanelExtensions::allowedAccountCategories('seller', $this->makeSeller($agent), $all));
+
+        // Everybody else keeps the whole menu.
+        $this->assertSame($all, PanelExtensions::allowedAccountCategories('agent', $this->makeAgent(), $all));
+        $this->assertSame($all, PanelExtensions::allowedAccountCategories('admin', $this->makeAdmin(), $all));
+
+        $this->actingAs($agent)->get(route('agent.dedicated.index'))
+            ->assertOk()
+            ->assertSee(route('agent.accounts.wireguard'), false)
+            ->assertDontSee(route('agent.accounts.v2ray'), false);
     }
 }

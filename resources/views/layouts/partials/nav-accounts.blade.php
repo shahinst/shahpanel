@@ -17,10 +17,20 @@
         ['route' => "{$panel}.accounts.anyconnect", 'section' => 'accounts_anyconnect', 'label' => __('menu.accounts_anyconnect'), 'icon' => 'bx-network-chart'],
     ];
 
+    // A module may narrow the categories, e.g. to the kinds of server a user
+    // actually sells on; an empty menu entry for a service they can never
+    // offer is only noise.
+    $allowedCategories = \App\Support\PanelExtensions::allowedAccountCategories(
+        $panel,
+        auth()->user(),
+        ['wireguard', 'ppp', 'v2ray', 'anyconnect'],
+    );
+
     $accountLinks = array_values(array_filter(
         $accountLinks,
         fn (array $link): bool => Route::has($link['route'])
             && admin_section_allowed($link['section'])
+            && in_array(substr($link['route'], strrpos($link['route'], '.') + 1), $allowedCategories, true)
     ));
 @endphp
 
