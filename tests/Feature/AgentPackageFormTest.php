@@ -136,5 +136,20 @@ class AgentPackageFormTest extends TestCase
         $this->actingAs($agent)->get(route('agent.dedicated.packages.edit', $package))->assertOk();
         $this->actingAs($this->makeAgent())->get(route('agent.dedicated.packages.create'))->assertForbidden();
     }
-}
 
+    public function test_identity_checks_are_neither_offered_nor_accepted_on_an_agents_package(): void
+    {
+        $agent = $this->makeAgent();
+        $server = $this->sanaeiServer([3]);
+        DedicatedServer::query()->create(['agent_user_id' => $agent->id, 'server_id' => $server->id]);
+
+        $this->actingAs($agent)->get(route('agent.dedicated.packages.create'))
+            ->assertOk()
+            ->assertDontSee('name="kyc_required"', false);
+
+        $this->actingAs($agent)->post(route('agent.dedicated.packages.store'), $this->payload($server->id, [3]) + ['kyc_required' => '1'])
+            ->assertSessionHasNoErrors();
+
+        $this->assertFalse((bool) Package::query()->where('owner_agent_id', $agent->id)->latest('id')->value('kyc_required'));
+    }
+}

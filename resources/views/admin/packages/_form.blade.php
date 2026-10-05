@@ -576,7 +576,10 @@
 </div>
 
 <x-form.checkbox name="is_active" :label="__('packages.package_active')" :checked="old('is_active', $package?->is_active ?? true)" :hiddenZero="true" />
+{{-- Pages that reuse this form for someone other than the admin pass hideKyc: identity checks are the admin's policy. --}}
+@unless ($hideKyc ?? false)
 <x-form.checkbox name="kyc_required" :label="__('kyc.package_required')" :hint="__('kyc.package_required_hint')" :checked="old('kyc_required', $package?->kyc_required ?? false)" :hiddenZero="true" />
+@endunless
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {

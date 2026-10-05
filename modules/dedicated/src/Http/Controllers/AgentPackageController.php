@@ -111,6 +111,9 @@ class AgentPackageController extends PackageController
 
         $validated = $this->validatedCore($request);
         $validated['package_category_id'] = null;
+        // Identity checks are the admin's policy. The checkbox is not on the
+        // agent's form, and a hand-built request must not switch it on either.
+        $validated['kyc_required'] = false;
         $validated['owner_agent_id'] = $agent->id;
         $validated['inbound_allocation_id'] = $this->allocationFor($agent, $chosen, $validated);
 
