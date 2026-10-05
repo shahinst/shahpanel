@@ -14,6 +14,11 @@
             </x-button>
         @endif
     @endcan
+    @if (Route::has($prefix.'.accounts.export'))
+        <a href="{{ route($prefix.'.accounts.export', ['category' => $category->value] + request()->query()) }}" class="btn btn-outline-secondary btn-sm">
+            <i class="bx bx-download align-middle"></i> {{ __('accounts.export_csv') }}
+        </a>
+    @endif
 @endsection
 
 @section('panel_content')

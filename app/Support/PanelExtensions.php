@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\Account;
+use App\Models\PackageDuration;
 use App\Models\User;
 use Throwable;
 
@@ -75,6 +76,40 @@ class PanelExtensions
      * @param  list<string>  $categories
      * @return list<string>
      */
+    /** @var list<callable> */
+    protected static array $sellerPriceResolvers = [];
+
+    /**
+     * Let a module price a seller from their agent's price (e.g. a markup
+     * percentage), so the seller follows the agent the moment it changes.
+     *
+     * Resolver: fn(User $seller, PackageDuration $duration): ?string — null
+     * leaves the seller on the panel's own per-seller prices.
+     */
+    public static function sellerPriceRule(callable $resolver): void
+    {
+        static::$sellerPriceResolvers[] = $resolver;
+    }
+
+    public static function sellerPriceFor(User $seller, PackageDuration $duration): ?string
+    {
+        foreach (static::$sellerPriceResolvers as $resolver) {
+            try {
+                $price = $resolver($seller, $duration);
+            } catch (Throwable $exception) {
+                report($exception);
+
+                continue;
+            }
+
+            if ($price !== null) {
+                return number_format((float) $price, 2, '.', '');
+            }
+        }
+
+        return null;
+    }
+
     public static function allowedAccountCategories(string $panel, ?User $user, array $categories): array
     {
         foreach (static::$categoryResolvers as $resolver) {

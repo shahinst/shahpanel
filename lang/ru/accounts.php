@@ -380,4 +380,5 @@ TEXT,
     'auto_renew_on_confirm' => 'Включить автопродление? При истечении стоимость спишется с кошелька владельца.',
     'auto_renew_off_confirm' => 'Выключить автопродление?',
     'admin_report_tx_inbound_usage' => 'Оплата трафика inbound',
+    'export_csv' => 'Экспорт CSV',
 ];

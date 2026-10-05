@@ -264,6 +264,7 @@ Route::prefix($adminPath)->name('admin.')->middleware($adminMiddleware)->group(f
     Route::patch('packages/{package}/toggle-active', [AdminPackageController::class, 'toggleActive'])
         ->name('packages.toggle-active');
 
+    Route::get('accounts/export/{category}', [AdminAccountController::class, 'exportCategory'])->name('accounts.export');
     Route::get('accounts/wireguard', [AdminAccountController::class, 'indexWireguard'])->name('accounts.wireguard');
     Route::get('accounts/ppp', [AdminAccountController::class, 'indexPpp'])->name('accounts.ppp');
     Route::get('accounts/v2ray', [AdminAccountController::class, 'indexV2ray'])->name('accounts.v2ray');
@@ -464,6 +465,7 @@ Route::prefix($agentPath)->name('agent.')->middleware(['auth', 'role:agent', 'lo
         ->middleware('throttle:impersonation')
         ->name('clients.impersonate');
     Route::post('clients/accounts/{account}/reassign', [AgentClientController::class, 'reassignAccount'])->name('clients.accounts.reassign');
+    Route::get('accounts/export/{category}', [AgentAccountController::class, 'exportCategory'])->name('accounts.export');
     Route::get('accounts/wireguard', [AgentAccountController::class, 'indexWireguard'])->name('accounts.wireguard');
     Route::get('accounts/ppp', [AgentAccountController::class, 'indexPpp'])->name('accounts.ppp');
     Route::get('accounts/v2ray', [AgentAccountController::class, 'indexV2ray'])->name('accounts.v2ray');
@@ -576,6 +578,7 @@ Route::prefix($sellerPath)->name('seller.')->middleware(['auth', 'role:seller', 
         ->middleware('throttle:impersonation')
         ->name('clients.impersonate');
 
+    Route::get('accounts/export/{category}', [SellerAccountController::class, 'exportCategory'])->name('accounts.export');
     Route::get('accounts/wireguard', [SellerAccountController::class, 'indexWireguard'])->name('accounts.wireguard');
     Route::get('accounts/ppp', [SellerAccountController::class, 'indexPpp'])->name('accounts.ppp');
     Route::get('accounts/v2ray', [SellerAccountController::class, 'indexV2ray'])->name('accounts.v2ray');

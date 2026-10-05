@@ -7,6 +7,7 @@ use App\Models\Package;
 use App\Models\PackageDuration;
 use App\Models\User;
 use App\Models\UserPackageDurationPrice;
+use App\Support\PanelExtensions;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Schema;
 use InvalidArgumentException;
@@ -45,6 +46,11 @@ class UserPackagePricingService
         // original per-user assigned-price logic below is used unchanged.
         if ($this->resellerDiscount->isDiscountMode()) {
             return $this->discountWholesaleUnit($user, $duration);
+        }
+
+        if ($user->role === UserRole::Seller
+            && ($ruled = PanelExtensions::sellerPriceFor($user, $duration)) !== null) {
+            return $ruled;
         }
 
         if (! Schema::hasTable('user_package_duration_prices')) {
