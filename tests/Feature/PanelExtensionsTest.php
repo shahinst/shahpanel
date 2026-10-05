@@ -17,7 +17,7 @@ class PanelExtensionsTest extends TestCase
 
     protected function tearDown(): void
     {
-        foreach (['accountMenuResolvers', 'navResolvers'] as $property) {
+        foreach (['accountMenuResolvers', 'navResolvers', 'categoryResolvers'] as $property) {
             (new ReflectionProperty(PanelExtensions::class, $property))->setValue(null, []);
         }
 

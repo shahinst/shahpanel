@@ -2,12 +2,16 @@
 
 namespace Modules\Dedicated;
 
+use App\Enums\ServiceType;
+use App\Models\Server;
+use App\Models\User;
 use App\Support\PanelExtensions;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Modules\Dedicated\Console\MeterCommand;
 use Modules\Dedicated\Models\DedicatedServer;
+use Modules\Dedicated\Services\DedicatedPackageService;
 
 /**
  * Dedicated agents and inbound resellers: agents who run on their own server
@@ -36,6 +40,30 @@ class DedicatedServiceProvider extends ServiceProvider
                 'icon' => 'bx-server',
                 'active' => request()->routeIs('agent.dedicated.*'),
             ];
+        });
+
+        // A dedicated agent sells only on their own servers, so the accounts
+        // menu shows just the kinds those servers carry. Their sellers sell
+        // the same packages and get the same narrowing.
+        PanelExtensions::accountCategories(function (string $panel, ?User $user): ?array {
+            $agent = match ($panel) {
+                'agent' => $user,
+                'seller' => $user?->parent,
+                default => null,
+            };
+
+            if ($agent === null || ! DedicatedServer::isDedicatedAgent($agent)) {
+                return null;
+            }
+
+            return Server::query()
+                ->whereIn('id', DedicatedServer::serverIdsOf($agent))
+                ->get()
+                ->flatMap(fn (Server $server): array => DedicatedPackageService::serviceTypesFor($server))
+                ->map(fn (ServiceType $type): string => $type->accountCategory()->value)
+                ->unique()
+                ->values()
+                ->all();
         });
 
         if ($this->app->runningInConsole()) {
