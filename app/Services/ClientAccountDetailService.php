@@ -9,7 +9,6 @@ use App\Enums\ServiceType;
 use App\Models\Account;
 use App\Models\Invoice;
 use App\Models\ServerInterface;
-use App\Models\Transaction;
 use App\Models\User;
 use Throwable;
 
@@ -154,7 +153,16 @@ class ClientAccountDetailService
 
                     if ($pppSecret !== null) {
                         $username = (string) ($pppSecret['name'] ?? $username);
-                        $password = (string) ($pppSecret['password'] ?? $password);
+                        $routerPassword = (string) ($pppSecret['password'] ?? '');
+
+                        // RouterOS 7 hides sensitive fields unless asked with
+                        // show-sensitive, and sends "********" instead. Taking
+                        // that over the password the panel generated put a
+                        // row of stars on the customer's page. The panel's
+                        // copy wins; the router's only fills a gap.
+                        if ($password === '' && ! self::isMaskedSecret($routerPassword)) {
+                            $password = $routerPassword;
+                        }
                     }
                 } catch (Throwable) {
                     // fallback to DB values
@@ -165,7 +173,8 @@ class ClientAccountDetailService
             $ipsecSecret = $this->l2tpIpsec->resolveSecretForDisplay($server);
 
             if ($ipsecSecret === '' && $pppSecret !== null) {
-                $ipsecSecret = trim((string) ($pppSecret['ipsec-secret'] ?? ''));
+                $routerIpsec = trim((string) ($pppSecret['ipsec-secret'] ?? ''));
+                $ipsecSecret = self::isMaskedSecret($routerIpsec) ? '' : $routerIpsec;
             }
         }
 
@@ -254,6 +263,7 @@ class ClientAccountDetailService
 
         return $services;
     }
+
     protected function buildL2tpSetupGuideText(
         string $address,
         string $accountName,
@@ -346,4 +356,14 @@ class ClientAccountDetailService
             'remote_password' => $account->remote_password_enc,
         ];
     }
+
+    /**
+     * A value RouterOS sent in place of a secret it would not show: a run of
+     * asterisks. Never a real password -- the panel does not generate those.
+     */
+    public static function isMaskedSecret(string $value): bool
+    {
+        return $value !== '' && trim($value, '*') === '';
+    }
 }
+
