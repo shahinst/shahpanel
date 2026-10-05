@@ -1,6 +1,28 @@
 {
     "versions": [
         {
+            "version": "3.32.2",
+            "date": "2026-11-08",
+            "notes": {
+                "fa": [
+                    "دستور panel:repair-volume-renewals دیگر تمدیدهای «افزودن حجم» و «تمدید همان حجم» را با «ارتقای حجم» اشتباه نمی‌گیرد؛ حالت تمدید از لاگ خودِ تمدید خوانده می‌شود، نه از متن فاکتور که در هر سه حالت حجم کل را می‌نویسد.",
+                    "رمز اکانت‌های OpenVPN و PPP روی میکروتیک‌های RouterOS 7 دیگر به‌صورت ستاره نمایش داده نمی‌شود؛ رمزی که پنل ساخته همیشه اولویت دارد."
+                ],
+                "en": [
+                    "panel:repair-volume-renewals no longer mistakes add-volume or same-volume renewals for volume upgrades; the mode is read from the renewal's own log, not the invoice text, which names the total in every mode.",
+                    "OpenVPN and PPP passwords on RouterOS 7 routers no longer show as asterisks; the password the panel generated always wins."
+                ],
+                "ru": [
+                    "panel:repair-volume-renewals больше не принимает продление с добавлением объёма или тем же объёмом за повышение объёма; режим читается из журнала самого продления, а не из текста счёта.",
+                    "Пароли OpenVPN и PPP на роутерах RouterOS 7 больше не отображаются звёздочками; пароль, созданный панелью, всегда имеет приоритет."
+                ],
+                "zh": [
+                    "panel:repair-volume-renewals 不再把“追加流量”或“同量续费”误判为“升级流量”；续费模式从续费本身的日志读取，而不是从发票文字读取。",
+                    "RouterOS 7 路由器上的 OpenVPN 和 PPP 密码不再显示为星号；始终以面板生成的密码为准。"
+                ]
+            }
+        },
+        {
             "version": "3.32.1",
             "date": "2026-11-07",
             "notes": {

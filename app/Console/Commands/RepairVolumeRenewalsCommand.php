@@ -69,7 +69,17 @@ class RepairVolumeRenewalsCommand extends Command
             }
 
             if (abs((float) $m[1] - (float) $account->purchased_data_gb) > 0.05) {
-                continue; // add-volume, or already repaired
+                continue; // already repaired, or changed since
+            }
+
+            // The invoice cannot tell the modes apart: an add-volume renewal
+            // writes the new total into its line too, so "invoiced for the
+            // whole volume" matched every top-up as well. Taken as the signal,
+            // it credited the usage of renewals that had lost nothing. The
+            // renewal log records the mode itself; nothing but an upgrade
+            // qualifies, and a renewal with no log is left alone.
+            if ($this->renewalMode($account) !== 'upgrade_volume') {
+                continue;
             }
 
             $logs = DB::table('account_usage_logs')->where('account_id', $account->id);
@@ -120,5 +130,20 @@ class RepairVolumeRenewalsCommand extends Command
         $this->info(sprintf('جبران شد: %d · ناموفق: %d', $done, count($owed) - $done));
 
         return $done === count($owed) ? self::SUCCESS : self::FAILURE;
+    }
+
+    /** The mode of the account's latest renewal, as the renewal itself logged it. */
+    protected function renewalMode(Account $account): ?string
+    {
+        $payload = DB::table('activity_logs')
+            ->where('action', 'account.renewed')
+            ->where('entity_type', 'like', '%Account')
+            ->where('entity_id', $account->id)
+            ->orderByDesc('id')
+            ->value('payload');
+
+        $mode = json_decode((string) $payload, true)['renewal_mode'] ?? null;
+
+        return is_string($mode) ? $mode : null;
     }
 }
