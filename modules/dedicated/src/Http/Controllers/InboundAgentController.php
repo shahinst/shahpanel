@@ -4,12 +4,15 @@ namespace Modules\Dedicated\Http\Controllers;
 
 use App\Enums\MoneyCurrency;
 use App\Enums\ServerType;
+use App\Enums\UserRole;
 use App\Models\InboundAllocation;
 use App\Models\Server;
 use App\Models\ServerInterface;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -28,14 +31,60 @@ use Throwable;
  */
 class InboundAgentController extends Controller
 {
-    public function index(): View
+    /** The list, like the regular agents page: one row per inbound agent. */
+    public function index(Request $request): View
     {
-        $servers = Server::query()->where('type', ServerType::Sanaei)->orderBy('name')->get();
+        $search = trim((string) $request->query('search', ''));
+
+        $agents = User::query()
+            ->where('role', UserRole::Agent)
+            ->whereIn('id', InboundAllocation::query()->select('agent_user_id'))
+            ->when($search !== '', fn ($q) => $q->where(fn ($w) => $w
+                ->where('username', 'like', "%{$search}%")
+                ->orWhere('full_name', 'like', "%{$search}%")
+                ->orWhere('email', 'like', "%{$search}%")))
+            ->with('wallets')
+            ->orderBy('username')
+            ->paginate(15)
+            ->withQueryString();
 
         return view('dedicated::admin.inbound', [
-            'allocations' => InboundAllocation::query()->with(['agent', 'server'])->latest()->get(),
-            'servers' => $servers,
-            'inbounds' => $servers->mapWithKeys(fn (Server $s): array => [$s->id => $this->inboundsFor($s->id)])->all(),
+            'agents' => $agents,
+            'allocations' => InboundAllocation::query()->with('server')
+                ->whereIn('agent_user_id', $agents->pluck('id'))->get()->groupBy('agent_user_id'),
+            'pendingCount' => InboundChargeRequest::query()->where('status', InboundChargeRequest::PENDING)->count(),
+            'pendingByAgent' => InboundChargeRequest::query()->where('status', InboundChargeRequest::PENDING)
+                ->selectRaw('agent_user_id, COUNT(*) as c')->groupBy('agent_user_id')->pluck('c', 'agent_user_id'),
+        ]);
+    }
+
+    public function create(): View
+    {
+        return view('dedicated::admin.inbound-create', $this->serverChoices());
+    }
+
+    /** One agent's inbounds: change what they sell on, add another, pause one. */
+    public function edit(User $agent): View
+    {
+        abort_unless(
+            $agent->role === UserRole::Agent
+                && InboundAllocation::query()->where('agent_user_id', $agent->id)->exists(),
+            404,
+        );
+
+        return view('dedicated::admin.inbound-edit', [
+            'agent' => $agent,
+            'rows' => InboundAllocation::query()->with('server')->where('agent_user_id', $agent->id)->oldest()->get(),
+            'requests' => InboundChargeRequest::query()->with(['allocation', 'pack'])
+                ->where('agent_user_id', $agent->id)->latest()->limit(20)->get(),
+        ] + $this->serverChoices());
+    }
+
+    /** Volume packs and the agents' requests for them, in one place. */
+    public function volume(): View
+    {
+        return view('dedicated::admin.inbound-volume', [
+            'servers' => Server::query()->where('type', ServerType::Sanaei)->orderBy('name')->get(),
             'packs' => InboundVolumePack::query()->with('server')->orderBy('server_id')->orderBy('sort_order')->orderBy('gb')->get(),
             'pending' => InboundChargeRequest::query()->with(['agent', 'allocation', 'pack'])
                 ->where('status', InboundChargeRequest::PENDING)->oldest()->get(),
@@ -44,14 +93,57 @@ class InboundAgentController extends Controller
         ]);
     }
 
-    /**
-     * A new agent and their inbound, made together: an inbound agent is an
-     * agent who sells on an inbound, so one without the other is only half
-     * made.
-     */
-    public function store(Request $request, AgentFactory $factory): RedirectResponse
+    /** Another inbound for an agent who already has one. */
+    public function addInbound(Request $request, User $agent): RedirectResponse
     {
-        $data = $request->validate(AgentFactory::rules() + [
+        abort_unless(InboundAllocation::query()->where('agent_user_id', $agent->id)->exists(), 404);
+
+        $data = $this->allocationData($request);
+
+        InboundAllocation::query()->create([
+            'agent_user_id' => $agent->id,
+            'server_id' => $data['server_id'],
+            'title' => $data['title'],
+            'inbound_ids' => $data['inbound_ids'],
+            'quota_bytes' => $data['quota_bytes'],
+            'price_per_gb' => '0.00',
+            'currency' => MoneyCurrency::IRT->value,
+            'credit_limit' => 0,
+        ]);
+
+        return back()->with('success', __('dedicated::admin.inbound_added'));
+    }
+
+    /**
+     * Title, inbounds and quota of one allocation. The server stays: accounts
+     * already sold live on it, and moving them is not what this form does.
+     */
+    public function updateInbound(Request $request, InboundAllocation $allocation): RedirectResponse
+    {
+        $request->merge(['server_id' => $allocation->server_id]);
+        $data = $this->allocationData($request);
+
+        // Lowering the quota below what is already used would suspend the
+        // agent on the next billing run without anyone noticing why.
+        if ($data['quota_bytes'] < (int) $allocation->used_bytes) {
+            throw ValidationException::withMessages(['quota_gb' => __('dedicated::admin.quota_below_used')]);
+        }
+
+        $allocation->update([
+            'title' => $data['title'],
+            'inbound_ids' => $data['inbound_ids'],
+            'quota_bytes' => $data['quota_bytes'],
+        ]);
+
+        return back()->with('success', __('app.saved'));
+    }
+
+    /**
+     * @return array{server_id: int, title: ?string, inbound_ids: list<int>, quota_bytes: int}
+     */
+    protected function allocationData(Request $request): array
+    {
+        $data = $request->validate([
             'server_id' => ['required', Rule::exists('servers', 'id')->where('type', ServerType::Sanaei->value)],
             'title' => ['nullable', 'string', 'max:120'],
             'inbound_ids' => ['required', 'array', 'min:1'],
@@ -65,24 +157,55 @@ class InboundAgentController extends Controller
             throw ValidationException::withMessages(['inbound_ids' => __('inbound_resellers.inbound_not_on_server')]);
         }
 
-        DB::transaction(function () use ($data, $inboundIds, $factory, $request): void {
+        return [
+            'server_id' => (int) $data['server_id'],
+            'title' => $data['title'] ?? null,
+            'inbound_ids' => $inboundIds,
+            'quota_bytes' => (int) $data['quota_gb'] * InboundAllocation::GB,
+        ];
+    }
+
+    /** @return array{servers: Collection, inbounds: array<int, array<int, string>>} */
+    protected function serverChoices(): array
+    {
+        $servers = Server::query()->where('type', ServerType::Sanaei)->orderBy('name')->get();
+
+        return [
+            'servers' => $servers,
+            'inbounds' => $servers->mapWithKeys(fn (Server $s): array => [$s->id => $this->inboundsFor($s->id)])->all(),
+        ];
+    }
+
+    /**
+     * A new agent and their inbound, made together: an inbound agent is an
+     * agent who sells on an inbound, so one without the other is only half
+     * made.
+     */
+    public function store(Request $request, AgentFactory $factory): RedirectResponse
+    {
+        $data = $request->validate(AgentFactory::rules());
+        $allocation = $this->allocationData($request);
+
+        $agent = DB::transaction(function () use ($data, $allocation, $factory, $request): User {
             $agent = $factory->create($data, $request->user());
 
             // Volume is prepaid through charge requests, so the per-gigabyte
             // after-the-fact billing stays at zero.
             InboundAllocation::query()->create([
                 'agent_user_id' => $agent->id,
-                'server_id' => (int) $data['server_id'],
-                'title' => $data['title'] ?? null,
-                'inbound_ids' => $inboundIds,
-                'quota_bytes' => (int) $data['quota_gb'] * InboundAllocation::GB,
+                'server_id' => $allocation['server_id'],
+                'title' => $allocation['title'],
+                'inbound_ids' => $allocation['inbound_ids'],
+                'quota_bytes' => $allocation['quota_bytes'],
                 'price_per_gb' => '0.00',
                 'currency' => MoneyCurrency::IRT->value,
                 'credit_limit' => 0,
             ]);
+
+            return $agent;
         });
 
-        return back()->with('success', __('dedicated::admin.inbound_agent_created'));
+        return redirect()->route('admin.inbound-agents.edit', $agent)->with('success', __('dedicated::admin.inbound_agent_created'));
     }
 
     public function storePack(Request $request): RedirectResponse
@@ -179,3 +302,4 @@ class InboundAgentController extends Controller
             ])->all();
     }
 }
+

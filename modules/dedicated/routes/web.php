@@ -22,6 +22,9 @@ $adminMiddleware[] = 'admin.section';
 Route::prefix(PortalPaths::slug('admin'))->name('admin.')->middleware($adminMiddleware)->group(function (): void {
     Route::get('dedicated-agents', [AdminController::class, 'index'])->name('dedicated.index');
     Route::post('dedicated-agents', [AdminController::class, 'store'])->name('dedicated.store');
+    Route::get('dedicated-agents/create', [AdminController::class, 'create'])->name('dedicated.create');
+    Route::get('dedicated-agents/{agent}/settings', [AdminController::class, 'edit'])->name('dedicated.edit');
+    Route::post('dedicated-agents/{agent}/servers', [AdminController::class, 'addServer'])->name('dedicated.servers.store');
     Route::put('dedicated-agents/{dedicated}', [AdminController::class, 'update'])->name('dedicated.update');
     Route::post('dedicated-agents/{dedicated}/interfaces', [AdminController::class, 'interfaces'])->name('dedicated.interfaces');
     Route::delete('dedicated-agents/{dedicated}', [AdminController::class, 'destroy'])->name('dedicated.destroy');
@@ -39,6 +42,11 @@ Route::prefix(PortalPaths::slug('admin'))->name('admin.')->middleware($adminMidd
     // Inbound agents: created with their inbound, fed by volume packs.
     Route::get('inbound-agents', [InboundAgentController::class, 'index'])->name('inbound-agents.index');
     Route::post('inbound-agents', [InboundAgentController::class, 'store'])->name('inbound-agents.store');
+    Route::get('inbound-agents/create', [InboundAgentController::class, 'create'])->name('inbound-agents.create');
+    Route::get('inbound-agents/volume', [InboundAgentController::class, 'volume'])->name('inbound-agents.volume');
+    Route::get('inbound-agents/{agent}/settings', [InboundAgentController::class, 'edit'])->name('inbound-agents.edit');
+    Route::post('inbound-agents/{agent}/inbounds', [InboundAgentController::class, 'addInbound'])->name('inbound-agents.inbounds.store');
+    Route::put('inbound-agents/inbounds/{allocation}', [InboundAgentController::class, 'updateInbound'])->name('inbound-agents.inbounds.update');
     Route::post('inbound-agents/packs', [InboundAgentController::class, 'storePack'])->name('inbound-agents.packs.store');
     Route::put('inbound-agents/packs/{pack}', [InboundAgentController::class, 'updatePack'])->name('inbound-agents.packs.update');
     Route::delete('inbound-agents/packs/{pack}', [InboundAgentController::class, 'destroyPack'])->name('inbound-agents.packs.destroy');

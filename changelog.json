@@ -1,6 +1,36 @@
 {
     "versions": [
         {
+            "version": "3.30.1",
+            "date": "2026-11-05",
+            "notes": {
+                "fa": [
+                    "صفحه‌های نمایندگان اختصاصی و اینباندی حالا مثل نمایندگان عادی یک جدول‌اند: جستجو، موجودی، وضعیت، ورود به پنل نماینده، ویرایش و حذف.",
+                    "جدول هر نوع، مشخصات خودش را نشان می‌دهد: سرورها و مصرف برای اختصاصی، اینباند و حجم مصرف‌شده برای اینباندی.",
+                    "ساخت نماینده در صفحهٔ جداگانه انجام می‌شود و تنظیمات (سرورها، اینباندها، حجم، تعلیق) در صفحهٔ تنظیمات همان نماینده.",
+                    "بسته‌های حجم و درخواست‌های شارژ اینباند صفحهٔ خودشان را دارند، با شمارندهٔ درخواست‌های در انتظار."
+                ],
+                "en": [
+                    "The dedicated and inbound agent pages are now tables like the regular agents page: search, balance, status, log in as the agent, edit and delete.",
+                    "Each table shows what matters for its kind: servers and usage for dedicated agents, the inbound and its used volume for inbound agents.",
+                    "Agents are created on a page of their own, and their settings (servers, inbounds, volume, suspension) live on that agent's settings page.",
+                    "Volume packs and inbound charge requests have their own page, with a count of waiting requests."
+                ],
+                "ru": [
+                    "Страницы выделенных и inbound-агентов теперь таблицы, как у обычных агентов: поиск, баланс, статус, вход от имени агента, правка и удаление.",
+                    "Каждая таблица показывает своё: серверы и трафик у выделенных, inbound и израсходованный объём у inbound-агентов.",
+                    "Агенты создаются на отдельной странице, а их настройки (серверы, inbound, объём, приостановка) — на странице настроек агента.",
+                    "Пакеты объёма и заявки на пополнение inbound вынесены на отдельную страницу со счётчиком ожидающих заявок."
+                ],
+                "zh": [
+                    "专属代理和入站代理页面现在与普通代理页面一样是表格：搜索、余额、状态、以代理身份登录、编辑和删除。",
+                    "每种表格显示各自的信息：专属代理显示服务器和用量，入站代理显示入站和已用流量。",
+                    "代理在单独页面创建，其设置（服务器、入站、流量、暂停）位于该代理的设置页面。",
+                    "流量包和入站充值申请有了单独页面，并显示待处理申请数量。"
+                ]
+            }
+        },
+        {
             "version": "3.30.0",
             "date": "2026-11-04",
             "notes": {
