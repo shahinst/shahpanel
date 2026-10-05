@@ -163,7 +163,16 @@ class InboundResellerTest extends TestCase
     {
         $this->actingAs($this->agent)->get(route('agent.inbounds.index'))->assertOk()->assertSee('My 30 GB');
         $this->actingAs($this->agent)->get(route('agent.inbounds.packages.edit', $this->package))->assertOk();
-        $this->actingAs($this->makeAgent())->get(route('agent.inbounds.packages.edit', $this->package))->assertNotFound();
+        // An agent with no server of their own is stopped at the door; one who
+        // has an allocation of their own still cannot open someone else's package.
+        $this->actingAs($this->makeAgent())->get(route('agent.inbounds.packages.edit', $this->package))->assertForbidden();
+        $rival = $this->makeAgent();
+        InboundAllocation::query()->create([
+            'agent_user_id' => $rival->id, 'server_id' => $this->allocation->server_id, 'title' => 'rival',
+            'inbound_ids' => [99], 'quota_bytes' => InboundAllocation::GB, 'price_per_gb' => '0.00',
+            'currency' => 'IRT', 'credit_limit' => 0, 'status' => InboundAllocation::STATUS_ACTIVE,
+        ]);
+        $this->actingAs($rival)->get(route('agent.inbounds.packages.edit', $this->package))->assertNotFound();
         $this->actingAs($this->admin)->get(route('admin.inbound-allocations.index'))->assertOk();
         $this->actingAs($this->admin)->get(route('admin.inbound-allocations.edit', $this->allocation))->assertOk();
     }
