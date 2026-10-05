@@ -210,4 +210,10 @@ return [
     'mikrotik_server_needs_interface' => '请先为服务器“:server”选择接口。',
     'sanaei_limit_ip' => '最大同时设备数',
     'sanaei_limit_ip_hint' => '每个账户可同时使用的 IP 数量（3x-ui 中的 limitIp）。留空或 0 表示不限制。仅对新账户生效。',
+    'page_intro_create' => '设置名称、服务器、服务类型以及每个周期的价格。保存后，所有有权限的人都可以销售该套餐。',
+    'page_intro_edit' => '修改此套餐。已用它创建的账户不会被删除。',
+    'chip_servers' => ':count 台活跃服务器',
+    'chip_durations' => '每个周期单独定价',
+    'chip_categories' => ':count 个分类',
+    'save_note' => '保存前请检查服务器和每个周期的价格。',
 ];
