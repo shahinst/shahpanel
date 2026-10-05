@@ -3,16 +3,19 @@
 @section('page_title', __('packages.create'))
 
 @section('panel_content')
-<x-card>
-    <form method="POST" action="{{ route('admin.packages.store') }}">
-        @csrf
-        <div class="row">
-            @include('admin.packages._form', ['servers' => $servers])
-            <x-form.actions>
-                <x-button type="submit">{{ __('app.save') }}</x-button>
-                <x-button :href="route('admin.packages.index')" variant="secondary">{{ __('app.cancel') }}</x-button>
-            </x-form.actions>
-        </div>
-    </form>
-</x-card>
+@include('admin.packages._page', [
+    'title' => __('packages.create'),
+    'intro' => __('packages.page_intro_create'),
+    'icon' => 'bx-package',
+    'chips' => [
+        ['bx-server', __('packages.chip_servers', ['count' => persian_digits($servers->count())])],
+        ['bx-time-five', __('packages.chip_durations')],
+        ['bx-category', __('packages.chip_categories', ['count' => persian_digits($categories->count())])],
+    ],
+    'action' => route('admin.packages.store'),
+    'isEdit' => false,
+    'backUrl' => route('admin.packages.index'),
+    'saveNote' => __('packages.save_note'),
+    'form' => ['servers' => $servers],
+])
 @endsection

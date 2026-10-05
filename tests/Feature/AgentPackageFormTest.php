@@ -60,6 +60,26 @@ class AgentPackageFormTest extends TestCase
         ];
     }
 
+    public function test_the_admin_package_pages_wear_the_same_design_and_still_save(): void
+    {
+        $admin = $this->makeAdmin();
+        $server = $this->sanaeiServer([3]);
+
+        $create = $this->actingAs($admin)->get(route('admin.packages.create'))->assertOk()->getContent();
+        $this->assertStringContainsString('pkp-hero', $create);
+        $this->assertStringContainsString('pkp-save', $create);
+        $this->assertStringContainsString('name="kyc_required"', $create);
+
+        $this->actingAs($admin)->post(route('admin.packages.store'), $this->payload($server->id, [3]))
+            ->assertRedirect();
+        $package = Package::query()->where('name', 'My plan')->firstOrFail();
+        $this->assertNull($package->owner_agent_id);
+
+        $edit = $this->actingAs($admin)->get(route('admin.packages.edit', $package))->assertOk()->getContent();
+        $this->assertStringContainsString('pkp-hero', $edit);
+        $this->assertStringContainsString('My plan', $edit);
+    }
+
     public function test_the_form_is_the_admins_and_shows_only_the_agents_servers(): void
     {
         $agent = $this->makeAgent();

@@ -210,4 +210,10 @@ return [
     'mikrotik_server_needs_interface' => 'Choose an interface for the “:server” server first.',
     'sanaei_limit_ip' => 'Max simultaneous devices',
     'sanaei_limit_ip_hint' => 'How many IPs one account may use at once (limitIp in 3x-ui). Empty or 0 means no limit. Applies to new accounts.',
+    'page_intro_create' => 'Set the name, servers, service type and a price for each period. Once saved, the package can be sold by everyone who has access to it.',
+    'page_intro_edit' => 'Change this package. Accounts already made with it are not removed.',
+    'chip_servers' => ':count active servers',
+    'chip_durations' => 'A price per period',
+    'chip_categories' => ':count categories',
+    'save_note' => 'Check the servers and each period\'s price before saving.',
 ];

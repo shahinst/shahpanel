@@ -3,17 +3,19 @@
 @section('page_title', __('menu.packages'))
 
 @section('panel_content')
-<x-card>
-    <form method="POST" action="{{ route('admin.packages.update', $package) }}">
-        @csrf
-        @method('PUT')
-        <div class="row">
-            @include('admin.packages._form', ['package' => $package, 'servers' => $servers, 'durationsByTier' => $durationsByTier])
-            <x-form.actions>
-                <x-button type="submit">{{ __('app.save') }}</x-button>
-                <x-button :href="route('admin.packages.index')" variant="secondary">{{ __('app.cancel') }}</x-button>
-            </x-form.actions>
-        </div>
-    </form>
-</x-card>
+@include('admin.packages._page', [
+    'title' => __('packages.edit').' — '.$package->name,
+    'intro' => __('packages.page_intro_edit'),
+    'icon' => 'bx-edit-alt',
+    'chips' => [
+        ['bx-server', __('packages.chip_servers', ['count' => persian_digits($servers->count())])],
+        ['bx-time-five', __('packages.chip_durations')],
+        ['bx-category', __('packages.chip_categories', ['count' => persian_digits($categories->count())])],
+    ],
+    'action' => route('admin.packages.update', $package),
+    'isEdit' => true,
+    'backUrl' => route('admin.packages.index'),
+    'saveNote' => __('packages.save_note'),
+    'form' => ['package' => $package, 'servers' => $servers, 'durationsByTier' => $durationsByTier],
+])
 @endsection
