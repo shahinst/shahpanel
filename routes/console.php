@@ -28,8 +28,10 @@ Schedule::command('panel:check-update')
     ->withoutOverlapping()
     ->runInBackground();
 
+// Every minute, so a one-hour test account is cut off on time; servers that
+// do not enforce the expiry themselves rely on this run alone.
 Schedule::command('accounts:check-expiry')
-    ->everyTenMinutes()
+    ->everyMinute()
     ->withoutOverlapping()
     ->after(fn () => Cache::put('system_health.job.accounts_expiry_at', now()->timestamp, now()->addHours(6)));
 
