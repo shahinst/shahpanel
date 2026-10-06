@@ -56,6 +56,32 @@ class ShahBotConnectTest extends TestCase
         Http::assertSent(fn (Request $r) => str_ends_with($r->url(), '/sendMessage') && (string) $r['chat_id'] === '111');
     }
 
+    public function test_an_agent_bot_webhook_uses_the_panel_address_not_the_request_host(): void
+    {
+        config(['app.url' => 'https://panel.example']);
+        app(BotSettings::class)->set(['agent_bots_enabled' => '1', 'mode' => 'webhook']);
+        $agent = $this->makeAgent();
+        $bot = BotInstance::query()->create(['owner_user_id' => $agent->id, 'webhook_secret' => str_repeat('b', 40), 'is_active' => true]);
+        $bot->setToken('654321:'.str_repeat('c', 35));
+        $bot->save();
+
+        // The agent opened the panel on another name the server also answers.
+        $this->app['request']->headers->set('HOST', 'other.example');
+        $this->app['url']->forceRootUrl(null);
+
+        Http::fake([
+            '*/getMe' => Http::response(['ok' => true, 'result' => ['username' => 'agent_bot']]),
+            '*/setWebhook' => Http::response(['ok' => true, 'result' => true]),
+            '*' => Http::response(['ok' => true, 'result' => true]),
+        ]);
+
+        app(WebhookService::class)->connectBot($bot);
+
+        Http::assertSent(fn (Request $r) => str_ends_with($r->url(), '/setWebhook')
+            && $r['url'] === 'https://panel.example/shahbot/webhook/'.str_repeat('b', 40)
+            && $r['secret_token'] === str_repeat('b', 40));
+    }
+
     public function test_a_test_message_that_reaches_nobody_fails_the_connect(): void
     {
         app(BotSettings::class)->set(['bot_token' => '123456:'.str_repeat('a', 35), 'admin_chat_ids' => '111', 'mode' => 'webhook']);

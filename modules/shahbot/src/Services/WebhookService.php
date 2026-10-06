@@ -37,9 +37,18 @@ class WebhookService
         });
     }
 
+    /**
+     * Built on the panel's own address (APP_URL), not on the host the admin or
+     * agent happened to open the panel on: a second domain, the bare IP or a
+     * CDN name would hand Telegram an address that answers 404.
+     */
     public function webhookUrl(): string
     {
-        return route('shahbot.webhook', $this->settings->webhookSecret());
+        $path = route('shahbot.webhook', $this->settings->webhookSecret(), false);
+        $base = rtrim((string) config('app.url'), '/');
+
+        // Telegram only takes https; an http APP_URL is a panel without SSL.
+        return str_starts_with($base, 'https://') ? $base.$path : url($path);
     }
 
     /**

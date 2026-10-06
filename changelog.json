@@ -1,6 +1,28 @@
 {
     "versions": [
         {
+            "version": "3.34.1",
+            "date": "2026-11-11",
+            "notes": {
+                "fa": [
+                    "رفع خطای «Wrong response from the webhook: 404 Not Found» در ربات نماینده‌ها: آدرس وب‌هوک از روی دامنه‌ای ساخته می‌شد که نماینده پنل را با آن باز کرده بود (دامنهٔ دوم، آی‌پی یا دامنهٔ CDN)، و تلگرام به آن آدرس پیام می‌فرستاد و ۴۰۴ می‌گرفت. حالا وب‌هوک همیشه روی آدرس اصلی پنل (APP_URL) ثبت می‌شود.",
+                    "نماینده‌هایی که این خطا را می‌بینند فقط یک بار دکمهٔ «اتصال ربات» را دوباره بزنند."
+                ],
+                "en": [
+                    "Fixed \"Wrong response from the webhook: 404 Not Found\" on agent bots: the webhook address was built from whatever domain the agent opened the panel on (a second domain, the IP or a CDN name), and Telegram got 404 there. The webhook is now always registered on the panel's main address (APP_URL).",
+                    "Agents who see this error only need to press \"Connect bot\" once again."
+                ],
+                "ru": [
+                    "Исправлена ошибка «Wrong response from the webhook: 404 Not Found» в ботах агентов: адрес вебхука строился из домена, через который агент открыл панель (второй домен, IP или домен CDN), и Telegram получал там 404. Теперь вебхук всегда регистрируется на основном адресе панели (APP_URL).",
+                    "Агентам с этой ошибкой достаточно ещё раз нажать «Подключить бота»."
+                ],
+                "zh": [
+                    "修复代理机器人的“Wrong response from the webhook: 404 Not Found”错误：Webhook 地址是根据代理打开面板时使用的域名（第二个域名、IP 或 CDN 域名）生成的，Telegram 在该地址收到 404。现在 Webhook 始终注册在面板的主地址（APP_URL）上。",
+                    "遇到此错误的代理只需再点击一次“连接机器人”。"
+                ]
+            }
+        },
+        {
             "version": "3.34.0",
             "date": "2026-11-10",
             "notes": {
