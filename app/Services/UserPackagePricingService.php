@@ -142,6 +142,14 @@ class UserPackagePricingService
 
         $price = $this->wholesalePriceFor($user, $duration);
 
+        // A test duration (one hour up to a day) the admin priced at zero is a
+        // free trial, not a missing price. Paid tiers keep refusing zero: an
+        // unpriced duration is stored as 0 too.
+        if ($duration->tier->isTest()
+            && bccomp($price ?? number_format((float) $duration->price, 2, '.', ''), '0', 2) === 0) {
+            return '0.00';
+        }
+
         if ($price === null || bccomp($price, '0', 2) <= 0) {
             throw new InvalidArgumentException(__('packages.wholesale_price_missing', [
                 'package' => $duration->package?->name ?? $duration->package_id,
