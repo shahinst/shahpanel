@@ -238,7 +238,16 @@ class ModuleManager
         ]);
 
         $this->refreshCache();
+        $this->migrate($module);
+        $this->clearCaches();
+    }
 
+    /**
+     * Run a module's pending migrations by path, so they run even when the
+     * active-modules cache was stale at boot and its provider never loaded them.
+     */
+    public function migrate(Module $module): void
+    {
         $relativeMigrations = 'modules/'.$module->slug.'/database/migrations';
         if (is_dir(base_path($relativeMigrations))) {
             Artisan::call('migrate', [
@@ -246,8 +255,6 @@ class ModuleManager
                 '--force' => true,
             ]);
         }
-
-        $this->clearCaches();
     }
 
     public function deactivate(Module $module): void
