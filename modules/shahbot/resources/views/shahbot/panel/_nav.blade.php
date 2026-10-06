@@ -12,6 +12,7 @@
         [$base.'.my-bot.plans', 'bx-package', 'my_plans', [$base.'.my-bot.plans'], 0],
         [$base.'.payments', 'bx-receipt', 'my_payments', [$base.'.payments*'], $pending],
         [$base.'.customers', 'bx-group', 'customers', [$base.'.customers'], 0],
+        [$base.'.assign', 'bx-user-check', 'assign_accounts', [$base.'.assign*'], 0],
         $panel === 'agent' ? [$base.'.access', 'bx-key', 'bot_access_my_sellers', [$base.'.access*'], 0] : null,
     ]));
 @endphp

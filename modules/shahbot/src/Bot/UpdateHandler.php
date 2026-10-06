@@ -31,6 +31,7 @@ use Modules\ShahBot\Models\BotRefundRequest;
 use Modules\ShahBot\Models\BotTicket;
 use Modules\ShahBot\Models\BotTutorial;
 use Modules\ShahBot\Models\BotUser;
+use Modules\ShahBot\Services\AccountAssignService;
 use Modules\ShahBot\Services\AgencyService;
 use Modules\ShahBot\Services\BotNotifier;
 use Modules\ShahBot\Services\BotUserService;
@@ -1900,14 +1901,10 @@ class UpdateHandler
             throw new InvalidArgumentException(__('shahbot::bot.give_user_not_found'));
         }
 
-        $client = $this->users->client($target);
-        $account->forceFill(['client_user_id' => $client->id])->save();
+        // Through the service, so a give from the bot can be taken back from the panel too.
+        app(AccountAssignService::class)->assign($owner, $this->user->bot_id, $account, $target, $owner);
         $this->user->setStep(null);
         $this->reply(__('shahbot::bot.give_done', ['account' => e($account->display_label ?: $account->remote_username)]), $this->mainMenu());
-        app(BotNotifier::class)->user($target, fn () => __('shahbot::bot.give_received', [
-            'bot' => e($this->settings->get('brand_name') ?: config('app.name')),
-            'account' => e($account->display_label ?: $account->remote_username),
-        ]));
     }
 
     protected function stepSellerCharge(string $text): void
