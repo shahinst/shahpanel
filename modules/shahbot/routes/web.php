@@ -17,6 +17,7 @@ use Modules\ShahBot\Http\Controllers\Admin\TutorialController;
 use Modules\ShahBot\Http\Controllers\Admin\UserController;
 use Modules\ShahBot\Http\Controllers\Panel\BotAccessController;
 use Modules\ShahBot\Http\Controllers\Panel\PaymentsController as ResellerPaymentsController;
+use Modules\ShahBot\Http\Controllers\Panel\AssignController;
 use Modules\ShahBot\Http\Controllers\Panel\CustomersController;
 use Modules\ShahBot\Http\Controllers\Panel\MyBotController;
 
@@ -109,6 +110,9 @@ foreach (['agent', 'seller'] as $role) {
         Route::post('shahbot/payments/{payment}/approve', [ResellerPaymentsController::class, 'approve'])->name('shahbot.payments.approve');
         Route::post('shahbot/payments/{payment}/reject', [ResellerPaymentsController::class, 'reject'])->name('shahbot.payments.reject');
         Route::get('shahbot/customers', [CustomersController::class, 'index'])->name('shahbot.customers');
+        Route::get('shahbot/assign', [AssignController::class, 'index'])->name('shahbot.assign');
+        Route::post('shahbot/assign/{account}', [AssignController::class, 'store'])->name('shahbot.assign.store');
+        Route::delete('shahbot/assign/{assignment}', [AssignController::class, 'destroy'])->name('shahbot.assign.destroy');
         Route::post('shahbot/access', [BotAccessController::class, 'update'])->name('shahbot.access.update');
     });
 }

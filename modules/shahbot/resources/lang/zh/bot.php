@@ -373,4 +373,5 @@ return [
     'app_renewed' => 'Service renewed. New expiry: :date',
     'app_sent' => 'The config file and QR were sent to the bot chat.',
     'app_send_wg_only' => 'Sending files is only for WireGuard accounts.',
+    'give_revoked' => '↩️ :bot 为您添加的账户“:account”已从您的服务中移除。',
 ];
