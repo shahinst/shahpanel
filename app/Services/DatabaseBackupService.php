@@ -276,6 +276,7 @@ class DatabaseBackupService
             $database,
         ];
 
+        file_put_contents($outputPath, $this->dumpHeader());
         $this->runProcess($command, $password, $outputPath);
     }
 
@@ -307,7 +308,7 @@ class DatabaseBackupService
     {
         $descriptors = [
             0 => $inputPath !== null ? ['file', $inputPath, 'r'] : ['pipe', 'r'],
-            1 => $outputPath !== null ? ['file', $outputPath, 'w'] : ['pipe', 'w'],
+            1 => $outputPath !== null ? ['file', $outputPath, 'a'] : ['pipe', 'w'],
             2 => ['pipe', 'w'],
         ];
 
@@ -340,6 +341,14 @@ class DatabaseBackupService
         }
     }
 
+    /** The version tells a panel restoring this file whether it is too old for it. */
+    protected function dumpHeader(): string
+    {
+        return "-- VPN Panel database backup\n"
+            .'-- Generated: '.now()->toDateTimeString()."\n"
+            .'-- ShahPanel-Version: '.trim((string) @file_get_contents(base_path('VERSION')))."\n\n";
+    }
+
     protected function runMysqlDumpViaPhp(string $outputPath): void
     {
         $connection = DB::connection();
@@ -353,8 +362,7 @@ class DatabaseBackupService
         }
 
         try {
-            fwrite($handle, "-- VPN Panel database backup\n");
-            fwrite($handle, '-- Generated: '.now()->toDateTimeString()."\n\n");
+            fwrite($handle, $this->dumpHeader());
             fwrite($handle, "SET SQL_MODE = \"NO_AUTO_VALUE_ON_ZERO\";\n");
             fwrite($handle, "SET FOREIGN_KEY_CHECKS=0;\n\n");
 
@@ -424,7 +432,8 @@ class DatabaseBackupService
 
     protected function runMysqlImportViaPhp(string $inputPath): void
     {
-        $connection = DB::connection();
+        // runMysqlImport() disconnected, and getPdo() does not reconnect by itself.
+        $connection = DB::reconnect();
         $pdo = $connection->getPdo();
         $connection->disableQueryLog();
 

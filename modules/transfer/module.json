@@ -1,0 +1,11 @@
+{
+    "slug": "transfer",
+    "name": "انتقال کامل پنل به سرور جدید",
+    "version": "1.0.0",
+    "description": "روی پنل تازه‌نصب، بک‌آپ دیتابیسی را که ربات تلگرام فرستاده آپلود کنید تا همهٔ داده‌ها و تنظیمات پنل قبلی — اکانت‌ها، سرورها، کاربران، ربات و درگاه‌ها — بدون نیاز به فایل .env منتقل شوند. اطلاعات رمزشده با کلید سرور جدید دوباره رمز می‌شود.",
+    "author": "ShahPanel",
+    "license": "AGPL-3.0-or-later",
+    "namespace": "Modules\\Transfer\\",
+    "autoload": "src",
+    "provider": "Modules\\Transfer\\TransferServiceProvider"
+}

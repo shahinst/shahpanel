@@ -1,6 +1,32 @@
 {
     "versions": [
         {
+            "version": "3.35.0",
+            "date": "2026-11-13",
+            "notes": {
+                "fa": [
+                    "ماژول جدید «انتقال کامل پنل به سرور جدید»: روی سرور جدید شاه‌پنل را تازه نصب کنید، ماژول را از تنظیمات > ماژول‌ها فعال کنید و بکاپ دیتابیسی را که ربات تلگرام فرستاده (یا فایل ‎.sql / ‎.sql.gz) در بخش نگهداری دیتابیس بارگذاری کنید. همه کاربران، نماینده‌ها، اکانت‌ها، سرورها، پکیج‌ها، کیف‌پول‌ها، ربات‌ها و تنظیمات عیناً منتقل می‌شوند و بکاپ نسخه‌های قدیمی‌تر خودکار به‌روز می‌شود. فقط مدیر اصلی به آن دسترسی دارد.",
+                    "فایل ‎.env لازم نیست: فقط APP_KEY پنل قبلی را یک بار وارد کنید تا رمزهای ذخیره‌شده (رمز سرورها، توکن ربات‌ها، درگاه‌ها) با کلید سرور جدید دوباره رمز شوند. کلید پیش از هر تغییری بررسی می‌شود؛ پیش از انتقال یک بکاپ ایمنی گرفته می‌شود و اگر هر مرحله خطا بدهد پنل به حالت قبل برمی‌گردد.",
+                    "بازگردانی بکاپ از صفحه نگهداری دیتابیس دوباره کار می‌کند؛ پیش‌تر اتصال دیتابیس پیش از وارد کردن فایل بسته می‌شد و بازگردانی با خطای «دیتابیس بازگردانی نشد» متوقف می‌شد."
+                ],
+                "en": [
+                    "New module \"Move the whole panel to a new server\": install ShahPanel fresh on the new server, enable the module under Settings > Modules, and upload the database backup the Telegram bot sent (or a .sql / .sql.gz) from Database maintenance. All users, agents, accounts, servers, packages, wallets, bots and settings move over as they were, and backups from older versions are upgraded automatically. Only the main admin can use it.",
+                    "No .env file is needed: enter the old panel's APP_KEY once and the stored secrets (server passwords, bot tokens, gateways) are re-encrypted with the new server's key. The key is checked before anything changes; a safety backup is taken first, and if any step fails the panel is put back as it was.",
+                    "Restoring a backup from Database maintenance works again; the database connection used to be closed before the import and the restore stopped with \"The database could not be restored\"."
+                ],
+                "ru": [
+                    "Новый модуль «Перенос всей панели на новый сервер»: установите ShahPanel заново на новом сервере, включите модуль в Настройки > Модули и загрузите резервную копию базы, присланную Telegram-ботом (или .sql / .sql.gz), в разделе обслуживания базы. Все пользователи, агенты, аккаунты, серверы, пакеты, кошельки, боты и настройки переносятся как были, а копии старых версий обновляются автоматически. Доступно только главному администратору.",
+                    "Файл .env не нужен: один раз введите APP_KEY старой панели, и сохранённые секреты (пароли серверов, токены ботов, платёжные шлюзы) будут перешифрованы ключом нового сервера. Ключ проверяется до любых изменений; сначала делается страховочная копия, и при ошибке на любом шаге панель возвращается в прежнее состояние.",
+                    "Восстановление резервной копии из раздела обслуживания базы снова работает: раньше соединение с базой закрывалось перед импортом и восстановление прерывалось ошибкой «Не удалось восстановить базу данных»."
+                ],
+                "zh": [
+                    "新模块“将整个面板迁移到新服务器”：在新服务器上全新安装 ShahPanel，在 设置 > 模块 中启用该模块，然后在数据库维护页面上传 Telegram 机器人发送的数据库备份（或 .sql / .sql.gz）。所有用户、代理、账户、服务器、套餐、钱包、机器人和设置都会原样迁移，旧版本的备份会自动升级。仅主管理员可用。",
+                    "无需 .env 文件：只需输入一次旧面板的 APP_KEY，已保存的密钥（服务器密码、机器人令牌、支付网关）就会用新服务器的密钥重新加密。任何更改之前都会先验证密钥；迁移前会先做一次安全备份，任何一步失败都会把面板恢复原状。",
+                    "从数据库维护页面恢复备份重新可用；之前导入前数据库连接会被关闭，恢复会因“无法恢复数据库”而中止。"
+                ]
+            }
+        },
+        {
             "version": "3.34.5",
             "date": "2026-11-12",
             "notes": {

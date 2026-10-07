@@ -153,6 +153,13 @@
             </a>
         </p>
     @endif
+    @if (Route::has('admin.transfer.index') && is_super_admin())
+        <p class="mt-3 mb-0">
+            <a href="{{ route('admin.transfer.index') }}" class="btn btn-outline-primary btn-sm">
+                <i class="bx bx-import"></i> {{ __('transfer::transfer.page_title') }}
+            </a>
+        </p>
+    @endif
 </x-card>
 
 @if (Route::has('admin.automation.index'))
