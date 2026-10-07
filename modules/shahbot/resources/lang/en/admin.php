@@ -239,8 +239,6 @@ return [
     'agency_discount' => 'Reseller discount for bot agents (%)',
     'agency_hint' => 'Works only when the bot\'s sales owner is an agent. An approved user becomes a seller under that agent; their wholesale price is the store price less this percentage (never below the agent\'s own price).',
     'bulk_max' => 'Maximum quantity in a bulk purchase',
-    'agent_bots_enabled' => 'Own bots for agents and sellers',
-    'agent_bots_hint' => 'Each agent or seller registers their own bot token in their panel ("My sales bot"); its users become their clients, while the store, gateways and rules come from these settings.',
     'agency_requests' => 'Agency requests',
     'agent_bots' => 'Agent bots',
     'agency_status_pending' => 'Pending',

@@ -40,7 +40,6 @@ class BotSettings
             'agency_enabled' => '0',
             'agency_text' => 'برای همکاری در فروش، توضیح کوتاهی دربارهٔ خودتان و میزان فروش‌تان بنویسید.',
             'agency_discount' => '10',
-            'agent_bots_enabled' => '0',
             'bulk_max' => '20',
 
             // Store

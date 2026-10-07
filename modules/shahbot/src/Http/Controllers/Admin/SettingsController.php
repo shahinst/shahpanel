@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\View\View;
+use Modules\ShahBot\Models\BotInstance;
 use Modules\ShahBot\Services\OnlinePaymentService;
 use Modules\ShahBot\Services\WebhookService;
 use Modules\ShahBot\Support\BotLocale;
@@ -19,7 +20,7 @@ class SettingsController extends Controller
     protected const BOOLEANS = [
         'sales_enabled', 'test_enabled', 'renew_enabled', 'show_portal_link', 'topup_enabled',
         'referral_enabled', 'referral_first_only', 'require_phone', 'iran_phone_only', 'reminder_enabled',
-        'pay_zarinpal', 'pay_crypto', 'pay_stars', 'agency_enabled', 'agent_bots_enabled', 'mini_app_enabled', 'wheel_enabled', 'wheel_buyers_only', 'transfer_enabled', 'location_enabled', 'refund_enabled',
+        'pay_zarinpal', 'pay_crypto', 'pay_stars', 'agency_enabled', 'mini_app_enabled', 'wheel_enabled', 'wheel_buyers_only', 'transfer_enabled', 'location_enabled', 'refund_enabled',
     ];
 
     public function edit(BotSettings $settings, WebhookService $webhooks): View
@@ -91,6 +92,9 @@ class SettingsController extends Controller
         // An empty token field keeps the stored one: it is never echoed back.
         if (blank($data['bot_token'] ?? null)) {
             unset($data['bot_token']);
+        } elseif (BotInstance::query()->get()->contains(fn (BotInstance $b) => $b->token() === $data['bot_token'])) {
+            // One token can only feed one webhook: sharing it with an agent's bot silently steals its updates.
+            return back()->withErrors(['bot_token' => __('shahbot::admin.token_in_use')])->withInput();
         }
 
         // Only the fields of the submitted tab are present in the request.

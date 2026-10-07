@@ -1,6 +1,28 @@
 {
     "versions": [
         {
+            "version": "3.34.4",
+            "date": "2026-11-12",
+            "notes": {
+                "fa": [
+                    "رفع ریشه‌ای خطای «Wrong response from the webhook: 404 Not Found» در ربات نمایندگان: وب‌هوک هنوز سوییچ قدیمی «ربات نمایندگان» را بررسی می‌کرد که از تنظیمات حذف شده بود، برای همین در پنل‌هایی که این سوییچ روشن نشده بود /start هیچ جوابی نداشت. حالا فقط دسترسی هر نفر به ربات ملاک است. بعد از به‌روزرسانی، نماینده‌ها یک بار دیگر «اتصال ربات» را بزنند.",
+                    "توکنی که ربات یک نماینده از آن استفاده می‌کند دیگر در تنظیمات ربات اصلی پذیرفته نمی‌شود؛ یک توکن مشترک پیام‌های ربات نماینده را به ربات اصلی می‌برد."
+                ],
+                "en": [
+                    "Fixed the root cause of \"Wrong response from the webhook: 404 Not Found\" on agent bots: the webhook still checked the old \"agent bots\" switch that had been removed from the settings, so on panels where it was never turned on /start got no answer. Per-person bot access is now the only rule. After updating, agents should press \"Connect bot\" once more.",
+                    "A token already used by an agent's bot is no longer accepted for the main bot; a shared token sends the agent bot's messages to the main bot."
+                ],
+                "ru": [
+                    "Устранена причина ошибки «Wrong response from the webhook: 404 Not Found» у ботов агентов: вебхук всё ещё проверял старый переключатель «боты агентов», удалённый из настроек, поэтому на панелях, где он не был включён, /start оставался без ответа. Теперь учитывается только персональный доступ к боту. После обновления агентам нужно ещё раз нажать «Подключить бота».",
+                    "Токен, который уже использует бот агента, больше не принимается для основного бота: общий токен уводит сообщения бота агента в основной бот."
+                ],
+                "zh": [
+                    "从根本上修复代理机器人的“Wrong response from the webhook: 404 Not Found”错误：Webhook 仍在检查已从设置中移除的旧“代理机器人”开关，因此在从未开启该开关的面板上 /start 没有任何回应。现在只以每个人的机器人权限为准。更新后，代理需要再点一次“连接机器人”。",
+                    "已被代理机器人使用的令牌不再能用于主机器人；共用令牌会把代理机器人的消息转到主机器人。"
+                ]
+            }
+        },
+        {
             "version": "3.34.3",
             "date": "2026-11-11",
             "notes": {

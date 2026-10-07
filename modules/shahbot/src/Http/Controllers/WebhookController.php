@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Modules\ShahBot\Bot\UpdateHandler;
 use Modules\ShahBot\Models\BotInstance;
+use Modules\ShahBot\Support\BotAccess;
 use Modules\ShahBot\Support\BotContext;
 use Modules\ShahBot\Support\BotSettings;
 use Throwable;
@@ -25,11 +26,10 @@ class WebhookController extends Controller
         $main = $settings->main('webhook_secret');
 
         if ($main === '' || ! hash_equals($main, $secret)) {
-            $bot = $settings->bool('agent_bots_enabled')
-                ? BotInstance::query()->where('webhook_secret', $secret)->where('is_active', true)->first()
-                : null;
+            $bot = BotInstance::query()->with('owner')->where('webhook_secret', $secret)->where('is_active', true)->first();
 
-            abort_if($bot === null, 404);
+            // Per-person access is the only switch, as in polling and the mini app.
+            abort_if($bot === null || ! app(BotAccess::class)->allows($bot->owner), 404);
         }
 
         abort_unless(hash_equals($secret, (string) $request->header('X-Telegram-Bot-Api-Secret-Token')), 404);
