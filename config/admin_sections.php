@@ -51,6 +51,8 @@ return [
         'updates.*',
         // The Telegram tunnel changes the server's routing as root.
         'tgtunnel.*',
+        // Moving a whole panel in replaces every table, administrators included.
+        'transfer.*',
     ],
 
     'sections' => [

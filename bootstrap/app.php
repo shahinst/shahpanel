@@ -26,8 +26,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ])
     ->withMiddleware(function (Middleware $middleware) {
         // update.sh puts the panel in maintenance mode while it migrates; the
-        // update page keeps polling its console through this one route.
-        $middleware->preventRequestsDuringMaintenance(except: ['*/updates/progress/*']);
+        // update page keeps polling its console through this one route. A panel
+        // transfer does the same while it restores (modules/transfer).
+        $middleware->preventRequestsDuringMaintenance(except: ['*/updates/progress/*', 'panel-transfer/status/*']);
 
         $prepend = [];
 
