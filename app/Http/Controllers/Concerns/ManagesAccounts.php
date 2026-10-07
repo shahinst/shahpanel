@@ -63,9 +63,8 @@ trait ManagesAccounts
                 AccountNameValidator::rules(AccountNameValidator::REMOTE_MAX, required: true),
                 [Rule::unique('accounts', 'remote_username')->ignore($account->id)],
             ),
-            // «ایمیل مشتری» در واقع برچسب کلاینت روی پنل است (مثل fatemeh-iq81gdq9-1-up7b)
-            // و نه نشانی ایمیل؛ قاعدهٔ email همین برچسب‌های واقعی را رد می‌کرد.
-            'client_email' => ['nullable', 'string', 'max:255'],
+            // «ایمیل مشتری» اینجا عمداً نیست: مصرف و کرون‌جاب کلاینت را با همین برچسب روی
+            // سرور پیدا می‌کنند و عوض‌کردنش فقط در پنل، اکانت را از سرور جدا می‌کند.
             'server_id' => ['nullable', 'exists:servers,id'],
             'status' => ['required', Rule::enum(\App\Enums\AccountStatus::class)],
         ];
@@ -456,7 +455,6 @@ trait ManagesAccounts
 
             $account->update([
                 'remote_username' => $validated['remote_username'],
-                'client_email' => $validated['client_email'],
                 'status' => $validated['status'],
             ]);
         } catch (\Throwable $exception) {

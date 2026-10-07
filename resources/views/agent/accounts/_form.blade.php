@@ -145,7 +145,12 @@
     <p class="help-block text-muted small mb-0">{{ __('accounts.service_username_hint') }}</p>
 </x-form.group>
 <x-form.group :label="__('ui.x_of_client', ['field' => __('auth.email')])">
-    <input name="client_email" type="text" value="{{ old('client_email', $account->client_email) }}" class="form-control">
+    @if (is_super_admin())
+        <input name="client_email" type="text" value="{{ old('client_email', $account->client_email) }}" class="form-control">
+    @else
+        {{-- Usage and the cron jobs find the client on the server by this label; only the main admin may change it. --}}
+        <input type="text" value="{{ $account->client_email }}" class="form-control" readonly disabled dir="ltr">
+    @endif
 </x-form.group>
 @else
 @php

@@ -286,7 +286,8 @@ class AccountController extends Controller
             // the account active/disabled only in the panel.
             $account->update([
                 'remote_username' => $validated['remote_username'],
-                'client_email' => $validated['client_email'],
+                // Usage and the cron jobs find the client on the server by this label, so only the main admin may change it.
+                'client_email' => is_super_admin($request->user()) ? $validated['client_email'] : $account->client_email,
                 'display_label' => $validated['display_label'] ?? $account->display_label,
             ]);
 
