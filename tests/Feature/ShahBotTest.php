@@ -18,6 +18,7 @@ use App\Services\UserPackagePricingService;
 use App\Services\WalletService;
 use App\Support\GatewayReturnUrls;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use Mockery;
@@ -484,8 +485,8 @@ class ShahBotTest extends TestCase
 
     public function test_agent_bot_has_its_own_users_and_token(): void
     {
-        app(BotSettings::class)->set(['agent_bots_enabled' => '1']);
         $agent = $this->makeAgent();
+        DB::table('shahbot_bot_access')->insert(['user_id' => $agent->id, 'created_at' => now(), 'updated_at' => now()]);
         $bot = new BotInstance(['owner_user_id' => $agent->id, 'webhook_secret' => str_repeat('a', 40), 'is_active' => true]);
         $bot->setToken('654321:'.str_repeat('b', 35));
         $bot->settings = ['admin_chat_ids' => '555'];

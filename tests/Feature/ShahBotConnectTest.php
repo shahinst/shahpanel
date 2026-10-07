@@ -59,7 +59,7 @@ class ShahBotConnectTest extends TestCase
     public function test_an_agent_bot_webhook_uses_the_panel_address_not_the_request_host(): void
     {
         config(['app.url' => 'https://panel.example']);
-        app(BotSettings::class)->set(['agent_bots_enabled' => '1', 'mode' => 'webhook']);
+        app(BotSettings::class)->set(['mode' => 'webhook']);
         $agent = $this->makeAgent();
         $bot = BotInstance::query()->create(['owner_user_id' => $agent->id, 'webhook_secret' => str_repeat('b', 40), 'is_active' => true]);
         $bot->setToken('654321:'.str_repeat('c', 35));
