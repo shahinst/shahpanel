@@ -394,4 +394,5 @@ return [
     'ppp_port_fixed' => 'پورت :protocol ثابت است (:port) و قابل تغییر نیست.',
     'ppp_ipsec_secret_missing' => 'برای رمزنگاری L2TP اول «رمز IPsec سرور L2TP» را در همین صفحه تنظیم کنید.',
     'ppp_ipsec_from_server' => 'رمزنگاری L2TP با «رمز IPsec سرور L2TP» همین سرور فعال می‌شود.',
+    'unreachable_recently' => 'سرور «:name» همین الان پاسخ نداد؛ پنل تا یک دقیقه دوباره امتحانش نمی‌کند.',
 ];

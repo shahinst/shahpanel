@@ -2,6 +2,7 @@
 
 namespace App\Concerns;
 
+use App\Exceptions\ServerUnreachableException;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -32,6 +33,8 @@ trait RetriesApiCalls
         for ($attempt = 1; $attempt <= $attempts; $attempt++) {
             try {
                 return $callback();
+            } catch (ServerUnreachableException $exception) {
+                throw $exception;
             } catch (Throwable $exception) {
                 $lastException = $exception;
 

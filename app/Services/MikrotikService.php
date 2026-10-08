@@ -5,8 +5,10 @@ namespace App\Services;
 use App\Concerns\RetriesApiCalls;
 use App\Exceptions\RemoteConnectionException;
 use App\Exceptions\RemoteProvisionException;
+use App\Exceptions\ServerUnreachableException;
 use App\Models\Account;
 use App\Models\Server;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use RouterOS\Client;
 use RouterOS\Config;
@@ -65,11 +67,26 @@ class MikrotikService
             return $this->clientPool[$server->id];
         }
 
-        return $this->clientPool[$server->id] = $this->withRetry(
-            fn () => $this->createClient($server),
-            'mikrotik.connect',
-            ['server_id' => $server->id, 'host' => $server->host]
-        );
+        // A router that just failed every connect attempt is not tried again
+        // for a minute: each page touching it would otherwise wait out the
+        // same timeouts again, once per call, until the browser gives up.
+        $downKey = 'mikrotik:unreachable:'.$server->id;
+
+        if (Cache::has($downKey)) {
+            throw new ServerUnreachableException(__('servers.unreachable_recently', ['name' => $server->name]));
+        }
+
+        try {
+            return $this->clientPool[$server->id] = $this->withRetry(
+                fn () => $this->createClient($server),
+                'mikrotik.connect',
+                ['server_id' => $server->id, 'host' => $server->host]
+            );
+        } catch (Throwable $exception) {
+            Cache::put($downKey, true, now()->addMinute());
+
+            throw $exception;
+        }
     }
 
     /**
