@@ -77,6 +77,30 @@ if ! grep -qE '^\s*config-per-user\s*=' "$OCSERV_CONF"; then
     RESTART_OCSERV=1
 fi
 
+# Final byte counts of every closed session; without them the traffic since
+# the panel last looked would be lost on each disconnect.
+HOOK=/usr/local/sbin/ocserv-api-disconnect
+if [ -n "$HERE" ] && [ -f "$HERE/ocserv-disconnect.py" ]; then
+    install -m 0750 "$HERE/ocserv-disconnect.py" "$HOOK"
+else
+    curl -fsSL "${SOURCE_URL%/*}/ocserv-disconnect.py" -o "$HOOK.tmp" && install -m 0750 "$HOOK.tmp" "$HOOK" && rm -f "$HOOK.tmp"
+fi
+mkdir -p /var/lib/ocserv-api && chmod 0700 /var/lib/ocserv-api
+RELOAD_OCSERV=0
+CURRENT_HOOK=$(sed -nE 's/^\s*disconnect-script\s*=\s*(.*)$/\1/p' "$OCSERV_CONF" | tail -1)
+if [ -z "$CURRENT_HOOK" ]; then
+    [ -f "$OCSERV_CONF.before-shahpanel" ] || cp -a "$OCSERV_CONF" "$OCSERV_CONF.before-shahpanel"
+    echo "disconnect-script = $HOOK" >> "$OCSERV_CONF"
+    RELOAD_OCSERV=1
+elif [ "$CURRENT_HOOK" != "$HOOK" ]; then
+    echo "WARNING: ocserv already runs $CURRENT_HOOK on disconnect; usage of closed sessions is not counted." >&2
+fi
+# Live sessions report their counters every minute.
+if ! grep -qE '^\s*stats-report-time\s*=' "$OCSERV_CONF"; then
+    echo "stats-report-time = 60" >> "$OCSERV_CONF"
+    RELOAD_OCSERV=1
+fi
+
 mkdir -p "$CONFIG_DIR" && chmod 0700 "$CONFIG_DIR"
 TOKEN=""
 if [ -f "$CONFIG_DIR/config.json" ]; then
@@ -109,7 +133,12 @@ WantedBy=multi-user.target
 UNIT
 
 systemctl daemon-reload
-[ "$RESTART_OCSERV" -eq 1 ] && systemctl restart ocserv
+if [ "$RESTART_OCSERV" -eq 1 ]; then
+    systemctl restart ocserv
+elif [ "$RELOAD_OCSERV" -eq 1 ]; then
+    # A reload keeps connected users online.
+    systemctl reload ocserv 2>/dev/null || occtl reload >/dev/null 2>&1 || true
+fi
 systemctl enable --now ocserv-api >/dev/null 2>&1
 systemctl restart ocserv-api
 

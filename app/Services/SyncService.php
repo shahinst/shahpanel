@@ -438,8 +438,12 @@ class SyncService
      */
     protected function fetchTraffic(Account $account, Server $server): array
     {
-        if ($server->isOcserv() || $account->service_type->isOcserv()
-            || $server->isCiscoAnyconnect() || $account->service_type->isCiscoAnyconnect() || $account->cisco_asa_username) {
+        if ($server->isOcserv() || $account->service_type->isOcserv()) {
+            return $this->fetchOcservTraffic($account, $server);
+        }
+
+        // Cisco ASA reports no per-user byte counters the panel can read.
+        if ($server->isCiscoAnyconnect() || $account->service_type->isCiscoAnyconnect() || $account->cisco_asa_username) {
             $this->lastPortalTrafficMeta = [
                 'raw' => null,
                 'normalized' => [
@@ -596,6 +600,60 @@ class SyncService
      *     upload_bytes: int
      * }
      */
+    /** @var array<int, array{at: int, users: array<string, array{rx: int, tx: int}>}> */
+    protected array $ocservTrafficCache = [];
+
+    /**
+     * The ocserv agent keeps per-user totals that only grow, so they are read
+     * as snapshots like a panel's counters; one call serves every account of
+     * the server for a minute. An agent older than the cumulative counters
+     * reports live sessions only, which would undercount: it is ignored until
+     * the agent is reinstalled.
+     */
+    protected function fetchOcservTraffic(Account $account, Server $server): array
+    {
+        $cached = $this->ocservTrafficCache[$server->id] ?? null;
+
+        if ($cached === null || time() - $cached['at'] > 60) {
+            $users = [];
+
+            try {
+                $payload = (new \App\Services\Ocserv\OcservClient($server))->traffic();
+
+                if (($payload['cumulative'] ?? false) === true) {
+                    foreach ((array) ($payload['users'] ?? []) as $row) {
+                        if (is_array($row) && isset($row['username'])) {
+                            $users[(string) $row['username']] = ['rx' => (int) ($row['rx'] ?? 0), 'tx' => (int) ($row['tx'] ?? 0)];
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                report($e);
+            }
+
+            $cached = $this->ocservTrafficCache[$server->id] = ['at' => time(), 'users' => $users];
+        }
+
+        $row = $cached['users'][(string) $account->remote_username] ?? null;
+
+        if ($row === null) {
+            $this->lastPortalTrafficMeta = ['raw' => null, 'normalized' => ['up' => 0, 'down' => 0, 'used_bytes' => 0, 'limit_bytes' => null, 'remaining_bytes' => null]];
+
+            return ['rx_bytes' => 0, 'tx_bytes' => 0, 'rx_snapshot' => 0, 'tx_snapshot' => 0];
+        }
+
+        $this->lastPortalTrafficMeta = ['raw' => $row, 'normalized' => [
+            'up' => $row['rx'],
+            'down' => $row['tx'],
+            'used_bytes' => $row['rx'] + $row['tx'],
+            'limit_bytes' => null,
+            'remaining_bytes' => null,
+        ]];
+
+        // The server's tx is the user's download.
+        return $this->clientTrafficSnapshots($row['tx'], $row['rx']);
+    }
+
     protected function clientTrafficSnapshots(int $downloadBytes, int $uploadBytes): array
     {
         return [
