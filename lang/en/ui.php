@@ -287,6 +287,8 @@ return [
     'seller_pricing_page_title' => 'Seller pricing',
     'my_seller_pricing' => 'My seller pricing',
     'no_packages_enabled' => 'No package has been enabled for you yet. Please contact the admin.',
+    'no_account_owners' => 'Create an agent or seller first and assign packages to them: every account is registered to one of them, and only their assigned packages appear here.',
+    'no_account_owners_link' => 'Create an agent',
     'seller_pricing_intro_before' => 'For each package you can set the price for your sellers up to',
     'seller_pricing_intro_middle' => 'above your own price —',
     'seller_pricing_intro_strong' => 'that same percentage is your commission',
