@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AccountActionController;
 use App\Http\Controllers\Api\V1\AccountController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CatalogController;
+use App\Http\Controllers\Api\V1\ClientController;
 use App\Http\Controllers\Api\V1\MetaController;
 use App\Http\Controllers\Api\V1\ResellerController;
 use App\Http\Controllers\Api\V1\StatsController;
@@ -52,6 +54,7 @@ Route::prefix('v1')->group(function (): void {
             Route::get('accounts/{accountKey}', [AccountController::class, 'show']);
             Route::get('accounts/{accountKey}/config', [AccountController::class, 'config']);
             Route::get('accounts/{accountKey}/usage', [AccountController::class, 'usage']);
+            Route::get('accounts/{accountKey}/ovpn', [AccountController::class, 'ovpn']);
         });
 
         Route::post('accounts', [AccountController::class, 'store'])
@@ -60,9 +63,32 @@ Route::prefix('v1')->group(function (): void {
         Route::post('accounts/{accountKey}/renew', [AccountController::class, 'renew'])
             ->middleware('api.ability:accounts:renew');
 
+        Route::middleware('api.ability:accounts:read')->group(function (): void {
+            Route::get('accounts-expiring', [AccountActionController::class, 'expiring']);
+            Route::get('clients', [ClientController::class, 'index']);
+            Route::get('clients/{clientId}', [ClientController::class, 'show'])->whereNumber('clientId');
+        });
+
+        // Everything the panel lets a reseller do to an account after buying it.
+        Route::middleware('api.ability:accounts:update')->group(function (): void {
+            Route::patch('accounts/{accountKey}', [AccountActionController::class, 'update']);
+            Route::post('accounts/{accountKey}/transfer', [AccountActionController::class, 'transfer']);
+            Route::post('accounts/{accountKey}/refund', [AccountActionController::class, 'refund'])->middleware('throttle:money-actions');
+            Route::post('accounts/{accountKey}/reactivate', [AccountActionController::class, 'reactivate'])->middleware('throttle:money-actions');
+            Route::post('accounts/{accountKey}/sync', [AccountActionController::class, 'sync']);
+            Route::delete('accounts/{accountKey}', [AccountActionController::class, 'destroy']);
+            Route::post('clients', [ClientController::class, 'store']);
+            Route::post('clients/{clientId}/accounts/{accountKey}', [ClientController::class, 'assign'])->whereNumber('clientId');
+        });
+
+        Route::post('resellers/{reseller}/charge', [ClientController::class, 'chargeSeller'])
+            ->whereNumber('reseller')
+            ->middleware(['api.role:agent', 'api.ability:resellers:read', 'throttle:money-actions']);
+
         Route::middleware('api.ability:accounts:update')->group(function (): void {
             Route::post('accounts/{accountKey}/enable', [AccountController::class, 'enable']);
             Route::post('accounts/{accountKey}/disable', [AccountController::class, 'disable']);
+            Route::post('accounts/{accountKey}/portal', [AccountController::class, 'newPortalLink']);
         });
 
         // ── Wallet ───────────────────────────────────────────────────────

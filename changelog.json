@@ -1,6 +1,36 @@
 {
     "versions": [
         {
+            "version": "3.37.2",
+            "date": "2026-11-19",
+            "notes": {
+                "fa": [
+                    "API و ربات‌ها (ویزویز، میرزا و ربات شاه‌پنل): پاسخ اکانت‌های AnyConnect و PPP حالا بخش connection دارد با آدرس سروری که کاربر به آن وصل می‌شود، نام کاربری و رمز.",
+                    "لینک پورتال در پاسخ API همیشه معتبر است: اگر توکن قبلی منقضی شده باشد خودکار لینک تازه ساخته می‌شود و فیلد url کامل برمی‌گردد؛ POST /api/v1/accounts/{id}/portal لینک تازه می‌سازد.",
+                    "فایل OpenVPN (.ovpn) سرور هم در پاسخ اکانت‌های PPP می‌آید و از GET /api/v1/accounts/{id}/ovpn قابل دانلود است؛ همیشه آخرین فایلی است که در پنل برای سرور گذاشته‌اید. ربات تلگرام هم آن را همراه مشخصات اتصال برای مشتری می‌فرستد.",
+                    "API کامل‌تر شد: ویرایش اکانت (نام، برچسب، تمدید خودکار)، انتقال به سرور دیگر، بازپرداخت و فعال‌سازی دوباره، خواندن فوری مصرف، حذف، فهرست اکانت‌های رو به انقضا، مدیریت مشتری‌ها (فهرست، ساخت، دادن اکانت) و شارژ کیف پول فروشنده‌ها؛ همه با همان مجوزهای پنل. راهنما در docs/API.md."
+                ],
+                "en": [
+                    "API and bots (WizWiz, Mirza and the ShahPanel bot): AnyConnect and PPP accounts now carry a connection block with the address customers connect to, the username and the password.",
+                    "The portal link in API responses is always valid: an expired token is replaced by itself and the full url is returned; POST /api/v1/accounts/{id}/portal issues a fresh link.",
+                    "The server's OpenVPN profile (.ovpn) comes with PPP accounts and can be downloaded from GET /api/v1/accounts/{id}/ovpn; it is always the latest file uploaded for the server. The Telegram bot sends it to customers with the connection details.",
+                    "A fuller API: edit an account (username, label, auto-renew), move it to another server, refund and reactivate it, read its usage now, delete it, list accounts about to expire, manage customers (list, create, hand them accounts) and top up sellers' wallets, all under the panel's own permissions. See docs/API.md."
+                ],
+                "ru": [
+                    "API и боты (WizWiz, Mirza и бот ShahPanel): у аккаунтов AnyConnect и PPP теперь есть блок connection с адресом подключения, логином и паролем.",
+                    "Ссылка на портал в ответах API всегда действительна: истёкший токен заменяется сам, возвращается полный url; POST /api/v1/accounts/{id}/portal выдаёт новую ссылку.",
+                    "Профиль OpenVPN сервера (.ovpn) приходит вместе с аккаунтами PPP и скачивается через GET /api/v1/accounts/{id}/ovpn; это всегда последний загруженный для сервера файл. Telegram-бот отправляет его клиенту вместе с данными подключения.",
+                    "Более полный API: изменение аккаунта (логин, метка, автопродление), перенос на другой сервер, возврат и повторная активация, мгновенное чтение расхода, удаление, список истекающих аккаунтов, управление клиентами (список, создание, выдача аккаунтов) и пополнение кошельков продавцов — всё с теми же правами, что и в панели. См. docs/API.md."
+                ],
+                "zh": [
+                    "API 与机器人（WizWiz、Mirza 和 ShahPanel 机器人）：AnyConnect 和 PPP 账户现在带有 connection 字段，包含客户连接的地址、用户名和密码。",
+                    "API 响应中的门户链接始终有效：过期的令牌会自动更换并返回完整 url；POST /api/v1/accounts/{id}/portal 可生成新链接。",
+                    "服务器的 OpenVPN 配置文件（.ovpn）会随 PPP 账户一起返回，也可通过 GET /api/v1/accounts/{id}/ovpn 下载，始终是为该服务器上传的最新文件。Telegram 机器人会把它连同连接信息发给客户。",
+                    "更完整的 API：编辑账户（用户名、标签、自动续费）、迁移到其他服务器、退款与重新激活、立即读取用量、删除、列出即将到期的账户、管理客户（列表、创建、分配账户）以及为销售员钱包充值，权限与面板一致。详见 docs/API.md。"
+                ]
+            }
+        },
+        {
             "version": "3.37.1",
             "date": "2026-11-18",
             "notes": {

@@ -6,6 +6,7 @@ use App\Enums\AccountCategory;
 use App\Enums\AccountStatus;
 use App\Enums\ServiceType;
 use App\Enums\UserRole;
+use App\Http\Resources\Api\V1\AccountConnection;
 use App\Models\Account;
 use App\Models\PackageDuration;
 use App\Models\Transaction;
@@ -1320,12 +1321,21 @@ class UpdateHandler
         }
 
         if ($account->service_type->accountCategory() !== AccountCategory::V2ray) {
+            // The address customers connect to (an AnyConnect server's VPN
+            // address, a router's client endpoint), not the panel's API host.
+            $connection = AccountConnection::make($account) ?? [];
             $this->reply(__('shahbot::bot.sub_credentials', [
                 'name' => e($this->accountName($account)),
                 'username' => e((string) $account->remote_username),
                 'password' => e((string) ($account->remote_password_enc ?? '—')),
-                'host' => e((string) ($account->server?->client_host ?: $account->server?->host ?: '—')),
+                'host' => e((string) ($connection['server_address'] ?? '—')),
             ]));
+
+            // PPP servers that offer OpenVPN: the server's profile goes along,
+            // so the customer needs nothing but this chat.
+            if (($connection['ovpn'] ?? null) !== null) {
+                rescue(fn () => $this->tg->sendDocumentBytes($this->chatId, (string) $connection['ovpn']['content'], (string) $connection['ovpn']['filename']));
+            }
 
             return;
         }

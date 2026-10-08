@@ -9,6 +9,7 @@ use App\Enums\UserRole;
 use App\Http\Controllers\Api\V1\Concerns\RespondsWithJson;
 use App\Http\Controllers\Concerns\ManagesAccounts;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Api\V1\AccountConnection;
 use App\Http\Resources\Api\V1\AccountTransformer;
 use App\Models\Account;
 use App\Models\Package;
@@ -20,11 +21,14 @@ use App\Services\AccountService;
 use App\Services\ClientAccountDetailService;
 use App\Services\PackageCategoryService;
 use App\Services\PackageService;
+use App\Services\PortalLinkService;
+use App\Services\ServerOvpnProfileService;
 use App\Services\ServerSelectionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Throwable;
 
 /**
@@ -341,6 +345,39 @@ class AccountController extends Controller
             'credentials' => $detail['clientCredentials'] ?? null,
             'usage' => $detail['usage'] ?? null,
         ]);
+    }
+
+    /**
+     * The server's OpenVPN profile as a file, for bots that send it as is.
+     * It is per server: the account logs in with its own username and password.
+     */
+    public function ovpn(Request $request, string $accountKey, ServerOvpnProfileService $profiles): JsonResponse|BinaryFileResponse
+    {
+        $model = $this->findAccount($request, $accountKey);
+
+        if ($model === null) {
+            return $this->fail('not_found', __('api.not_found'), 404);
+        }
+
+        if (AccountConnection::make($model)['ovpn'] ?? null) {
+            return $profiles->downloadResponse($model);
+        }
+
+        return $this->fail('ovpn_unavailable', __('accounts.ovpn_profile_not_available'), 404);
+    }
+
+    /** Replaces the portal link; the old one stops working at once. */
+    public function newPortalLink(Request $request, string $accountKey, PortalLinkService $portal): JsonResponse
+    {
+        $model = $this->findAccount($request, $accountKey);
+
+        if ($model === null) {
+            return $this->fail('not_found', __('api.not_found'), 404);
+        }
+
+        $portal->regenerate($model);
+
+        return $this->ok(['account' => AccountTransformer::make($model->fresh(), detailed: true)]);
     }
 
     /** Force a fresh read from the remote panel, then report usage. */
