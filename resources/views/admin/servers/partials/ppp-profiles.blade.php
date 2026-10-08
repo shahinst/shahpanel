@@ -132,12 +132,18 @@
                     </select>
                 </div>
                 <div class="col-md-2">
+                    <label class="form-label" for="ppp-port">{{ __('servers.port') }}</label>
+                    <input type="number" name="port" id="ppp-port" class="form-control form-control-sm"
+                           value="{{ old('port') }}" min="1" max="65535" placeholder="{{ __('servers.ppp_port_auto') }}">
+                </div>
+                <div class="col-md-2">
                     <label class="form-label d-block">{{ __('servers.ppp_use_encryption') }}</label>
                     <div class="form-check mt-1">
                         <input type="checkbox" name="use_encryption" value="1" id="ppp-encryption"
                                class="form-check-input" @checked(old('use_encryption'))>
                         <label class="form-check-label small" for="ppp-encryption">{{ __('servers.ppp_encryption_yes') }}</label>
                     </div>
+                    <div class="form-text">{{ app(\App\Services\ServerL2tpIpsecService::class)->hasSecret($server) ? __('servers.ppp_ipsec_from_server') : __('servers.ppp_ipsec_secret_missing') }}</div>
                 </div>
                 @include('admin.servers.partials.speed-limit-select', ['fieldName' => 'speed_limit_mbps'])
                 <div class="col-md-2">

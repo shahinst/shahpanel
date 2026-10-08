@@ -389,4 +389,9 @@ return [
     'ppp_speed_needs_subnet' => '«:name» زیرشبکهٔ مشخصی ندارد، پس نمی‌شود برای تک‌تک آدرس‌هایش صف ساخت.',
     'speed_queues_verified' => 'بررسی روی روتر: :ok از :total صف آدرس با سرعت جدید فعال است.',
     'speed_fasttrack_exempted' => 'FastTrack روی این روتر روشن است و صف‌های ساده را دور می‌زند؛ برای «:name» دو قانون استثنا بالای FastTrack اضافه شد تا محدودیت سرعت واقعاً اعمال شود.',
+    'ppp_port_auto' => 'خودکار',
+    'ppp_port_needs_protocol' => 'برای تعیین پورت، پروتکل را مشخص کنید (SSTP یا OpenVPN).',
+    'ppp_port_fixed' => 'پورت :protocol ثابت است (:port) و قابل تغییر نیست.',
+    'ppp_ipsec_secret_missing' => 'برای رمزنگاری L2TP اول «رمز IPsec سرور L2TP» را در همین صفحه تنظیم کنید.',
+    'ppp_ipsec_from_server' => 'رمزنگاری L2TP با «رمز IPsec سرور L2TP» همین سرور فعال می‌شود.',
 ];

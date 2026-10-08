@@ -1,6 +1,24 @@
 {
     "versions": [
         {
+            "version": "3.36.1",
+            "date": "2026-11-17",
+            "notes": {
+                "fa": [
+                    "ساخت پروفایل PPP در مدیریت سرورها: پورت را می‌توان مشخص کرد (برای SSTP و OpenVPN روی روتر اعمال می‌شود؛ پورت L2TP و PPTP ثابت است). تیک رمزنگاری برای L2TP حالا IPsec را با «رمز IPsec سرور L2TP» همان سرور فعال می‌کند و اگر آن رمز تنظیم نشده باشد، پروفایل بدون رمز ساخته نمی‌شود."
+                ],
+                "en": [
+                    "Creating a PPP profile under server management: the port can be set (applied on the router for SSTP and OpenVPN; L2TP and PPTP ports are fixed). The encryption tick on L2TP now enables IPsec with the server's own \"L2TP server IPsec secret\", and a profile is no longer saved without a secret when none is set."
+                ],
+                "ru": [
+                    "Создание PPP-профиля в управлении серверами: можно указать порт (для SSTP и OpenVPN он применяется на роутере; порты L2TP и PPTP фиксированы). Галочка шифрования для L2TP теперь включает IPsec с «секретом IPsec сервера L2TP» этого сервера, и без заданного секрета профиль больше не сохраняется."
+                ],
+                "zh": [
+                    "在服务器管理中创建 PPP 配置：现在可以设置端口（SSTP 和 OpenVPN 会在路由器上生效；L2TP 和 PPTP 端口固定）。L2TP 的加密勾选现在会使用本服务器的「L2TP 服务器 IPsec 密钥」启用 IPsec；未设置密钥时不再保存无密钥的配置。"
+                ]
+            }
+        },
+        {
             "version": "3.36.0",
             "date": "2026-11-16",
             "notes": {
