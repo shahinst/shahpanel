@@ -389,4 +389,9 @@ return [
     'ppp_speed_needs_subnet' => '":name" has no known subnet, so per-address queues cannot be built for it.',
     'speed_queues_verified' => 'Checked on the router: :ok of :total address queues are active at the new speed.',
     'speed_fasttrack_exempted' => 'FastTrack is on on this router and bypasses simple queues; two exemption rules for ":name" were placed above it so the speed limit actually applies.',
+    'ppp_port_auto' => '自动',
+    'ppp_port_needs_protocol' => '要设置端口，请先选择协议（SSTP 或 OpenVPN）。',
+    'ppp_port_fixed' => ':protocol 的端口是固定的（:port），不能修改。',
+    'ppp_ipsec_secret_missing' => '启用 L2TP 加密前，请先在本页设置「L2TP 服务器 IPsec 密钥」。',
+    'ppp_ipsec_from_server' => 'L2TP 加密将使用本服务器的「L2TP 服务器 IPsec 密钥」。',
 ];

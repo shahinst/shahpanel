@@ -389,4 +389,9 @@ return [
     'ppp_speed_needs_subnet' => '":name" has no known subnet, so per-address queues cannot be built for it.',
     'speed_queues_verified' => 'Checked on the router: :ok of :total address queues are active at the new speed.',
     'speed_fasttrack_exempted' => 'FastTrack is on on this router and bypasses simple queues; two exemption rules for ":name" were placed above it so the speed limit actually applies.',
+    'ppp_port_auto' => 'авто',
+    'ppp_port_needs_protocol' => 'Чтобы указать порт, выберите протокол (SSTP или OpenVPN).',
+    'ppp_port_fixed' => 'Порт :protocol фиксирован (:port) и не меняется.',
+    'ppp_ipsec_secret_missing' => 'Сначала задайте на этой странице «секрет IPsec сервера L2TP», затем включайте шифрование L2TP.',
+    'ppp_ipsec_from_server' => 'Шифрование L2TP использует «секрет IPsec сервера L2TP» этого сервера.',
 ];

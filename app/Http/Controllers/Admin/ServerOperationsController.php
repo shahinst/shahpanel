@@ -592,6 +592,7 @@ class ServerOperationsController extends Controller
             'protocol' => ['required', 'string', 'in:any,l2tp,ovpn,pptp,sstp'],
             'use_encryption' => ['nullable', 'boolean'],
             'speed_limit_mbps' => ['nullable', 'integer', 'in:5,10,20,30,40,50'],
+            'port' => ['nullable', 'integer', 'between:1,65535'],
         ]);
 
         try {
@@ -603,6 +604,7 @@ class ServerOperationsController extends Controller
                 $request->boolean('use_encryption'),
                 $validated['pool_name'] ?? null,
                 isset($validated['speed_limit_mbps']) ? (int) $validated['speed_limit_mbps'] : null,
+                isset($validated['port']) ? (int) $validated['port'] : null,
             );
         } catch (Throwable $exception) {
             report($exception);

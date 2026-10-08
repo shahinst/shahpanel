@@ -30,6 +30,7 @@ class MikrotikPppProfileService
         bool $useEncryption = false,
         ?string $poolName = null,
         ?int $speedLimitMbps = null,
+        ?int $port = null,
     ): ServerInterface {
         $name = trim($name);
         $subnetCidr = $this->normalizeSubnetCidr($subnetCidr);
@@ -53,6 +54,19 @@ class MikrotikPppProfileService
             throw new InvalidArgumentException(__('servers.ppp_profile_exists', ['name' => $name]));
         }
 
+        // Encryption on an L2TP profile means L2TP over IPsec, keyed with the
+        // server's own IPsec secret; without one clients could never connect.
+        $ipsec = $useEncryption && in_array($protocol, ['any', 'l2tp'], true);
+        $l2tp = app(ServerL2tpIpsecService::class);
+
+        if ($ipsec && ! $l2tp->hasSecret($server)) {
+            throw new InvalidArgumentException(__('servers.ppp_ipsec_secret_missing'));
+        }
+
+        if ($port !== null) {
+            $this->applyServicePort($server, $protocol, $port);
+        }
+
         $created = $this->mikrotik->createPppProfileWithPool(
             $server,
             $name,
@@ -68,7 +82,12 @@ class MikrotikPppProfileService
             // optional
         }
 
-        $port = $protocol !== 'any' ? ($servicePorts[$protocol] ?? null) : null;
+        $port ??= $protocol !== 'any' ? ($servicePorts[$protocol] ?? null) : null;
+
+        if ($ipsec) {
+            $l2tp->store($server, null, true);
+        }
+
         $key = $this->profileService->pppRemoteKey($name);
 
         $profile = ServerInterface::query()->updateOrCreate(
@@ -90,6 +109,7 @@ class MikrotikPppProfileService
                     'pool_name' => $poolName,
                     'pool_ranges' => $created['ranges'],
                     'use_encryption' => $useEncryption,
+                    'ipsec' => $ipsec,
                     'ports' => $servicePorts,
                     'secret_count' => 0,
                     'panel_account_count' => 0,
@@ -314,6 +334,30 @@ class MikrotikPppProfileService
 
                 return $protocol === $serviceName;
             });
+    }
+
+    /**
+     * SSTP and OpenVPN listen on a port of the admin's choice; L2TP and PPTP
+     * are fixed by their protocols, so another port there would only be a
+     * wrong number shown to customers.
+     */
+    protected function applyServicePort(Server $server, string $protocol, int $port): void
+    {
+        $fixed = ['l2tp' => 1701, 'pptp' => 1723];
+
+        if ($protocol === 'any') {
+            throw new InvalidArgumentException(__('servers.ppp_port_needs_protocol'));
+        }
+
+        if (isset($fixed[$protocol])) {
+            if ($port !== $fixed[$protocol]) {
+                throw new InvalidArgumentException(__('servers.ppp_port_fixed', ['protocol' => strtoupper($protocol), 'port' => $fixed[$protocol]]));
+            }
+
+            return;
+        }
+
+        $this->mikrotik->sendCommand($server, '/interface/'.$protocol.'-server/server/set', ['port' => (string) $port]);
     }
 
     public function normalizeSubnetCidr(string $subnetCidr): string
