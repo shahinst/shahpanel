@@ -58,3 +58,20 @@ Separate from Cisco ASA (`cisco_anyconnect`). Customers still use Cisco Secure C
 | Sessions / disconnect | `GET /api/sessions`, `POST /api/sessions/{u}/disconnect` |
 | Traffic / tunnels | `GET /api/traffic`, `GET /api/tunnels` |
 
+### Usage
+
+`GET /api/traffic` returns `{"cumulative": true, "users": [{"username", "rx", "tx"}]}`:
+lifetime bytes per user, as the server sees them (`rx` is the user's upload,
+`tx` their download). The panel only reads usage from an agent that says
+`cumulative`; older agents reported live sessions only and are ignored.
+
+The totals are every closed session plus the live ones. occtl forgets a
+session when it ends, so the installer registers
+`/usr/local/sbin/ocserv-api-disconnect` as ocserv's `disconnect-script`: it
+adds each session's final `STATS_BYTES_IN` / `STATS_BYTES_OUT` to
+`/var/lib/ocserv-api/traffic.json` (root only, written atomically under a
+lock, never failing the teardown). `stats-report-time = 60` keeps the live
+counters fresh. Deleting a user clears their totals, so a new user with the
+same name starts from zero. If ocserv already runs another disconnect-script,
+the installer leaves it in place and warns that closed sessions are not counted.
+

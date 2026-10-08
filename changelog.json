@@ -1,6 +1,28 @@
 {
     "versions": [
         {
+            "version": "3.37.1",
+            "date": "2026-11-18",
+            "notes": {
+                "fa": [
+                    "مصرف اکانت‌های OpenConnect/AnyConnect (ocserv) حالا واقعاً در پنل ثبت می‌شود؛ پیش‌تر پنل برای این اکانت‌ها مصرف را همیشه صفر می‌گذاشت.",
+                    "API سرور ocserv مصرف هر کاربر را تجمعی نگه می‌دارد: آمار نهایی هر نشست هنگام قطع شدن با disconnect-script ثبت می‌شود، پس قطع و وصل شدن کاربر مصرفش را صفر نمی‌کند و هیچ بایتی گم نمی‌شود. برای گرفتن این امکان، نصب‌کنندهٔ scripts/ocserv-api/install.sh را یک بار دیگر روی سرور ocserv اجرا کنید؛ توکن و تنظیمات حفظ می‌شوند و کاربران وصل قطع نمی‌شوند."
+                ],
+                "en": [
+                    "Usage of OpenConnect/AnyConnect (ocserv) accounts is now actually recorded; the panel used to set it to zero for these accounts.",
+                    "The ocserv API keeps each user's usage cumulatively: a disconnect-script records every session's final figures as it closes, so reconnecting never resets usage and no bytes are lost. Run scripts/ocserv-api/install.sh once more on the ocserv server to get it; the token and settings are kept and connected users stay online."
+                ],
+                "ru": [
+                    "Расход аккаунтов OpenConnect/AnyConnect (ocserv) теперь действительно учитывается; раньше панель всегда ставила для них ноль.",
+                    "API ocserv хранит расход каждого пользователя накопительно: disconnect-script записывает итоговые цифры каждой сессии при её закрытии, поэтому переподключение не обнуляет расход и ни один байт не теряется. Чтобы получить это, ещё раз запустите scripts/ocserv-api/install.sh на сервере ocserv; токен и настройки сохраняются, подключённые пользователи не отключаются."
+                ],
+                "zh": [
+                    "OpenConnect/AnyConnect（ocserv）账户的用量现在会被真实记录；此前面板始终把这些账户的用量记为零。",
+                    "ocserv API 会累计保存每个用户的用量：每个会话关闭时由 disconnect-script 记录其最终数据，因此重连不会清零用量，也不会丢失任何字节。请在 ocserv 服务器上再运行一次 scripts/ocserv-api/install.sh 以启用；令牌和设置会保留，已连接用户不会断开。"
+                ]
+            }
+        },
+        {
             "version": "3.37.0",
             "date": "2026-11-18",
             "notes": {
