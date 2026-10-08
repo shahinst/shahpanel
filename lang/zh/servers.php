@@ -394,4 +394,5 @@ return [
     'ppp_port_fixed' => ':protocol 的端口是固定的（:port），不能修改。',
     'ppp_ipsec_secret_missing' => '启用 L2TP 加密前，请先在本页设置「L2TP 服务器 IPsec 密钥」。',
     'ppp_ipsec_from_server' => 'L2TP 加密将使用本服务器的「L2TP 服务器 IPsec 密钥」。',
+    'unreachable_recently' => '服务器「:name」刚才没有响应，面板将在一分钟后再试。',
 ];

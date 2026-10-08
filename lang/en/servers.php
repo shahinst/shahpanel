@@ -394,4 +394,5 @@ return [
     'ppp_port_fixed' => 'The :protocol port is fixed (:port) and cannot be changed.',
     'ppp_ipsec_secret_missing' => 'Set the server\'s "L2TP server IPsec secret" on this page before enabling L2TP encryption.',
     'ppp_ipsec_from_server' => 'L2TP encryption uses this server\'s "L2TP server IPsec secret".',
+    'unreachable_recently' => 'The server “:name” did not answer just now; the panel tries it again in a minute.',
 ];

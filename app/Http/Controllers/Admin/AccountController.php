@@ -110,7 +110,13 @@ class AccountController extends Controller
         $this->assertElasticGbValid($package, $validated['data_gb'] ?? null);
 
         $duration = $packageService->resolveDuration($package, (int) $validated['package_duration_id']);
-        $server = $this->resolveServerForCreate($validated, $package, $serverSelection, $packageService);
+        // No server with room or none answering is a message for the form,
+        // not a crash: the admin fixes the server and tries again.
+        try {
+            $server = $this->resolveServerForCreate($validated, $package, $serverSelection, $packageService);
+        } catch (\RuntimeException $exception) {
+            return back()->withInput()->with('error', $exception->getMessage());
+        }
 
         $clientData = $validated;
         $clientData['kyc_actor'] = $request->user();
