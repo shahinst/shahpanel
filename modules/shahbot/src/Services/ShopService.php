@@ -158,11 +158,15 @@ class ShopService
             ['code' => $codeModel, 'discount' => $discount] = $this->codes->discountFor($user, $code, $total);
         }
 
+        // The loyalty discount comes on top, on what is left after the code.
+        $loyalty = app(LoyaltyService::class)->discount($user, number_format(max(0, (float) $total - (float) $discount), 2, '.', ''));
+
         return [
             'row' => $row,
             'total' => $total,
             'discount' => $discount,
-            'payable' => number_format(max(0, (float) $total - (float) $discount), 2, '.', ''),
+            'loyalty' => $loyalty,
+            'payable' => number_format(max(0, (float) $total - (float) $discount - (float) $loyalty), 2, '.', ''),
             'code' => $codeModel,
             'gb' => $gb,
         ];
@@ -188,6 +192,10 @@ class ShopService
                 $this->codes->consumeDiscount($user, $quote['code'], $quote['discount']);
             }
 
+            if ((float) $quote['loyalty'] > 0) {
+                $this->codes->transfer($user, $quote['loyalty'], 'Bot loyalty discount');
+            }
+
             $account = $this->purchases->purchase($client, $quote['row']['package'], $quote['row']['duration'], $quote['gb']);
 
             // The name the buyer chose is the account's label in the panel and
@@ -203,7 +211,7 @@ class ShopService
                 'package_duration_id' => $quote['row']['duration']->id,
                 'type' => 'buy',
                 'amount' => $quote['payable'],
-                'discount' => $quote['discount'],
+                'discount' => number_format((float) $quote['discount'] + (float) $quote['loyalty'], 2, '.', ''),
                 'discount_code' => $quote['code']?->code,
                 'data_gb' => $quote['gb'],
             ]);
@@ -218,13 +226,45 @@ class ShopService
     /**
      * One free (or cheap) test service per Telegram user.
      */
+    /**
+     * Whether the trial must wait for the user's phone number.
+     */
+    public function trialNeedsPhone(BotUser $user): bool
+    {
+        return $this->settings->bool('test_requires_phone') && blank($user->phone);
+    }
+
+    /**
+     * One trial per person, not per bot user: the same Telegram account in
+     * another agent's bot, or another Telegram account with the same phone,
+     * already had it. Both cost the same servers.
+     */
+    public function trialTakenElsewhere(BotUser $user): bool
+    {
+        return BotUser::query()
+            ->whereKeyNot($user->id)
+            ->whereNotNull('test_used_at')
+            ->where(function ($query) use ($user): void {
+                $query->where('telegram_id', $user->telegram_id);
+
+                if (filled($user->phone)) {
+                    $query->orWhere('phone', $user->phone);
+                }
+            })
+            ->exists();
+    }
+
     public function trial(BotUser $user): BotOrder
     {
+        if ($this->trialNeedsPhone($user)) {
+            throw new InvalidArgumentException(__('shahbot::bot.test_phone_first'));
+        }
+
         if (! $this->settings->bool('test_enabled')) {
             throw new InvalidArgumentException(__('shahbot::bot.test_disabled'));
         }
 
-        if ($user->test_used_at !== null) {
+        if ($user->test_used_at !== null || $this->trialTakenElsewhere($user)) {
             throw new InvalidArgumentException(__('shahbot::bot.test_used'));
         }
 

@@ -18,12 +18,14 @@ class BotInstance extends Model
 {
     /** Settings an agent may set for their own bot. */
     public const OWN_SETTINGS = [
-        'admin_chat_ids', 'card_number', 'card_holder', 'card_bank', 'card_note',
+        'admin_chat_ids', 'support_chat_ids', 'card_number', 'card_holder', 'card_bank', 'card_note',
         'welcome_text', 'support_text', 'channels', 'rules_text',
         // The agent's own brand. These are deliberately plain texts the owner
         // writes, not a fixed set of fields: every reseller advertises
         // different things, and a free text box covers what a column cannot.
         'brand_name', 'about_text', 'contact_text', 'faq_text',
+        // The mini app's look: a #rrggbb accent and an https logo address.
+        'brand_color', 'brand_logo',
     ];
 
     protected $table = 'shahbot_bots';

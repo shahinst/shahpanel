@@ -2,6 +2,8 @@
 
 namespace Modules\ShahBot\Services;
 
+use Illuminate\Support\Facades\Cache;
+use Modules\ShahBot\Jobs\AnnounceBotMove;
 use Modules\ShahBot\Models\BotInstance;
 use Modules\ShahBot\Support\BotContext;
 use Modules\ShahBot\Support\BotSettings;
@@ -31,6 +33,12 @@ class WebhookService
 
             if ($bot !== null && $result['ok']) {
                 $bot->forceFill(['username' => $this->settings->get('bot_username') ?: $bot->username])->save();
+
+                $oldToken = Cache::pull('shahbot:bot-move:'.$bot->id);
+
+                if ($oldToken !== null && (string) $bot->username !== '') {
+                    AnnounceBotMove::dispatch($bot->id, $oldToken, (string) $bot->username);
+                }
             }
 
             return $result;
@@ -83,19 +91,27 @@ class WebhookService
             return $this->sendTestMessage($username);
         }
 
-        $result = $this->telegram->call('setWebhook', [
-            'url' => $this->webhookUrl(),
-            'secret_token' => $this->settings->webhookSecret(),
-            'allowed_updates' => json_encode(['message', 'callback_query', 'pre_checkout_query']),
-            'max_connections' => 20,
-            'drop_pending_updates' => 'true',
-        ]);
+        $result = $this->registerWebhook(true);
 
         if (! ($result['ok'] ?? false)) {
             return ['ok' => false, 'message' => (string) ($result['description'] ?? '')];
         }
 
         return $this->sendTestMessage($username);
+    }
+
+    /**
+     * A fresh connect drops what queued up meanwhile; a repair keeps it.
+     */
+    public function registerWebhook(bool $dropPending): array
+    {
+        return $this->telegram->call('setWebhook', [
+            'url' => $this->webhookUrl(),
+            'secret_token' => $this->settings->webhookSecret(),
+            'allowed_updates' => json_encode(['message', 'callback_query', 'pre_checkout_query']),
+            'max_connections' => 20,
+            'drop_pending_updates' => $dropPending ? 'true' : 'false',
+        ]);
     }
 
     /**

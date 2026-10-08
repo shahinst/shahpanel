@@ -35,6 +35,7 @@ class BotSettings
             'proxy' => '',
             'owner_user_id' => '',
             'admin_chat_ids' => '',
+            'support_chat_ids' => '',
 
             // Agents
             'agency_enabled' => '0',
@@ -46,6 +47,7 @@ class BotSettings
             'sales_enabled' => '1',
             'closed_text' => 'فروش در حال حاضر متوقف است. کمی بعد دوباره سر بزنید.',
             'test_enabled' => '0',
+            'test_requires_phone' => '0',
             'test_duration_id' => '',
             'renew_enabled' => '1',
             'show_portal_link' => '1',
@@ -80,6 +82,17 @@ class BotSettings
             'reminder_enabled' => '1',
             'reminder_days' => '2',
             'low_traffic_percent' => '10',
+            'extra_gb_price' => '0',
+            'extra_gb_options' => '5, 10, 20',
+            'loyalty_tiers' => '',
+            'outage_comp_enabled' => '0',
+            'outage_comp_minutes' => '30',
+            'auto_answer_enabled' => '1',
+            'low_balance_alert' => '0',
+            'winback_enabled' => '0',
+            'winback_days' => '3',
+            'winback_percent' => '15',
+            'winback_valid_days' => '7',
 
             // Service operations
             'transfer_enabled' => '1',
@@ -186,6 +199,25 @@ class BotSettings
             $this->lines('admin_chat_ids'),
             fn (string $id): bool => preg_match('/^-?\d+$/', $id) === 1
         ))));
+    }
+
+    /**
+     * Support operators: they get the tickets and answer them, and nothing
+     * else (no receipts, sales, wallet or admin menu).
+     *
+     * @return list<int>
+     */
+    public function supportChatIds(): array
+    {
+        return array_values(array_diff(array_unique(array_map('intval', array_filter(
+            $this->lines('support_chat_ids'),
+            fn (string $id): bool => preg_match('/^-?\d+$/', $id) === 1
+        ))), $this->adminChatIds()));
+    }
+
+    public function isSupportChat(int|string $chatId): bool
+    {
+        return in_array((int) $chatId, $this->supportChatIds(), true);
     }
 
     public function isAdminChat(int|string $chatId): bool

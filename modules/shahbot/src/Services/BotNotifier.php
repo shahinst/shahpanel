@@ -30,6 +30,18 @@ class BotNotifier
         }
     }
 
+    /**
+     * Tickets: the admins and the support operators.
+     */
+    public function support(string $text, ?array $keyboard = null): void
+    {
+        app(BotTexts::class)->apply();
+
+        foreach (array_merge($this->settings->adminChatIds(), $this->settings->supportChatIds()) as $chatId) {
+            $this->telegram->sendMessage($chatId, $text, $keyboard);
+        }
+    }
+
     public function adminsPhoto(string $fileId, string $caption, ?array $keyboard = null): void
     {
         foreach ($this->settings->adminChatIds() as $chatId) {

@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Modules\ShahBot\Http\Controllers\MiniAppController;
+use Modules\ShahBot\Http\Controllers\OpenAppController;
 use Modules\ShahBot\Http\Controllers\PaymentReturnController;
 use Modules\ShahBot\Http\Controllers\ResellerIpnController;
 use Modules\ShahBot\Http\Controllers\WebhookController;
@@ -9,6 +10,13 @@ use Modules\ShahBot\Http\Controllers\WebhookController;
 Route::post('/shahbot/webhook/{secret}', WebhookController::class)
     ->where('secret', '[A-Za-z0-9]{20,100}')
     ->name('shahbot.webhook');
+
+// From a bot button to the customer's VPN app; signed for one account.
+Route::get('/shahbot/open/{account}/{app}', OpenAppController::class)
+    ->whereNumber('account')
+    ->where('app', '[a-z0-9]{2,20}')
+    ->middleware('throttle:60,1')
+    ->name('shahbot.open');
 
 Route::get('/shahbot/pay/{uuid}', PaymentReturnController::class)
     ->where('uuid', '[0-9a-fA-F-]{36}')

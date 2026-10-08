@@ -59,6 +59,14 @@
                     <input type="text" name="brand_name" value="{{ old('brand_name', $values['brand_name'] ?? '') }}" class="form-control" maxlength="80">
                     <div class="text-muted small">{{ __('shahbot::admin.brand_name_hint') }}</div>
                 </div>
+                <div class="col-md-4">
+                    <label class="form-label">{{ __('shahbot::admin.brand_color') }}</label>
+                    <input type="color" name="brand_color" value="{{ old('brand_color', $values['brand_color'] ?? '#7c6cff') }}" class="form-control form-control-color">
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label">{{ __('shahbot::admin.brand_logo') }}</label>
+                    <input type="url" name="brand_logo" value="{{ old('brand_logo', $values['brand_logo'] ?? '') }}" class="form-control" dir="ltr" placeholder="https://example.com/logo.png">
+                </div>
                 <div class="col-md-6">
                     <label class="form-label">{{ __('shahbot::admin.about_text') }}</label>
                     <textarea name="about_text" rows="4" class="form-control">{{ old('about_text', $values['about_text'] ?? '') }}</textarea>
@@ -81,6 +89,9 @@
                 <div class="col-md-6">
                     <label class="form-label">{{ __('shahbot::admin.admin_chat_ids') }}</label>
                     <textarea name="admin_chat_ids" rows="2" class="form-control" dir="ltr">{{ old('admin_chat_ids', $values['admin_chat_ids'] ?? '') }}</textarea>
+                    <label class="form-label mt-2">{{ __('shahbot::admin.support_chat_ids') }}</label>
+                    <textarea name="support_chat_ids" rows="2" class="form-control" dir="ltr">{{ old('support_chat_ids', $values['support_chat_ids'] ?? '') }}</textarea>
+                    <div class="text-muted small">{{ __('shahbot::admin.support_chat_ids_hint') }}</div>
                 </div>
                 <div class="col-md-4"><label class="form-label">{{ __('shahbot::admin.card_number') }}</label><input type="text" name="card_number" value="{{ old('card_number', $values['card_number'] ?? '') }}" class="form-control" dir="ltr"></div>
                 <div class="col-md-4"><label class="form-label">{{ __('shahbot::admin.card_holder') }}</label><input type="text" name="card_holder" value="{{ old('card_holder', $values['card_holder'] ?? '') }}" class="form-control"></div>

@@ -68,6 +68,30 @@ class ShahBotSecondAgentTest extends TestCase
         }
     }
 
+    public function test_a_new_token_has_the_old_bot_send_customers_the_new_link(): void
+    {
+        \Illuminate\Support\Facades\Bus::fake([\Modules\ShahBot\Jobs\AnnounceBotMove::class]);
+        $agent = $this->makeAgent();
+        $bot = $this->bot($agent, 'm');
+        $oldToken = $bot->token();
+        BotUser::query()->create(['bot_id' => $bot->id, 'telegram_id' => 7501, 'first_name' => 'Fan']);
+        Http::swap(new \Illuminate\Http\Client\Factory);
+        Http::fake(['api.telegram.org/*' => Http::response(['ok' => true, 'result' => ['username' => 'new_nova_bot']])]);
+
+        $this->actingAs($agent)->post(route('agent.shahbot.my-bot.update'), ['bot_token' => '888888:'.str_repeat('n', 35), 'admin_chat_ids' => '42'])->assertSessionHasNoErrors();
+        app(\Modules\ShahBot\Services\WebhookService::class)->connectBot($bot->fresh());
+
+        \Illuminate\Support\Facades\Bus::assertDispatched(\Modules\ShahBot\Jobs\AnnounceBotMove::class, function ($job) use ($bot, $oldToken) {
+            return $job->botId === $bot->id && $job->newUsername === 'new_nova_bot' && \Illuminate\Support\Facades\Crypt::decryptString($job->oldTokenEnc) === $oldToken;
+        });
+
+        // The job writes through the old token, in each customer's language.
+        Http::swap(new \Illuminate\Http\Client\Factory);
+        Http::fake(['api.telegram.org/*' => Http::response(['ok' => true])]);
+        (new \Modules\ShahBot\Jobs\AnnounceBotMove($bot->id, \Illuminate\Support\Facades\Crypt::encryptString($oldToken), 'new_nova_bot'))->handle();
+        Http::assertSent(fn (Request $r) => str_contains($r->url(), '/bot'.$oldToken.'/sendMessage') && str_contains((string) $r['text'], 't.me/new_nova_bot'));
+    }
+
     public function test_an_agent_bot_needs_only_its_owner_access(): void
     {
         $agent = $this->makeAgent();

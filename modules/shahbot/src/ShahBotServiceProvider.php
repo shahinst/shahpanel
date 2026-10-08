@@ -55,6 +55,8 @@ class ShahBotServiceProvider extends ServiceProvider
                 Console\RemindCommand::class,
                 Console\GatewaySyncCommand::class,
                 Console\LotteryCommand::class,
+                Console\WebhookCheckCommand::class,
+                Console\OutageCommand::class,
             ]);
         }
 
@@ -66,6 +68,8 @@ class ShahBotServiceProvider extends ServiceProvider
             $schedule->command('shahbot:gateway-sync')->everyMinute()->withoutOverlapping(5)->name('shahbot.gateway-sync');
             $schedule->command('shahbot:lottery')->everyFiveMinutes()->withoutOverlapping(10)->name('shahbot.lottery');
             $schedule->command('shahbot:remind')->hourlyAt(17)->withoutOverlapping()->name('shahbot.remind');
+            $schedule->command('shahbot:webhook-check')->everyTenMinutes()->withoutOverlapping(10)->name('shahbot.webhook-check');
+            $schedule->command('shahbot:outages')->everyFiveMinutes()->withoutOverlapping(10)->runInBackground()->name('shahbot.outages');
         });
     }
 }

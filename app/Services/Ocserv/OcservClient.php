@@ -100,6 +100,20 @@ final class OcservClient
     }
 
     /**
+     * The agent's own report: always "ok", and from the bundled ocserv-api
+     * also the size of its client address pool and the sessions using it.
+     *
+     * @return array<string, mixed>
+     */
+    public function health(): array
+    {
+        $response = $this->request('get', '/api/health');
+        $this->assertSuccess($response, [200]);
+
+        return (array) $response->json();
+    }
+
+    /**
      * @return list<array{username: string, group: ?string, locked: bool, max_sessions: int|null}>
      */
     public function listUsers(): array

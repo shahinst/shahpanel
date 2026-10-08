@@ -7,6 +7,7 @@ use App\Services\ClientDisplayPricingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -57,6 +58,7 @@ class MyBotController extends Controller
         $data = $request->validate([
             'bot_token' => ['nullable', 'string', 'regex:/^\d{5,}:[A-Za-z0-9_-]{30,}$/'],
             'admin_chat_ids' => ['nullable', 'string', 'max:500'],
+            'support_chat_ids' => ['nullable', 'string', 'max:500'],
             'card_number' => ['nullable', 'string', 'max:40'],
             'card_holder' => ['nullable', 'string', 'max:100'],
             'card_bank' => ['nullable', 'string', 'max:100'],
@@ -69,6 +71,8 @@ class MyBotController extends Controller
             'np_ipn_secret' => ['nullable', 'string', 'max:200'],
             'np_sandbox' => ['nullable', 'boolean'],
             'brand_name' => ['nullable', 'string', 'max:80'],
+            'brand_color' => ['nullable', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'brand_logo' => ['nullable', 'url:https', 'max:300'],
             'about_text' => ['nullable', 'string', 'max:3500'],
             'contact_text' => ['nullable', 'string', 'max:1000'],
             'faq_text' => ['nullable', 'string', 'max:3500'],
@@ -88,6 +92,12 @@ class MyBotController extends Controller
 
             if ($taken) {
                 return back()->withErrors(['bot_token' => __('shahbot::admin.token_in_use')])->withInput();
+            }
+
+            // A new token on a bot that had customers: once the new bot is
+            // connected, the old one tells them where it went (see WebhookService).
+            if ($bot->exists && $bot->token() !== '' && $bot->token() !== $data['bot_token'] && BotUser::query()->where('bot_id', $bot->id)->exists()) {
+                Cache::put('shahbot:bot-move:'.$bot->id, $bot->token_enc, now()->addDays(7));
             }
 
             $bot->setToken($data['bot_token']);

@@ -374,4 +374,48 @@ return [
     'app_sent' => 'The config file and QR were sent to the bot chat.',
     'app_send_wg_only' => 'Sending files is only for WireGuard accounts.',
     'give_revoked' => '↩️ :bot 为您添加的账户“:account”已从您的服务中移除。',
+    'admin_receipt_duplicate' => '⚠️ <b>疑似重复凭证：</b>同样的图片或流水号已出现在付款 :ids 中。批准前请在银行账户中核实到账。',
+    'test_phone_first' => '要获取测试账户，请先用下面的按钮分享你的手机号，然后再次点击测试按钮。',
+    'winback_offer' => "🎁 <b>我们想念你！</b>
+你的服务「:name」已到期。此代码可在下次购买或续费时优惠 :percent%：
+<code>:code</code>
+有效期至 :date · 仅限一次",
+    'btn_extra_gb' => "➕ 加购流量",
+    'extra_gb_option' => ":gb GB",
+    'extra_gb_choose' => "➕ <b>为「:name」加购流量</b>
+到期时间和已用流量不变，只增加流量上限。",
+    'extra_gb_confirm' => "➕ 为「:name」增加 :gb GB？
+价格：:price
+你的余额：:balance",
+    'extra_gb_done' => "✅ 已为你的服务增加 :gb GB。",
+    'extra_gb_tx' => "为 :name 加购 :gb GB",
+    'invoice_loyalty_line' => "
+⭐️ 会员折扣（:percent%）：−:discount",
+    'btn_family' => "👨‍👩‍👧 家庭",
+    'btn_family_invite' => "➕ 邀请成员",
+    'btn_family_services' => "👨‍👩‍👧 家庭服务",
+    'family_title' => "👨‍👩‍👧 <b>与家人共享「:name」</b>\n成员（:count / :max）可以获取此服务的配置；续费和付款仍由你负责。点击成员可将其移除。",
+    'family_invite' => "🔗 把这个链接发给家人，「:name」就会加入他的服务：\n:link\n链接仅可使用一次，有效 :hours 小时。",
+    'family_joined' => "✅ 已与你共享服务「:name」，可在「家庭服务」中找到。",
+    'family_services' => "👨‍👩‍👧 与你共享的服务：",
+    'family_none' => "还没有人与你共享服务。",
+    'family_full' => "此服务已达到 :max 名家庭成员上限。",
+    'family_invite_invalid' => "此邀请链接无效或已被使用。",
+    'family_own_account' => "这个服务本来就是你的。",
+    'btn_usage' => "📊 用量",
+    'usage_report' => "📊 <b>「:name」的用量</b>\n\n:chart\n\n总用量：:used / :limit（:percent%）",
+    'usage_no_history' => "此服务尚无每日记录。",
+    'btn_server_status' => "📡 服务器状态",
+    'server_status' => "📡 <b>你的服务器</b>\n\n:lines",
+    'server_up' => "正常",
+    'server_down' => "中断中，我们正在处理",
+    'outage_compensated' => "🛠 服务「:name」的服务器中断了约 :minutes 分钟。这段时间已补到你的服务中；新的到期时间：:date",
+    'open_app_hint' => "如果 :app 没有自动打开，请点击下面的按钮，或把订阅链接粘贴到应用中。",
+    'auto_answer' => "💡 这也许能回答你的问题：\n\n<b>:title</b>\n:body",
+    'btn_auto_solved' => "✅ 问题已解决",
+    'btn_auto_send' => "📨 没有，发送给客服",
+    'auto_answer_thanks' => "🙏 很高兴问题解决了。",
+    'admin_balance_line' => "\n💰 你的钱包余额：:balance",
+    'low_balance_alert' => "⚠️ <b>你的钱包余额不足：</b>:balance（低于 :threshold）。\n机器人每笔销售都从这个钱包扣款，余额用完后机器人将无法销售。请及时充值。",
+    'bot_moved' => "📢 <b>我们的机器人已搬家。</b>\n今后请使用新的机器人，你的服务和钱包都已在那里。只需点一次 /start：\n:link",
 ];

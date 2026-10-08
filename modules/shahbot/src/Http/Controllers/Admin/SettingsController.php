@@ -18,8 +18,8 @@ use Modules\ShahBot\Support\BotSettings;
 class SettingsController extends Controller
 {
     protected const BOOLEANS = [
-        'sales_enabled', 'test_enabled', 'renew_enabled', 'show_portal_link', 'topup_enabled',
-        'referral_enabled', 'referral_first_only', 'require_phone', 'iran_phone_only', 'reminder_enabled',
+        'sales_enabled', 'test_enabled', 'test_requires_phone', 'renew_enabled', 'show_portal_link', 'topup_enabled',
+        'referral_enabled', 'referral_first_only', 'require_phone', 'iran_phone_only', 'reminder_enabled', 'winback_enabled', 'auto_answer_enabled', 'outage_comp_enabled',
         'pay_zarinpal', 'pay_crypto', 'pay_stars', 'agency_enabled', 'mini_app_enabled', 'wheel_enabled', 'wheel_buyers_only', 'transfer_enabled', 'location_enabled', 'refund_enabled',
     ];
 
@@ -50,6 +50,7 @@ class SettingsController extends Controller
             'proxy' => ['nullable', 'string', 'max:255', 'regex:/^(https?|socks5h?):\/\//'],
             'owner_user_id' => ['nullable', 'integer'],
             'admin_chat_ids' => ['nullable', 'string', 'max:1000'],
+            'support_chat_ids' => ['nullable', 'string', 'max:1000'],
             'closed_text' => ['nullable', 'string', 'max:1000'],
             'test_duration_id' => ['nullable', 'integer'],
             'topup_min' => ['nullable', 'numeric', 'min:0'],
@@ -73,6 +74,14 @@ class SettingsController extends Controller
             'rules_text' => ['nullable', 'string', 'max:3500'],
             'reminder_days' => ['nullable', 'integer', 'min:1', 'max:30'],
             'low_traffic_percent' => ['nullable', 'integer', 'min:0', 'max:90'],
+            'extra_gb_price' => ['nullable', 'numeric', 'min:0'],
+            'extra_gb_options' => ['nullable', 'string', 'max:100'],
+            'loyalty_tiers' => ['nullable', 'string', 'max:500'],
+            'outage_comp_minutes' => ['nullable', 'integer', 'min:5', 'max:1440'],
+            'low_balance_alert' => ['nullable', 'numeric', 'min:0'],
+            'winback_days' => ['nullable', 'integer', 'min:1', 'max:30'],
+            'winback_percent' => ['nullable', 'integer', 'min:1', 'max:90'],
+            'winback_valid_days' => ['nullable', 'integer', 'min:1', 'max:60'],
             'welcome_text' => ['nullable', 'string', 'max:3500'],
             'support_text' => ['nullable', 'string', 'max:1000'],
             'tab' => ['nullable', 'string'],

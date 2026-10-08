@@ -26,7 +26,7 @@ class TicketService
         $ticket->messages()->create(['from_admin' => false, 'author' => $user->displayName(), 'body' => mb_substr($text, 0, 4000)]);
         $ticket->update(['status' => BotTicket::OPEN, 'last_message_at' => now()]);
 
-        $this->notifier->admins(
+        $this->notifier->support(
             __('shahbot::bot.admin_new_ticket', [
                 'id' => $ticket->id,
                 'user' => e($user->displayName()),

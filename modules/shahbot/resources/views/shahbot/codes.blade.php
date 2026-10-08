@@ -51,6 +51,12 @@
             @if ($kind === 'discount')
                 <div class="col-md-12">
                     <label class="form-check"><input type="checkbox" name="first_purchase_only" value="1" class="form-check-input"> {{ __('shahbot::admin.first_purchase_only') }}</label>
+                    <label class="form-check"><input type="checkbox" name="flash" value="1" class="form-check-input"> {{ __('shahbot::admin.flash') }}</label>
+                    <select name="flash_audience" class="form-select form-select-sm mt-1">
+                        @foreach (['all', 'customers', 'no_service'] as $audience)
+                            <option value="{{ $audience }}">{{ __('shahbot::admin.audience_'.$audience) }}</option>
+                        @endforeach
+                    </select>
                 </div>
             @endif
             <div class="col-md-1"><button class="btn btn-primary w-100">{{ __('shahbot::admin.save') }}</button></div>
