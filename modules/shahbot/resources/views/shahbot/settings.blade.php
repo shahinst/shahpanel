@@ -60,6 +60,9 @@
                         <label class="form-label">{{ __('shahbot::admin.admin_chat_ids') }}</label>
                         <textarea name="admin_chat_ids" rows="3" class="form-control" dir="ltr">{{ $settings->get('admin_chat_ids') }}</textarea>
                         <div class="sb-muted mt-1">{{ __('shahbot::admin.admin_chat_ids_hint') }}</div>
+                        <label class="form-label mt-2">{{ __('shahbot::admin.support_chat_ids') }}</label>
+                        <textarea name="support_chat_ids" rows="2" class="form-control" dir="ltr">{{ $settings->get('support_chat_ids') }}</textarea>
+                        <div class="sb-muted mt-1">{{ __('shahbot::admin.support_chat_ids_hint') }}</div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">{{ __('shahbot::admin.webhook_url') }}</label>
@@ -85,6 +88,10 @@
                     <textarea name="closed_text" rows="2" class="form-control">{{ $settings->get('closed_text') }}</textarea>
                 </div>
                 {!! $toggle('renew_enabled') !!}
+                <div class="row g-2 mb-2">
+                    <div class="col-md-4"><label class="form-label">{{ __('shahbot::admin.extra_gb_price') }}</label><input type="number" min="0" step="any" name="extra_gb_price" value="{{ $settings->get('extra_gb_price') }}" class="form-control"></div>
+                    <div class="col-md-4"><label class="form-label">{{ __('shahbot::admin.extra_gb_options') }}</label><input type="text" name="extra_gb_options" value="{{ $settings->get('extra_gb_options') }}" class="form-control" dir="ltr"></div>
+                </div>
                 {!! $toggle('show_portal_link') !!}
                 {!! $toggle('mini_app_enabled') !!}
                 <p class="sb-muted">{{ __('shahbot::admin.mini_app_hint') }}</p>
@@ -96,6 +103,7 @@
                 <p class="sb-muted">{{ __('shahbot::admin.ops_hint') }}</p>
                 <hr>
                 {!! $toggle('test_enabled') !!}
+                {!! $toggle('test_requires_phone') !!}
                 <div class="mb-2" style="max-width:520px">
                     <label class="form-label">{{ __('shahbot::admin.test_duration') }}</label>
                     <select name="test_duration_id" class="form-select">
@@ -180,6 +188,17 @@
                 {!! $toggle('referral_first_only') !!}
                 <hr>
                 {!! $toggle('reminder_enabled') !!}
+                <div class="mb-2"><label class="form-label">{{ __('shahbot::admin.loyalty_tiers') }}</label><textarea name="loyalty_tiers" rows="3" class="form-control" dir="ltr" placeholder="2000000 = 5&#10;5000000 = 10">{{ $settings->get('loyalty_tiers') }}</textarea><div class="sb-muted">{{ __('shahbot::admin.loyalty_tiers_hint') }}</div></div>
+                {!! $toggle('outage_comp_enabled') !!}
+                <div class="row g-2 mb-2"><div class="col-md-4"><label class="form-label">{{ __('shahbot::admin.outage_comp_minutes') }}</label><input type="number" min="5" max="1440" name="outage_comp_minutes" value="{{ $settings->get('outage_comp_minutes') }}" class="form-control"></div></div>
+                {!! $toggle('auto_answer_enabled') !!}
+                <div class="row g-2 mb-2"><div class="col-md-4"><label class="form-label">{{ __('shahbot::admin.low_balance_alert') }}</label><input type="number" min="0" step="any" name="low_balance_alert" value="{{ $settings->get('low_balance_alert') }}" class="form-control"></div></div>
+                {!! $toggle('winback_enabled') !!}
+                <div class="row g-2 mb-2">
+                    @foreach (['winback_days' => [1, 30], 'winback_percent' => [1, 90], 'winback_valid_days' => [1, 60]] as $key => [$min, $max])
+                        <div class="col-md-3"><label class="form-label">{{ __('shahbot::admin.'.$key) }}</label><input type="number" min="{{ $min }}" max="{{ $max }}" name="{{ $key }}" value="{{ $settings->get($key) }}" class="form-control"></div>
+                    @endforeach
+                </div>
                 <div class="row g-3">
                     <div class="col-md-3"><label class="form-label">{{ __('shahbot::admin.reminder_days') }}</label><input type="number" min="1" max="30" name="reminder_days" value="{{ $settings->get('reminder_days') }}" class="form-control"></div>
                     <div class="col-md-4"><label class="form-label">{{ __('shahbot::admin.low_traffic_percent') }}</label><input type="number" min="0" max="90" name="low_traffic_percent" value="{{ $settings->get('low_traffic_percent') }}" class="form-control"></div>

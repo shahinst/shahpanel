@@ -152,6 +152,322 @@ class ShahBotTest extends TestCase
             && str_contains((string) $request['text'], 'Sara'));
     }
 
+    public function test_a_reused_receipt_is_flagged_to_the_admin(): void
+    {
+        $payments = app(PaymentService::class);
+        $first = $payments->start($this->botUser(), '100000');
+        $payments->attachReceipt($first, 'file-a', 'پیگیری ۱۲۳۴۵۶۷۸۹', 'uniq-a');
+        $this->assertSame('123456789', $first->fresh()->receipt_ref);
+        $this->assertSame([], $payments->duplicatesOf($first->fresh()));
+
+        // Another customer sends the same picture; a third only the same tracking number.
+        $samePicture = $payments->start($this->botUser(2002, ['first_name' => 'Sara']), '100000');
+        $payments->attachReceipt($samePicture, 'file-b', null, 'uniq-a');
+        $sameNumber = $payments->start($this->botUser(2003, ['first_name' => 'Nima']), '100000');
+        $payments->attachReceipt($sameNumber, 'file-c', 'ref 123456789', 'uniq-c');
+
+        $this->assertSame([$first->id], $payments->duplicatesOf($samePicture->fresh()));
+        // The second receipt had no number, so only the first shares it.
+        $this->assertSame([$first->id], $payments->duplicatesOf($sameNumber->fresh()));
+        Http::assertSent(fn ($request) => str_contains($request->url(), '/sendPhoto')
+            && str_contains((string) $request['caption'], '#'.$first->id));
+
+        // A receipt the admin turned down is no evidence against the next one.
+        $first->forceFill(['status' => BotPayment::REJECTED])->save();
+        $this->assertSame([], $payments->duplicatesOf($samePicture->fresh()));
+    }
+
+    public function test_a_trial_is_one_per_person_across_bots_and_phones(): void
+    {
+        $shop = app(\Modules\ShahBot\Services\ShopService::class);
+        $used = $this->botUser(3001, ['phone' => '+989120000001', 'test_used_at' => now()]);
+
+        // The same Telegram account in another agent's bot, or another account with the same phone.
+        $this->assertTrue($shop->trialTakenElsewhere($this->botUser(3001, ['bot_id' => 7])));
+        $this->assertTrue($shop->trialTakenElsewhere($this->botUser(3002, ['phone' => '+989120000001'])));
+        $this->assertFalse($shop->trialTakenElsewhere($fresh = $this->botUser(3003, ['phone' => '+989120000003'])));
+        $this->assertFalse($shop->trialTakenElsewhere($used));
+
+        app(BotSettings::class)->set(['test_enabled' => '1', 'test_requires_phone' => '1']);
+        $this->assertTrue($shop->trialNeedsPhone($noPhone = $this->botUser(3004)));
+        $this->assertFalse($shop->trialNeedsPhone($fresh));
+
+        try {
+            $shop->trial($noPhone);
+            $this->fail('A trial without a phone was handed out.');
+        } catch (\InvalidArgumentException $e) {
+            $this->assertSame(__('shahbot::bot.test_phone_first'), $e->getMessage());
+        }
+    }
+
+    public function test_a_lapsed_customer_gets_one_win_back_code(): void
+    {
+        app(BotSettings::class)->set(['winback_enabled' => '1', 'winback_days' => '3', 'winback_percent' => '20']);
+        [$package] = $this->makePackage();
+        $server = $this->makeServer();
+        $lapsed = $this->botUser(4001, ['client_user_id' => ($client = $this->makeClient($this->owner))->id]);
+        $this->makeAccount($this->owner, $server, ['package_id' => $package->id, 'client_user_id' => $client->id, 'status' => \App\Enums\AccountStatus::Expired, 'expiry_at' => now()->subDays(5)]);
+        $staying = $this->botUser(4002, ['client_user_id' => ($other = $this->makeClient($this->owner))->id]);
+        $this->makeAccount($this->owner, $server, ['package_id' => $package->id, 'client_user_id' => $other->id, 'status' => \App\Enums\AccountStatus::Expired, 'expiry_at' => now()->subDays(5)]);
+        $this->makeAccount($this->owner, $server, ['package_id' => $package->id, 'client_user_id' => $other->id, 'expiry_at' => now()->addDays(20)]);
+        // Ended only yesterday: too early to call it a lapse.
+        $recent = $this->botUser(4003, ['client_user_id' => ($third = $this->makeClient($this->owner))->id]);
+        $this->makeAccount($this->owner, $server, ['package_id' => $package->id, 'client_user_id' => $third->id, 'status' => \App\Enums\AccountStatus::Expired, 'expiry_at' => now()->subDay()]);
+
+        $winback = app(\Modules\ShahBot\Services\WinbackService::class);
+        $this->assertSame(1, $winback->run());
+        $this->assertSame(0, $winback->run());
+
+        $code = \Modules\ShahBot\Models\BotCode::query()->sole();
+        $this->assertStringStartsWith('BACK', $code->code);
+        $this->assertSame(1, (int) $code->max_uses);
+        $this->assertSame('20.00', number_format((float) $code->value, 2, '.', ''));
+        Http::assertSent(fn ($request) => str_contains($request->url(), '/sendMessage')
+            && (string) $request['chat_id'] === '4001' && str_contains((string) $request['text'], $code->code));
+        Http::assertNotSent(fn ($request) => in_array((string) ($request['chat_id'] ?? ''), ['4002', '4003'], true));
+    }
+
+    public function test_extra_data_is_charged_and_added_without_touching_expiry(): void
+    {
+        app(BotSettings::class)->set(['extra_gb_price' => '1000', 'extra_gb_options' => '۵، 10']);
+        $extra = app(\Modules\ShahBot\Services\ExtraDataService::class);
+        $this->assertSame([5, 10], $extra->sizes());
+
+        $user = $this->botUser(5001);
+        $client = app(BotUserService::class)->client($user);
+        app(WalletService::class)->credit($client, '20000.00', TransactionType::Charge);
+        [$package] = $this->makePackage();
+        // A server the panel never reaches: the limit is the panel's own record here.
+        $account = $this->makeAccount($this->owner, $this->makeServer(), [
+            'package_id' => $package->id, 'client_user_id' => $client->id,
+            'data_limit_bytes' => 10 * 1024 ** 3, 'data_used_bytes' => 9 * 1024 ** 3, 'expiry_at' => $expiry = now()->addDays(10)->startOfSecond(),
+        ]);
+        $this->app->instance(\App\Services\AccountService::class, \Mockery::mock(\App\Services\AccountService::class, function ($mock) {
+            $mock->shouldReceive('applyVolumeTopUp')->once()->andReturnUsing(function ($account, $gb) {
+                $account->forceFill(['data_limit_bytes' => $account->data_limit_bytes + (int) ($gb * 1024 ** 3)])->save();
+
+                return $account->fresh();
+            });
+        }));
+        $extra = app(\Modules\ShahBot\Services\ExtraDataService::class);
+
+        $this->assertTrue($extra->available($user, $account));
+        $after = $extra->buy($user, $account, 10);
+
+        $this->assertSame(20 * 1024 ** 3, (int) $after->data_limit_bytes);
+        $this->assertSame($expiry->timestamp, $after->expiry_at->timestamp);
+        $this->assertSame('10000.00', $this->balance($client));
+
+        // Sizes the admin did not offer, and agents' bots, get nothing.
+        $this->expectException(\InvalidArgumentException::class);
+        $extra->buy($this->botUser(5001, ['bot_id' => 9]), $account, 10);
+    }
+
+    public function test_a_flash_sale_needs_limits_and_is_announced(): void
+    {
+        $this->actingAs($this->makeAdmin());
+        $base = ['kind' => 'discount', 'value_type' => 'percent', 'value' => '30', 'flash' => '1', 'flash_audience' => 'customers'];
+
+        $this->post(route('admin.shahbot.codes.store'), $base + ['code' => 'NOLIMIT'])->assertSessionHasErrors('flash');
+        $this->assertFalse(\Modules\ShahBot\Models\BotCode::query()->where('code', 'NOLIMIT')->exists());
+
+        $this->post(route('admin.shahbot.codes.store'), $base + ['code' => 'FLASH30', 'max_uses' => '50', 'expires_at' => \Morilog\Jalali\Jalalian::fromCarbon(now()->addDay())->format('Y/m/d')])
+            ->assertSessionHasNoErrors();
+
+        $broadcast = \Modules\ShahBot\Models\BotBroadcast::query()->sole();
+        $this->assertSame('customers', $broadcast->audience);
+        $this->assertStringContainsString('FLASH30', $broadcast->text);
+        $this->assertMatchesRegularExpression('/50|۵۰/u', $broadcast->text);
+    }
+
+    public function test_loyalty_tiers_follow_what_the_customer_spent(): void
+    {
+        app(BotSettings::class)->set(['loyalty_tiers' => "۱٬۰۰۰ = 5\n5000 = 10\nbroken line"]);
+        $loyalty = app(\Modules\ShahBot\Services\LoyaltyService::class);
+        $this->assertSame([['min' => 5000.0, 'percent' => 10.0], ['min' => 1000.0, 'percent' => 5.0]], $loyalty->tiers());
+
+        $user = $this->botUser(6001);
+        $this->assertSame('0.00', $loyalty->discount($user, '2000'));
+        $this->assertSame(1000.0, $loyalty->status($user)['next']['min']);
+
+        \Modules\ShahBot\Models\BotOrder::query()->create(['bot_user_id' => $user->id, 'type' => 'buy', 'amount' => 1500]);
+        $this->assertSame('100.00', $loyalty->discount($user, '2000'));
+        \Modules\ShahBot\Models\BotOrder::query()->create(['bot_user_id' => $user->id, 'type' => 'renew', 'amount' => 4000]);
+        $this->assertSame('200.00', $loyalty->discount($user, '2000'));
+        // Trials are not spending.
+        \Modules\ShahBot\Models\BotOrder::query()->create(['bot_user_id' => $user->id, 'type' => 'test', 'amount' => 0]);
+        $this->assertSame(5500.0, $loyalty->spent($user));
+
+        // An agent's customers are outside the admin's scheme.
+        $this->assertSame('0.00', $loyalty->discount($this->botUser(6001, ['bot_id' => 3]), '2000'));
+    }
+
+    public function test_a_family_invite_shares_an_account_once_and_can_be_taken_back(): void
+    {
+        $family = app(\Modules\ShahBot\Services\FamilyService::class);
+        $head = $this->botUser(7101);
+        $client = app(BotUserService::class)->client($head);
+        [$package] = $this->makePackage();
+        $account = $this->makeAccount($this->owner, $this->makeServer(), ['package_id' => $package->id, 'client_user_id' => $client->id]);
+        $member = $this->botUser(7102);
+
+        $param = $family->invite($head, $account);
+        $this->assertStringStartsWith('fam_', $param);
+        $share = $family->join($member, substr($param, 4));
+        $this->assertTrue($family->sharedWith($member)->contains('id', $account->id));
+        $family->assertShared($member, $account);
+
+        // The link is spent; a stranger cannot reuse it.
+        try {
+            $family->join($this->botUser(7103), substr($param, 4));
+            $this->fail('A used invite was accepted.');
+        } catch (\InvalidArgumentException) {
+        }
+
+        // Handing the account to someone else ends the share with it.
+        $account->forceFill(['client_user_id' => $this->makeClient($this->owner)->id])->save();
+        $this->assertTrue($family->sharedWith($member)->isEmpty());
+        $account->forceFill(['client_user_id' => $client->id])->save();
+
+        $family->remove($head, $account->fresh(), $share->id);
+        $this->assertTrue($family->sharedWith($member)->isEmpty());
+        $this->expectException(\InvalidArgumentException::class);
+        $family->invite($member, $account->fresh());
+    }
+
+    public function test_the_usage_report_draws_the_last_week(): void
+    {
+        [$package] = $this->makePackage();
+        $account = $this->makeAccount($this->owner, $this->makeServer(), ['package_id' => $package->id, 'data_limit_bytes' => 10 * 1024 ** 3, 'data_used_bytes' => 3 * 1024 ** 3]);
+        $report = app(\Modules\ShahBot\Services\UsageReportService::class);
+        $this->assertStringContainsString(__('shahbot::bot.usage_no_history'), $report->render($account));
+
+        foreach ([[0, 2], [0, 1], [2, 1], [9, 5]] as [$daysAgo, $gb]) {
+            \App\Models\AccountUsageLog::query()->create(['account_id' => $account->id, 'rx_delta_bytes' => $gb * 1024 ** 3, 'tx_delta_bytes' => 0, 'recorded_at' => now()->subDays($daysAgo)]);
+        }
+
+        $daily = $report->daily($account);
+        $this->assertCount(7, $daily);
+        $this->assertSame(3 * 1024 ** 3, end($daily));
+        $this->assertSame(1024 ** 3, $daily[now()->subDays(2)->toDateString()]);
+        // Ten days ago is outside the week.
+        $this->assertSame(4 * 1024 ** 3, array_sum($daily));
+        $this->assertStringContainsString('████████████', $report->render($account));
+    }
+
+    public function test_an_outage_is_tracked_and_its_time_given_back(): void
+    {
+        $this->makeAdmin();
+        app(BotSettings::class)->set(['outage_comp_enabled' => '1', 'outage_comp_minutes' => '30']);
+        $user = $this->botUser(8101);
+        $client = app(BotUserService::class)->client($user);
+        [$package] = $this->makePackage();
+        $server = $this->makeServer();
+        $account = $this->makeAccount($this->owner, $server, ['package_id' => $package->id, 'client_user_id' => $client->id, 'expiry_at' => $expiry = now()->addDays(5)->startOfMinute()]);
+        $this->app->instance(\App\Services\AccountService::class, \Mockery::mock(\App\Services\AccountService::class, function ($mock) {
+            $mock->shouldReceive('updateExpiryByAdmin')->once()->andReturnUsing(function ($account, $newExpiry) {
+                $account->forceFill(['expiry_at' => $newExpiry])->save();
+
+                return $account->fresh();
+            });
+        }));
+        $outages = app(\Modules\ShahBot\Services\OutageService::class);
+
+        // One failure is not an outage; two are, from the first one on.
+        $outages->track($server, false);
+        $this->assertFalse($outages->isDown($server));
+        $outages->track($server, false);
+        $this->assertTrue($outages->isDown($server));
+        $this->assertStringContainsString('🔴', $outages->statusText([$account->load('server')]));
+
+        $this->travel(45)->minutes();
+        $this->assertSame(1, $outages->track($server, true));
+        $this->assertFalse($outages->isDown($server));
+        $this->assertSame($expiry->copy()->addMinutes(45)->timestamp, $account->fresh()->expiry_at->timestamp);
+        Http::assertSent(fn ($request) => (string) $request['chat_id'] === '8101' && str_contains((string) $request['text'], '۴۵'));
+
+        // A short blip is tracked but not paid back.
+        $outages->track($server, false);
+        $outages->track($server, false);
+        $this->travel(10)->minutes();
+        $this->assertSame(0, $outages->track($server, true));
+    }
+
+    public function test_a_support_message_a_tutorial_answers_shows_it_first(): void
+    {
+        \Modules\ShahBot\Models\BotTutorial::query()->create(['title' => 'آموزش اتصال در آیفون', 'body' => 'برنامه Streisand را نصب کنید و لینک اشتراک را وارد کنید.', 'is_active' => true]);
+        \Modules\ShahBot\Models\BotTutorial::query()->create(['title' => 'تمدید سرویس', 'body' => 'از بخش سرویس‌ها دکمهٔ تمدید را بزنید.', 'is_active' => true]);
+        $answers = app(\Modules\ShahBot\Services\AutoAnswerService::class);
+
+        // Arabic letters and a missing half-space still find the iPhone tutorial.
+        $this->assertSame('آموزش اتصال در آیفون', $answers->match('سلام، اتصال روي آيفون كار نميكنه')?->title);
+        $this->assertNull($answers->match('سلام وقت بخیر'));
+
+        $user = $this->botUser(9101);
+        $user->setStep('support');
+        $send = fn (string $text) => $this->withHeader('X-Telegram-Bot-Api-Secret-Token', str_repeat('s', 40))->postJson('/shahbot/webhook/'.str_repeat('s', 40), ['update_id' => random_int(1, 1e9), 'message' => [
+            'message_id' => 1, 'chat' => ['id' => 9101, 'type' => 'private'], 'from' => ['id' => 9101, 'first_name' => 'Ali'], 'text' => $text,
+        ]]);
+        $send('اتصال روی آیفون کار نمی‌کند');
+
+        $this->assertSame('support_pending', $user->fresh()->step);
+        $this->assertSame(0, \Modules\ShahBot\Models\BotTicket::query()->count());
+        Http::assertSent(fn ($request) => str_contains((string) ($request['text'] ?? ''), 'Streisand'));
+    }
+
+    public function test_a_low_owner_wallet_is_warned_once_per_dip(): void
+    {
+        app(BotSettings::class)->set(['low_balance_alert' => '1000']);
+        $alerts = app(\Modules\ShahBot\Services\BalanceAlertService::class);
+        $warned = fn () => Http::recorded(fn ($request) => (string) ($request['chat_id'] ?? '') === '999' && str_contains((string) ($request['text'] ?? ''), '⚠️'))->count();
+
+        $this->assertSame(1, $alerts->run());
+        $this->assertSame(0, $alerts->run());
+
+        app(WalletService::class)->credit($this->owner, '5000.00', TransactionType::Charge);
+        $this->assertSame(0, $alerts->run());
+        app(WalletService::class)->debit($this->owner, '4500.00', TransactionType::Adjustment);
+        $this->assertSame(1, $alerts->run());
+        $this->assertSame(2, $warned());
+    }
+
+    public function test_an_agent_mini_app_wears_its_own_brand(): void
+    {
+        $agent = $this->makeAgent();
+        \Illuminate\Support\Facades\DB::table('shahbot_bot_access')->insert(['user_id' => $agent->id, 'created_at' => now(), 'updated_at' => now()]);
+        $bot = new \Modules\ShahBot\Models\BotInstance(['owner_user_id' => $agent->id, 'webhook_secret' => str_repeat('k', 40), 'is_active' => true,
+            'settings' => ['brand_name' => 'Nova VPN', 'brand_color' => '#ff3366', 'brand_logo' => 'https://cdn.example/nova.png']]);
+        $bot->setToken($agent->id.'00:'.str_repeat('k', 35));
+        $bot->save();
+
+        $this->get(route('shahbot.app', $bot->id))->assertOk()
+            ->assertSee('<title>Nova VPN</title>', false)
+            ->assertSee('--accent: #ff3366', false)
+            ->assertSee('cdn.example', false);
+
+        // A colour that is not a colour never reaches the page's CSS.
+        $bot->forceFill(['settings' => ['brand_color' => 'red;}body{display:none']])->save();
+        $this->get(route('shahbot.app', $bot->id))->assertOk()->assertSee('--accent: #7c6cff', false);
+    }
+
+    public function test_a_support_operator_gets_tickets_and_nothing_else(): void
+    {
+        app(BotSettings::class)->set(['support_chat_ids' => "777\n999"]);
+        $this->assertSame([777], app(BotSettings::class)->supportChatIds());
+
+        $ticket = app(\Modules\ShahBot\Services\TicketService::class)->fromUser($this->botUser(), 'help');
+        Http::assertSent(fn ($request) => (string) ($request['chat_id'] ?? '') === '777' && str_contains((string) $request['text'], 'help'));
+
+        $press = fn (string $data) => $this->withHeader('X-Telegram-Bot-Api-Secret-Token', str_repeat('s', 40))->postJson('/shahbot/webhook/'.str_repeat('s', 40), ['update_id' => random_int(1, 1e9), 'callback_query' => [
+            'id' => 'cb', 'data' => $data, 'from' => ['id' => 777, 'first_name' => 'Op'], 'message' => ['message_id' => 5, 'chat' => ['id' => 777, 'type' => 'private']],
+        ]]);
+        $press('adm:pend');
+        Http::assertNotSent(fn ($request) => (string) ($request['chat_id'] ?? '') === '777' && str_contains((string) ($request['text'] ?? ''), 'رسید'));
+
+        $press('adm:tk:close:'.$ticket->id);
+        $this->assertSame(\Modules\ShahBot\Models\BotTicket::CLOSED, $ticket->fresh()->status);
+    }
+
     public function test_receipt_approval_moves_money_from_owner_to_user(): void
     {
         app(WalletService::class)->credit($this->owner, '500000.00', TransactionType::Charge);

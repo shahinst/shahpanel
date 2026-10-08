@@ -48,7 +48,7 @@
     <style>
         :root {
             --bg: #0b0f1e; --bg2: #121833; --card: rgba(255,255,255,.055); --line: rgba(255,255,255,.09);
-            --text: #eef1ff; --muted: #9aa3c7; --accent: #7c6cff; --accent2: #38bdf8; --ok: #34d399; --warn: #fbbf24; --bad: #f87171;
+            --text: #eef1ff; --muted: #9aa3c7; --accent: {{ $accent ?? '#7c6cff' }}; --accent2: #38bdf8; --ok: #34d399; --warn: #fbbf24; --bad: #f87171;
         }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         html, body { margin: 0; min-height: 100%; }
@@ -66,7 +66,7 @@
             background: linear-gradient(135deg, var(--accent), var(--accent2)); box-shadow: 0 8px 20px -8px var(--accent); }
 
         .balance { position: relative; overflow: hidden; border-radius: 24px; padding: 20px; margin-bottom: 18px;
-            background: linear-gradient(135deg, #6d5bff 0%, #4f46e5 45%, #0ea5e9 100%); box-shadow: 0 20px 40px -22px #6d5bff; }
+            background: linear-gradient(135deg, var(--accent) 0%, #4f46e5 45%, #0ea5e9 100%); box-shadow: 0 20px 40px -22px var(--accent); }
         .balance::after { content: ""; position: absolute; inset: auto -40px -60px auto; width: 180px; height: 180px; border-radius: 50%;
             background: rgba(255,255,255,.12); }
         .balance small { opacity: .85; font-size: 12px; }
@@ -205,7 +205,7 @@
             const plans = data.plans || [];
             const initial = (data.name || '?').trim().charAt(0);
 
-            let home = '<div class="top"><div class="brand">' + esc(@json($brand)) + '<small>' + esc(t.hello) + ' ' + esc(data.name) + '</small></div>'
+            let home = '<div class="top"><div class="brand">' + (@json($logo ?? null) ? '<img src="' + esc(@json($logo ?? null)) + '" alt="" style="height:28px;vertical-align:middle;margin-inline-end:6px;border-radius:8px">' : '') + esc(@json($brand)) + '<small>' + esc(t.hello) + ' ' + esc(data.name) + '</small></div>'
                 + '<div class="avatar">' + esc(initial) + '</div></div>'
                 + '<div class="balance"><small>' + esc(t.balance) + '</small><strong>' + fa(esc(data.balance)) + '</strong>'
                 + '<div class="chips"><span class="chip">📦 ' + fa(services.length) + ' ' + esc(t.services) + '</span>'

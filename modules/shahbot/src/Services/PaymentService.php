@@ -81,16 +81,24 @@ class PaymentService
         return $amount;
     }
 
-    public function attachReceipt(BotPayment $payment, ?string $fileId, ?string $note): BotPayment
+    /**
+     * $uniqueId is Telegram's file_unique_id: the same picture sent again, to
+     * this bot or any other, carries the same one.
+     */
+    public function attachReceipt(BotPayment $payment, ?string $fileId, ?string $note, ?string $uniqueId = null): BotPayment
     {
         if ($payment->status !== BotPayment::AWAITING_RECEIPT) {
             throw new InvalidArgumentException(__('shahbot::bot.payment_closed'));
         }
 
+        $note = $note !== null ? mb_substr($note, 0, 1000) : null;
+
         $payment->update([
             'status' => BotPayment::PENDING,
             'receipt_file_id' => $fileId,
-            'receipt_note' => $note !== null ? mb_substr($note, 0, 1000) : null,
+            'receipt_note' => $note,
+            'receipt_unique_id' => $uniqueId,
+            'receipt_ref' => self::referenceIn($note),
         ]);
 
         $user = $payment->botUser;
@@ -101,6 +109,11 @@ class PaymentService
             'amount' => format_money($payment->amount),
             'note' => e((string) $payment->receipt_note),
         ]);
+        $duplicates = $this->duplicatesOf($payment);
+
+        if ($duplicates !== []) {
+            $caption .= "\n\n".__('shahbot::bot.admin_receipt_duplicate', ['ids' => '#'.implode(', #', $duplicates)]);
+        }
         $keyboard = Keyboard::inline([[
             Keyboard::button(__('shahbot::bot.btn_approve'), 'adm:pay:ok:'.$payment->id),
             Keyboard::button(__('shahbot::bot.btn_reject'), 'adm:pay:no:'.$payment->id),
@@ -113,6 +126,54 @@ class PaymentService
         }
 
         return $payment;
+    }
+
+    /**
+     * The bank's tracking number the payer typed under the receipt, if any:
+     * the longest run of at least six digits, Persian digits included.
+     */
+    public static function referenceIn(?string $note): ?string
+    {
+        if ($note === null || preg_match_all('/\d{6,}/', western_digits($note), $matches) === 0) {
+            return null;
+        }
+
+        $runs = $matches[0];
+        usort($runs, fn (string $a, string $b): int => strlen($b) <=> strlen($a));
+
+        return mb_substr($runs[0], 0, 64);
+    }
+
+    /**
+     * Earlier receipts, in any bot, with the same picture or tracking number
+     * that were not turned down. The admin decides; a match is only a warning,
+     * since two honest payers can share neither but a cheater reuses both.
+     *
+     * @return list<int>
+     */
+    public function duplicatesOf(BotPayment $payment): array
+    {
+        if ($payment->receipt_unique_id === null && $payment->receipt_ref === null) {
+            return [];
+        }
+
+        return BotPayment::query()
+            ->whereKeyNot($payment->id)
+            ->whereIn('status', [BotPayment::PENDING, BotPayment::APPROVED])
+            ->where(function ($query) use ($payment): void {
+                if ($payment->receipt_unique_id !== null) {
+                    $query->orWhere('receipt_unique_id', $payment->receipt_unique_id);
+                }
+
+                if ($payment->receipt_ref !== null) {
+                    $query->orWhere('receipt_ref', $payment->receipt_ref);
+                }
+            })
+            ->orderBy('id')
+            ->limit(5)
+            ->pluck('id')
+            ->map(fn ($id): int => (int) $id)
+            ->all();
     }
 
     public function approve(BotPayment $payment, string $reviewer): BotPayment

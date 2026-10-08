@@ -2,6 +2,27 @@
 
 Base URL example: `https://ocserv1.example.com:9443`
 
+## Install on an ocserv server (one command)
+
+A ready implementation of this API ships in [`scripts/ocserv-api`](../scripts/ocserv-api)
+(Python standard library only, no packages to install). On a server where
+ocserv already runs with `plain` authentication:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/shahinst/shahpanel/master/scripts/ocserv-api/install.sh \
+  | sudo bash -s -- --panel-ip <PANEL_IP>
+```
+
+It installs the `ocserv-api` systemd service, enables per-user session limits
+(`config-per-user`), opens the API port to the panel IP only (ufw or iptables)
+and prints the port, username and token to enter in the panel. Options:
+`--port` (default 9443), `--cert` / `--key` (default: ocserv's own certificate),
+`--panel-ip` may be repeated. Running it again keeps the token.
+
+`GET /api/health` also returns `pool_size` (client addresses in ocserv's
+`ipv4-netmask`) and `sessions` (connected users); the watchdog module warns
+when the pool is almost full.
+
 ## Access
 
 - Reachable only from the panel server IP (nftables + API `403` for others).

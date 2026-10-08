@@ -187,6 +187,7 @@ return [
     'renew_enabled' => 'Renewal from the bot',
     'show_portal_link' => 'Show the "Service page" (client portal) button',
     'test_enabled' => 'Test accounts enabled',
+    'test_requires_phone' => 'Test accounts only after sharing a phone number (one per number, across all bots)',
     'test_duration' => 'Test account package',
     'test_duration_hint' => 'One of the test tiers (1 hour to 1 day) assigned to the sales owner. Once per Telegram user.',
     'topup_enabled' => 'Card-to-card wallet top-up',
@@ -444,4 +445,35 @@ return [
     'assign_already' => 'This account is already given to a customer; take it back first.',
     'assign_not_yours' => 'This account is not yours.',
     'assign_no_members' => 'Nobody has started your bot yet.',
+    'monitor_token' => '⚠️ The token of the bot :bot is no longer valid (Telegram refuses it). Check it in BotFather, save the new token in the panel and press connect.',
+    'monitor_polling' => '⚠️ The bot :bot is in polling mode but still has a webhook the panel could not remove; it receives nothing until it is gone. Press connect again in the panel.',
+    'monitor_repaired' => '🔧 The webhook of the bot :bot pointed to a wrong address; the panel set it back to :url. Queued messages were kept.',
+    'monitor_url' => '⚠️ The webhook of the bot :bot points to a wrong address and the panel could not fix it. Press connect in the panel. The right address: :url',
+    'monitor_error' => '⚠️ Telegram cannot deliver the messages of the bot :bot to the panel, so users get no answer.
+Telegram\'s error: :error
+Queued messages: :pending',
+    'monitor_backlog' => '⚠️ :pending messages for the bot :bot are waiting at Telegram and have not reached the panel. Check the connection and the speed of the panel server.',
+    'monitor_recovered' => '✅ The bot :bot is fine again: messages reach the panel.',
+    'winback_enabled' => 'Win-back: a few days after a service runs out, send the customer a one-time discount code (main bot only)',
+    'winback_days' => 'Days after expiry',
+    'winback_percent' => 'Win-back discount percent',
+    'winback_valid_days' => 'Code valid for (days)',
+    'extra_gb_price' => 'Price per extra GB (0 = off; main bot only)',
+    'extra_gb_options' => 'Extra data sizes (GB, comma separated)',
+    'flash' => 'Flash sale: announce it to the bot users now, with its deadline and limited stock',
+    'flash_needs_limits' => 'A flash sale needs a discount code with a use limit and a future expiry date.',
+    'flash_text' => "⚡️ <b>Flash sale!</b>
+:value off purchases and renewals, for the first :count people only.
+Code: <code>:code</code>
+⏳ Until :date",
+    'loyalty_tiers' => 'Loyalty tiers',
+    'loyalty_tiers_hint' => 'One per line: "total spent = discount percent"; e.g. 5000000 = 10 gives a customer who has spent 5,000,000 in total 10% off every new purchase. Main bot only; empty = off.',
+    'outage_comp_enabled' => 'Outage compensation: when a server comes back after an outage, add the lost time to its active accounts and tell the customers',
+    'outage_comp_minutes' => 'Shortest outage that is made up for (minutes)',
+    'auto_answer_enabled' => 'Support auto-answer: when a customer message matches a tutorial, show that tutorial before a ticket is opened',
+    'low_balance_alert' => 'Warn bot owners whose wallet drops below this amount (all bots; 0 = off)',
+    'brand_color' => 'Mini app accent colour',
+    'brand_logo' => 'Logo address (https)',
+    'support_chat_ids' => 'Numeric IDs of support operators',
+    'support_chat_ids_hint' => 'One per line. They only get tickets and can answer or close them; no receipts, sales, wallet or admin menu.',
 ];

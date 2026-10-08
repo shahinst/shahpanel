@@ -37,7 +37,10 @@ class MiniAppController extends Controller
 
         return $context->run($instance, fn () => view('shahbot::mini-app', [
             'botId' => $bot,
-            'brand' => app_display_name(),
+            // An agent's own brand, falling back to the panel's.
+            'brand' => $settings->get('brand_name') ?: app_display_name(),
+            'accent' => preg_match('/^#[0-9a-fA-F]{6}$/', (string) $settings->get('brand_color')) === 1 ? $settings->get('brand_color') : null,
+            'logo' => str_starts_with((string) $settings->get('brand_logo'), 'https://') ? $settings->get('brand_logo') : null,
             'botUsername' => $settings->get('bot_username'),
         ]));
     }

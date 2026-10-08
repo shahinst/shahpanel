@@ -42,6 +42,13 @@ use Modules\ShahBot\Services\PaymentService;
 use Modules\ShahBot\Services\ResellerCryptoService;
 use Modules\ShahBot\Services\ResellerService;
 use Modules\ShahBot\Services\ServiceOpsService;
+use Modules\ShahBot\Services\ExtraDataService;
+use Modules\ShahBot\Http\Controllers\OpenAppController;
+use Modules\ShahBot\Services\AutoAnswerService;
+use Modules\ShahBot\Services\BalanceAlertService;
+use Modules\ShahBot\Services\FamilyService;
+use Modules\ShahBot\Services\OutageService;
+use Modules\ShahBot\Services\UsageReportService;
 use Modules\ShahBot\Services\ShopService;
 use Modules\ShahBot\Services\TicketService;
 use Modules\ShahBot\Support\BotContext;
@@ -154,6 +161,14 @@ class UpdateHandler
             return;
         }
 
+        if ($startParam !== null && str_starts_with($startParam, 'fam_')) {
+            $this->user->setStep(null);
+            $share = app(FamilyService::class)->join($this->user, substr($startParam, 4));
+            $this->reply(__('shahbot::bot.family_joined', ['name' => e($this->accountName($share->account))]), Keyboard::inline([[Keyboard::button(__('shahbot::bot.btn_family_services'), 'fm:l')]]));
+
+            return;
+        }
+
         if ($startParam !== null || str_starts_with($text, '/start')) {
             $this->user->setStep(null);
             $this->sendWelcome();
@@ -194,7 +209,9 @@ class UpdateHandler
         }
 
         if (str_starts_with($data, 'adm:')) {
-            if ($this->settings->isAdminChat($this->user->telegram_id)) {
+            // Support operators may only answer and close tickets.
+            if ($this->settings->isAdminChat($this->user->telegram_id)
+                || (str_starts_with($data, 'adm:tk:') && $this->settings->isSupportChat($this->user->telegram_id))) {
                 $this->onAdminCallback($data, $messageId, $callback);
             }
 
@@ -646,11 +663,14 @@ class UpdateHandler
 
         $photo = $message['photo'] ?? null;
         $fileId = null;
+        $uniqueId = null;
 
         if (is_array($photo) && $photo !== []) {
             $fileId = (string) end($photo)['file_id'];
+            $uniqueId = isset(end($photo)['file_unique_id']) ? (string) end($photo)['file_unique_id'] : null;
         } elseif (isset($message['document']['file_id']) && str_starts_with((string) ($message['document']['mime_type'] ?? ''), 'image/')) {
             $fileId = (string) $message['document']['file_id'];
+            $uniqueId = isset($message['document']['file_unique_id']) ? (string) $message['document']['file_unique_id'] : null;
         }
 
         if ($fileId === null) {
@@ -659,7 +679,7 @@ class UpdateHandler
             return;
         }
 
-        $this->payments->attachReceipt($payment, $fileId, $message['caption'] ?? null);
+        $this->payments->attachReceipt($payment, $fileId, $message['caption'] ?? null, $uniqueId);
         $this->user->setStep(null);
         $this->reply(__('shahbot::bot.receipt_received', ['id' => $payment->id]), $this->mainMenu());
     }
@@ -680,9 +700,38 @@ class UpdateHandler
             return;
         }
 
+        // A message a tutorial already answers is shown that tutorial first;
+        // the customer can still send it on with one tap.
+        $tutorial = $this->settings->bool('auto_answer_enabled') ? app(AutoAnswerService::class)->match($text) : null;
+
+        if ($tutorial !== null) {
+            $this->user->setStep('support_pending', ['text' => mb_substr($text, 0, 3500)]);
+            $this->reply(__('shahbot::bot.auto_answer', ['title' => e((string) $tutorial->title), 'body' => e((string) $tutorial->body)]), Keyboard::inline([
+                [Keyboard::button(__('shahbot::bot.btn_auto_solved'), 'faq:ok')],
+                [Keyboard::button(__('shahbot::bot.btn_auto_send'), 'faq:send')],
+            ]));
+
+            return;
+        }
+
         $this->tickets->fromUser($this->user, $text);
         $this->user->setStep(null);
         $this->reply(__('shahbot::bot.support_sent'), $this->mainMenu());
+    }
+
+    protected function autoAnswerCallback(string $action, int $messageId): void
+    {
+        $pending = $this->user->step === 'support_pending' ? (string) $this->user->stepValue('text', '') : '';
+        $this->user->setStep(null);
+
+        if ($action === 'send' && $pending !== '') {
+            $this->tickets->fromUser($this->user, $pending);
+            $this->say($messageId, __('shahbot::bot.support_sent'));
+
+            return;
+        }
+
+        $this->say($messageId, __('shahbot::bot.auto_answer_thanks'));
     }
 
     protected function stepAgency(string $text): void
@@ -744,6 +793,8 @@ class UpdateHandler
             'test' => $this->testCallback($messageId),
             'tut' => $this->tutorialCallback($parts, $messageId),
             'rs' => $this->resellerCallback($parts, $messageId),
+            'fm' => $this->familyCallback($parts, $messageId),
+            'faq' => $this->autoAnswerCallback((string) ($parts[1] ?? ''), $messageId),
             'fun' => ($parts[1] ?? '') === 'spin' ? $this->spinWheel($messageId) : null,
             'lang' => $this->setLanguage((string) ($parts[1] ?? ''), $messageId),
             default => null,
@@ -950,6 +1001,8 @@ class UpdateHandler
             'discount_line' => (float) $quote['discount'] > 0
                 ? __('shahbot::bot.invoice_discount_line', ['code' => e((string) $code), 'discount' => format_money($quote['discount'])])
                 : '',
+            // Appended to the discount line so every language's invoice keeps its layout.
+            ...((float) ($quote['loyalty'] ?? 0) > 0 ? ['discount_line' => ((float) $quote['discount'] > 0 ? __('shahbot::bot.invoice_discount_line', ['code' => e((string) $code), 'discount' => format_money($quote['discount'])]) : '').__('shahbot::bot.invoice_loyalty_line', ['percent' => persian_digits((int) app(\Modules\ShahBot\Services\LoyaltyService::class)->status($this->user)['percent']), 'discount' => format_money($quote['loyalty'])])] : []),
             'payable' => format_money($quote['payable']),
             'balance' => format_money($balance),
         ]);
@@ -1044,6 +1097,13 @@ class UpdateHandler
             return;
         }
 
+        if ($this->shop->trialNeedsPhone($this->user)) {
+            $lock->release();
+            $this->reply(__('shahbot::bot.test_phone_first'), Keyboard::contact(__('shahbot::bot.btn_share_phone'), __('shahbot::bot.cancel')));
+
+            return;
+        }
+
         try {
             $this->say($messageId, __('shahbot::bot.buying'));
             $order = $this->shop->trial($this->user);
@@ -1063,8 +1123,9 @@ class UpdateHandler
     protected function showServices(?int $messageId = null): void
     {
         $accounts = $this->shop->accounts($this->user);
+        $shared = app(FamilyService::class)->sharedWith($this->user)->isNotEmpty();
 
-        if ($accounts->isEmpty()) {
+        if ($accounts->isEmpty() && ! $shared) {
             $this->say($messageId, __('shahbot::bot.services_empty'));
 
             return;
@@ -1073,6 +1134,9 @@ class UpdateHandler
         $buttons = [];
         foreach ($accounts->take(40) as $account) {
             $buttons[] = [Keyboard::button($this->statusIcon($account).' '.$this->accountName($account), 'svc:v:'.$account->id)];
+        }
+        if ($shared) {
+            $buttons[] = [Keyboard::button(__('shahbot::bot.btn_family_services'), 'fm:l')];
         }
 
         $this->say($messageId, __('shahbot::bot.services_title'), Keyboard::inline($buttons));
@@ -1114,6 +1178,14 @@ class UpdateHandler
             'tr' => $this->askFor('transfer_to', __('shahbot::bot.transfer_ask'), ['account' => $account->id]),
             'trok' => $this->doTransfer($account, (int) ($parts[3] ?? 0), $messageId),
             'rf' => $this->askFor('refund_reason', __('shahbot::bot.refund_ask'), ['account' => $account->id]),
+            'use' => $this->say($messageId, app(UsageReportService::class)->render($account), Keyboard::inline([[Keyboard::button(__('shahbot::bot.back'), 'svc:v:'.$account->id)]])),
+            'st' => $this->say($messageId, app(OutageService::class)->statusText($this->shop->accounts($this->user)), Keyboard::inline([[Keyboard::button(__('shahbot::bot.back'), 'svc:v:'.$account->id)]])),
+            'fam' => $this->showFamily($account, $messageId),
+            'famin' => $this->sendFamilyInvite($account),
+            'famrm' => $this->removeFamilyMember($account, (int) ($parts[3] ?? 0), $messageId),
+            'gb' => $this->showExtraData($account, $messageId),
+            'gbd' => $this->confirmExtraData($account, (int) ($parts[3] ?? 0), $messageId),
+            'gbok' => $this->buyExtraData($account, (int) ($parts[3] ?? 0), $messageId),
             default => null,
         };
     }
@@ -1181,6 +1253,14 @@ class UpdateHandler
         $ops = [];
         if ($this->settings->bool('location_enabled') && $this->ops->locations($account)->isNotEmpty()) {
             $ops[] = Keyboard::button(__('shahbot::bot.btn_location'), 'svc:loc:'.$account->id);
+        }
+        $ops[] = Keyboard::button(__('shahbot::bot.btn_usage'), 'svc:use:'.$account->id);
+        $ops[] = Keyboard::button(__('shahbot::bot.btn_server_status'), 'svc:st:'.$account->id);
+        if (! $account->packageDuration?->tier->isTest()) {
+            $ops[] = Keyboard::button(__('shahbot::bot.btn_family'), 'svc:fam:'.$account->id);
+        }
+        if (app(ExtraDataService::class)->available($this->user, $account)) {
+            $ops[] = Keyboard::button(__('shahbot::bot.btn_extra_gb'), 'svc:gb:'.$account->id);
         }
         if ($this->settings->bool('transfer_enabled')) {
             $ops[] = Keyboard::button(__('shahbot::bot.btn_transfer'), 'svc:tr:'.$account->id);
@@ -1252,10 +1332,16 @@ class UpdateHandler
 
         $url = app(SubscriptionFeedService::class)->urlFor($account);
         $caption = __('shahbot::bot.sub_caption', ['name' => e($this->accountName($account)), 'url' => e($url)]);
+        // One tap opens the customer's app with the subscription filled in.
+        $apps = Keyboard::inline(array_chunk(array_map(
+            fn (string $app, array $meta) => Keyboard::url('📲 '.$meta['label'], OpenAppController::link($account, $app)),
+            array_keys(OpenAppController::APPS),
+            OpenAppController::APPS,
+        ), 2));
 
         try {
             $png = base64_decode(app(SanaeiPortalService::class)->qrBase64($url));
-            $result = $this->tg->sendPhotoBytes($this->chatId, $png, 'qr.png', $caption);
+            $result = $this->tg->sendPhotoBytes($this->chatId, $png, 'qr.png', $caption, $apps);
 
             if ($result['ok'] ?? false) {
                 return;
@@ -1263,7 +1349,7 @@ class UpdateHandler
         } catch (Throwable) {
         }
 
-        $this->reply($caption);
+        $this->reply($caption, $apps);
     }
 
     protected function toggleAutoRenew(Account $account, int $messageId): void
@@ -1277,6 +1363,140 @@ class UpdateHandler
         app(SubscriptionFeedService::class)->issue($account);
         $this->reply(__('shahbot::bot.new_link_done'));
         $this->sendSubscription($account->fresh());
+    }
+
+    protected function showFamily(Account $account, int $messageId): void
+    {
+        $members = app(FamilyService::class)->members($account);
+        $rows = $members->map(fn ($share) => [Keyboard::button('✖️ '.($share->member?->displayName() ?? '—'), 'svc:famrm:'.$account->id.':'.$share->id)])->all();
+
+        if ($members->count() < FamilyService::MAX_MEMBERS) {
+            $rows[] = [Keyboard::button(__('shahbot::bot.btn_family_invite'), 'svc:famin:'.$account->id)];
+        }
+        $rows[] = [Keyboard::button(__('shahbot::bot.back'), 'svc:v:'.$account->id)];
+
+        $this->say($messageId, __('shahbot::bot.family_title', [
+            'name' => e($this->accountName($account)),
+            'count' => persian_digits($members->count()),
+            'max' => persian_digits(FamilyService::MAX_MEMBERS),
+        ]), Keyboard::inline($rows));
+    }
+
+    protected function sendFamilyInvite(Account $account): void
+    {
+        $param = app(FamilyService::class)->invite($this->user, $account);
+        $username = $this->settings->get('bot_username');
+        $link = $username !== '' ? 'https://t.me/'.ltrim($username, '@').'?start='.$param : '/start '.$param;
+
+        $this->reply(__('shahbot::bot.family_invite', [
+            'name' => e($this->accountName($account)),
+            'link' => e($link),
+            'hours' => persian_digits(FamilyService::INVITE_HOURS),
+        ]));
+    }
+
+    protected function removeFamilyMember(Account $account, int $shareId, int $messageId): void
+    {
+        app(FamilyService::class)->remove($this->user, $account, $shareId);
+        $this->showFamily($account, $messageId);
+    }
+
+    /**
+     * Accounts shared with this user: config only, the buyer keeps the rest.
+     */
+    protected function familyCallback(array $parts, int $messageId): void
+    {
+        $family = app(FamilyService::class);
+
+        if (($parts[1] ?? '') === 'l') {
+            $accounts = $family->sharedWith($this->user);
+            $buttons = $accounts->take(40)->map(fn (Account $a) => [Keyboard::button($this->statusIcon($a).' '.$this->accountName($a), 'fm:v:'.$a->id)])->all();
+            $this->say($messageId, $accounts->isEmpty() ? __('shahbot::bot.family_none') : __('shahbot::bot.family_services'), $buttons === [] ? null : Keyboard::inline($buttons));
+
+            return;
+        }
+
+        $account = Account::query()->with(['package', 'server', 'packageDuration'])->find((int) ($parts[2] ?? 0));
+
+        if ($account === null) {
+            throw new InvalidArgumentException(__('shahbot::bot.service_not_found'));
+        }
+
+        $family->assertShared($this->user, $account);
+
+        match ($parts[1] ?? '') {
+            'v' => $this->say($messageId, $this->serviceText($account), Keyboard::inline([
+                [Keyboard::button(__('shahbot::bot.btn_sub'), 'fm:sub:'.$account->id), Keyboard::button(__('shahbot::bot.btn_usage'), 'fm:use:'.$account->id)],
+                [Keyboard::button(__('shahbot::bot.back'), 'fm:l')],
+            ])),
+            'use' => $this->say($messageId, app(UsageReportService::class)->render($account), Keyboard::inline([[Keyboard::button(__('shahbot::bot.back'), 'fm:v:'.$account->id)]])),
+            'sub' => $this->sendSubscription($account),
+            default => null,
+        };
+    }
+
+    protected function showExtraData(Account $account, int $messageId): void
+    {
+        $extra = app(ExtraDataService::class);
+
+        if (! $extra->available($this->user, $account)) {
+            throw new InvalidArgumentException(__('shahbot::bot.product_unavailable'));
+        }
+
+        $buttons = array_map(fn (int $gb) => [Keyboard::button(
+            __('shahbot::bot.extra_gb_option', ['gb' => persian_digits($gb)]).' · '.format_money($extra->price($gb)),
+            'svc:gbd:'.$account->id.':'.$gb
+        )], $extra->sizes());
+        $buttons[] = [Keyboard::button(__('shahbot::bot.back'), 'svc:v:'.$account->id)];
+
+        $this->say($messageId, __('shahbot::bot.extra_gb_choose', ['name' => e($this->accountName($account))]), Keyboard::inline($buttons));
+    }
+
+    protected function confirmExtraData(Account $account, int $gb, int $messageId): void
+    {
+        $extra = app(ExtraDataService::class);
+
+        if (! $extra->available($this->user, $account) || ! in_array($gb, $extra->sizes(), true)) {
+            throw new InvalidArgumentException(__('shahbot::bot.product_unavailable'));
+        }
+
+        $price = $extra->price($gb);
+        $balance = $this->users->balance($this->user);
+        $rows = (float) $balance >= (float) $price
+            ? [[Keyboard::button(__('shahbot::bot.btn_confirm'), 'svc:gbok:'.$account->id.':'.$gb)]]
+            : [[Keyboard::button(__('shahbot::bot.btn_topup_diff', ['amount' => format_money($diff = (string) ceil((float) $price - (float) $balance))]), 'buy:top:'.$diff)]];
+        $rows[] = [Keyboard::button(__('shahbot::bot.back'), 'svc:gb:'.$account->id)];
+
+        $this->say($messageId, __('shahbot::bot.extra_gb_confirm', [
+            'name' => e($this->accountName($account)),
+            'gb' => persian_digits($gb),
+            'price' => format_money($price),
+            'balance' => format_money($balance),
+        ]), Keyboard::inline($rows));
+    }
+
+    protected function buyExtraData(Account $account, int $gb, int $messageId): void
+    {
+        $lock = Cache::lock('shahbot:buy:'.$this->user->id, 120);
+
+        if (! $lock->get()) {
+            return;
+        }
+
+        try {
+            $this->say($messageId, __('shahbot::bot.buying'));
+            $account = app(ExtraDataService::class)->buy($this->user, $account, $gb);
+            $this->reply(__('shahbot::bot.extra_gb_done', ['gb' => persian_digits($gb)])."
+
+".$this->serviceText($account), $this->serviceKeyboard($account));
+        } catch (InvalidArgumentException $e) {
+            throw $e;
+        } catch (Throwable $e) {
+            report($e);
+            $this->reply(__('shahbot::bot.error', ['message' => e($e->getMessage())]));
+        } finally {
+            $lock->release();
+        }
     }
 
     protected function showRenewOptions(Account $account, int $messageId): void
@@ -1640,7 +1860,7 @@ class UpdateHandler
             'tickets' => persian_digits(BotTicket::query()
                 ->whereIn('bot_user_id', $this->ownUsers()->select('id'))
                 ->where('status', BotTicket::OPEN)->count()),
-        ]);
+        ]).__('shahbot::bot.admin_balance_line', ['balance' => format_money(app(BalanceAlertService::class)->balance($this->users->owner($this->user)))]);
 
         $rows = [
             [Keyboard::button(__('shahbot::bot.btn_pending_receipts'), 'adm:pend')],

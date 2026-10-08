@@ -1,0 +1,11 @@
+{
+    "slug": "watchdog",
+    "name": "پایش سرورها و هشدار تلگرام",
+    "version": "1.0.0",
+    "description": "هر پنج دقیقه سرورها، فضای دیسک پنل، تاریخ انقضای گواهی‌های SSL و ظرفیت IP سرورهای AnyConnect را بررسی می‌کند و هر مشکل را یک بار (و هر چند ساعت تا رفع آن) با ربات تلگرام بکاپ به ادمین خبر می‌دهد؛ رفع مشکل هم اعلام می‌شود.",
+    "author": "ShahPanel",
+    "license": "AGPL-3.0-or-later",
+    "namespace": "Modules\\Watchdog\\",
+    "autoload": "src",
+    "provider": "Modules\\Watchdog\\WatchdogServiceProvider"
+}

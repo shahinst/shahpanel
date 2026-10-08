@@ -31,6 +31,8 @@ class BotPayment extends Model
         'status',
         'receipt_file_id',
         'receipt_note',
+        'receipt_unique_id',
+        'receipt_ref',
         'external_id',
         'reviewed_by',
         'reviewed_at',

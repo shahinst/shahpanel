@@ -1,0 +1,11 @@
+{
+    "slug": "webhooks",
+    "name": "وبهوک رویدادها",
+    "version": "1.0.0",
+    "description": "با ساخت، تمدید، انقضا، تغییر وضعیت و حذف هر اکانت، یک درخواست امضاشده (HMAC-SHA256) به نشانی دلخواه شما فرستاده می‌شود تا سایت، CRM یا ربات‌های دیگر بی‌درنگ باخبر شوند. ارسال‌های ناموفق چند بار دوباره تلاش می‌شوند.",
+    "author": "ShahPanel",
+    "license": "AGPL-3.0-or-later",
+    "namespace": "Modules\\Webhooks\\",
+    "autoload": "src",
+    "provider": "Modules\\Webhooks\\WebhooksServiceProvider"
+}

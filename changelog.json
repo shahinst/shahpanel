@@ -1,6 +1,52 @@
 {
     "versions": [
         {
+            "version": "3.36.0",
+            "date": "2026-11-16",
+            "notes": {
+                "fa": [
+                    "ماژول تازهٔ «پایش سرورها و هشدار تلگرام»: قطع شدن سرورها، کم شدن فضای دیسک، نزدیک شدن انقضای گواهی SSL و پر شدن بازهٔ IP سرورهای AnyConnect را با ربات بکاپ تلگرام خبر می‌دهد و برگشتن هر مشکل را هم اعلام می‌کند.",
+                    "ماژول تازهٔ «وبهوک رویدادها»: ساخت، تمدید، انقضا، تغییر وضعیت و حذف هر اکانت با درخواست امضاشدهٔ HMAC به نشانی دلخواه شما فرستاده می‌شود و ارسال ناموفق تا شش بار تکرار می‌شود.",
+                    "نصب یک‌دستوری API روی سرور ocserv (AnyConnect) در پوشهٔ scripts/ocserv-api؛ راهنما در docs/OCSERV_API.md.",
+                    "ربات: وضعیت وبهوک همهٔ ربات‌ها هر ده دقیقه بررسی می‌شود؛ آدرس اشتباه خودکار درست می‌شود و خطاهایی مثل 404 به مدیر ربات و مدیر اصلی خبر داده می‌شود.",
+                    "ربات: رسید کارت‌به‌کارت تکراری (همان عکس یا همان شمارهٔ پیگیری) هنگام بررسی به ادمین هشدار داده می‌شود؛ اکانت تست برای هر نفر یک بار است، در همهٔ ربات‌ها و با هر شماره، و می‌توان آن را به ثبت شماره وابسته کرد.",
+                    "ربات: کد تخفیف بازگشت برای مشتریانی که سرویسشان تمام شده، خرید حجم اضافه بدون تغییر انقضا، فروش ویژهٔ زمان‌دار با تعداد محدود، سطح‌های وفاداری و اشتراک سرویس با خانواده.",
+                    "ربات: گزارش مصرف هفت روز، وضعیت سرورها، باز کردن یک‌لمسی اشتراک در v2rayNG، Hiddify، Streisand، V2Box و sing-box، پاسخ خودکار از آموزش‌ها پیش از ثبت تیکت و جبران خودکار زمان قطعی سرور.",
+                    "ربات نماینده‌ها: موجودی کیف پول در منوی مدیریت و هشدار کم شدن آن، رنگ و لوگوی اختصاصی مینی‌اپ، اپراتور پشتیبانی که فقط به تیکت‌ها دسترسی دارد، و با عوض شدن توکن ربات، ربات قبلی لینک ربات تازه را برای مشتریان می‌فرستد."
+                ],
+                "en": [
+                    "New \"Server monitoring and Telegram alerts\" module: servers going down, low disk space, SSL certificates close to expiry and full AnyConnect IP pools are reported through the backup Telegram bot, and so is each recovery.",
+                    "New \"Event webhooks\" module: creating, renewing, expiring, changing the status of and deleting an account are posted, HMAC-signed, to an address of your choice; failed deliveries are retried up to six times.",
+                    "One-command API install for ocserv (AnyConnect) servers in scripts/ocserv-api; see docs/OCSERV_API.md.",
+                    "Bot: every bot's webhook is checked every ten minutes; a wrong address is repaired by itself and errors such as 404 are reported to the bot's admins and the main admins.",
+                    "Bot: a reused card receipt (same picture or tracking number) is flagged to the admin; a test account is one per person across every bot and phone number, and can be made to require a phone number.",
+                    "Bot: a win-back discount code for customers whose service ran out, extra data without touching the expiry, time-limited flash sales with limited stock, loyalty tiers and family sharing of a service.",
+                    "Bot: a seven-day usage report, server status, one-tap import of the subscription into v2rayNG, Hiddify, Streisand, V2Box and sing-box, tutorial answers before a ticket is opened, and automatic compensation for server outages.",
+                    "Agents' bots: wallet balance in the admin menu and a low-balance warning, the mini app's own colour and logo, support operators who only see tickets, and after a token change the old bot sends customers the new bot's link."
+                ],
+                "ru": [
+                    "Новый модуль «Мониторинг серверов и оповещения в Telegram»: падение серверов, нехватка места на диске, скорое истечение SSL-сертификатов и заполнение пулов IP серверов AnyConnect сообщаются через бот резервных копий, как и восстановление.",
+                    "Новый модуль «Вебхуки событий»: создание, продление, истечение, смена статуса и удаление аккаунта отправляются с подписью HMAC на выбранный адрес; неудачная доставка повторяется до шести раз.",
+                    "Установка API одной командой для серверов ocserv (AnyConnect) в scripts/ocserv-api; см. docs/OCSERV_API.md.",
+                    "Бот: вебхук каждого бота проверяется каждые десять минут; неверный адрес исправляется сам, а ошибки вроде 404 сообщаются администраторам бота и главным администраторам.",
+                    "Бот: повторный чек (то же изображение или номер операции) отмечается для администратора; тестовый аккаунт — один на человека во всех ботах и на любой номер, можно требовать номер телефона.",
+                    "Бот: код скидки для вернувшихся клиентов, дополнительный трафик без изменения срока, флеш-распродажи с ограниченным количеством, уровни лояльности и семейный доступ к услуге.",
+                    "Бот: отчёт о расходе за семь дней, статус серверов, импорт подписки в одно касание в v2rayNG, Hiddify, Streisand, V2Box и sing-box, ответы из инструкций до создания тикета и автоматическая компенсация простоев серверов.",
+                    "Боты агентов: баланс кошелька в меню и предупреждение о низком балансе, собственные цвет и логотип мини-приложения, операторы поддержки только с тикетами, а при смене токена старый бот рассылает клиентам ссылку на новый."
+                ],
+                "zh": [
+                    "新模块「服务器监控与 Telegram 告警」：服务器宕机、磁盘空间不足、SSL 证书即将到期以及 AnyConnect IP 池将满时，通过备份 Telegram 机器人通知，恢复时也会通知。",
+                    "新模块「事件 Webhook」：账户的创建、续费、到期、状态变化和删除会以 HMAC 签名发送到你指定的地址；投递失败最多重试六次。",
+                    "ocserv（AnyConnect）服务器的一键 API 安装，位于 scripts/ocserv-api；说明见 docs/OCSERV_API.md。",
+                    "机器人：每十分钟检查一次所有机器人的 Webhook；地址错误会自动修复，404 等错误会通知该机器人的管理员和主管理员。",
+                    "机器人：重复的转账凭证（相同图片或流水号）会提醒管理员；测试账户在所有机器人和手机号中每人仅限一次，并可要求先提供手机号。",
+                    "机器人：为服务到期的客户发送回归优惠码、加购流量而不改变到期时间、限时限量的闪购、会员等级以及与家人共享服务。",
+                    "机器人：七天用量报告、服务器状态、一键把订阅导入 v2rayNG、Hiddify、Streisand、V2Box 和 sing-box、提交工单前先给出教程答案，以及服务器中断的自动补偿。",
+                    "代理机器人：管理菜单显示钱包余额并在余额不足时提醒、迷你应用的专属颜色和 Logo、只能处理工单的客服操作员，以及更换令牌后旧机器人会把新机器人的链接发给客户。"
+                ]
+            }
+        },
+        {
             "version": "3.35.1",
             "date": "2026-11-14",
             "notes": {
