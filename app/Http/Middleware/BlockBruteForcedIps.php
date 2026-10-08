@@ -30,7 +30,7 @@ class BlockBruteForcedIps
         // Still knocking after being told no: let the kernel handle it.
         $block->increment('attempts');
 
-        if ($block->attempts >= IpGuardService::ESCALATE_AFTER) {
+        if ($block->attempts >= IpGuardService::escalateAfter()) {
             $this->guard->escalateToFirewall($block);
         }
 

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\BlockedIp;
 use App\Models\IpWhitelist;
 use App\Models\LoginAttempt;
+use App\Models\Setting;
 use App\Services\FirewallService;
 use App\Services\IpGuardService;
 use App\Services\SecurityShieldService;
@@ -84,11 +85,26 @@ class LoginFirewallController extends Controller
                 ->limit(8)
                 ->get(),
             'settings' => [
-                'max_attempts' => IpGuardService::MAX_ATTEMPTS,
-                'window' => IpGuardService::WINDOW_MINUTES,
-                'block_minutes' => IpGuardService::BLOCK_MINUTES,
+                'max_attempts' => IpGuardService::maxAttempts(),
+                'window' => IpGuardService::windowMinutes(),
+                'block_minutes' => IpGuardService::blockMinutes(),
+                'escalate_after' => IpGuardService::escalateAfter(),
             ],
         ]);
+    }
+
+    public function updatePolicy(Request $request): RedirectResponse
+    {
+        $rules = [];
+        foreach (IpGuardService::POLICY as $key => [, $min, $max]) {
+            $rules[$key] = ['required', 'integer', 'min:'.$min, 'max:'.$max];
+        }
+
+        foreach ($request->validate($rules) as $key => $value) {
+            Setting::setValue($key, (string) (int) $value);
+        }
+
+        return back()->with('success', __('loginfw.policy_saved'));
     }
 
     public function unblock(Request $request, BlockedIp $blockedIp): RedirectResponse
@@ -108,7 +124,7 @@ class LoginFirewallController extends Controller
         $block = $this->guard->block(
             $data['ip'],
             reason: 'manual',
-            minutes: $data['minutes'] ?? IpGuardService::BLOCK_MINUTES,
+            minutes: $data['minutes'] ?? IpGuardService::blockMinutes(),
         );
 
         if ($block === null) {

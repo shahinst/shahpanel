@@ -172,6 +172,7 @@ Route::post('impersonate/leave', [ImpersonationController::class, 'leave'])
 
 Route::prefix($adminPath)->name('admin.')->middleware($adminMiddleware)->group(function (): void {
     Route::get('login-firewall', [\App\Http\Controllers\Admin\LoginFirewallController::class, 'index'])->name('login-firewall.index');
+    Route::post('login-firewall/policy', [\App\Http\Controllers\Admin\LoginFirewallController::class, 'updatePolicy'])->name('login-firewall.policy');
     Route::post('login-firewall/block', [\App\Http\Controllers\Admin\LoginFirewallController::class, 'blockManually'])->name('login-firewall.block');
     Route::post('login-firewall/{blockedIp}/unblock', [\App\Http\Controllers\Admin\LoginFirewallController::class, 'unblock'])->name('login-firewall.unblock');
     Route::post('login-firewall/whitelist', [\App\Http\Controllers\Admin\LoginFirewallController::class, 'storeWhitelist'])->name('login-firewall.whitelist.store');
