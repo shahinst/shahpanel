@@ -3,6 +3,13 @@
 @section('page_title', __('accounts.create'))
 
 @section('panel_content')
+@if ($accountOwners->isEmpty())
+    {{-- Every account belongs to an agent or seller, whose assigned packages fill this form. --}}
+    <x-alert type="warning" class="margin-bottom">
+        {{ __('ui.no_account_owners') }}
+        <a href="{{ route('admin.users.create') }}">{{ __('ui.no_account_owners_link') }}</a>
+    </x-alert>
+@endif
 <x-card>
     <form method="POST" action="{{ route('admin.accounts.store') }}">
         @csrf

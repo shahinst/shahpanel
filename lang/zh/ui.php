@@ -287,6 +287,8 @@ return [
     'seller_pricing_page_title' => '销售商定价',
     'my_seller_pricing' => '我的销售商定价',
     'no_packages_enabled' => '尚未为你启用任何套餐。请联系管理员。',
+    'no_account_owners' => '请先创建代理或销售员并为其分配套餐：每个账户都登记在其中一人名下，这里只显示分配给他的套餐。',
+    'no_account_owners_link' => '创建代理',
     'seller_pricing_intro_before' => '对每个套餐，你可以为销售商设置最高比你自己的价格高出',
     'seller_pricing_intro_middle' => '的价格 ——',
     'seller_pricing_intro_strong' => '这个百分比就是你的佣金',
