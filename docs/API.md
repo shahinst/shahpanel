@@ -235,6 +235,39 @@ POST /accounts/{id}/enable
 POST /accounts/{id}/disable
 ```
 
+### اطلاعات اتصال و پورتال
+
+پاسخ `GET /accounts/{id}` برای اکانت‌های AnyConnect و PPP بخش `connection` دارد: `server_address` (آدرسی که مشتری به آن وصل می‌شود)، `username`، `password` و برای سرورهایی که فایل OpenVPN دارند `ovpn` (`filename`، `content`، `updated_at`).
+بخش `portal` همیشه لینکی معتبر دارد (`url`، `token`، `expires_at`)؛ اگر توکن قبلی منقضی شده باشد خودکار لینک تازه ساخته می‌شود.
+
+```http
+GET  /accounts/{id}/ovpn          # دانلود فایل .ovpn سرور (همیشه آخرین فایل)
+POST /accounts/{id}/portal        # لینک تازهٔ پورتال (لینک قبلی باطل می‌شود)
+```
+
+### مدیریت اکانت (دسترسی `accounts:update`)
+
+```http
+PATCH  /accounts/{id}                         # {"display_label": "...", "remote_username": "...", "auto_renew": true}
+POST   /accounts/{id}/transfer                # {"server_id": 4}  انتقال به سرور دیگر
+POST   /accounts/{id}/refund                  # بازپرداخت طبق قوانین پنل
+POST   /accounts/{id}/reactivate              # فعال‌سازی دوباره پس از بازپرداخت
+POST   /accounts/{id}/sync                    # خواندن همین حالای مصرف از سرور
+DELETE /accounts/{id}                         # حذف اکانت (اگر نقش شما اجازه داشته باشد)
+GET    /accounts-expiring?days=3              # اکانت‌هایی که تا چند روز دیگر تمام می‌شوند
+```
+
+### مشتری‌ها
+
+```http
+GET  /clients?search=ali                      # accounts:read
+GET  /clients/{id}                            # با اکانت‌هایش
+POST /clients                                 # {"username": "ali", "password": "...", "full_name": "..."}  accounts:update
+POST /clients/{id}/accounts/{accountId}       # دادن اکانت به مشتری
+```
+
+همهٔ این مسیرها همان قوانین و مجوزهای پنل را دارند: فقط اکانت‌ها و مشتری‌های زیرمجموعهٔ خودتان در دسترس است.
+
 ---
 
 ## کیف پول
@@ -251,9 +284,10 @@ GET /wallet/transactions?per_page=50&from=2026-08-01
 ## زیرمجموعه‌ها (فقط نماینده)
 
 ```http
-GET /resellers?search=ali
-GET /resellers/{id}
-GET /resellers/{id}/accounts
+GET  /resellers?search=ali
+GET  /resellers/{id}
+GET  /resellers/{id}/accounts
+POST /resellers/{id}/charge      # {"amount": 500000}  شارژ کیف پول فروشنده از کیف پول نماینده
 ```
 
 ---

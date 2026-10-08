@@ -3,6 +3,7 @@
 namespace App\Http\Resources\Api\V1;
 
 use App\Models\Account;
+use App\Services\PortalLinkService;
 
 /**
  * One shape for an account everywhere the API returns one.
@@ -80,10 +81,19 @@ class AccountTransformer
                 : null,
         ];
 
+        // The stored token may have expired; hand out the link the panel would
+        // show right now (renewed when needed), never a dead one.
+        $portal = app(PortalLinkService::class);
+        $url = rescue(fn () => $portal->ensure($account), null);
+        $account->refresh();
+
         $payload['portal'] = [
-            'token' => $account->portal_token,
-            'expires_at' => optional($account->portal_token_expires_at)->toIso8601String(),
+            'url' => $url,
+            'token' => $url !== null ? $account->portal_token : null,
+            'expires_at' => $url !== null ? optional($account->portal_token_expires_at)->toIso8601String() : null,
         ];
+
+        $payload['connection'] = AccountConnection::make($account);
 
         $payload['last_sync_at'] = optional($account->last_sync_at)->toIso8601String();
 

@@ -24,6 +24,8 @@ class AgentSellerChargeService
 
     public const FROM_BOT = 'bot';
 
+    public const FROM_API = 'api';
+
     public function __construct(protected WalletService $wallets) {}
 
     public function charge(User $agent, User $seller, string $amount, string $via = self::FROM_PANEL): void
