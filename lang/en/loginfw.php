@@ -69,4 +69,10 @@ return [
     'add' => 'Add',
     'remove' => 'Remove',
     'or' => 'or',
+    'login_guard_max_attempts' => 'Wrong passwords before a block',
+    'login_guard_window_minutes' => 'Counting window (minutes)',
+    'login_guard_block_minutes' => 'Block length (minutes)',
+    'login_guard_escalate_after' => 'Attempts while blocked before the server firewall',
+    'policy_hint' => 'When one IP enters this many wrong passwords within the window, the login page closes for it for the block length. If it keeps trying this many times while blocked, the server\'s own firewall shuts it out. Whitelisted IPs are never blocked, and a correct login resets that IP\'s count.',
+    'policy_saved' => 'The login block policy was saved.',
 ];

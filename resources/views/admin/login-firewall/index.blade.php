@@ -69,6 +69,20 @@
                                 'window' => persian_digits((string) $settings['window']),
                                 'minutes' => persian_digits((string) $settings['block_minutes']),
                             ]) }}
+                            <form method="POST" action="{{ route('admin.login-firewall.policy') }}" class="row g-2 align-items-end mt-2">
+                                @csrf
+                                @foreach (\App\Services\IpGuardService::POLICY as $key => [, $min, $max])
+                                    @php $value = \App\Services\IpGuardService::policy($key); @endphp
+                                    <div class="col-6 col-md-3">
+                                        <label class="form-label small mb-1" for="{{ $key }}">{{ __('loginfw.'.$key) }}</label>
+                                        <input type="number" name="{{ $key }}" id="{{ $key }}" value="{{ old($key, $value) }}" min="{{ $min }}" max="{{ $max }}" required class="form-control form-control-sm">
+                                    </div>
+                                @endforeach
+                                <div class="col-12">
+                                    <div class="text-muted small mb-1">{{ __('loginfw.policy_hint') }}</div>
+                                    <button type="submit" class="btn btn-primary btn-sm">{{ __('app.save') }}</button>
+                                </div>
+                            </form>
                         </td>
                     </tr>
                 </tbody>

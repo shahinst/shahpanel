@@ -5,14 +5,16 @@ namespace App\Services;
 use App\Models\BlockedIp;
 use App\Models\IpWhitelist;
 use App\Models\LoginAttempt;
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Support\Facades\Cache;
 
 /**
  * Brute-force policy for the login screen.
  *
- * A wrong password costs the address a strike. On the third strike inside the
- * window the address loses the login page for an hour — the customer portal
+ * A wrong password costs the address a strike. On the last allowed strike
+ * inside the window (three by default, set by the admin on the login firewall
+ * page) the address loses the login page for the block time (an hour by default) — the customer portal
  * and subscription links stay up, because Iranian carriers put many users
  * behind one address and a full block would take innocents down with it.
  *
@@ -32,6 +34,48 @@ class IpGuardService
 
     /** Requests from an already-blocked address before the kernel takes over. */
     public const ESCALATE_AFTER = 20;
+
+    /**
+     * The admin's own numbers, each with its default and the range it may
+     * take. The floor on attempts keeps an admin from locking themselves out
+     * on a single typo; a block of 0 minutes would mean "never lift it".
+     *
+     * @var array<string, array{0: int, 1: int, 2: int}> key => [default, min, max]
+     */
+    public const POLICY = [
+        'login_guard_max_attempts' => [self::MAX_ATTEMPTS, 2, 50],
+        'login_guard_window_minutes' => [self::WINDOW_MINUTES, 1, 1440],
+        'login_guard_block_minutes' => [self::BLOCK_MINUTES, 1, 43200],
+        'login_guard_escalate_after' => [self::ESCALATE_AFTER, 5, 1000],
+    ];
+
+    public static function policy(string $key): int
+    {
+        [$default, $min, $max] = self::POLICY[$key];
+        $value = Setting::getValue($key);
+
+        return $value === null || $value === '' ? $default : max($min, min($max, (int) $value));
+    }
+
+    public static function maxAttempts(): int
+    {
+        return self::policy('login_guard_max_attempts');
+    }
+
+    public static function windowMinutes(): int
+    {
+        return self::policy('login_guard_window_minutes');
+    }
+
+    public static function blockMinutes(): int
+    {
+        return self::policy('login_guard_block_minutes');
+    }
+
+    public static function escalateAfter(): int
+    {
+        return self::policy('login_guard_escalate_after');
+    }
 
     public function __construct(
         protected FirewallService $firewall,
@@ -70,10 +114,10 @@ class IpGuardService
         $recent = LoginAttempt::query()
             ->where('ip', $ip)
             ->where('succeeded', false)
-            ->where('created_at', '>=', now()->subMinutes(self::WINDOW_MINUTES))
+            ->where('created_at', '>=', now()->subMinutes(self::windowMinutes()))
             ->count();
 
-        if ($recent < self::MAX_ATTEMPTS) {
+        if ($recent < self::maxAttempts()) {
             return null;
         }
 
@@ -95,7 +139,7 @@ class IpGuardService
         LoginAttempt::query()
             ->where('ip', $ip)
             ->where('succeeded', false)
-            ->where('created_at', '>=', now()->subMinutes(self::WINDOW_MINUTES))
+            ->where('created_at', '>=', now()->subMinutes(self::windowMinutes()))
             ->delete();
     }
 
@@ -112,7 +156,7 @@ class IpGuardService
         }
 
         $country = $this->geo->lookup($ip);
-        $minutes ??= self::BLOCK_MINUTES;
+        $minutes ??= self::blockMinutes();
 
         $existing = BlockedIp::query()->where('ip', $ip)->first();
 

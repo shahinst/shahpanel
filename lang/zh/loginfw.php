@@ -69,4 +69,10 @@ return [
     'add' => '添加',
     'remove' => '移除',
     'or' => '或',
+    'login_guard_max_attempts' => '封禁前允许的错误密码次数',
+    'login_guard_window_minutes' => '计数时间窗（分钟）',
+    'login_guard_block_minutes' => '封禁时长（分钟）',
+    'login_guard_escalate_after' => '封禁期间再尝试多少次后转入服务器防火墙',
+    'policy_hint' => '同一 IP 在时间窗内输错这么多次密码后，登录页会对其关闭一段封禁时长。若封禁期间继续尝试达到该次数，将由服务器自身防火墙拦截。白名单 IP 永不封禁，成功登录会清零该 IP 的计数。',
+    'policy_saved' => '登录封禁策略已保存。',
 ];
