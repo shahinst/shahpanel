@@ -21,6 +21,8 @@
     <a href="{{ $backUrl }}"><i class="bx bx-arrow-back"></i> {{ __('app.back') }}</a>
 </p>
 
+@include('shared.accounts.partials.account-card')
+
 <div class="row g-4">
     <div class="col-xl-8">
         <div class="panel-modern-card mb-3">

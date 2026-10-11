@@ -995,3 +995,20 @@ if (! function_exists('trans_for')) {
         return (string) __($key, $replace, $locale);
     }
 }
+
+if (! function_exists('panel_theme')) {
+    /**
+     * The active theme (slug, name, styles, scripts, body_class); never throws,
+     * so a layout can always render.
+     *
+     * @return array<string, mixed>
+     */
+    function panel_theme(): array
+    {
+        try {
+            return app(\App\Support\Themes\ThemeRegistry::class)->active();
+        } catch (\Throwable) {
+            return ['slug' => 'shahpanel', 'name' => 'Shahpanel', 'styles' => [], 'scripts' => [], 'body_class' => 'theme-shahpanel'];
+        }
+    }
+}

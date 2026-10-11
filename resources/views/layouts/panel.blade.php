@@ -14,7 +14,7 @@
         };
 @endphp
 
-@section('body_attrs') class="vp-panel-app panel-{{ $panel }}" @endsection
+@section('body_attrs') class="vp-panel-app panel-{{ $panel }} {{ panel_theme()['body_class'] }}" data-theme="{{ panel_theme()['slug'] }}" data-digits="{{ locale_digits() }}" @endsection
 
 @section('body')
 <div id="layout-wrapper">

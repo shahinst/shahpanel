@@ -25,6 +25,7 @@ return [
     'payment_requests' => 'Запросы на пополнение',
     'settings' => 'Настройки',
     'settings_general' => 'Настройки системы',
+    'themes' => 'Тема оформления',
     'modules' => 'Модули',
     'gift_accounts' => 'Подарочные аккаунты',
     'gifts' => 'Подарки',

@@ -291,6 +291,7 @@ return [
                 'settings.index',
                 'settings.update',
                 'modules.*',
+                'themes.*',
                 'gift-accounts.*',
                 'gifts.*',
                 'sms.*',
@@ -316,6 +317,12 @@ return [
                     'icon' => 'bx-extension',
                     'probe' => 'modules.index',
                     'routes' => ['modules.*'],
+                ],
+                'settings_themes' => [
+                    'label' => 'menu.themes',
+                    'icon' => 'bx-palette',
+                    'probe' => 'themes.index',
+                    'routes' => ['themes.*'],
                 ],
                 'settings_gift_accounts' => [
                     'label' => 'menu.gift_accounts',

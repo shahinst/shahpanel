@@ -1,0 +1,268 @@
+/* =====================================================================
+   Metal3D — a dark, layered theme for ShahPanel
+   Loaded after the panel's own stylesheet and scoped to body.theme-metal3d,
+   so it can only change how pages look. Everything is driven by the panel's
+   design tokens first; the selectors below add depth, light and motion.
+   ===================================================================== */
+
+body.theme-metal3d {
+    /* Palette: brushed graphite with the panel's accent as the light source */
+    --bg: #0b1020;
+    --surface: #141a2e;
+    --surface-2: #1a2138;
+    --surface-3: #212a45;
+    --border: rgba(148, 163, 184, .14);
+    --border-strong: rgba(148, 163, 184, .28);
+    --text: #e6eaf2;
+    --text-soft: #c3cad8;
+    --muted: #8a94a8;
+    --muted-2: #65708a;
+
+    --accent-soft: color-mix(in srgb, var(--accent) 18%, #141a2e);
+    --success-soft: rgba(16, 185, 129, .16);
+    --warning-soft: rgba(245, 158, 11, .16);
+    --danger-soft: rgba(239, 68, 68, .16);
+    --info-soft: rgba(6, 182, 212, .16);
+
+    --radius-xs: 10px;
+    --radius-sm: 12px;
+    --radius: 16px;
+    --radius-lg: 20px;
+    --radius-xl: 26px;
+
+    /* Elevation: a hard light from the top, a long soft shadow below */
+    --m3d-edge: inset 0 1px 0 rgba(255, 255, 255, .08), inset 0 -1px 0 rgba(0, 0, 0, .35);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, .4), var(--m3d-edge);
+    --shadow: 0 10px 30px rgba(0, 0, 0, .45), var(--m3d-edge);
+    --shadow-md: 0 18px 44px rgba(0, 0, 0, .5), var(--m3d-edge);
+    --shadow-lg: 0 30px 70px rgba(0, 0, 0, .6), var(--m3d-edge);
+
+    --m3d-metal: linear-gradient(160deg, #1b2238 0%, #141a2e 45%, #10152a 100%);
+    --m3d-glass: linear-gradient(160deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, .015));
+    --m3d-glow: 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent), 0 0 32px color-mix(in srgb, var(--accent) 35%, transparent);
+
+    color: var(--text);
+    background:
+        radial-gradient(1200px 600px at 85% -10%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 60%),
+        radial-gradient(900px 500px at -10% 110%, color-mix(in srgb, var(--hero-from) 16%, transparent), transparent 60%),
+        var(--bg);
+    background-attachment: fixed;
+    color-scheme: dark;
+}
+
+body.theme-metal3d.panel-client { --accent: #a78bfa; --accent-600: #8b5cf6; --accent-700: #7c3aed; --hero-from: #a78bfa; --hero-mid: #7c3aed; --hero-to: #4c1d95; }
+body.theme-metal3d.panel-admin { --accent: #818cf8; --accent-600: #6366f1; --accent-700: #4f46e5; --hero-from: #818cf8; --hero-mid: #4f46e5; --hero-to: #312e81; }
+body.theme-metal3d.panel-agent { --accent: #60a5fa; --accent-600: #3b82f6; --accent-700: #2563eb; --hero-from: #60a5fa; --hero-mid: #2563eb; --hero-to: #1e3a8a; }
+body.theme-metal3d.panel-seller { --accent: #2dd4bf; --accent-600: #14b8a6; --accent-700: #0d9488; --hero-from: #2dd4bf; --hero-mid: #0d9488; --hero-to: #134e4a; }
+
+/* Motion is opt-out for people who asked their system for less of it */
+@media (prefers-reduced-motion: reduce) {
+    body.theme-metal3d *, body.theme-metal3d *::before, body.theme-metal3d *::after { animation: none !important; transition: none !important; }
+}
+
+/* ---- Chrome: sidebar & topbar as glass over the metal ---------------- */
+body.theme-metal3d .vp-sidebar {
+    background: linear-gradient(180deg, rgba(20, 26, 46, .92), rgba(11, 16, 32, .96));
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    border-color: var(--border);
+    box-shadow: 8px 0 40px rgba(0, 0, 0, .45);
+}
+html[dir="rtl"] body.theme-metal3d .vp-sidebar { box-shadow: -8px 0 40px rgba(0, 0, 0, .45); }
+body.theme-metal3d .vp-sidebar__brand-text { color: var(--text); }
+body.theme-metal3d .vp-sidebar__brand-text small { color: var(--muted); }
+body.theme-metal3d .vp-nav__title { color: var(--muted-2); letter-spacing: .12em; }
+body.theme-metal3d .vp-nav__link { color: var(--text-soft); border-radius: var(--radius-sm); transition: background .18s, color .18s, transform .18s, box-shadow .18s; }
+body.theme-metal3d .vp-nav__link:hover { background: rgba(255, 255, 255, .05); color: var(--text); transform: translateX(var(--m3d-nudge, 2px)); }
+html[dir="rtl"] body.theme-metal3d .vp-nav__link:hover { --m3d-nudge: -2px; }
+body.theme-metal3d .vp-nav__link.is-active {
+    color: #fff;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 55%, transparent), color-mix(in srgb, var(--accent-700) 70%, transparent));
+    box-shadow: var(--m3d-glow), var(--m3d-edge);
+}
+body.theme-metal3d .vp-nav__link.is-active i, body.theme-metal3d .vp-nav__link.is-active .vp-nav__icon { color: #fff; opacity: 1; }
+body.theme-metal3d .vp-nav__sub .vp-nav__link.is-active { background: rgba(255, 255, 255, .08); box-shadow: none; }
+body.theme-metal3d .vp-nav__sub { border-color: var(--border); }
+
+body.theme-metal3d .vp-topbar {
+    background: linear-gradient(180deg, rgba(20, 26, 46, .85), rgba(20, 26, 46, .65));
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .25);
+}
+body.theme-metal3d .vp-topbar__title { color: var(--text); }
+body.theme-metal3d .vp-topbar__btn, body.theme-metal3d .vp-topbar__wallet, body.theme-metal3d .vp-topbar__user {
+    background: var(--m3d-glass); border: 1px solid var(--border); color: var(--text-soft); box-shadow: var(--m3d-edge);
+}
+body.theme-metal3d .vp-topbar__btn:hover, body.theme-metal3d .vp-topbar__wallet:hover, body.theme-metal3d .vp-topbar__user:hover { color: var(--text); border-color: var(--border-strong); }
+body.theme-metal3d .vp-topbar__noti-dot { box-shadow: 0 0 12px var(--danger); }
+body.theme-metal3d .footer { color: var(--muted); border-top: 1px solid var(--border); background: transparent; }
+
+/* ---- Surfaces: every card is a raised plate ---------------------------- */
+body.theme-metal3d .panel-modern-card,
+body.theme-metal3d .card,
+body.theme-metal3d .dash-card,
+body.theme-metal3d .dash-kpi,
+body.theme-metal3d .dash-tile,
+body.theme-metal3d .panel-kpi-card,
+body.theme-metal3d .panel-kpi-mini,
+body.theme-metal3d .panel-quick-action,
+body.theme-metal3d .panel-filter-bar,
+body.theme-metal3d .payment-summary-box,
+body.theme-metal3d .panel-form-section,
+body.theme-metal3d .empty-state {
+    background: var(--m3d-metal);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    color: var(--text);
+    position: relative;
+}
+body.theme-metal3d .panel-modern-card::before,
+body.theme-metal3d .dash-card::before,
+body.theme-metal3d .dash-kpi::before,
+body.theme-metal3d .panel-kpi-card::before {
+    content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    background: linear-gradient(120deg, rgba(255, 255, 255, .07), transparent 40%, transparent 70%, rgba(255, 255, 255, .03));
+}
+body.theme-metal3d .panel-modern-card, body.theme-metal3d .dash-card, body.theme-metal3d .dash-kpi, body.theme-metal3d .panel-kpi-card, body.theme-metal3d .panel-quick-action, body.theme-metal3d .dash-tile {
+    transition: transform .25s cubic-bezier(.2, .7, .2, 1), box-shadow .25s;
+}
+body.theme-metal3d .dash-kpi:hover, body.theme-metal3d .panel-kpi-card:hover, body.theme-metal3d .panel-quick-action:hover, body.theme-metal3d .dash-tile:hover {
+    transform: translateY(-4px) perspective(900px) rotateX(1.5deg);
+    box-shadow: var(--shadow-md), var(--m3d-glow);
+}
+body.theme-metal3d .panel-modern-card .card-head, body.theme-metal3d .card-header {
+    background: rgba(255, 255, 255, .025); border-bottom: 1px solid var(--border); color: var(--text);
+}
+body.theme-metal3d .panel-modern-card .card-head h3, body.theme-metal3d .card-title, body.theme-metal3d .dash-card__head h3, body.theme-metal3d .panel-dash-section-title, body.theme-metal3d .panel-form-section-title, body.theme-metal3d .account-ppp-section-title { color: var(--text); }
+body.theme-metal3d .panel-modern-card .card-head h3 i, body.theme-metal3d .dash-card__head h3 i { color: var(--accent); text-shadow: 0 0 14px color-mix(in srgb, var(--accent) 60%, transparent); }
+body.theme-metal3d .card-footer, body.theme-metal3d .panel-modern-card .card-foot { background: rgba(0, 0, 0, .18); border-color: var(--border); }
+body.theme-metal3d .dash-card__head p, body.theme-metal3d .dash-kpi header, body.theme-metal3d .panel-kpi-card .label, body.theme-metal3d .panel-kpi-mini .label, body.theme-metal3d .text-muted, body.theme-metal3d .sb-muted, body.theme-metal3d .small.text-muted { color: var(--muted) !important; }
+body.theme-metal3d .dash-kpi__value, body.theme-metal3d .panel-kpi-card .value, body.theme-metal3d .panel-kpi-mini .value { color: var(--text); text-shadow: 0 2px 12px rgba(0, 0, 0, .5); }
+body.theme-metal3d .dash-kpi__icon, body.theme-metal3d .panel-kpi-card .icon, body.theme-metal3d .panel-quick-action .icon, body.theme-metal3d .dash-tile__icon {
+    background: linear-gradient(145deg, color-mix(in srgb, var(--tone, var(--accent)) 35%, #141a2e), color-mix(in srgb, var(--tone, var(--accent)) 12%, #0b1020));
+    color: var(--tone, var(--accent));
+    box-shadow: var(--m3d-edge), 0 8px 20px color-mix(in srgb, var(--tone, var(--accent)) 25%, transparent);
+}
+
+/* Hero bands keep their gradient; they just get a metallic sheen and depth */
+body.theme-metal3d .panel-page-hero, body.theme-metal3d .panel-dash-hero, body.theme-metal3d .dash-head {
+    box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, .25);
+    border: 1px solid rgba(255, 255, 255, .12);
+}
+body.theme-metal3d .panel-page-hero::before, body.theme-metal3d .panel-dash-hero::before {
+    background: radial-gradient(circle at 20% 0%, rgba(255, 255, 255, .35), transparent 55%);
+}
+
+/* ---- Tables ----------------------------------------------------------- */
+body.theme-metal3d .table { color: var(--text); }
+body.theme-metal3d .table th, body.theme-metal3d .table td { border-color: var(--border); }
+body.theme-metal3d .table thead th, body.theme-metal3d .table.table-light thead th, body.theme-metal3d .table thead.table-light th { background: rgba(255, 255, 255, .03); color: var(--muted); }
+body.theme-metal3d .table-hover tbody tr:hover, body.theme-metal3d .table-striped tbody tr:nth-child(odd) { background: rgba(255, 255, 255, .025); }
+body.theme-metal3d .table-hover tbody tr:hover { box-shadow: inset 3px 0 0 var(--accent); }
+body.theme-metal3d .table .table-secondary, body.theme-metal3d tr.table-secondary td { background: var(--surface-3); }
+body.theme-metal3d code, body.theme-metal3d pre { color: #c4b5fd; background: rgba(0, 0, 0, .3) !important; border-color: var(--border) !important; }
+body.theme-metal3d .bg-light { background: rgba(255, 255, 255, .04) !important; }
+body.theme-metal3d .border, body.theme-metal3d .border-bottom, body.theme-metal3d .border-top { border-color: var(--border) !important; }
+
+/* ---- Forms ------------------------------------------------------------ */
+body.theme-metal3d .form-control, body.theme-metal3d .form-select, body.theme-metal3d .input-group-text {
+    background: rgba(0, 0, 0, .28); border-color: var(--border-strong); color: var(--text); box-shadow: inset 0 2px 6px rgba(0, 0, 0, .45);
+}
+body.theme-metal3d .form-select { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%238a94a8' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e"); }
+body.theme-metal3d .form-control:focus, body.theme-metal3d .form-select:focus { border-color: var(--accent); box-shadow: inset 0 2px 6px rgba(0, 0, 0, .45), 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent); background: rgba(0, 0, 0, .34); }
+body.theme-metal3d .form-control::placeholder { color: var(--muted-2); }
+body.theme-metal3d .form-control:disabled, body.theme-metal3d .form-control[readonly] { background: rgba(0, 0, 0, .18); color: var(--text-soft); }
+body.theme-metal3d .form-label, body.theme-metal3d label, body.theme-metal3d .form-check-label, body.theme-metal3d .form-text { color: var(--text-soft); }
+body.theme-metal3d .form-check-input { background-color: rgba(0, 0, 0, .3); border-color: var(--border-strong); }
+body.theme-metal3d .form-check-input:checked { background-color: var(--accent); border-color: var(--accent); box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 50%, transparent); }
+body.theme-metal3d .form-switch .form-check-input { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%238a94a8'/%3e%3c/svg%3e"); }
+body.theme-metal3d .form-switch .form-check-input:checked { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e"); }
+
+/* ---- Buttons: machined, with a light edge ------------------------------ */
+body.theme-metal3d .btn { box-shadow: var(--m3d-edge); transition: transform .15s, box-shadow .15s, background .15s; }
+body.theme-metal3d .btn:active { transform: translateY(1px); }
+body.theme-metal3d .btn-primary { background: linear-gradient(180deg, var(--accent), var(--accent-600)); color: #fff; border: 0; box-shadow: var(--m3d-edge), 0 8px 22px color-mix(in srgb, var(--accent) 35%, transparent); }
+body.theme-metal3d .btn-primary:hover { background: linear-gradient(180deg, var(--accent-600), var(--accent-700)); box-shadow: var(--m3d-edge), 0 12px 28px color-mix(in srgb, var(--accent) 45%, transparent); transform: translateY(-1px); }
+body.theme-metal3d .btn-secondary, body.theme-metal3d .btn-light, body.theme-metal3d .btn-outline-secondary { background: var(--m3d-glass); border: 1px solid var(--border-strong); color: var(--text-soft); }
+body.theme-metal3d .btn-secondary:hover, body.theme-metal3d .btn-light:hover, body.theme-metal3d .btn-outline-secondary:hover { color: var(--text); background: rgba(255, 255, 255, .08); }
+body.theme-metal3d .btn-outline-primary { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 55%, transparent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+body.theme-metal3d .btn-outline-primary:hover { background: var(--accent); color: #fff; }
+body.theme-metal3d .btn-outline-danger { color: #f87171; border-color: rgba(248, 113, 113, .5); }
+body.theme-metal3d .btn-danger { background: linear-gradient(180deg, #ef4444, #dc2626); border: 0; }
+body.theme-metal3d .btn-success { background: linear-gradient(180deg, #10b981, #059669); border: 0; }
+body.theme-metal3d .btn-warning { background: linear-gradient(180deg, #f59e0b, #d97706); border: 0; color: #1c1917; }
+
+/* ---- Badges, alerts, progress, dropdowns, modals, pagination ----------- */
+body.theme-metal3d .badge { box-shadow: var(--m3d-edge); }
+body.theme-metal3d .badge.bg-primary { background: var(--accent-soft) !important; color: var(--accent) !important; }
+body.theme-metal3d .badge.bg-success, body.theme-metal3d .badge.bg-soft-success { background: var(--success-soft) !important; color: #34d399 !important; }
+body.theme-metal3d .badge.bg-danger { background: var(--danger-soft) !important; color: #f87171 !important; }
+body.theme-metal3d .badge.bg-warning { background: var(--warning-soft) !important; color: #fbbf24 !important; }
+body.theme-metal3d .badge.bg-info { background: var(--info-soft) !important; color: #22d3ee !important; }
+body.theme-metal3d .badge.bg-secondary { background: var(--surface-3) !important; color: var(--text-soft) !important; }
+body.theme-metal3d .panel-status-badge--active { background: var(--success-soft); color: #34d399; }
+body.theme-metal3d .panel-status-badge--inactive { background: var(--danger-soft); color: #f87171; }
+body.theme-metal3d .alert { border: 1px solid var(--border); background: var(--m3d-metal); color: var(--text); box-shadow: var(--shadow-sm); }
+body.theme-metal3d .alert-success { border-inline-start: 4px solid #10b981; }
+body.theme-metal3d .alert-warning { border-inline-start: 4px solid #f59e0b; }
+body.theme-metal3d .alert-danger, body.theme-metal3d .alert-error { border-inline-start: 4px solid #ef4444; }
+body.theme-metal3d .alert-info { border-inline-start: 4px solid #06b6d4; }
+body.theme-metal3d .progress { background: rgba(0, 0, 0, .35); box-shadow: inset 0 2px 5px rgba(0, 0, 0, .5); }
+body.theme-metal3d .progress-bar { background: linear-gradient(90deg, var(--accent), var(--accent-600)); box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 55%, transparent); }
+body.theme-metal3d .progress-bar.bg-warning { background: linear-gradient(90deg, #fbbf24, #d97706); box-shadow: 0 0 14px rgba(245, 158, 11, .5); }
+body.theme-metal3d .progress-bar.bg-danger { background: linear-gradient(90deg, #f87171, #dc2626); box-shadow: 0 0 14px rgba(239, 68, 68, .5); }
+body.theme-metal3d .dropdown-menu, body.theme-metal3d .account-menu, body.theme-metal3d .modal-content, body.theme-metal3d .offcanvas {
+    background: linear-gradient(160deg, rgba(26, 33, 56, .98), rgba(16, 21, 42, .98));
+    backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+    border: 1px solid var(--border-strong); color: var(--text); box-shadow: var(--shadow-lg);
+}
+body.theme-metal3d .dropdown-item { color: var(--text-soft); }
+body.theme-metal3d .dropdown-item:hover { background: rgba(255, 255, 255, .06); color: var(--text); }
+body.theme-metal3d .dropdown-divider, body.theme-metal3d .modal-header, body.theme-metal3d .modal-footer { border-color: var(--border); }
+body.theme-metal3d .modal-backdrop { background: rgba(3, 6, 15, .75); backdrop-filter: blur(4px); }
+body.theme-metal3d .btn-close { filter: invert(1) grayscale(1) brightness(1.6); }
+body.theme-metal3d .pagination .page-link { background: var(--m3d-glass); border-color: var(--border); color: var(--text-soft); }
+body.theme-metal3d .pagination .page-item.active .page-link { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: var(--m3d-glow); }
+body.theme-metal3d .nav-tabs { border-color: var(--border); }
+body.theme-metal3d .nav-tabs .nav-link { color: var(--muted); }
+body.theme-metal3d .nav-tabs .nav-link.active { background: var(--surface-2); color: var(--text); border-color: var(--border) var(--border) transparent; }
+body.theme-metal3d .list-group-item { background: transparent; border-color: var(--border); color: var(--text); }
+body.theme-metal3d a:not(.btn):not(.vp-nav__link):not(.dropdown-item):not(.page-link):not(.badge) { color: var(--accent); }
+body.theme-metal3d a:not(.btn):not(.vp-nav__link):not(.dropdown-item):not(.page-link):not(.badge):hover { color: #fff; }
+body.theme-metal3d hr { border-color: var(--border); opacity: 1; }
+body.theme-metal3d h1, body.theme-metal3d h2, body.theme-metal3d h3, body.theme-metal3d h4, body.theme-metal3d h5, body.theme-metal3d h6, body.theme-metal3d .vp-page-title, body.theme-metal3d .fw-semibold, body.theme-metal3d .fw-bold, body.theme-metal3d strong, body.theme-metal3d dt { color: var(--text); }
+body.theme-metal3d .text-dark, body.theme-metal3d .text-body { color: var(--text) !important; }
+body.theme-metal3d .text-success { color: #34d399 !important; }
+body.theme-metal3d .text-danger { color: #f87171 !important; }
+body.theme-metal3d .text-warning { color: #fbbf24 !important; }
+body.theme-metal3d .text-primary { color: var(--accent) !important; }
+body.theme-metal3d .bg-white, body.theme-metal3d .bg-body { background: var(--surface) !important; }
+
+/* ---- Charts: the canvas sits in a recessed well ------------------------ */
+body.theme-metal3d .dash-chart, body.theme-metal3d .chart-wrap, body.theme-metal3d canvas.chartjs-render-monitor {
+    border-radius: var(--radius-sm);
+}
+body.theme-metal3d .dash-chart { background: radial-gradient(ellipse at 50% 120%, color-mix(in srgb, var(--accent) 12%, transparent), transparent 70%), rgba(0, 0, 0, .18); box-shadow: inset 0 2px 10px rgba(0, 0, 0, .45); padding: 8px; }
+body.theme-metal3d .dash-empty { color: var(--muted); }
+
+/* ---- Account card: deeper and glossier in this theme ------------------- */
+body.theme-metal3d .account-card { box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, .3); border: 1px solid rgba(255, 255, 255, .14); transform-style: preserve-3d; transition: transform .4s cubic-bezier(.2, .7, .2, 1), box-shadow .4s; }
+body.theme-metal3d .account-card:hover { transform: perspective(1200px) rotateX(2deg) rotateY(calc(var(--m3d-tilt, 0) * 1deg)); box-shadow: var(--shadow-lg), var(--m3d-glow); }
+body.theme-metal3d .account-card .btn-light { background: rgba(255, 255, 255, .92); color: #0f172a; }
+
+/* ---- Scrollbars & selection ------------------------------------------- */
+body.theme-metal3d ::-webkit-scrollbar { width: 10px; height: 10px; }
+body.theme-metal3d ::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 10px; border: 2px solid var(--bg); }
+body.theme-metal3d ::-webkit-scrollbar-thumb:hover { background: var(--accent-700); }
+body.theme-metal3d ::selection { background: color-mix(in srgb, var(--accent) 55%, transparent); color: #fff; }
+
+/* ---- Entrance: plates settle into place -------------------------------- */
+@keyframes m3d-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+body.theme-metal3d .page-content .panel-modern-card, body.theme-metal3d .page-content .dash-card, body.theme-metal3d .page-content .dash-kpi, body.theme-metal3d .page-content .panel-kpi-card, body.theme-metal3d .page-content .account-card {
+    animation: m3d-rise .5s cubic-bezier(.2, .7, .2, 1) both;
+}
+
+/* Printing is paper, not metal */
+@media print { body.theme-metal3d { background: #fff; color: #000; } }
