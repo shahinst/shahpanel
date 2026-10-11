@@ -167,17 +167,22 @@ body.theme-metal3d .bg-light { background: rgba(255, 255, 255, .04) !important; 
 body.theme-metal3d .border, body.theme-metal3d .border-bottom, body.theme-metal3d .border-top { border-color: var(--border) !important; }
 
 /* ---- Forms ------------------------------------------------------------ */
+/* background-color, never the background shorthand: the shorthand would reset
+   background-repeat/position/size and tile the select's chevron and the
+   switch's knob across the whole control. */
 body.theme-metal3d .form-control, body.theme-metal3d .form-select, body.theme-metal3d .input-group-text {
-    background: rgba(0, 0, 0, .28); border-color: var(--border-strong); color: var(--text); box-shadow: inset 0 2px 6px rgba(0, 0, 0, .45);
+    background-color: rgba(0, 0, 0, .28); border-color: var(--border-strong); color: var(--text); box-shadow: inset 0 2px 6px rgba(0, 0, 0, .45);
 }
-body.theme-metal3d .form-select { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%238a94a8' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e"); }
-body.theme-metal3d .form-control:focus, body.theme-metal3d .form-select:focus { border-color: var(--accent); box-shadow: inset 0 2px 6px rgba(0, 0, 0, .45), 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent); background: rgba(0, 0, 0, .34); }
+body.theme-metal3d .form-select { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%238a94a8' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: left .75rem center; background-size: 14px; }
+body.theme-metal3d .form-select option { background: #141a2e; color: var(--text); }
+body.theme-metal3d .form-control:focus, body.theme-metal3d .form-select:focus { border-color: var(--accent); box-shadow: inset 0 2px 6px rgba(0, 0, 0, .45), 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent); background-color: rgba(0, 0, 0, .34); }
 body.theme-metal3d .form-control::placeholder { color: var(--muted-2); }
-body.theme-metal3d .form-control:disabled, body.theme-metal3d .form-control[readonly] { background: rgba(0, 0, 0, .18); color: var(--text-soft); }
+body.theme-metal3d .form-control:disabled, body.theme-metal3d .form-control[readonly] { background-color: rgba(0, 0, 0, .18); color: var(--text-soft); }
 body.theme-metal3d .form-label, body.theme-metal3d label, body.theme-metal3d .form-check-label, body.theme-metal3d .form-text { color: var(--text-soft); }
 body.theme-metal3d .form-check-input { background-color: rgba(0, 0, 0, .3); border-color: var(--border-strong); }
 body.theme-metal3d .form-check-input:checked { background-color: var(--accent); border-color: var(--accent); box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 50%, transparent); }
-body.theme-metal3d .form-switch .form-check-input { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%238a94a8'/%3e%3c/svg%3e"); }
+body.theme-metal3d .form-switch .form-check-input { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%238a94a8'/%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: left center; background-size: contain; transition: background-position .15s; }
+body.theme-metal3d .form-switch .form-check-input:checked { background-position: right center; }
 body.theme-metal3d .form-switch .form-check-input:checked { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e"); }
 
 /* ---- Buttons: machined, with a light edge ------------------------------ */
