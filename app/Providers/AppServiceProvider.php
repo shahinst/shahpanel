@@ -39,6 +39,8 @@ class AppServiceProvider extends ServiceProvider
         // پرسیده شود؛ منو برای هر آیتم این سرویس را صدا می‌زند.
         $this->app->singleton(\App\Services\AdminSectionAccessService::class);
         $this->app->singleton(PaymentGatewayManager::class);
+        // The chosen theme is read once per request and shared with every view.
+        $this->app->singleton(\App\Support\Themes\ThemeRegistry::class);
     }
 
     /**

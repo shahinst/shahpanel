@@ -25,6 +25,7 @@ return [
     'payment_requests' => '充值申请',
     'settings' => '设置',
     'settings_general' => '系统设置',
+    'themes' => '主题',
     'modules' => '模块',
     'gift_accounts' => '赠送账号',
     'gifts' => '赠送',

@@ -25,6 +25,7 @@ return [
     'payment_requests' => 'درخواست‌های شارژ',
     'settings' => 'تنظیمات',
     'settings_general' => 'تنظیمات سامانه',
+    'themes' => 'قالب',
     'modules' => 'ماژول‌ها',
     'gift_accounts' => 'اکانت هدیه',
     'gifts' => 'هدایا',

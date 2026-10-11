@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\FinancialPlanTemplateController as AdminFinancial
 use App\Http\Controllers\Admin\AgentFinancialPlanPurchaseController as AdminAgentFinancialPlanPurchaseController;
 use App\Http\Controllers\Admin\MaintenanceController as AdminMaintenanceController;
 use App\Http\Controllers\Admin\ModuleController as AdminModuleController;
+use App\Http\Controllers\Admin\ThemeController as AdminThemeController;
 use App\Http\Controllers\Admin\SellerController as AdminSellerController;
 use App\Http\Controllers\Admin\ServerClientImportController as AdminServerClientImportController;
 use App\Http\Controllers\Admin\ServerOperationsController as AdminServerOperationsController;
@@ -342,6 +343,8 @@ Route::prefix($adminPath)->name('admin.')->middleware($adminMiddleware)->group(f
     Route::post('settings/server-backups/database-schedule', [AdminServerBackupController::class, 'updateDatabaseSchedule'])->name('settings.server-backups.database-schedule');
     Route::get('settings/server-backups/{serverBackup}', [AdminServerBackupController::class, 'show'])->name('settings.server-backups.show');
 
+    Route::get('themes', [AdminThemeController::class, 'index'])->name('themes.index');
+    Route::post('themes', [AdminThemeController::class, 'update'])->name('themes.update');
     Route::get('modules', [AdminModuleController::class, 'index'])->name('modules.index');
     Route::post('modules/upload', [AdminModuleController::class, 'upload'])->name('modules.upload');
     Route::post('modules/{module}/activate', [AdminModuleController::class, 'activate'])->name('modules.activate');

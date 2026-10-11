@@ -25,6 +25,7 @@ return [
     'payment_requests' => 'Top-up requests',
     'settings' => 'Settings',
     'settings_general' => 'System settings',
+    'themes' => 'Theme',
     'modules' => 'Modules',
     'gift_accounts' => 'Gift accounts',
     'gifts' => 'Gifts',

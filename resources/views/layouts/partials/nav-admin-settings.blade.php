@@ -4,6 +4,7 @@
     $settingsLinks = array_values(array_filter([
         array('route' => 'admin.settings.index', 'section' => 'settings_general', 'label' => __('menu.settings_general'), 'icon' => 'bx-cog'),
         array('route' => 'admin.modules.index', 'section' => 'settings_modules', 'label' => __('menu.modules'), 'icon' => 'bx-extension'),
+        array('route' => 'admin.themes.index', 'section' => 'settings_themes', 'label' => __('menu.themes'), 'icon' => 'bx-palette'),
         array('route' => 'admin.gift-accounts.index', 'section' => 'settings_gift_accounts', 'label' => __('menu.gift_accounts'), 'icon' => 'bx-gift'),
         array('route' => 'admin.gifts.index', 'section' => 'settings_gifts', 'label' => __('menu.gifts'), 'icon' => 'bx-heart'),
         array('route' => 'admin.sms.index', 'section' => 'settings_sms', 'label' => __('menu.sms'), 'icon' => 'bx-message-dots'),
@@ -38,6 +39,7 @@
     $settingsOpen = request()->routeIs('admin.settings.index')
         || request()->routeIs('admin.settings.update')
         || request()->routeIs('admin.modules.*')
+        || request()->routeIs('admin.themes.*')
         || request()->routeIs('admin.gift-accounts.*')
         || request()->routeIs('admin.gifts.*')
         || request()->routeIs('admin.sms.*')

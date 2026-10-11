@@ -1,6 +1,32 @@
 {
     "versions": [
         {
+            "version": "3.38.0",
+            "date": "2026-11-20",
+            "notes": {
+                "fa": [
+                    "بخش «قالب» به تنظیمات اضافه شد: ظاهر همهٔ صفحات پنل برای مدیر، نماینده، فروشنده و مشتری از یک جا انتخاب می‌شود. قالب فعلی با نام «Shahpanel» قالب پیش‌فرض است و قالب‌های تازه به شکل ماژول اضافه می‌شوند؛ با خاموش شدن ماژولِ قالب فعال، پنل خودکار به Shahpanel برمی‌گردد. قالب فقط ظاهر را تغییر می‌دهد و هیچ کاری را عوض نمی‌کند.",
+                    "قالب جدید «Metal3D» به شکل ماژول: تاریک و فلزی با کارت‌ها و نمودارهای برجسته و سه‌بعدی، منوی شیشه‌ای، نور و عمق روی هر سطح و پویانمایی نرم (برای کسانی که حرکت کمتر خواسته‌اند خاموش می‌شود). نمودارها در فارسی با اعداد فارسی و در زبان‌های دیگر با اعداد لاتین نشان داده می‌شوند. از تنظیمات > ماژول‌ها فعال و از تنظیمات > قالب انتخابش کنید.",
+                    "«کارت اکانت» در صفحهٔ مشخصات هر اکانت از هر نوع (وایرگارد، PPP/L2TP/OpenVPN، V2ray، AnyConnect): مشخصات سرویس مثل یک کارت ویزیت، با نام سرویس، آدرس سرور، نام کاربری و رمز (هر جا معنا دارد)، QR، پکیج، تاریخ انقضا و روزهای مانده، حلقهٔ مصرف و دکمه‌های کپی مشخصات و چاپ. برای مشتری فقط چیزهایی را نشان می‌دهد که قبلاً هم در همان صفحه می‌دید."
+                ],
+                "en": [
+                    "A \"Theme\" section was added to Settings: the look of every panel page for admins, agents, sellers and clients is chosen in one place. The current look is the default theme, \"Shahpanel\"; new themes come as modules, and if the active theme's module is turned off the panel falls back to Shahpanel on its own. A theme only changes appearance, never behaviour.",
+                    "New \"Metal3D\" theme as a module: dark and metallic, with raised three-dimensional cards and charts, a glass sidebar, light and depth on every surface and soft motion (off for readers who asked their system for less motion). Charts use Persian digits in Persian and Latin digits in the other languages. Activate it under Settings > Modules and pick it under Settings > Theme.",
+                    "An \"Account card\" on every account's detail page, for every service type (WireGuard, PPP/L2TP/OpenVPN, V2ray, AnyConnect): the service as a business card, with its name, server address, username and password where they apply, QR, package, expiry and days left, a usage ring, and buttons to copy the details or print. A client only sees what the same page already showed them."
+                ],
+                "ru": [
+                    "В настройках появился раздел «Тема оформления»: внешний вид всех страниц панели для администраторов, агентов, продавцов и клиентов выбирается в одном месте. Текущий вид стал темой по умолчанию «Shahpanel»; новые темы поставляются как модули, а при выключении модуля активной темы панель сама возвращается к Shahpanel. Тема меняет только вид, но не поведение.",
+                    "Новая тема «Metal3D» в виде модуля: тёмная и металлическая, с объёмными приподнятыми карточками и графиками, стеклянным меню, светом и глубиной на каждой поверхности и мягкой анимацией (отключается для тех, кто попросил систему о меньшем движении). Графики используют персидские цифры в персидском и латинские в остальных языках. Включите модуль в Настройки > Модули и выберите тему в Настройки > Тема.",
+                    "«Карточка аккаунта» на странице каждого аккаунта любого типа (WireGuard, PPP/L2TP/OpenVPN, V2ray, AnyConnect): услуга в виде визитки с названием, адресом сервера, логином и паролем там, где они есть, QR, пакетом, сроком и оставшимися днями, кольцом использования и кнопками копирования и печати. Клиент видит только то, что эта страница и так ему показывала."
+                ],
+                "zh": [
+                    "设置中新增“主题”：在一处为管理员、代理、销售员和客户选择面板所有页面的外观。当前外观成为默认主题“Shahpanel”；新主题以模块形式提供，若停用当前主题的模块，面板会自动回到 Shahpanel。主题只改变外观，不改变任何功能。",
+                    "新主题“Metal3D”模块：深色金属风格，带立体浮起的卡片和图表、玻璃质感侧栏、每个表面的光影深度和柔和动效（对要求减少动态的用户自动关闭）。图表在波斯语下使用波斯数字，其他语言使用拉丁数字。在 设置 > 模块 中启用，并在 设置 > 主题 中选择。",
+                    "每个账户详情页新增“账户卡片”，支持所有类型（WireGuard、PPP/L2TP/OpenVPN、V2ray、AnyConnect）：以名片形式展示服务名称、服务器地址、用户名和密码（如适用）、二维码、套餐、到期时间与剩余天数、用量环，以及复制信息和打印按钮。客户只会看到该页面本来就显示的内容。"
+                ]
+            }
+        },
+        {
             "version": "3.37.2",
             "date": "2026-11-19",
             "notes": {

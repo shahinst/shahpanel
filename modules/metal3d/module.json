@@ -1,0 +1,11 @@
+{
+    "slug": "metal3d",
+    "name": "قالب Metal3D",
+    "version": "1.0.0",
+    "description": "قالب تاریک و سه‌بعدی برای همهٔ صفحات پنل: سطوح فلزی با عمق و نور، کارت‌ها و نمودارهای برجسته، منوی شیشه‌ای و پویانمایی نرم. پس از فعال‌سازی، از تنظیمات > قالب انتخابش کنید. نسخهٔ فارسی کاملاً راست‌چین با تقویم شمسی و اعداد فارسی است و بقیهٔ زبان‌ها میلادی و اعداد لاتین دارند.",
+    "author": "ShahPanel",
+    "license": "AGPL-3.0-or-later",
+    "namespace": "Modules\\Metal3d\\",
+    "autoload": "src",
+    "provider": "Modules\\Metal3d\\Metal3dServiceProvider"
+}

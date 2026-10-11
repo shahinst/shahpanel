@@ -9,6 +9,7 @@
     <link rel="shortcut icon" href="{{ asset('images/shahpanel-logo.png') }}">
     @include('layouts.partials.webadmin-fonts')
     @include('layouts.partials.panel-vite', ['assets' => ['resources/css/app.css', 'resources/js/app.js']])
+    @include('layouts.partials.theme-assets', ['part' => 'styles'])
     @stack('styles')
 </head>
 <body @yield('body_attrs')>
@@ -24,6 +25,7 @@
         }
     }, true);
 </script>
+@include('layouts.partials.theme-assets', ['part' => 'scripts'])
 @stack('scripts')
 </body>
 </html>
