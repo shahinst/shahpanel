@@ -22,7 +22,7 @@ class PanelThemeSmokeTest extends TestCase
     public function test_every_plain_panel_page_renders_with_a_theme_chosen(): void
     {
         Setting::setValue(ThemeRegistry::SETTING, 'metal3d');
-        app(ThemeRegistry::class)->register(['slug' => 'metal3d', 'name' => 'Metal3D', 'styles' => ['/themes/metal3d/metal3d.css'], 'scripts' => ['/themes/metal3d/metal3d.js']]);
+        app(ThemeRegistry::class)->register(['slug' => 'metal3d', 'name' => 'Metal3D', 'styles' => ['/themes/metal3d/css'], 'scripts' => ['/themes/metal3d/js']]);
 
         $admin = $this->makeAdmin();
         $agent = $this->makeAgent();

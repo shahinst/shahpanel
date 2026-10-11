@@ -30,8 +30,8 @@ class PanelThemeTest extends TestCase
         // The provider registers on "booted"; the app is already booted here.
         $this->app->make(ThemeRegistry::class)->register([
             'slug' => 'metal3d', 'name' => 'Metal3D',
-            'styles' => [Metal3dServiceProvider::assetUrl('metal3d.css')],
-            'scripts' => [Metal3dServiceProvider::assetUrl('metal3d.js')],
+            'styles' => [Metal3dServiceProvider::assetUrl('css')],
+            'scripts' => [Metal3dServiceProvider::assetUrl('js')],
         ]);
     }
 
@@ -50,10 +50,11 @@ class PanelThemeTest extends TestCase
         $this->assertSame('metal3d', Setting::getValue(ThemeRegistry::SETTING));
 
         $page = $this->actingAs($admin)->get(route('admin.dashboard'))->assertOk();
-        $page->assertSee('theme-metal3d', false)->assertSee('themes/metal3d/metal3d.css', false)->assertSee('themes/metal3d/metal3d.js', false);
+        $page->assertSee('theme-metal3d', false)->assertSee('themes/metal3d/css', false)->assertSee('themes/metal3d/js', false);
 
-        $this->get('/themes/metal3d/metal3d.css')->assertOk()->assertHeader('Content-Type', 'text/css; charset=UTF-8');
-        $this->get('/themes/metal3d/other.css')->assertNotFound();
+        // No file extension in the URL: nginx would otherwise answer it as a static file.
+        $this->get('/themes/metal3d/css')->assertOk()->assertHeader('Content-Type', 'text/css; charset=UTF-8');
+        $this->get('/themes/metal3d/metal3d.css')->assertNotFound();
     }
 
     public function test_a_chosen_theme_whose_module_is_off_falls_back_to_the_default(): void
@@ -72,7 +73,9 @@ class PanelThemeTest extends TestCase
         $this->actingAs($agent)->get(route('agent.accounts.show', $account))->assertOk()
             ->assertSee('id="account-card"', false)
             ->assertSee('Office phone')
-            ->assertSee(__('accounts.card_copy'))
-            ->assertSee('--p: 40', false);
+            ->assertSee(__('accounts.card_download'))
+            ->assertSee('data-card=', false)
+            // Server name, seller and usage figures are deliberately not on the card.
+            ->assertDontSee('account-card__ring');
     }
 }
