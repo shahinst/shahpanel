@@ -1,6 +1,28 @@
 {
     "versions": [
         {
+            "version": "3.38.1",
+            "date": "2026-11-20",
+            "notes": {
+                "fa": [
+                    "قالب Metal3D روی نصب‌های واقعی اعمال نمی‌شد: تنظیمات nginx نصب‌کننده، آدرس‌های با پسوند .css و .js را خودش جواب می‌دهد و فایل‌های قالب با وضعیت ۴۰۴ به مرورگر می‌رسید، پس مرورگر آن‌ها را نادیده می‌گرفت. فایل‌های قالب حالا از آدرس بدون پسوند داده می‌شوند و قالب بلافاصله بعد از انتخاب اعمال می‌شود.",
+                    "کارت اکانت کوچک‌تر و مرتب‌تر شد: یک کارت تک‌ستونه با نام سرویس، آدرس سرور، نام کاربری و رمز (هر جا معنا دارد)، لینک سابسکرایب، پکیج، تاریخ انقضا با روزهای مانده، حجم و QR. نام سرور، فروشنده، مصرف‌شده، باقی‌مانده و وضعیت فعال/غیرفعال از کارت حذف شدند و دکمهٔ چاپ برداشته شد. کارت با دکمهٔ «دانلود عکس کارت» به‌صورت عکس PNG دانلود می‌شود و با «ارسال برای مشتری» از طریق منوی اشتراک‌گذاری دستگاه (تلگرام، واتساپ و …) برای مشتری فرستاده می‌شود؛ روی دسکتاپ بدون منوی اشتراک، همان عکس دانلود می‌شود. اعداد و تاریخ در عکس همان‌هایی هستند که صفحه نشان می‌دهد (شمسی و فارسی در فارسی، میلادی و لاتین در زبان‌های دیگر)."
+                ],
+                "en": [
+                    "The Metal3D theme did not apply on real installs: the installer's nginx config answers .css and .js URLs itself, so the theme files reached the browser with status 404 and were ignored. The theme files are now served from extension-less URLs and the theme applies as soon as it is chosen.",
+                    "The account card is smaller and tidier: a single-column card with the service name, server address, username and password where they apply, subscription link, package, expiry with days left, data volume and QR. Server name, seller, used and remaining data and the active/inactive status were removed, as was the print button. \"Download card image\" saves the card as a PNG and \"Send to customer\" opens the device's share sheet (Telegram, WhatsApp, ...); on a desktop without one the image is downloaded instead. Digits and dates in the image are exactly what the page shows (Jalali and Persian digits in Persian, Gregorian and Latin elsewhere)."
+                ],
+                "ru": [
+                    "Тема Metal3D не применялась на реальных установках: конфигурация nginx из установщика сама отвечает на адреса .css и .js, поэтому файлы темы приходили в браузер со статусом 404 и игнорировались. Теперь файлы темы отдаются по адресам без расширения, и тема применяется сразу после выбора.",
+                    "Карточка аккаунта стала компактнее и аккуратнее: одна колонка с названием услуги, адресом сервера, логином и паролем (где применимо), ссылкой подписки, пакетом, сроком с оставшимися днями, объёмом и QR. Название сервера, продавец, использованный и оставшийся трафик и статус активности убраны, как и кнопка печати. «Скачать картинку» сохраняет карточку в PNG, «Отправить клиенту» открывает системное меню «Поделиться» (Telegram, WhatsApp и т. д.); на компьютере без него картинка просто скачивается. Цифры и даты на картинке точно такие, как на странице."
+                ],
+                "zh": [
+                    "Metal3D 主题在实际安装上无法生效：安装程序的 nginx 配置会自行响应 .css 和 .js 地址，导致主题文件以 404 状态到达浏览器而被忽略。现在主题文件通过无扩展名的地址提供，选择后立即生效。",
+                    "账户卡片更小更整洁：单列卡片包含服务名称、服务器地址、用户名和密码（如适用）、订阅链接、套餐、到期时间及剩余天数、流量和二维码。移除了服务器名称、销售员、已用/剩余流量和启用状态，也去掉了打印按钮。“下载卡片图片”将卡片保存为 PNG，“发送给客户”打开设备的分享菜单（Telegram、WhatsApp 等）；桌面端若无分享菜单则直接下载。图片中的数字和日期与页面显示完全一致。"
+                ]
+            }
+        },
+        {
             "version": "3.38.0",
             "date": "2026-11-20",
             "notes": {

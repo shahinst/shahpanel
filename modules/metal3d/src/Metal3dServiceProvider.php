@@ -34,8 +34,8 @@ class Metal3dServiceProvider extends ServiceProvider
                 'author' => 'ShahPanel',
                 'version' => (string) (json_decode((string) @file_get_contents(__DIR__.'/../module.json'), true)['version'] ?? '1.0.0'),
                 'preview' => 'linear-gradient(135deg, #1e293b 0%, #0f172a 45%, #312e81 100%)',
-                'styles' => [self::assetUrl('metal3d.css')],
-                'scripts' => [self::assetUrl('metal3d.js')],
+                'styles' => [self::assetUrl('css')],
+                'scripts' => [self::assetUrl('js')],
                 'body_class' => 'theme-metal3d',
             ]);
         });
@@ -46,13 +46,16 @@ class Metal3dServiceProvider extends ServiceProvider
         return dirname(__DIR__).'/assets/'.$file;
     }
 
-    public static function assetUrl(string $file): string
+    /**
+     * @param  'css'|'js'  $kind
+     */
+    public static function assetUrl(string $kind): string
     {
-        $path = self::assetPath($file);
+        $path = self::assetPath('metal3d.'.$kind);
         $version = is_file($path) ? (string) filemtime($path) : '0';
 
         // Built from the path, not the route name: this runs while the app is
         // still booting, before route-name lookups are refreshed.
-        return asset('themes/metal3d/'.$file).'?v='.$version;
+        return asset('themes/metal3d/'.$kind).'?v='.$version;
     }
 }
