@@ -28,11 +28,16 @@
 @endphp
 
 {{-- Header: who this account is, at a glance. The chips repeat what the
-     tables below say in detail, so a reader can stop here. --}}
+     tables below say in detail, so a reader can stop here. The name sits in
+     its own bidi span: a Latin name must not drag the heading to the other
+     side of a Persian page. --}}
 <header class="acct-head">
     <a href="{{ $backUrl }}" class="acct-head__back" aria-label="{{ __('app.back') }}" title="{{ __('app.back') }}"><i class="bx bx-arrow-back"></i></a>
     <div class="acct-head__title">
-        <h2 dir="auto">{{ $account->display_label ?: $account->remote_username }}</h2>
+        <div class="acct-head__row">
+            <h2><span dir="auto">{{ $account->display_label ?: $account->remote_username }}</span></h2>
+            <span class="acct-status acct-status--{{ $badgeColor }}"><i class="bx bxs-circle"></i> {{ $badgeLabel }}</span>
+        </div>
         <div class="acct-head__chips">
             @if ($account->display_label)
                 <span class="acct-chip acct-chip--mono" dir="ltr">{{ $account->remote_username }}</span>
@@ -44,70 +49,67 @@
             <span class="acct-chip"><i class="bx bx-calendar-plus"></i> {{ jalali_date($account->created_at, 'Y/m/d') }}</span>
         </div>
     </div>
-    <span class="acct-status acct-status--{{ $badgeColor }}"><i class="bx bxs-circle"></i> {{ $badgeLabel }}</span>
 </header>
 
-<div class="acct-hero">
-    @include('shared.accounts.partials.account-card')
-
-    <div class="acct-kpis">
-        <div class="panel-modern-card acct-kpi acct-kpi--{{ $pageExpiryTone }}">
-            <span class="acct-kpi__icon"><i class="bx bx-time-five"></i></span>
-            <span class="acct-kpi__label">{{ __('accounts.expires_at') }}</span>
-            <strong class="acct-kpi__value">{{ $account->expiry_at ? jalali_date($account->expiry_at, 'Y/m/d') : __('accounts.no_expiry') }}</strong>
-            @if ($pageDaysLeft !== null)
-                <span class="acct-kpi__hint">{{ __('accounts.card_days_left', ['days' => persian_digits($pageDaysLeft)]) }} · {{ jalali_date($account->expiry_at, 'H:i') }}</span>
-            @endif
-        </div>
-
-        <div class="panel-modern-card acct-kpi acct-kpi--{{ $pageTone }}">
-            <span class="acct-kpi__icon"><i class="bx bx-pie-chart-alt-2"></i></span>
-            <span class="acct-kpi__label">{{ __('clients.data_usage') }}</span>
-            @if ($account->isUnlimited())
-                <strong class="acct-kpi__value">{{ __('clients.unlimited_data') }}</strong>
-                <span class="acct-kpi__hint">{{ __('accounts.total_usage') }}: {{ format_data_size($usage['used_bytes']) }}</span>
-            @else
-                <strong class="acct-kpi__value">{{ format_data_size($usage['used_bytes']) }} <small>/ {{ format_data_size($usage['limit_bytes']) }}</small></strong>
-                @if ($pagePercent !== null)
-                    <div class="acct-meter" role="progressbar" aria-valuenow="{{ (int) $pagePercent }}" aria-valuemin="0" aria-valuemax="100"><span style="width: {{ min(100, max(0, (float) $pagePercent)) }}%"></span></div>
-                    <span class="acct-kpi__hint">{{ __('accounts.remaining') }}: {{ format_data_size($usage['remaining_bytes']) }} · {{ persian_digits(number_format($pagePercent, 1)) }}٪</span>
-                @endif
-            @endif
-        </div>
-
-        <div class="panel-modern-card acct-kpi">
-            <span class="acct-kpi__icon"><i class="bx bx-package"></i></span>
-            <span class="acct-kpi__label">{{ __('accounts.package') }}</span>
-            <strong class="acct-kpi__value" dir="auto">{{ $account->package?->name ?? '—' }}</strong>
-            @if ($pageVolume)
-                <span class="acct-kpi__hint">{{ __('accounts.renew_volume') }}: {{ $pageVolume }}</span>
-            @endif
-        </div>
-
-        @if (! empty($kycVerification))
-            <div class="panel-modern-card acct-kpi">
-                <span class="acct-kpi__icon"><i class="bx bx-id-card"></i></span>
-                <span class="acct-kpi__label">{{ __('kyc.status') }}</span>
-                <strong class="acct-kpi__value" dir="auto">{{ $kycVerification->fullName() }}</strong>
-                <span class="acct-kpi__hint">
-                    <span class="badge bg-info">{{ $kycVerification->status->label() }}</span>
-                    @if ($kycVerification->has_document)
-                        <span class="badge bg-success">{{ __('kyc.has_document') }}</span>
-                        @if (!empty($viewerIsAdmin))
-                            <a class="acct-link" href="{{ route('admin.kyc.show', $kycVerification) }}">{{ __('kyc.view_document') }}</a>
-                        @endif
-                    @else
-                        <span class="badge bg-secondary">{{ __('kyc.no_document') }}</span>
-                    @endif
-                    <span dir="ltr" class="acct-chip--mono">{{ !empty($viewerIsAdmin) ? $kycVerification->national_code : $kycVerification->maskedNationalCode() }}</span>
-                </span>
-            </div>
+{{-- The numbers that decide whether anything needs doing, in one even row. --}}
+<div class="acct-kpis">
+    <div class="panel-modern-card acct-kpi acct-kpi--{{ $pageExpiryTone }}">
+        <div class="acct-kpi__top"><span class="acct-kpi__label">{{ __('accounts.expires_at') }}</span><span class="acct-kpi__icon"><i class="bx bx-time-five"></i></span></div>
+        <strong class="acct-kpi__value">{{ $account->expiry_at ? jalali_date($account->expiry_at, 'Y/m/d') : __('accounts.no_expiry') }}</strong>
+        @if ($pageDaysLeft !== null)
+            <span class="acct-kpi__hint">{{ __('accounts.card_days_left', ['days' => persian_digits($pageDaysLeft)]) }} · {{ jalali_date($account->expiry_at, 'H:i') }}</span>
         @endif
     </div>
+
+    <div class="panel-modern-card acct-kpi acct-kpi--{{ $pageTone }}">
+        <div class="acct-kpi__top">
+            <span class="acct-kpi__label">{{ __('clients.data_usage') }}@if (! $account->isUnlimited() && $pagePercent !== null) <span class="acct-kpi__tag">{{ persian_digits(number_format($pagePercent, 1)) }}{{ locale_digits() === 'fa' ? '٪' : '%' }}</span>@endif</span>
+            <span class="acct-kpi__icon"><i class="bx bx-pie-chart-alt-2"></i></span>
+        </div>
+        @if ($account->isUnlimited())
+            <strong class="acct-kpi__value">{{ __('clients.unlimited_data') }}</strong>
+            <span class="acct-kpi__hint">{{ __('accounts.total_usage') }}: <span dir="ltr">{{ format_data_size($usage['used_bytes']) }}</span></span>
+        @else
+            <strong class="acct-kpi__value"><span dir="ltr">{{ format_data_size($usage['used_bytes']) }} <small>/ {{ format_data_size($usage['limit_bytes']) }}</small></span></strong>
+            @if ($pagePercent !== null)
+                <div class="acct-meter" role="progressbar" aria-valuenow="{{ (int) $pagePercent }}" aria-valuemin="0" aria-valuemax="100"><span style="width: {{ min(100, max(0, (float) $pagePercent)) }}%"></span></div>
+                <span class="acct-kpi__hint">{{ __('accounts.remaining') }}: <span dir="ltr">{{ format_data_size($usage['remaining_bytes']) }}</span></span>
+            @endif
+        @endif
+    </div>
+
+    <div class="panel-modern-card acct-kpi">
+        <div class="acct-kpi__top"><span class="acct-kpi__label">{{ __('accounts.package') }}</span><span class="acct-kpi__icon"><i class="bx bx-package"></i></span></div>
+        <strong class="acct-kpi__value"><span dir="auto">{{ $account->package?->name ?? '—' }}</span></strong>
+        @if ($pageVolume)
+            <span class="acct-kpi__hint">{{ __('accounts.renew_volume') }}: {{ $pageVolume }}</span>
+        @endif
+    </div>
+
+    @if (! empty($kycVerification))
+        <div class="panel-modern-card acct-kpi">
+            <div class="acct-kpi__top"><span class="acct-kpi__label">{{ __('kyc.status') }}</span><span class="acct-kpi__icon"><i class="bx bx-id-card"></i></span></div>
+            <strong class="acct-kpi__value"><span dir="auto">{{ $kycVerification->fullName() }}</span></strong>
+            <span class="acct-kpi__hint">
+                <span class="badge bg-info">{{ $kycVerification->status->label() }}</span>
+                @if ($kycVerification->has_document)
+                    <span class="badge bg-success">{{ __('kyc.has_document') }}</span>
+                    @if (!empty($viewerIsAdmin))
+                        <a class="acct-link" href="{{ route('admin.kyc.show', $kycVerification) }}">{{ __('kyc.view_document') }}</a>
+                    @endif
+                @else
+                    <span class="badge bg-secondary">{{ __('kyc.no_document') }}</span>
+                @endif
+                <span dir="ltr" class="acct-chip--mono">{{ !empty($viewerIsAdmin) ? $kycVerification->national_code : $kycVerification->maskedNationalCode() }}</span>
+            </span>
+        </div>
+    @endif
 </div>
 
 <div class="row g-4 acct-grid">
-    <div class="col-xl-8">
+    <div class="col-xl-8 acct-main">
+        @include('shared.accounts.partials.account-card')
+
         @if ($isWireguard)
             <div class="panel-modern-card mb-3">
                 <div class="card-head"><h3><i class="bx bx-qr"></i> WireGuard</h3></div>
@@ -376,6 +378,56 @@
                 </div>
             </div>
         @endif
+
+        {{-- Money, side by side: these belong in the wide column, so the page
+             ends evenly whatever the account type. --}}
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="panel-modern-card h-100 mb-0">
+                    <div class="card-head"><h3><i class="bx bx-receipt"></i> {{ __('clients.purchase_history') }}</h3></div>
+                    <div class="card-body">
+                        @if ($purchaseInvoice)
+                            <div class="border rounded p-2 mb-2">
+                                <div class="small text-muted">{{ __('clients.tx_purchase') }}</div>
+                                <div class="fw-semibold">{{ format_money($purchaseInvoice->total, $purchaseInvoice->currency) }}</div>
+                                <div class="small text-muted">{{ jalali_date($purchaseInvoice->issued_at, 'Y/m/d H:i') }}</div>
+                            </div>
+                        @endif
+                        @forelse ($renewalInvoices as $invoice)
+                            <div class="border rounded p-2 mb-2">
+                                <div class="small text-muted">{{ __('clients.tx_renewal') }}</div>
+                                <div class="fw-semibold">{{ format_money($invoice->total, $invoice->currency) }}</div>
+                                <div class="small text-muted">{{ jalali_date($invoice->issued_at, 'Y/m/d H:i') }}</div>
+                            </div>
+                        @empty
+                            @if (! $purchaseInvoice)
+                                <p class="text-muted small mb-0">—</p>
+                            @endif
+                        @endforelse
+                    </div>
+                </div>
+            </div>
+            @if ($recentTransactions->isNotEmpty())
+            <div class="col-md-6">
+                <div class="panel-modern-card h-100 mb-0">
+                    <div class="card-head"><h3><i class="bx bx-history"></i> {{ __('clients.wallet_transactions') }}</h3></div>
+                    <div class="card-body">
+                        @foreach ($recentTransactions as $tx)
+                            <div class="d-flex justify-content-between py-2 border-bottom">
+                                <div>
+                                    <div class="small fw-semibold">{{ $tx->type->value }}</div>
+                                    <div class="text-muted small">{{ jalali_date($tx->created_at, 'Y/m/d H:i') }}</div>
+                                </div>
+                                <div class="fw-semibold @if((float)$tx->amount < 0) text-danger @else text-success @endif">
+                                    {{ format_money($tx->amount, $tx->currency ?? null) }}
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+            @endif
+        </div>
     </div>
 
     <div class="col-xl-4">
@@ -471,48 +523,6 @@
             </div>
         @endif
 
-        <div class="panel-modern-card mb-3">
-            <div class="card-head"><h3><i class="bx bx-receipt"></i> {{ __('clients.purchase_history') }}</h3></div>
-            <div class="card-body">
-                @if ($purchaseInvoice)
-                    <div class="border rounded p-2 mb-2">
-                        <div class="small text-muted">{{ __('clients.tx_purchase') }}</div>
-                        <div class="fw-semibold">{{ format_money($purchaseInvoice->total, $purchaseInvoice->currency) }}</div>
-                        <div class="small text-muted">{{ jalali_date($purchaseInvoice->issued_at, 'Y/m/d H:i') }}</div>
-                    </div>
-                @endif
-                @forelse ($renewalInvoices as $invoice)
-                    <div class="border rounded p-2 mb-2">
-                        <div class="small text-muted">{{ __('clients.tx_renewal') }}</div>
-                        <div class="fw-semibold">{{ format_money($invoice->total, $invoice->currency) }}</div>
-                        <div class="small text-muted">{{ jalali_date($invoice->issued_at, 'Y/m/d H:i') }}</div>
-                    </div>
-                @empty
-                    @if (! $purchaseInvoice)
-                        <p class="text-muted small mb-0">—</p>
-                    @endif
-                @endforelse
-            </div>
-        </div>
-
-        @if ($recentTransactions->isNotEmpty())
-            <div class="panel-modern-card">
-                <div class="card-head"><h3><i class="bx bx-history"></i> {{ __('clients.wallet_transactions') }}</h3></div>
-                <div class="card-body">
-                    @foreach ($recentTransactions as $tx)
-                        <div class="d-flex justify-content-between py-2 border-bottom">
-                            <div>
-                                <div class="small fw-semibold">{{ $tx->type->value }}</div>
-                                <div class="text-muted small">{{ jalali_date($tx->created_at, 'Y/m/d H:i') }}</div>
-                            </div>
-                            <div class="fw-semibold @if((float)$tx->amount < 0) text-danger @else text-success @endif">
-                                {{ format_money($tx->amount, $tx->currency ?? null) }}
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-        @endif
     </div>
 </div>
 @endsection
@@ -524,40 +534,41 @@
     .acct-head__back:hover { transform: translateY(-1px); box-shadow: var(--shadow); color: var(--accent); }
     html[dir="ltr"] .acct-head__back .bx { transform: rotate(180deg); }
     .acct-head__title { flex: 1 1 auto; min-width: 0; }
-    .acct-head__title h2 { margin: 0 0 6px; font-size: 1.45rem; font-weight: 800; line-height: 1.25; overflow-wrap: anywhere; color: var(--text); }
+    .acct-head__row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 14px; margin-bottom: 8px; }
+    .acct-head__row h2 { margin: 0; font-size: 1.45rem; font-weight: 800; line-height: 1.25; overflow-wrap: anywhere; color: var(--text); }
     .acct-head__chips { display: flex; flex-wrap: wrap; gap: 6px; }
     .acct-chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; font-size: .78rem; color: var(--text-soft); background: var(--surface-3); border: 1px solid var(--border); }
     .acct-chip .bx { font-size: .95rem; opacity: .8; }
     .acct-chip--mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .01em; }
-    .acct-status { display: inline-flex; align-items: center; gap: 7px; flex: 0 0 auto; padding: 7px 14px; border-radius: 999px; font-size: .85rem; font-weight: 700; background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-sm); color: var(--text); }
+    .acct-status { display: inline-flex; align-items: center; gap: 7px; padding: 5px 12px; border-radius: 999px; font-size: .8rem; font-weight: 700; background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-sm); color: var(--text); white-space: nowrap; }
     .acct-status .bx { font-size: .6rem; }
     .acct-status--success .bx { color: var(--success); } .acct-status--danger .bx { color: var(--danger); } .acct-status--warning .bx { color: var(--warning); } .acct-status--info .bx { color: var(--info); } .acct-status--secondary .bx { color: var(--muted-2); }
 
-    .acct-hero { display: grid; grid-template-columns: minmax(0, 560px) 1fr; gap: 18px; align-items: start; margin-bottom: 22px; }
-    .acct-hero .account-card { margin-bottom: 0 !important; }
-    .acct-kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-    .acct-kpi { position: relative; display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; min-height: 124px; overflow: hidden; transition: transform .18s ease, box-shadow .18s ease; }
+    /* One row of equal tiles; however many there are, they share the width. */
+    .acct-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 24px; }
+    .acct-kpi { display: flex; flex-direction: column; gap: 6px; padding: 16px 18px; transition: transform .18s ease, box-shadow .18s ease; }
     .acct-kpi:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
-    .acct-kpi::after { content: ''; position: absolute; inset-inline-end: -30px; top: -30px; width: 110px; height: 110px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--kpi, var(--accent)) 22%, transparent), transparent 70%); pointer-events: none; }
     .acct-kpi--warn { --kpi: var(--warning); } .acct-kpi--danger { --kpi: var(--danger); } .acct-kpi--ok { --kpi: var(--accent); }
-    .acct-kpi__icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 11px; font-size: 1.2rem; color: var(--kpi, var(--accent)); background: color-mix(in srgb, var(--kpi, var(--accent)) 14%, transparent); margin-bottom: 4px; }
-    .acct-kpi__label { font-size: .76rem; color: var(--muted); letter-spacing: .02em; }
-    .acct-kpi__value { font-size: 1.12rem; font-weight: 800; line-height: 1.3; color: var(--text); overflow-wrap: anywhere; }
+    .acct-kpi__top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .acct-kpi__icon { display: grid; place-items: center; flex: 0 0 auto; width: 36px; height: 36px; border-radius: 11px; font-size: 1.2rem; color: var(--kpi, var(--accent)); background: color-mix(in srgb, var(--kpi, var(--accent)) 14%, transparent); }
+    .acct-kpi__label { display: inline-flex; align-items: center; gap: 8px; font-size: .78rem; color: var(--muted); min-width: 0; }
+    .acct-kpi__tag { padding: 1px 8px; border-radius: 999px; font-size: .72rem; font-weight: 700; color: var(--kpi, var(--accent)); background: color-mix(in srgb, var(--kpi, var(--accent)) 14%, transparent); }
+    .acct-kpi__value { font-size: 1.15rem; font-weight: 800; line-height: 1.3; color: var(--text); overflow-wrap: anywhere; }
     .acct-kpi__value small { font-size: .8rem; font-weight: 500; color: var(--muted); }
-    .acct-kpi__hint { font-size: .78rem; color: var(--muted); display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+    .acct-kpi__hint { font-size: .78rem; color: var(--muted); display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: auto; }
     .acct-link { font-size: .78rem; text-decoration: underline; color: var(--accent); }
-    .acct-meter { height: 8px; border-radius: 999px; background: color-mix(in srgb, var(--kpi, var(--accent)) 14%, transparent); overflow: hidden; margin: 6px 0 2px; }
-    .acct-meter span { display: block; height: 100%; border-radius: inherit; background: var(--kpi, var(--accent)); box-shadow: 0 0 10px color-mix(in srgb, var(--kpi, var(--accent)) 45%, transparent); transition: width .8s cubic-bezier(.2, .8, .2, 1); }
+    .acct-meter { height: 8px; border-radius: 999px; background: color-mix(in srgb, var(--kpi, var(--accent)) 14%, transparent); overflow: hidden; }
+    .acct-meter span { display: block; height: 100%; border-radius: inherit; background: var(--kpi, var(--accent)); transition: width .8s cubic-bezier(.2, .8, .2, 1); }
 
-    /* The detail sections below share one rhythm. */
+    /* The card opens the main column at the column's own width. */
+    .acct-main .account-card { max-width: none; }
     .acct-grid .panel-modern-card { border-radius: var(--radius-lg); }
     .acct-grid .card-head h3 { display: flex; align-items: center; gap: 8px; font-size: 1rem; }
     .acct-grid .card-head h3 .bx { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; font-size: 1.05rem; color: var(--accent); background: var(--accent-soft); }
     .acct-grid code { border-radius: 8px; padding: 2px 8px; }
     .acct-grid .table-sm > :not(caption) > * > * { padding: .55rem .75rem; }
     .acct-grid pre { border-radius: var(--radius); }
-    @media (max-width: 1199.98px) { .acct-hero { grid-template-columns: 1fr; } }
-    @media (max-width: 575.98px) { .acct-kpis { grid-template-columns: 1fr; } .acct-head { flex-wrap: wrap; } .acct-status { order: 3; } }
+    @media (max-width: 575.98px) { .acct-kpis { grid-template-columns: 1fr; } .acct-head__row h2 { font-size: 1.25rem; } }
     @media (prefers-reduced-motion: reduce) { .acct-kpi, .acct-head__back, .acct-meter span { transition: none; } }
 </style>
 @endpush
