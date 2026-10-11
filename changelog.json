@@ -1,6 +1,28 @@
 {
     "versions": [
         {
+            "version": "3.38.2",
+            "date": "2026-11-21",
+            "notes": {
+                "fa": [
+                    "قالب Metal3D: فیلدهای انتخابی (فیلترها) و سوییچ‌ها الگوی زیگزاگی پشت متن داشتند که خواندن را سخت می‌کرد؛ علتش تکرار شدن آیکن فلش فیلد در تمام پس‌زمینه بود و برطرف شد.",
+                    "صفحهٔ مشخصات اکانت بازطراحی شد: سربرگ با نام سرویس، نوع، سرور (برای کارکنان)، تاریخ ساخت و وضعیت؛ کنار کارت اکانت چهار کاشی خلاصه برای انقضا و روزهای مانده، مصرف با نوار پیشرفت و رنگ هشدار، پکیج و حجم، و احراز هویت. بخش‌های پایینی (اتصال، اطلاعات مشتری، تمدید، لینک پورتال، سوابق) با یک ریتم یکدست و دکمه‌ها و کدهای مرتب‌تر. در هر دو قالب درست نمایش داده می‌شود و روی موبایل تک‌ستونه می‌شود."
+                ],
+                "en": [
+                    "Metal3D theme: select fields (filters) and switches showed a zigzag pattern behind the text, because the field's arrow icon was being tiled across the whole background. Fixed.",
+                    "The account detail page was redesigned: a header with the service name, type, server (for staff), creation date and status; next to the account card four summary tiles for expiry with days left, usage with a progress meter and warning colours, package and volume, and identity verification. The sections below (connection, client info, renewal, portal link, history) share one tidy rhythm with neater buttons and codes. It renders correctly in both themes and collapses to one column on phones."
+                ],
+                "ru": [
+                    "Тема Metal3D: у полей выбора (фильтров) и переключателей за текстом появлялся зигзагообразный узор, потому что значок стрелки поля размножался по всему фону. Исправлено.",
+                    "Страница аккаунта переработана: шапка с названием услуги, типом, сервером (для персонала), датой создания и статусом; рядом с карточкой аккаунта четыре плитки — срок с оставшимися днями, использование с индикатором и предупреждающими цветами, пакет и объём, проверка личности. Нижние разделы (подключение, данные клиента, продление, ссылка портала, история) оформлены в едином ритме с аккуратными кнопками и кодами. Корректно отображается в обеих темах и на телефонах становится одноколоночной."
+                ],
+                "zh": [
+                    "Metal3D 主题：下拉选择（筛选）和开关的文字后面出现锯齿图案，原因是字段的箭头图标在整个背景上重复平铺。已修复。",
+                    "账户详情页重新设计：页眉显示服务名称、类型、服务器（仅员工可见）、创建日期和状态；账户卡片旁有四个摘要磁贴——到期时间与剩余天数、带进度条和警示色的用量、套餐与流量、身份验证。下方各区块（连接、客户信息、续费、门户链接、记录）采用统一节奏，按钮和代码更整洁。两种主题均正常显示，手机上自动变为单列。"
+                ]
+            }
+        },
+        {
             "version": "3.38.1",
             "date": "2026-11-20",
             "notes": {

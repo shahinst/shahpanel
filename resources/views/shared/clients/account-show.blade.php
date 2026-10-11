@@ -17,87 +17,97 @@
     [$badgeColor, $badgeLabel] = $statusBadge;
 @endphp
 
-<p class="mb-3">
-    <a href="{{ $backUrl }}"><i class="bx bx-arrow-back"></i> {{ __('app.back') }}</a>
-</p>
+@php
+    $pageDaysLeft = $account->expiry_at ? (int) ceil(max(0, now()->diffInHours($account->expiry_at, false)) / 24) : null;
+    $pagePercent = $usage['percent'] ?? null;
+    $pageTone = $pagePercent === null ? 'ok' : ($pagePercent >= 90 ? 'danger' : ($pagePercent >= 70 ? 'warn' : 'ok'));
+    $pageExpiryTone = $pageDaysLeft === null ? 'ok' : ($pageDaysLeft <= 0 ? 'danger' : ($pageDaysLeft <= 3 ? 'warn' : 'ok'));
+    $pageVolume = $account->purchased_data_gb
+        ? persian_digits(rtrim(rtrim(number_format((float) $account->purchased_data_gb, 2, '.', ''), '0'), '.')).' '.__('accounts.gb_unit')
+        : null;
+@endphp
 
-@include('shared.accounts.partials.account-card')
+{{-- Header: who this account is, at a glance. The chips repeat what the
+     tables below say in detail, so a reader can stop here. --}}
+<header class="acct-head">
+    <a href="{{ $backUrl }}" class="acct-head__back" aria-label="{{ __('app.back') }}" title="{{ __('app.back') }}"><i class="bx bx-arrow-back"></i></a>
+    <div class="acct-head__title">
+        <h2 dir="auto">{{ $account->display_label ?: $account->remote_username }}</h2>
+        <div class="acct-head__chips">
+            @if ($account->display_label)
+                <span class="acct-chip acct-chip--mono" dir="ltr">{{ $account->remote_username }}</span>
+            @endif
+            <span class="acct-chip"><i class="bx bx-layer"></i> {{ $account->service_type->label() }}</span>
+            @if ($account->server && ! ($viewerIsClient ?? false))
+                <span class="acct-chip"><i class="bx bx-server"></i> {{ $account->server->name }}</span>
+            @endif
+            <span class="acct-chip"><i class="bx bx-calendar-plus"></i> {{ jalali_date($account->created_at, 'Y/m/d') }}</span>
+        </div>
+    </div>
+    <span class="acct-status acct-status--{{ $badgeColor }}"><i class="bx bxs-circle"></i> {{ $badgeLabel }}</span>
+</header>
 
-<div class="row g-4">
-    <div class="col-xl-8">
-        <div class="panel-modern-card mb-3">
-            <div class="card-head d-flex flex-wrap justify-content-between align-items-center gap-2">
-                <h3><i class="bx bx-server"></i> {{ $account->remote_username }}</h3>
-                <span class="badge bg-{{ $badgeColor }}">{{ $badgeLabel }}</span>
-            </div>
-            <div class="card-body">
-                <dl class="row mb-0">
-                    <dt class="col-sm-4">{{ __('accounts.package') }}</dt>
-                    <dd class="col-sm-8">{{ $account->package?->name ?? '—' }}</dd>
-                    <dt class="col-sm-4">{{ __('accounts.expires_at') }}</dt>
-                    <dd class="col-sm-8">{{ $account->expiry_at ? jalali_date($account->expiry_at) : __('accounts.no_expiry') }}</dd>
-                    @if ($account->server)
-                        <dt class="col-sm-4">{{ __('clients.server') }}</dt>
-                        <dd class="col-sm-8">{{ $account->server->name }}</dd>
-                    @endif
-                    @if ($account->purchased_data_gb)
-                        <dt class="col-sm-4">{{ __('accounts.renew_volume') }}</dt>
-                        <dd class="col-sm-8">{{ persian_digits(rtrim(rtrim(number_format((float) $account->purchased_data_gb, 2, '.', ''), '0'), '.')) }} {{ __('accounts.gb_unit') }}</dd>
-                    @endif
-                    @if (!empty($kycVerification))
-                        <dt class="col-sm-4">{{ __('kyc.status') }}</dt>
-                        <dd class="col-sm-8">
-                            <span class="badge bg-info">{{ $kycVerification->status->label() }}</span>
-                            @if ($kycVerification->has_document)
-                                <span class="badge bg-success">{{ __('kyc.has_document') }}</span>
-                                @if (!empty($viewerIsAdmin))
-                                    <a class="btn btn-sm btn-outline-primary ms-1" href="{{ route('admin.kyc.show', $kycVerification) }}">
-                                        {{ __('kyc.view_document') }}
-                                    </a>
-                                @endif
-                            @else
-                                <span class="badge bg-secondary">{{ __('kyc.no_document') }}</span>
-                            @endif
-                        </dd>
-                        <dt class="col-sm-4">{{ __('kyc.first_name') }} / {{ __('kyc.last_name') }}</dt>
-                        <dd class="col-sm-8">{{ $kycVerification->fullName() }}</dd>
-                        @if (!empty($viewerIsAdmin))
-                            <dt class="col-sm-4">{{ __('kyc.national_code') }}</dt>
-                            <dd class="col-sm-8" dir="ltr">{{ $kycVerification->national_code }}</dd>
-                        @else
-                            <dt class="col-sm-4">{{ __('kyc.national_code') }}</dt>
-                            <dd class="col-sm-8" dir="ltr">{{ $kycVerification->maskedNationalCode() }}</dd>
-                        @endif
-                    @endif
-                </dl>
-            </div>
+<div class="acct-hero">
+    @include('shared.accounts.partials.account-card')
+
+    <div class="acct-kpis">
+        <div class="panel-modern-card acct-kpi acct-kpi--{{ $pageExpiryTone }}">
+            <span class="acct-kpi__icon"><i class="bx bx-time-five"></i></span>
+            <span class="acct-kpi__label">{{ __('accounts.expires_at') }}</span>
+            <strong class="acct-kpi__value">{{ $account->expiry_at ? jalali_date($account->expiry_at, 'Y/m/d') : __('accounts.no_expiry') }}</strong>
+            @if ($pageDaysLeft !== null)
+                <span class="acct-kpi__hint">{{ __('accounts.card_days_left', ['days' => persian_digits($pageDaysLeft)]) }} · {{ jalali_date($account->expiry_at, 'H:i') }}</span>
+            @endif
         </div>
 
-        <div class="panel-modern-card mb-3">
-            <div class="card-head"><h3><i class="bx bx-pie-chart-alt-2"></i> {{ __('clients.data_usage') }}</h3></div>
-            <div class="card-body">
-                @if ($account->isUnlimited())
-                    <p class="mb-2">{{ __('clients.unlimited_data') }}</p>
-                    <p class="mb-0">{{ __('accounts.total_usage') }}: <strong>{{ format_data_size($usage['used_bytes']) }}</strong></p>
-                @else
-                    @if ($usage['percent'] !== null)
-                        <div class="progress mb-3" style="height: 10px;">
-                            <div class="progress-bar @if($usage['percent'] >= 90) bg-danger @elseif($usage['percent'] >= 70) bg-warning @else bg-primary @endif"
-                                 style="width: {{ $usage['percent'] }}%"></div>
-                        </div>
-                    @endif
-                    <div class="row g-2 small">
-                        <div class="col-sm-6">{{ __('accounts.data_consumed') }}: <strong>{{ format_data_size($usage['used_bytes']) }}</strong></div>
-                        <div class="col-sm-6">{{ __('accounts.data_limit') }}: <strong>{{ format_data_size($usage['limit_bytes']) }}</strong></div>
-                        <div class="col-sm-6">{{ __('accounts.remaining') }}: <strong>{{ format_data_size($usage['remaining_bytes']) }}</strong></div>
-                        @if ($usage['percent'] !== null)
-                            <div class="col-sm-6">{{ __('accounts.usage_percent') }}: <strong>{{ persian_digits(number_format($usage['percent'], 1)) }}٪</strong></div>
-                        @endif
-                    </div>
+        <div class="panel-modern-card acct-kpi acct-kpi--{{ $pageTone }}">
+            <span class="acct-kpi__icon"><i class="bx bx-pie-chart-alt-2"></i></span>
+            <span class="acct-kpi__label">{{ __('clients.data_usage') }}</span>
+            @if ($account->isUnlimited())
+                <strong class="acct-kpi__value">{{ __('clients.unlimited_data') }}</strong>
+                <span class="acct-kpi__hint">{{ __('accounts.total_usage') }}: {{ format_data_size($usage['used_bytes']) }}</span>
+            @else
+                <strong class="acct-kpi__value">{{ format_data_size($usage['used_bytes']) }} <small>/ {{ format_data_size($usage['limit_bytes']) }}</small></strong>
+                @if ($pagePercent !== null)
+                    <div class="acct-meter" role="progressbar" aria-valuenow="{{ (int) $pagePercent }}" aria-valuemin="0" aria-valuemax="100"><span style="width: {{ min(100, max(0, (float) $pagePercent)) }}%"></span></div>
+                    <span class="acct-kpi__hint">{{ __('accounts.remaining') }}: {{ format_data_size($usage['remaining_bytes']) }} · {{ persian_digits(number_format($pagePercent, 1)) }}٪</span>
                 @endif
-            </div>
+            @endif
         </div>
 
+        <div class="panel-modern-card acct-kpi">
+            <span class="acct-kpi__icon"><i class="bx bx-package"></i></span>
+            <span class="acct-kpi__label">{{ __('accounts.package') }}</span>
+            <strong class="acct-kpi__value" dir="auto">{{ $account->package?->name ?? '—' }}</strong>
+            @if ($pageVolume)
+                <span class="acct-kpi__hint">{{ __('accounts.renew_volume') }}: {{ $pageVolume }}</span>
+            @endif
+        </div>
+
+        @if (! empty($kycVerification))
+            <div class="panel-modern-card acct-kpi">
+                <span class="acct-kpi__icon"><i class="bx bx-id-card"></i></span>
+                <span class="acct-kpi__label">{{ __('kyc.status') }}</span>
+                <strong class="acct-kpi__value" dir="auto">{{ $kycVerification->fullName() }}</strong>
+                <span class="acct-kpi__hint">
+                    <span class="badge bg-info">{{ $kycVerification->status->label() }}</span>
+                    @if ($kycVerification->has_document)
+                        <span class="badge bg-success">{{ __('kyc.has_document') }}</span>
+                        @if (!empty($viewerIsAdmin))
+                            <a class="acct-link" href="{{ route('admin.kyc.show', $kycVerification) }}">{{ __('kyc.view_document') }}</a>
+                        @endif
+                    @else
+                        <span class="badge bg-secondary">{{ __('kyc.no_document') }}</span>
+                    @endif
+                    <span dir="ltr" class="acct-chip--mono">{{ !empty($viewerIsAdmin) ? $kycVerification->national_code : $kycVerification->maskedNationalCode() }}</span>
+                </span>
+            </div>
+        @endif
+    </div>
+</div>
+
+<div class="row g-4 acct-grid">
+    <div class="col-xl-8">
         @if ($isWireguard)
             <div class="panel-modern-card mb-3">
                 <div class="card-head"><h3><i class="bx bx-qr"></i> WireGuard</h3></div>
@@ -506,6 +516,51 @@
     </div>
 </div>
 @endsection
+
+@push('styles')
+<style>
+    .acct-head { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 18px; }
+    .acct-head__back { display: grid; place-items: center; flex: 0 0 auto; width: 42px; height: 42px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); color: var(--text-soft); font-size: 1.25rem; box-shadow: var(--shadow-sm); transition: transform .15s, box-shadow .15s; }
+    .acct-head__back:hover { transform: translateY(-1px); box-shadow: var(--shadow); color: var(--accent); }
+    html[dir="ltr"] .acct-head__back .bx { transform: rotate(180deg); }
+    .acct-head__title { flex: 1 1 auto; min-width: 0; }
+    .acct-head__title h2 { margin: 0 0 6px; font-size: 1.45rem; font-weight: 800; line-height: 1.25; overflow-wrap: anywhere; color: var(--text); }
+    .acct-head__chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .acct-chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 999px; font-size: .78rem; color: var(--text-soft); background: var(--surface-3); border: 1px solid var(--border); }
+    .acct-chip .bx { font-size: .95rem; opacity: .8; }
+    .acct-chip--mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .01em; }
+    .acct-status { display: inline-flex; align-items: center; gap: 7px; flex: 0 0 auto; padding: 7px 14px; border-radius: 999px; font-size: .85rem; font-weight: 700; background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-sm); color: var(--text); }
+    .acct-status .bx { font-size: .6rem; }
+    .acct-status--success .bx { color: var(--success); } .acct-status--danger .bx { color: var(--danger); } .acct-status--warning .bx { color: var(--warning); } .acct-status--info .bx { color: var(--info); } .acct-status--secondary .bx { color: var(--muted-2); }
+
+    .acct-hero { display: grid; grid-template-columns: minmax(0, 560px) 1fr; gap: 18px; align-items: start; margin-bottom: 22px; }
+    .acct-hero .account-card { margin-bottom: 0 !important; }
+    .acct-kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .acct-kpi { position: relative; display: flex; flex-direction: column; gap: 4px; padding: 16px 18px; min-height: 124px; overflow: hidden; transition: transform .18s ease, box-shadow .18s ease; }
+    .acct-kpi:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .acct-kpi::after { content: ''; position: absolute; inset-inline-end: -30px; top: -30px; width: 110px; height: 110px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--kpi, var(--accent)) 22%, transparent), transparent 70%); pointer-events: none; }
+    .acct-kpi--warn { --kpi: var(--warning); } .acct-kpi--danger { --kpi: var(--danger); } .acct-kpi--ok { --kpi: var(--accent); }
+    .acct-kpi__icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 11px; font-size: 1.2rem; color: var(--kpi, var(--accent)); background: color-mix(in srgb, var(--kpi, var(--accent)) 14%, transparent); margin-bottom: 4px; }
+    .acct-kpi__label { font-size: .76rem; color: var(--muted); letter-spacing: .02em; }
+    .acct-kpi__value { font-size: 1.12rem; font-weight: 800; line-height: 1.3; color: var(--text); overflow-wrap: anywhere; }
+    .acct-kpi__value small { font-size: .8rem; font-weight: 500; color: var(--muted); }
+    .acct-kpi__hint { font-size: .78rem; color: var(--muted); display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+    .acct-link { font-size: .78rem; text-decoration: underline; color: var(--accent); }
+    .acct-meter { height: 8px; border-radius: 999px; background: color-mix(in srgb, var(--kpi, var(--accent)) 14%, transparent); overflow: hidden; margin: 6px 0 2px; }
+    .acct-meter span { display: block; height: 100%; border-radius: inherit; background: var(--kpi, var(--accent)); box-shadow: 0 0 10px color-mix(in srgb, var(--kpi, var(--accent)) 45%, transparent); transition: width .8s cubic-bezier(.2, .8, .2, 1); }
+
+    /* The detail sections below share one rhythm. */
+    .acct-grid .panel-modern-card { border-radius: var(--radius-lg); }
+    .acct-grid .card-head h3 { display: flex; align-items: center; gap: 8px; font-size: 1rem; }
+    .acct-grid .card-head h3 .bx { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; font-size: 1.05rem; color: var(--accent); background: var(--accent-soft); }
+    .acct-grid code { border-radius: 8px; padding: 2px 8px; }
+    .acct-grid .table-sm > :not(caption) > * > * { padding: .55rem .75rem; }
+    .acct-grid pre { border-radius: var(--radius); }
+    @media (max-width: 1199.98px) { .acct-hero { grid-template-columns: 1fr; } }
+    @media (max-width: 575.98px) { .acct-kpis { grid-template-columns: 1fr; } .acct-head { flex-wrap: wrap; } .acct-status { order: 3; } }
+    @media (prefers-reduced-motion: reduce) { .acct-kpi, .acct-head__back, .acct-meter span { transition: none; } }
+</style>
+@endpush
 
 @if (! ($viewerIsClient ?? false) && ($isPpp ?? false) && ! empty($ppp['l2tp_setup_guide_text'] ?? null))
     @push('scripts')
