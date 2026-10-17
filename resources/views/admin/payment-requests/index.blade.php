@@ -27,11 +27,12 @@
                 <x-table :headers="[__('ui.col_user'), __('wallet.direction'), __('menu.amount'), __('ui.col_admin'), __('ui.col_date'), __('ui.col_note')]">
                     @forelse ($adjustments as $adjustment)
                         <tr class="{{ (int) $highlightAdjustmentId === (int) $adjustment->id ? 'table-success' : '' }}">
-                            <td>{{ $adjustment->user->full_name }}</td>
+                            {{-- A deleted agent or admin leaves the record behind; the page must still open. --}}
+                            <td>{{ $adjustment->user?->full_name ?? __('ui.deleted_user') }}</td>
                             <td>{{ $adjustment->isCredit() ? __('wallet.credit') : __('wallet.debit') }}</td>
                             {{-- جدول wallet_adjustments ستون currency ندارد؛ ارز از تراکنش متصل خوانده می‌شود و در نبود آن ارز پیش‌فرض پنل. --}}
                             <td>{{ format_money($adjustment->amount, $adjustment->transaction?->currency ?? \App\Enums\MoneyCurrency::default()) }}</td>
-                            <td>{{ $adjustment->admin->full_name }}</td>
+                            <td>{{ $adjustment->admin?->full_name ?? __('ui.deleted_user') }}</td>
                             <td>{{ jalali_date($adjustment->created_at) }}</td>
                             <td><small class="text-muted">{{ $adjustment->note ?: '—' }}</small></td>
                         </tr>
