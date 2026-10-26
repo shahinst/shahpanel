@@ -55,4 +55,6 @@ return [
     'pdf_generated' => 'Generated on :date.',
     'pdf_page' => 'Page :page of :pages',
     'invoice_pdf' => 'Download invoice PDF',
+    'owner_filter' => 'Agent / seller',
+    'all_owners' => 'All agents',
 ];

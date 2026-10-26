@@ -43,6 +43,11 @@
 
                 @include('auth.partials.login-captcha', ['captcha' => $captcha])
 
+                <div class="login-notice" role="note">
+                    <span class="login-notice__dot" aria-hidden="true"></span>
+                    <span>{{ __('auth.premium_notice') }}</span>
+                </div>
+
                 <div class="mt-3">
                     <button class="btn btn-primary w-100" type="submit">{{ __('auth.login') }}</button>
                 </div>

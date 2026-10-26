@@ -24,4 +24,5 @@ return [
     'captcha_invalid' => 'Неверный или истёкший код безопасности.',
     'captcha_throttle' => 'Слишком много попыток ввода капчи. Подождите :seconds секунд.',
     'captcha_aria' => 'Код безопасности для входа',
+    'premium_notice' => 'ShahPanel Premium скоро выйдет под новым именем PyPanel.',
 ];

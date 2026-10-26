@@ -185,6 +185,8 @@
                                         </td>
                                     @endif
                                     <td>
+                                        @php $isOnline = isset($onlineAccountIds) && $onlineAccountIds->contains($account->id); @endphp
+                                        <span class="account-presence account-presence--{{ $isOnline ? 'online' : 'offline' }}" title="{{ $isOnline ? __('accounts.connection_online') : __('accounts.connection_offline') }}" aria-label="{{ $isOnline ? __('accounts.connection_online') : __('accounts.connection_offline') }}"></span>
                                         @if (in_array($prefix, ['admin', 'seller', 'agent'], true))
                                             <button type="button" class="btn btn-link p-0 text-start admin-account-report-trigger" data-account-report="{{ $account->id }}">
                                                 @if ($prefix !== 'admin')
@@ -205,6 +207,10 @@
                                             <strong>{{ $account->remote_username }}</strong>
                                         @endif
                                         <br><small class="text-muted">{{ $account->service_type->label() }}</small>
+                                        @php $accountUuid = $account->sanaei_client_uuid ?: $account->remnawave_uuid; @endphp
+                                        @if ($accountUuid)
+                                            <br><small class="text-muted font-monospace account-uuid" dir="ltr" title="{{ __('accounts.config_uuid') }}">{{ $accountUuid }}</small>
+                                        @endif
                                     </td>
                                     <td>{{ $account->package?->name ?? '—' }}</td>
                                     @if ($showVolumeColumns)

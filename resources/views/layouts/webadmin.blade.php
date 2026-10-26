@@ -10,6 +10,7 @@
     @include('layouts.partials.webadmin-fonts')
     @include('layouts.partials.panel-vite', ['assets' => ['resources/css/app.css', 'resources/js/app.js']])
     @include('layouts.partials.theme-assets', ['part' => 'styles'])
+    @include('layouts.partials.pwa-head')
     @stack('styles')
 </head>
 <body @yield('body_attrs')>

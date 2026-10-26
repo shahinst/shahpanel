@@ -34,11 +34,12 @@ class ThemeRegistry
             'author' => 'ShahPanel',
             'version' => '1.0.0',
             'preview' => 'linear-gradient(135deg, #6366f1 0%, #4338ca 55%, #312e81 100%)',
+            'theme_color' => '#4f46e5',
         ]);
     }
 
     /**
-     * @param  array{slug: string, name: string, description?: string, author?: string, version?: string, preview?: string, styles?: list<string>, scripts?: list<string>, body_class?: string}  $theme
+     * @param  array{slug: string, name: string, description?: string, author?: string, version?: string, preview?: string, styles?: list<string>, scripts?: list<string>, body_class?: string, theme_color?: string}  $theme
      */
     public function register(array $theme): void
     {
@@ -58,6 +59,8 @@ class ThemeRegistry
             'styles' => array_values($theme['styles'] ?? []),
             'scripts' => array_values($theme['scripts'] ?? []),
             'body_class' => (string) ($theme['body_class'] ?? 'theme-'.$slug),
+            // The colour the installed app's window and splash screen take on.
+            'theme_color' => preg_match('/^#[0-9a-fA-F]{6}$/', (string) ($theme['theme_color'] ?? '')) === 1 ? (string) $theme['theme_color'] : '#4f46e5',
         ];
     }
 

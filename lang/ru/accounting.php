@@ -55,4 +55,6 @@ return [
     'pdf_generated' => 'Сформировано :date.',
     'pdf_page' => 'Стр. :page из :pages',
     'invoice_pdf' => 'Скачать счёт PDF',
+    'owner_filter' => 'Агент / продавец',
+    'all_owners' => 'Все агенты',
 ];

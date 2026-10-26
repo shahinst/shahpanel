@@ -24,4 +24,5 @@ return [
     'captcha_invalid' => '验证码无效或已过期。',
     'captcha_throttle' => '验证码尝试次数过多，请等待 :seconds 秒。',
     'captcha_aria' => '登录验证码',
+    'premium_notice' => 'ShahPanel Premium 即将以全新名称 PyPanel 推出。',
 ];

@@ -59,3 +59,7 @@ input.form-control:-webkit-autofill:focus {
     min-height: 2.5rem;
     line-height: 2.5rem;
 }
+
+/* A quiet note under the captcha. */
+.login-notice{display:flex;align-items:center;gap:.6rem;margin-top:1rem;padding:.7rem .9rem;border:1px solid rgba(79,70,229,.25);border-radius:.75rem;background:rgba(79,70,229,.06);color:#3730a3;font-size:.86rem;line-height:1.5}
+.login-notice__dot{flex:0 0 auto;width:.55rem;height:.55rem;border-radius:50%;background:#4f46e5;box-shadow:0 0 0 4px rgba(79,70,229,.18)}

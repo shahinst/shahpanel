@@ -385,4 +385,7 @@ return [
     'amount_in_selected_currency_hint' => '请按所选货币输入金额。',
     'install_via_ssh' => '安装通过 SSH 执行：',
     'phase_zero_ready' => '阶段 0 已成功设置。',
+    'offline_title' => '当前离线',
+    'offline_text' => '面板无法连接到互联网。请检查网络连接后重试。',
+    'offline_retry' => '重试',
 ];

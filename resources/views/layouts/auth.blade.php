@@ -11,6 +11,7 @@
     <link href="{{ asset('fonts/vazirmatn/vazirmatn.css') }}" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/login.css') }}">
     @include('layouts.partials.auth-critical-css')
+    @include('layouts.partials.pwa-head')
     @stack('styles')
 </head>
 <body>

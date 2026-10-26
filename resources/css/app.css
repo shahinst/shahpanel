@@ -1429,3 +1429,8 @@ button.panel-quick-action { width: 100%; cursor: pointer; font: inherit; text-al
 @media (max-width: 767.98px) {
     .panel-chart-card canvas, .chart-container { max-width: 100% !important; }
 }
+
+/* Online dot beside an account name on list pages. */
+.account-presence{display:inline-block;width:.6rem;height:.6rem;border-radius:50%;margin-inline-end:.45rem;vertical-align:middle;background:#cbd5e1;box-shadow:0 0 0 2px rgba(148,163,184,.25)}
+.account-presence--online{background:#22c55e;box-shadow:0 0 0 3px rgba(34,197,94,.22)}
+.account-uuid{font-size:.72rem;letter-spacing:.01em;word-break:break-all}

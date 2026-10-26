@@ -340,6 +340,14 @@
                     <div class="panel-modern-card h-100 mb-0">
                         <div class="card-head"><h3><i class="bx bx-qr-scan"></i> {{ __('accounts.direct_config_link') }}</h3></div>
                         <div class="card-body">
+                            @php $configUuid = $account->sanaei_client_uuid ?: $account->remnawave_uuid; @endphp
+                            @if ($configUuid)
+                                <label class="form-label small text-muted" for="config-uuid-input">{{ __('accounts.config_uuid') }}</label>
+                                <div class="input-group input-group-sm mb-3">
+                                    <input type="text" class="form-control font-monospace" dir="ltr" readonly value="{{ $configUuid }}" id="config-uuid-input">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="navigator.clipboard.writeText(document.getElementById('config-uuid-input').value)">{{ __('clients.copy_link') }}</button>
+                                </div>
+                            @endif
                             {{-- اکانت چند-اینباندی چند لینک دارد؛ هرکدام با نام خودش،
                                  QR خودش و دکمهٔ کپی خودش پشت سر هم می‌آید تا با سه
                                  لینک هم چیزی ناقص به نظر نرسد. --}}

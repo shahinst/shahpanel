@@ -388,4 +388,6 @@ TEXT,
     'card_download' => 'Download card image',
     'card_share' => 'Send to customer',
     'card_copied' => 'Copied',
+    'config_uuid' => 'Config id (UUID)',
+    'pwa_install' => 'Install as an app',
 ];

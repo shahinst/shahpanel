@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\AccountController as AdminAccountController;
+use App\Http\Controllers\PwaController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\PackageController as AdminPackageController;
 use App\Http\Controllers\Admin\PackageCategoryController as AdminPackageCategoryController;
@@ -690,3 +691,11 @@ Route::middleware(['auth', 'log.activity'])->group(function (): void {
     Route::post('notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
     Route::post('notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
 });
+
+// The installable app's manifest, worker and offline page. All public: the
+// browser fetches them without cookies. No file extension in the URLs, since
+// the installer's nginx answers *.js itself with a 404 (see the theme assets).
+// The worker's Service-Worker-Allowed header lets it control the whole site.
+Route::get('pwa/manifest', [PwaController::class, 'manifest'])->name('pwa.manifest');
+Route::get('pwa/worker', [PwaController::class, 'worker'])->name('pwa.worker');
+Route::get('pwa/offline', [PwaController::class, 'offline'])->name('pwa.offline');

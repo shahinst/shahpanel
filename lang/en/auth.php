@@ -24,4 +24,5 @@ return [
     'captcha_invalid' => 'Invalid or expired security code.',
     'captcha_throttle' => 'Too many captcha attempts. Wait :seconds seconds.',
     'captcha_aria' => 'Login security code',
+    'premium_notice' => 'ShahPanel Premium is coming soon under its new name, PyPanel.',
 ];
