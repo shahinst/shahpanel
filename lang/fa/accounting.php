@@ -55,4 +55,6 @@ return [
     'pdf_generated' => 'این فاکتور در تاریخ :date صادر شده است.',
     'pdf_page' => 'صفحه :page از :pages',
     'invoice_pdf' => 'دانلود فاکتور PDF',
+    'owner_filter' => 'نماینده / فروشنده',
+    'all_owners' => 'همهٔ نماینده‌ها',
 ];

@@ -37,6 +37,7 @@ class Metal3dServiceProvider extends ServiceProvider
                 'styles' => [self::assetUrl('css')],
                 'scripts' => [self::assetUrl('js')],
                 'body_class' => 'theme-metal3d',
+                'theme_color' => '#0f172a',
             ]);
         });
     }

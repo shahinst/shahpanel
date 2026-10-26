@@ -1008,7 +1008,7 @@ if (! function_exists('panel_theme')) {
         try {
             return app(\App\Support\Themes\ThemeRegistry::class)->active();
         } catch (\Throwable) {
-            return ['slug' => 'shahpanel', 'name' => 'Shahpanel', 'styles' => [], 'scripts' => [], 'body_class' => 'theme-shahpanel'];
+            return ['slug' => 'shahpanel', 'name' => 'Shahpanel', 'styles' => [], 'scripts' => [], 'body_class' => 'theme-shahpanel', 'theme_color' => '#4f46e5'];
         }
     }
 }

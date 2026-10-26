@@ -50,6 +50,7 @@ trait ListsAccountsByCategory
         return view('shared.accounts.index', array_merge(
             [
                 'accounts' => $accounts,
+                'onlineAccountIds' => $this->onlineAccountIds($accounts->getCollection()),
                 'category' => $category,
                 'prefix' => $this->accountRoutePrefix(),
                 'showOwnerColumn' => $this->shouldShowOwnerColumn(),
@@ -243,6 +244,31 @@ trait ListsAccountsByCategory
         return in_array($user?->role, [UserRole::Admin, UserRole::Agent], true);
     }
 
+
+    /**
+     * Accounts that moved traffic in the last few minutes, read from the
+     * usage log the sync already writes: no call to any server on a list page.
+     *
+     * @param  iterable<int, \App\Models\Account>  $accounts
+     * @return \Illuminate\Support\Collection<int, int>
+     */
+    protected function onlineAccountIds(iterable $accounts): \Illuminate\Support\Collection
+    {
+        $ids = collect($accounts)->pluck('id')->all();
+
+        if ($ids === [] || ! \Illuminate\Support\Facades\Schema::hasTable('account_usage_logs')) {
+            return collect();
+        }
+
+        return \App\Models\AccountUsageLog::query()
+            ->whereIn('account_id', $ids)
+            ->where('recorded_at', '>=', now()->subMinutes(\App\Models\Account::ONLINE_WINDOW_MINUTES))
+            ->where(fn ($q) => $q->where('rx_delta_bytes', '>', 0)->orWhere('tx_delta_bytes', '>', 0))
+            ->distinct()
+            ->pluck('account_id')
+            ->map(fn ($id): int => (int) $id);
+    }
+
     protected function accountsQueryForViewer(Request $request): Builder
     {
         $query = Account::query()
@@ -282,7 +308,10 @@ trait ListsAccountsByCategory
             $inner->where('remote_username', 'like', $like)
                 ->orWhere('display_label', 'like', $like)
                 ->orWhere('client_email', 'like', $like)
-                ->orWhere('wireguard_address', 'like', $like);
+                ->orWhere('wireguard_address', 'like', $like)
+                // The config's own id: what a customer pastes from their app.
+                ->orWhere('sanaei_client_uuid', 'like', $like)
+                ->orWhere('remnawave_uuid', 'like', $like);
 
             // WireGuard IPs are often stored as 10.8.0.5/32 — match the host part too.
             if (str_contains($term, '/')) {

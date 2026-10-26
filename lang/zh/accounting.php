@@ -55,4 +55,6 @@ return [
     'pdf_generated' => '生成于 :date。',
     'pdf_page' => '第 :page / :pages 页',
     'invoice_pdf' => '下载发票 PDF',
+    'owner_filter' => '代理 / 销售员',
+    'all_owners' => '全部代理',
 ];

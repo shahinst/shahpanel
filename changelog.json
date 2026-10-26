@@ -1,6 +1,36 @@
 {
     "versions": [
         {
+            "version": "3.39.0",
+            "date": "2026-11-23",
+            "notes": {
+                "fa": [
+                    "اکانت‌های V2Ray: شناسهٔ خود کانفیگ (UUID) زیر نام اکانت در فهرست و در صفحهٔ مشخصات با دکمهٔ کپی نمایش داده می‌شود و جست‌وجوی فهرست و حسابداری با همین شناسه هم اکانت را پیدا می‌کند.",
+                    "حسابداری: تاریخ‌های فیلتر برای زبان فارسی شمسی شدند و هر دو تاریخ به‌صورت روز کامل اعمال می‌شوند، پس ردیف‌های همان روز دیگر جا نمی‌مانند. فیلتر تازهٔ «نماینده / فروشنده» اضافه شد: ادمین هر نماینده‌ای را و نماینده فقط فروشنده‌های خودش را می‌تواند انتخاب کند یا همه را ببیند.",
+                    "فهرست اکانت‌ها: نقطهٔ سبز کنار نام، اکانت‌هایی را نشان می‌دهد که در ۱۰ دقیقهٔ اخیر ترافیک داشته‌اند. این از لاگ مصرفی که همگام‌سازی می‌نویسد خوانده می‌شود و صفحه را کند نمی‌کند.",
+                    "نصب پنل به‌عنوان برنامه (PWA) روی ویندوز، اندروید، macOS و iOS: مرورگر دکمهٔ «نصب» را نشان می‌دهد و پنل در پنجرهٔ خودش با رنگ قالب فعال باز می‌شود. بدون اینترنت صفحهٔ آفلاین نمایش داده می‌شود. نصب فقط روی آدرس https ممکن است."
+                ],
+                "en": [
+                    "V2Ray accounts: the config's own id (UUID) is shown under the account name in the list and on the detail page with a copy button, and the list and accounting search find an account by it.",
+                    "Accounting: filter dates are Jalali for Persian readers, and both dates now cover whole days, so rows from the chosen day are no longer left out. A new agent / seller filter: an admin picks any agent, an agent only their own sellers, or all.",
+                    "Accounts list: a green dot beside the name marks accounts that moved traffic in the last 10 minutes, read from the usage log the sync already writes, so the page stays fast.",
+                    "Install the panel as an app (PWA) on Windows, Android, macOS and iOS: the browser offers Install, and the panel opens in its own window coloured by the active theme, with an offline page when there is no connection. Installing needs an https address."
+                ],
+                "ru": [
+                    "Аккаунты V2Ray: идентификатор самого конфига (UUID) показывается под именем в списке и на странице аккаунта с кнопкой копирования; поиск в списке и в бухгалтерии находит аккаунт по нему.",
+                    "Бухгалтерия: даты фильтра для персидского интерфейса стали джалали, обе даты охватывают полные дни, поэтому записи выбранного дня больше не теряются. Новый фильтр «агент / продавец»: администратор выбирает любого агента, агент — только своих продавцов, или всех.",
+                    "Список аккаунтов: зелёная точка рядом с именем отмечает аккаунты с трафиком за последние 10 минут; читается из журнала потребления, который уже пишет синхронизация, страница не замедляется.",
+                    "Установка панели как приложения (PWA) на Windows, Android, macOS и iOS: браузер предлагает «Установить», панель открывается в своём окне в цвете активной темы, без сети показывается офлайн-страница. Нужен адрес https."
+                ],
+                "zh": [
+                    "V2Ray 账户：配置自身的标识（UUID）显示在列表的账户名下方和详情页（带复制按钮），列表和财务搜索也可按它查找账户。",
+                    "财务：波斯语界面的筛选日期改为伊朗历，两个日期都按整天生效，所选日期的记录不再遗漏。新增「代理 / 销售员」筛选：管理员可选任意代理，代理只能选自己的销售员，或查看全部。",
+                    "账户列表：名称旁的绿点表示最近 10 分钟内有流量的账户，数据来自同步已写入的用量日志，页面不会变慢。",
+                    "可将面板安装为应用（PWA），支持 Windows、Android、macOS 和 iOS：浏览器会提示「安装」，面板以当前主题颜色在独立窗口中打开，断网时显示离线页面。需要 https 地址。"
+                ]
+            }
+        },
+        {
             "version": "3.38.5",
             "date": "2026-11-22",
             "notes": {

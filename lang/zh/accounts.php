@@ -388,4 +388,6 @@ TEXT,
     'card_download' => '下载卡片图片',
     'card_share' => '发送给客户',
     'card_copied' => '已复制',
+    'config_uuid' => '配置标识（UUID）',
+    'pwa_install' => '安装为应用',
 ];

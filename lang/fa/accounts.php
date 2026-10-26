@@ -388,4 +388,6 @@ TEXT,
     'card_download' => 'دانلود عکس کارت',
     'card_share' => 'ارسال برای مشتری',
     'card_copied' => 'کپی شد',
+    'config_uuid' => 'شناسهٔ کانفیگ (UUID)',
+    'pwa_install' => 'نصب به‌عنوان برنامه',
 ];

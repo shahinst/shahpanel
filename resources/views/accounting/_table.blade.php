@@ -3,7 +3,8 @@
     $exportRoute = $routePanel.'.accounting.export';
     $invoicePdfRoute = collect([$routePanel.'.accounting.invoice-pdf', $routePanel.'.invoices.pdf'])
         ->first(fn (string $name): bool => \Illuminate\Support\Facades\Route::has($name));
-    $filterQuery = request()->only(['date_from', 'date_to', 'search', 'status']);
+    $filterQuery = request()->only(['date_from', 'date_to', 'search', 'status', 'owner_id']);
+    $ownerOptions = $ownerOptions ?? collect();
     // Sellers never earn sales profit, so the credited/profit column is hidden for them.
     $showCredited = ($totals['role'] ?? null) !== \App\Enums\UserRole::Seller;
     $showMarginPercent = $showMarginPercent ?? false;
@@ -78,18 +79,38 @@
     <div class="card-body">
         <form method="GET" class="panel-filter-bar">
             <div class="row g-2 align-items-end">
+                {{-- شمسی برای خوانندهٔ فارسی، میلادی برای بقیه؛ هر دو را سرویس حسابداری به یک روز کامل تبدیل می‌کند. --}}
                 <div class="col-md-2">
-                    <label class="form-label">{{ __('accounting.date_from') }}</label>
-                    <input type="date" name="date_from" value="{{ request('date_from') }}" class="form-control form-control-sm">
+                    <label class="form-label">{{ locale_digits() === 'fa' ? __('ui.date_from_jalali') : __('accounting.date_from') }}</label>
+                    @if (locale_digits() === 'fa')
+                        <x-form.jalali-date name="date_from" :value="request('date_from')" class="form-control-sm" />
+                    @else
+                        <input type="date" name="date_from" value="{{ request('date_from') }}" class="form-control form-control-sm">
+                    @endif
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">{{ __('accounting.date_to') }}</label>
-                    <input type="date" name="date_to" value="{{ request('date_to') }}" class="form-control form-control-sm">
+                    <label class="form-label">{{ locale_digits() === 'fa' ? __('ui.date_to_jalali') : __('accounting.date_to') }}</label>
+                    @if (locale_digits() === 'fa')
+                        <x-form.jalali-date name="date_to" :value="request('date_to')" class="form-control-sm" />
+                    @else
+                        <input type="date" name="date_to" value="{{ request('date_to') }}" class="form-control form-control-sm">
+                    @endif
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label">{{ __('accounting.search_account') }}</label>
                     <input type="search" name="search" value="{{ request('search') }}" class="form-control form-control-sm" placeholder="{{ __('app.search') }}...">
                 </div>
+                @if ($ownerOptions->isNotEmpty())
+                    <div class="col-md-2">
+                        <label class="form-label">{{ __('accounting.owner_filter') }}</label>
+                        <select name="owner_id" class="form-select form-select-sm">
+                            <option value="">{{ __('accounting.all_owners') }}</option>
+                            @foreach ($ownerOptions as $owner)
+                                <option value="{{ $owner->id }}" @selected((int) request('owner_id') === $owner->id)>{{ $owner->full_name }} ({{ $owner->role->label() }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
                 <div class="col-md-2">
                     <label class="form-label">{{ __('accounting.account_status') }}</label>
                     <select name="status" class="form-select form-select-sm">
@@ -101,7 +122,7 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-3 d-flex gap-2">
+                <div class="col-md-2 d-flex gap-2">
                     <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
                         <i class="bx bx-filter-alt"></i> {{ __('accounting.apply_filter') }}
                     </button>

@@ -13,6 +13,7 @@ use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
 class AccountingService
@@ -63,15 +64,48 @@ class AccountingService
                 $this->applyAccountFilters($q, $filters);
             });
 
-        if (! empty($filters['date_from'])) {
-            $query->whereDate('issued_at', '>=', $filters['date_from']);
-        }
-
-        if (! empty($filters['date_to'])) {
-            $query->whereDate('issued_at', '<=', $filters['date_to']);
-        }
+        $this->applyDateRange($query, 'issued_at', $filters);
 
         return $query;
+    }
+
+    /**
+     * The typed dates are Jalali for a Persian reader and Gregorian for
+     * everyone else; both are turned into full days, so "to 1404/08/01"
+     * includes everything that happened on that day.
+     */
+    public static function applyDateRange(Builder $query, string $column, array $filters): void
+    {
+        $from = self::parseFilterDate($filters['date_from'] ?? null, false);
+        $to = self::parseFilterDate($filters['date_to'] ?? null, true);
+
+        if ($from !== null) {
+            $query->where($column, '>=', $from);
+        }
+
+        if ($to !== null) {
+            $query->where($column, '<=', $to);
+        }
+    }
+
+    public static function parseFilterDate(?string $value, bool $endOfDay): ?Carbon
+    {
+        if ($value === null || trim($value) === '') {
+            return null;
+        }
+
+        $date = locale_digits() === 'fa' ? parse_jalali_date($value, $endOfDay) : null;
+
+        if ($date === null) {
+            try {
+                $date = Carbon::parse(western_digits(trim($value)));
+                $date = $endOfDay ? $date->endOfDay() : $date->startOfDay();
+            } catch (\Throwable) {
+                return null;
+            }
+        }
+
+        return $date;
     }
 
     /**
@@ -246,19 +280,17 @@ class AccountingService
      */
     public function applyAccountFilters(Builder $query, array $filters): Builder
     {
-        if (! empty($filters['date_from'])) {
-            $query->whereDate('created_at', '>=', $filters['date_from']);
-        }
-
-        if (! empty($filters['date_to'])) {
-            $query->whereDate('created_at', '<=', $filters['date_to']);
+        if (! empty($filters['owner_id'])) {
+            $query->where(fn (Builder $o) => $o->where('owner_seller_id', (int) $filters['owner_id'])->orWhere('owner_agent_id', (int) $filters['owner_id']));
         }
 
         if (! empty($filters['search'])) {
             $search = trim((string) $filters['search']);
             $query->where(function (Builder $inner) use ($search): void {
                 $inner->where('remote_username', 'like', '%'.$search.'%')
-                    ->orWhere('display_label', 'like', '%'.$search.'%');
+                    ->orWhere('display_label', 'like', '%'.$search.'%')
+                    ->orWhere('sanaei_client_uuid', 'like', '%'.$search.'%')
+                    ->orWhere('remnawave_uuid', 'like', '%'.$search.'%');
             });
         }
 

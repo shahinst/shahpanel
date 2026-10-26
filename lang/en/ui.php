@@ -385,4 +385,7 @@ return [
     'amount_in_selected_currency_hint' => 'Enter the amount in the selected currency.',
     'install_via_ssh' => 'Installation is performed over SSH:',
     'phase_zero_ready' => 'Phase 0 was set up successfully.',
+    'offline_title' => 'You are offline',
+    'offline_text' => 'The panel cannot reach the internet. Check the connection and try again.',
+    'offline_retry' => 'Try again',
 ];

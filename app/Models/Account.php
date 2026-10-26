@@ -20,6 +20,9 @@ class Account extends Model
     use BelongsToHierarchy;
     use SoftDeletes;
 
+    /** Traffic inside this many minutes counts as "online" on list pages. */
+    public const ONLINE_WINDOW_MINUTES = 10;
+
     protected $fillable = [
         'inbound_allocation_id',
         'auto_renew',
