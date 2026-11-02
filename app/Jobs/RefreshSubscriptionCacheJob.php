@@ -143,6 +143,7 @@ class RefreshSubscriptionCacheJob implements ShouldBeUnique, ShouldQueue
         // TLS می‌دهد. آن متد چند نشانی و چند طرح را امتحان می‌کند و همان چیزی را
         // برمی‌گرداند که کلاینت می‌بیند.
         if ($account->service_type->isSanaei()) {
+            $this->refreshSanaeiUuid($account, $server, $sanaeiService);
             $lines = $this->fetchSanaeiLines($account, $server, $sanaeiService, $shareLinkBuilder);
 
             if ($lines !== null) {
@@ -227,6 +228,29 @@ class RefreshSubscriptionCacheJob implements ShouldBeUnique, ShouldQueue
             $account->service_type->isPasarguard() => 'pasarguard',
             default => 'remnawave',
         };
+    }
+
+    /**
+     * The client's UUID as 3x-ui has it now. A UUID changed on the panel used
+     * to stay stale in ShahPanel while the configs themselves were refreshed,
+     * so the page showed one id and the links carried another. A failed read
+     * keeps the stored one.
+     */
+    protected function refreshSanaeiUuid(Account $account, Server $server, SanaeiService $sanaeiService): void
+    {
+        $email = (string) ($account->client_email ?: $account->remote_username);
+
+        try {
+            $found = $email !== '' ? $sanaeiService->findClientByEmail($server, $email) : null;
+        } catch (Throwable) {
+            return;
+        }
+
+        $uuid = trim((string) ($found['client']['id'] ?? ''));
+
+        if ($uuid !== '' && $uuid !== (string) $account->sanaei_client_uuid) {
+            $account->forceFill(['sanaei_client_uuid' => $uuid])->save();
+        }
     }
 
     /**

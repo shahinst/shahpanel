@@ -152,6 +152,16 @@
         <input type="text" value="{{ $account->client_email }}" class="form-control" readonly disabled dir="ltr">
     @endif
 </x-form.group>
+@if (is_super_admin())
+    {{-- A correction, not a sale: no wallet moves and the usage so far is kept. --}}
+    @php
+        $currentLimitGb = (int) $account->data_limit_bytes > 0 ? round((int) $account->data_limit_bytes / 1024 ** 3, 2) : null;
+    @endphp
+    <x-form.group :label="__('accounts.exact_volume_gb')">
+        <input name="data_limit_gb" type="number" min="0.01" step="0.01" value="{{ old('data_limit_gb', $currentLimitGb) }}" class="form-control" dir="ltr" placeholder="{{ __('accounts.exact_volume_unlimited') }}">
+        <p class="help-block text-muted small mb-0">{{ __('accounts.exact_volume_hint') }}</p>
+    </x-form.group>
+@endif
 @else
 @php
     $clientMode = old('client_mode', request('client_mode', 'new'));

@@ -254,6 +254,21 @@ class SyncService
                 max(0, $usedBytes),
             );
             $account->lifetime_used_bytes = $panelLifetime;
+        } elseif (($server->isSanaei() || $account->service_type->isSanaei()) && is_array($meta['raw'] ?? null)) {
+            // A volume changed on 3x-ui itself is the account's volume now; the
+            // panel used to keep its own figure, so the two drifted apart until
+            // the next renewal overwrote the server. 0 on 3x-ui is unlimited.
+            $panelLimit = (int) ($meta['normalized']['limit_bytes'] ?? 0);
+
+            if ($panelLimit > 0) {
+                $account->data_limit_bytes = $panelLimit;
+
+                if ($account->purchased_data_gb !== null) {
+                    $account->purchased_data_gb = round($panelLimit / 1024 ** 3, 2);
+                }
+            } elseif (array_key_exists('total', $meta['raw']) || array_key_exists('totalGB', $meta['raw'])) {
+                $account->data_limit_bytes = null;
+            }
         }
 
         $account->last_sync_at = now();

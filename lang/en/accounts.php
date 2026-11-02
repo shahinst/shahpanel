@@ -390,4 +390,7 @@ TEXT,
     'card_copied' => 'Copied',
     'config_uuid' => 'Config id (UUID)',
     'pwa_install' => 'Install as an app',
+    'exact_volume_gb' => 'Exact account volume (GB)',
+    'exact_volume_unlimited' => 'Empty = no change',
+    'exact_volume_hint' => 'Main admin only: this exact volume is set on the account and on the server (3x-ui included); usage is kept and no wallet is charged or refunded. A value below the current usage is refused.',
 ];
