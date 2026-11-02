@@ -390,4 +390,7 @@ TEXT,
     'card_copied' => '已复制',
     'config_uuid' => '配置标识（UUID）',
     'pwa_install' => '安装为应用',
+    'exact_volume_gb' => '账户精确流量（GB）',
+    'exact_volume_unlimited' => '留空 = 不修改',
+    'exact_volume_hint' => '仅限主管理员：此流量将精确设置到账户和服务器（包括 3x-ui）；已用流量保留，钱包不扣款也不退款。低于当前已用量的数值会被拒绝。',
 ];

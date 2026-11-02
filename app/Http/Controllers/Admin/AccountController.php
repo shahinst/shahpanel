@@ -275,6 +275,7 @@ class AccountController extends Controller
             'expiry_jalali' => ['nullable', 'string', 'max:20'],
             'expiry_add_days' => ['nullable', 'integer', 'min:-3650', 'max:3650'],
             'expiry_add_months' => ['nullable', 'integer', 'min:-120', 'max:120'],
+            'data_limit_gb' => ['nullable', 'numeric', 'min:0.01', 'max:1000000'],
         ]);
 
         $newServerId = isset($validated['server_id']) ? (int) $validated['server_id'] : null;
@@ -334,6 +335,19 @@ class AccountController extends Controller
                 );
 
                 $account->update(['renewal_charge_override' => $charge]);
+            }
+
+            // The main admin's exact volume: set as typed, usage kept, nothing
+            // charged or refunded, and pushed to the server (3x-ui included).
+            if (is_super_admin($request->user()) && filled($validated['data_limit_gb'] ?? null)) {
+                // Compared as the form shows it (GB, two decimals): the field is
+                // pre-filled with the current volume, and an untouched field
+                // must not push a "change" to the server on every save.
+                $currentGb = round((int) $account->fresh()->data_limit_bytes / 1024 ** 3, 2);
+
+                if (abs(round((float) $validated['data_limit_gb'], 2) - $currentGb) >= 0.01) {
+                    $accountService->setPurchasedVolumeGb($account->fresh(), (float) $validated['data_limit_gb']);
+                }
             }
 
             $newExpiry = $this->resolveAdminExpiryUpdate($request, $account);
