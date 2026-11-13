@@ -1,6 +1,24 @@
 {
     "versions": [
         {
+            "version": "3.39.2",
+            "date": "2026-11-25",
+            "notes": {
+                "fa": [
+                    "نصب‌کننده روی سرورهایی که اینترنت خروجی‌شان از پشت NAT با IP دیگری بیرون می‌رود، به اشتباه می‌گفت دامنه به این سرور اشاره نمی‌کند و SSL را رد می‌کرد. حالا IPهای خود کارت شبکه هم «این سرور» حساب می‌شوند و گواهی SSL درست صادر می‌شود."
+                ],
+                "en": [
+                    "On servers whose outgoing traffic leaves through NAT with a different address, the installer wrongly said the domain did not point at the server and skipped SSL. The server's own interface addresses now count as this server, so the certificate is issued."
+                ],
+                "ru": [
+                    "На серверах, где исходящий трафик выходит через NAT с другим адресом, установщик ошибочно считал, что домен не указывает на сервер, и пропускал SSL. Теперь собственные адреса интерфейсов сервера тоже считаются этим сервером, и сертификат выпускается."
+                ],
+                "zh": [
+                    "在出站流量经 NAT 以其他地址出去的服务器上，安装程序曾误判域名未指向本机并跳过 SSL。现在服务器自身网卡地址也视为本机，证书可正常签发。"
+                ]
+            }
+        },
+        {
             "version": "3.39.1",
             "date": "2026-11-24",
             "notes": {

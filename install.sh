@@ -282,7 +282,9 @@ if [[ "$MODE" == "domain" ]]; then
         reply="$(ask '  Continue without SSL for now? [Y/n]: ' 'y')"
         [[ "$reply" =~ ^[Nn] ]] && die "Point the A record at $SERVER_IP, then run the installer again."
         WITH_SSL=0
-    elif [[ "$DOMAIN_IP" != "$SERVER_IP" ]]; then
+    # Behind outbound NAT the address ipify sees is not the one the domain
+    # points at; the server's own interface addresses count as "this server".
+    elif [[ "$DOMAIN_IP" != "$SERVER_IP" ]] && ! ip -4 -o addr show 2>/dev/null | awk '{print $4}' | cut -d/ -f1 | grep -qxF "$DOMAIN_IP"; then
         warn "$DOMAIN points at $DOMAIN_IP, not at this server ($SERVER_IP)."
         warn "Certbot will fail until the A record is corrected."
         reply="$(ask '  Continue anyway? [y/N]: ' 'n')"
