@@ -87,7 +87,6 @@ class AccountRenewalPricingService
         PackageDuration $duration,
         ?float $dataGbOverride = null,
         string $renewalMode = 'same',
-        bool $extendTime = false,
     ): array {
         $account->loadMissing('package');
         $package = $this->billingPackageService->resolveBillingPackage($account);
@@ -99,7 +98,7 @@ class AccountRenewalPricingService
 
         $isPerGb = $package->isElastic();
         $gb = $isPerGb
-            ? $this->billableGbForRenewal($account, $renewalMode, $dataGbOverride, $extendTime)
+            ? $this->billableGbForRenewal($account, $renewalMode, $dataGbOverride)
             : null;
         $unitPrice = $this->userPackagePricingService->requireWholesalePrice($buyer, $duration);
         $wholesaleTotal = $this->userPackagePricingService->lineTotal($buyer, $duration, $gb, forRenewal: true);
@@ -148,12 +147,11 @@ class AccountRenewalPricingService
      * GB used for wholesale billing on renewal (elastic only).
      *
      * - same: current account volume × assigned wholesale unit
-     * - add_volume: added GB × assigned wholesale unit
-     * - add_volume with $extendTime: (current + added GB) × unit, since a new
-     *   period is sold for the volume already held as well as for the extra
+     * - add_volume: added GB × assigned wholesale unit, with or without a new
+     *   period: the volume already held was paid for when it was bought
      * - upgrade_volume: new total GB × assigned wholesale unit
      */
-    public function billableGbForRenewal(Account $account, string $mode, ?float $resolvedGb = null, bool $extendTime = false): ?float
+    public function billableGbForRenewal(Account $account, string $mode, ?float $resolvedGb = null): ?float
     {
         $account->loadMissing('package');
         $package = $this->billingPackageService->resolveBillingPackage($account);
@@ -174,10 +172,6 @@ class AccountRenewalPricingService
             );
         }
 
-        if ($mode === 'add_volume' && $extendTime) {
-            return round($this->billableDataGb($account) + $resolvedGb, 2);
-        }
-
         return round($resolvedGb, 2);
     }
 
@@ -196,9 +190,8 @@ class AccountRenewalPricingService
         PackageDuration $duration,
         string $renewalMode = 'same',
         ?float $resolvedGb = null,
-        bool $extendTime = false,
     ): array {
-        $quote = $this->quote($buyer, $account, $duration, $resolvedGb, $renewalMode, $extendTime);
+        $quote = $this->quote($buyer, $account, $duration, $resolvedGb, $renewalMode);
         $gb = $quote['data_gb'] !== null ? (float) $quote['data_gb'] : null;
         $wholesaleTotal = $quote['wholesale_total'];
         $chargeBreakdown = $this->financialPlanService->resolveCharge($buyer, $wholesaleTotal);

@@ -81,7 +81,7 @@ return [
     'renew_mode_add' => '购买额外流量',
     'renew_mode_add_hint' => '所填的 GB 数将加到已购流量和上限中 —— 保留当前用量',
     'renew_extend_time' => '同时把时长加到剩余时间上',
-    'renew_extend_time_hint' => '下方所选时长会加到剩余天数上，按全部流量（当前 + 额外）计费。',
+    'renew_extend_time_hint' => '下方所选时长会加到剩余天数上。只按额外流量计费，已购流量不再重复收费。',
     'renew_add_gb_label' => '额外流量（GB）',
     'renew_add_gb_hint' => '例如 10 —— 会加到当前流量上（总量上限：:max GB）',
     'renew_add_gb_required' => '请输入要购买的额外流量 GB 数。',
