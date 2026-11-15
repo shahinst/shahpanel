@@ -80,6 +80,8 @@ return [
     'renew_mode_upgrade_hint' => 'Any data, less or more than now, and the chosen period from now. Previous usage is reset and the remaining time is replaced.',
     'renew_mode_add' => 'Buy extra data',
     'renew_mode_add_hint' => 'The gigabytes entered are added to the purchased data and the cap — current usage is kept',
+    'renew_extend_time' => 'Also add time on top of the time left',
+    'renew_extend_time_hint' => 'The period chosen below is added to the days left. It is billed for the whole volume (current + extra).',
     'renew_add_gb_label' => 'Extra data (GB)',
     'renew_add_gb_hint' => 'For example 10 — added to the current data (maximum total: :max GB)',
     'renew_add_gb_required' => 'Enter the number of gigabytes to buy extra data.',

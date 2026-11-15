@@ -156,7 +156,7 @@ return [
     'docs_p_client_email' => 'ایمیل مشتری',
     'docs_p_owner_seller' => 'نماینده می‌تواند به نام یکی از فروشنده‌هایش بفروشد',
     'docs_p_refresh' => 'با مقدار ۱ مصرف را زنده از سرور می‌خواند (کندتر)',
-    'docs_p_renewal_mode' => 'same (پیش‌فرض، مصرف صفر می‌شود)، add_volume (حجم اضافه، مصرف حفظ) یا upgrade_volume',
+    'docs_p_renewal_mode' => 'same (پیش‌فرض، مصرف صفر می‌شود)، add_volume (حجم اضافه، مصرف حفظ) یا upgrade_volume، extend_time (در add_volume: دوره هم به زمان باقی‌مانده اضافه شود)',
     'docs_p_data_gb_renew' => 'در حالت add_volume و upgrade_volume الزامی است',
     'docs_p_duration_renew' => 'اگر بخواهید با دوره دیگری تمدید شود',
     'docs_p_txn_type' => 'نوع تراکنش',

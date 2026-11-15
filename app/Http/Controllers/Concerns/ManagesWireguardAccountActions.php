@@ -138,6 +138,7 @@ trait ManagesWireguardAccountActions
             'package_duration_id' => ['required', 'exists:package_durations,id'],
             'renewal_mode' => ['nullable', 'in:same,upgrade_volume,add_volume'],
             'data_gb' => ['nullable', 'numeric', 'min:0.01'],
+            'extend_time' => ['nullable', 'boolean'],
         ]);
 
         $actor = auth()->user();
@@ -169,7 +170,7 @@ trait ManagesWireguardAccountActions
                 );
             }
 
-            $quote = $renewalPricing->quote($buyer, $account, $duration, $gbOverride, $renewalMode);
+            $quote = $renewalPricing->quote($buyer, $account, $duration, $gbOverride, $renewalMode, $renewalMode === 'add_volume' && (bool) ($validated['extend_time'] ?? false));
         } catch (\Throwable $exception) {
             return response()->json(['error' => $exception->getMessage()], 422);
         }
