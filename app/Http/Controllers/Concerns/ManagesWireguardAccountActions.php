@@ -170,7 +170,7 @@ trait ManagesWireguardAccountActions
                 );
             }
 
-            $quote = $renewalPricing->quote($buyer, $account, $duration, $gbOverride, $renewalMode, $renewalMode === 'add_volume' && (bool) ($validated['extend_time'] ?? false));
+            $quote = $renewalPricing->quote($buyer, $account, $duration, $gbOverride, $renewalMode);
         } catch (\Throwable $exception) {
             return response()->json(['error' => $exception->getMessage()], 422);
         }

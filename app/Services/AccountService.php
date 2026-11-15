@@ -381,16 +381,13 @@ class AccountService
                 $duration,
                 $renewalMode,
                 $renewalGbOverride,
-                $extendTime,
             );
             $buyerWholesale = $billing['quote']['wholesale_total'];
             $buyerCharge = $billing['quote']['charged_total'];
             $chargeBreakdown = $billing['charge_breakdown'];
             $economics = $billing['economics'];
 
-            // With a new period the quote bills the whole volume, but only the
-            // extra gigabytes are added to the account.
-            if ($billingPackage->isElastic() && $billing['quote']['data_gb'] !== null && ! $extendTime) {
+            if ($billingPackage->isElastic() && $billing['quote']['data_gb'] !== null) {
                 $renewalGb = round((float) $billing['quote']['data_gb'], 2);
             }
         }
@@ -455,8 +452,8 @@ class AccountService
                 // AccountRenewalPricingService::billableGbForRenewal تنها گیگ‌های اضافه‌شده است،
                 // پس تمدید انقضا در این حالت یک دورهٔ کامل را به قیمت یک گیگ می‌بخشید.
                 // بقیهٔ حالت‌ها بهای دوره را می‌پردازند و انقضا را جابه‌جا می‌کنند.
-                // With $extendTime the top-up also buys a period, added on top of
-                // the days still left, exactly like a normal renewal.
+                // With $extendTime the top-up also adds the period on top of the
+                // days still left; only the extra gigabytes are billed.
                 if ($renewalMode !== 'add_volume' || $extendTime) {
                     $account->expiry_at = $duration->expiryFrom($renewalBase);
                     $account->package_duration_id = $duration->id;
