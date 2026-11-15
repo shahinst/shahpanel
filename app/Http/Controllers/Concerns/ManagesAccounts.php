@@ -558,6 +558,7 @@ trait ManagesAccounts
                 $request->user(),
                 $renewalGbOverride,
                 $renewalMode,
+                $request->boolean('extend_time'),
             );
         } catch (\Throwable $exception) {
             report($exception);

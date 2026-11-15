@@ -1,6 +1,24 @@
 {
     "versions": [
         {
+            "version": "3.39.3",
+            "date": "2026-11-26",
+            "notes": {
+                "fa": [
+                    "در تمدید با «خرید حجم اضافه» حالا گزینهٔ «زمان هم به زمان باقی‌مانده اضافه شود» هست. با تیک آن، دورهٔ انتخابی روی روزهای باقی‌مانده اضافه می‌شود، حجم اضافه روی حجم فعلی می‌نشیند و مصرف صفر نمی‌شود. هزینه برای کل حجم (فعلی + اضافه) در آن دوره حساب می‌شود. بدون تیک، مثل قبل فقط حجم اضافه می‌شود. در API هم با extend_time=1 در دسترس است."
+                ],
+                "en": [
+                    "Renewing with \"Buy extra volume\" now offers \"Also add time on top of the time left\". When ticked, the chosen period is added to the days left, the extra volume is added to the current one and usage is kept. The period is billed for the whole volume (current + extra). Unticked, only volume is added as before. Also available in the API as extend_time=1."
+                ],
+                "ru": [
+                    "При продлении через «Купить дополнительный объём» появилась опция «Добавить и время к оставшемуся сроку». Выбранный период добавляется к оставшимся дням, дополнительный объём — к текущему, использование сохраняется. Период оплачивается за весь объём (текущий + дополнительный). Без отметки, как и раньше, добавляется только объём. В API — параметр extend_time=1."
+                ],
+                "zh": [
+                    "使用“购买额外流量”续费时，新增“同时把时长加到剩余时间上”选项。勾选后，所选时长会加到剩余天数上，额外流量加到当前流量上，用量保留；该时长按全部流量（当前 + 额外）计费。不勾选则与以前一样只增加流量。API 中可用 extend_time=1。"
+                ]
+            }
+        },
+        {
             "version": "3.39.2",
             "date": "2026-11-25",
             "notes": {

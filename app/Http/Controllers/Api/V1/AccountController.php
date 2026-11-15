@@ -236,6 +236,7 @@ class AccountController extends Controller
             'package_duration_id' => ['nullable', 'integer'],
             'renewal_mode' => ['nullable', 'in:same,add_volume,upgrade_volume'],
             'data_gb' => ['nullable', 'numeric', 'min:0.01'],
+            'extend_time' => ['nullable', 'boolean'],
         ]);
 
         $model->loadMissing(['package.category']);
@@ -286,6 +287,7 @@ class AccountController extends Controller
                 $request->user(),
                 $renewalGbOverride,
                 $renewalMode,
+                (bool) ($data['extend_time'] ?? false),
             );
         } catch (ValidationException $e) {
             throw $e;

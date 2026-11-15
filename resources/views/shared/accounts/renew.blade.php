@@ -63,6 +63,13 @@
                         {{ __('accounts.renew_mode_add') }}
                         <span class="text-muted small d-block">{{ __('accounts.renew_mode_add_hint') }}</span>
                     </label>
+                    <div class="form-check ms-4 mt-1" id="renew-extend-time-group" @if(old('renewal_mode', $defaultRenewalMode) !== 'add_volume') hidden @endif>
+                        <input type="checkbox" class="form-check-input" name="extend_time" value="1" id="renew-extend-time" @checked(old('extend_time'))>
+                        <label class="form-check-label" for="renew-extend-time">
+                            {{ __('accounts.renew_extend_time') }}
+                            <span class="text-muted small d-block">{{ __('accounts.renew_extend_time_hint') }}</span>
+                        </label>
+                    </div>
                 </div>
                 <div class="form-check">
                     <label>
@@ -204,6 +211,10 @@
         const mode = renewalMode();
         const show = isElastic && (mode === 'upgrade_volume' || mode === 'add_volume');
         gbGroup.hidden = !show;
+        const extendGroup = document.getElementById('renew-extend-time-group');
+        if (extendGroup) {
+            extendGroup.hidden = mode !== 'add_volume';
+        }
         const labelEl = document.getElementById('renew-data-gb-label');
         if (labelEl) {
             labelEl.textContent = mode === 'add_volume' ? addGbLabel : upgradeGbLabel;
@@ -310,6 +321,10 @@
             if ((renewalMode() === 'upgrade_volume' || renewalMode() === 'add_volume') && gbInput && gbInput.value) {
                 params.set('data_gb', gbInput.value);
             }
+            const extendTime = document.getElementById('renew-extend-time');
+            if (renewalMode() === 'add_volume' && extendTime && extendTime.checked) {
+                params.set('extend_time', '1');
+            }
         }
 
         const requestId = ++previewRequestId;
@@ -344,6 +359,10 @@
             loadPreview();
         });
     });
+    const extendTimeInput = document.getElementById('renew-extend-time');
+    if (extendTimeInput) {
+        extendTimeInput.addEventListener('change', loadPreview);
+    }
     if (gbInput) {
         gbInput.addEventListener('input', function () {
             if (renewalMode() === 'upgrade_volume' || renewalMode() === 'add_volume') {

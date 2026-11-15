@@ -302,7 +302,11 @@ class AccountService
         ?User $actor = null,
         ?float $renewalGbOverride = null,
         string $renewalMode = 'same',
+        bool $extendTime = false,
     ): Account {
+        // Only a volume top-up can optionally carry a new period too; every
+        // other mode already moves the end date.
+        $extendTime = $extendTime && $renewalMode === 'add_volume';
         $account->loadMissing(['ownerSeller.parent', 'package', 'packageDuration', 'server']);
         $storedPackage = $account->package;
 
@@ -377,13 +381,16 @@ class AccountService
                 $duration,
                 $renewalMode,
                 $renewalGbOverride,
+                $extendTime,
             );
             $buyerWholesale = $billing['quote']['wholesale_total'];
             $buyerCharge = $billing['quote']['charged_total'];
             $chargeBreakdown = $billing['charge_breakdown'];
             $economics = $billing['economics'];
 
-            if ($billingPackage->isElastic() && $billing['quote']['data_gb'] !== null) {
+            // With a new period the quote bills the whole volume, but only the
+            // extra gigabytes are added to the account.
+            if ($billingPackage->isElastic() && $billing['quote']['data_gb'] !== null && ! $extendTime) {
                 $renewalGb = round((float) $billing['quote']['data_gb'], 2);
             }
         }
@@ -409,6 +416,7 @@ class AccountService
                 $clientPortalBilling,
                 &$purchaseResult,
                 $renewalMode,
+                $extendTime,
             ) {
                 // Two renewals of the same account (double click, two tabs, the
                 // client and their seller at once) used to both read the old
@@ -447,7 +455,9 @@ class AccountService
                 // AccountRenewalPricingService::billableGbForRenewal تنها گیگ‌های اضافه‌شده است،
                 // پس تمدید انقضا در این حالت یک دورهٔ کامل را به قیمت یک گیگ می‌بخشید.
                 // بقیهٔ حالت‌ها بهای دوره را می‌پردازند و انقضا را جابه‌جا می‌کنند.
-                if ($renewalMode !== 'add_volume') {
+                // With $extendTime the top-up also buys a period, added on top of
+                // the days still left, exactly like a normal renewal.
+                if ($renewalMode !== 'add_volume' || $extendTime) {
                     $account->expiry_at = $duration->expiryFrom($renewalBase);
                     $account->package_duration_id = $duration->id;
                     $account->status = AccountStatus::Active;
@@ -495,7 +505,7 @@ class AccountService
                 // Topping up an account whose time has run out adds the volume
                 // but must not bring it back online; renewRemoteAccount always
                 // enables the user, so switch it off again.
-                if ($renewalMode === 'add_volume' && $account->isExpired()) {
+                if ($renewalMode === 'add_volume' && ! $extendTime && $account->isExpired()) {
                     $this->disableRemoteAccount($account);
                 }
 
@@ -515,6 +525,7 @@ class AccountService
                 $this->activityLogService->log($actor, 'account.renewed', $account, array_filter([
                     'billing' => $clientPortalBilling ? AccountBillingContext::ClientPortal->value : null,
                     'renewal_mode' => $renewalMode,
+                    'extend_time' => $extendTime ?: null,
                     'renewal_gb' => $renewalGb,
                     'purchased_before_gb' => $purchasedBeforeGb,
                     'data_limit_before_bytes' => $limitBeforeBytes,

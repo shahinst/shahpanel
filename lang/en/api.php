@@ -156,7 +156,7 @@ return [
     'docs_p_client_email' => 'Customer email',
     'docs_p_owner_seller' => 'An agent may sell on behalf of one of their sellers',
     'docs_p_refresh' => 'Set to 1 to read usage live from the node (slower)',
-    'docs_p_renewal_mode' => 'same (default, usage resets), add_volume (adds volume, keeps usage) or upgrade_volume',
+    'docs_p_renewal_mode' => 'same (default, usage resets), add_volume (adds volume, keeps usage) or upgrade_volume, extend_time (with add_volume: also add the period to the time left)',
     'docs_p_data_gb_renew' => 'Required for add_volume and upgrade_volume',
     'docs_p_duration_renew' => 'Renew onto a different duration',
     'docs_p_txn_type' => 'Transaction type',
