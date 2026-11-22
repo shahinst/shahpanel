@@ -21,6 +21,7 @@ return [
         'support_telegram' => 'تلگرام پشتیبانی',
         'default_payment_card' => 'شماره کارت پیش‌فرض (کارت به کارت)',
         'min_charge_amount' => 'حداقل مبلغ درخواست شارژ (تومان)',
+        'refund_by_volume_only' => 'برگشت از خرید فقط بر اساس حجم باقی‌مانده (زمان باقی‌مانده حساب نشود)',
         'global_discount_enabled' => 'تخفیف سراسری فعال',
         'global_discount_percent' => 'درصد تخفیف سراسری',
         'global_discount_ends_at' => 'پایان تخفیف سراسری',

@@ -21,6 +21,7 @@ return [
         'support_telegram' => 'Support Telegram',
         'default_payment_card' => 'Default card number',
         'min_charge_amount' => 'Minimum charge amount',
+        'refund_by_volume_only' => 'Refund on remaining volume only (ignore remaining time)',
         'global_discount_enabled' => 'Global discount enabled',
         'global_discount_percent' => 'Global discount percentage',
         'global_discount_ends_at' => 'Global discount ends at',

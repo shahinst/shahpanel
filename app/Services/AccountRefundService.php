@@ -8,6 +8,7 @@ use App\Enums\TransactionType;
 use App\Models\Account;
 use App\Models\ActivityLog;
 use App\Models\Invoice;
+use App\Models\Setting;
 use App\Models\Transaction;
 use App\Models\User;
 use Illuminate\Support\Collection;
@@ -141,6 +142,12 @@ class AccountRefundService
             }
             $hoursUsed = (float) max(0.0, $totalHours - $hoursRemaining);
             $usedRatio = bcdiv(number_format($hoursUsed, 4, '.', ''), (string) $totalHours, 4);
+
+            // Panels that sell by volume can refund on the remaining volume alone,
+            // so the amount matches what the customer sees left on the account.
+            if (Setting::getValue('refund_by_volume_only') === '1' && ! $account->isUnlimited() && $account->data_limit_bytes !== null && $account->data_limit_bytes > 0) {
+                $usedRatio = '0';
+            }
 
             // The customer bought time AND volume: whichever is used up more is
             // what has been consumed. A 1GB account spent in a day with 29 days
