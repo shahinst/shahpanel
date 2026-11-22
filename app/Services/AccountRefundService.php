@@ -141,6 +141,18 @@ class AccountRefundService
             }
             $hoursUsed = (float) max(0.0, $totalHours - $hoursRemaining);
             $usedRatio = bcdiv(number_format($hoursUsed, 4, '.', ''), (string) $totalHours, 4);
+
+            // The customer bought time AND volume: whichever is used up more is
+            // what has been consumed. A 1GB account spent in a day with 29 days
+            // left used the whole purchase, not a thirtieth of it.
+            if (! $account->isUnlimited() && $account->data_limit_bytes !== null && $account->data_limit_bytes > 0) {
+                $volumeRatio = bcdiv((string) min(max(0, (int) $account->data_used_bytes), (int) $account->data_limit_bytes), (string) $account->data_limit_bytes, 4);
+
+                if (bccomp($volumeRatio, $usedRatio, 4) > 0) {
+                    $usedRatio = $volumeRatio;
+                }
+            }
+
             $usedAmount = bcmul($price, $usedRatio, 2);
             $refundAmount = bcsub($price, $usedAmount, 2);
         }
