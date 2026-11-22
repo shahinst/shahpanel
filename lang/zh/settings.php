@@ -21,6 +21,7 @@ return [
         'support_telegram' => '客服 Telegram',
         'default_payment_card' => '默认卡号',
         'min_charge_amount' => '最低充值金额',
+        'refund_by_volume_only' => '仅按剩余流量退款（不计剩余时间）',
         'global_discount_enabled' => '启用全局折扣',
         'global_discount_percent' => '全局折扣百分比',
         'global_discount_ends_at' => '全局折扣结束时间',

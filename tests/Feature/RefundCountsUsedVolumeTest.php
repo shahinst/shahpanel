@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\InvoiceType;
 use App\Models\Account;
 use App\Models\Invoice;
+use App\Models\Setting;
 use App\Services\AccountRefundService;
 use App\Services\AccountService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -65,5 +66,17 @@ class RefundCountsUsedVolumeTest extends TestCase
         $result = $this->app->make(AccountRefundService::class)->refund($account, $this->makeAdmin());
 
         $this->assertEqualsWithDelta(3000, (float) $result['refund_amount'], 5);
+    }
+
+    public function test_the_volume_only_setting_ignores_the_time_that_has_passed(): void
+    {
+        Setting::setValue('refund_by_volume_only', '1');
+        $account = $this->boughtAccount(256 * 1024 ** 2);
+        // Most of the period has gone, but three quarters of the volume is left.
+        $account->forceFill(['expiry_at' => now()->addDays(2)])->save();
+
+        $result = $this->app->make(AccountRefundService::class)->refund($account, $this->makeAdmin());
+
+        $this->assertEqualsWithDelta(4500, (float) $result['refund_amount'], 5);
     }
 }

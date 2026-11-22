@@ -21,6 +21,7 @@ return [
         'support_telegram' => 'Telegram поддержки',
         'default_payment_card' => 'Номер карты по умолчанию',
         'min_charge_amount' => 'Минимальная сумма пополнения',
+        'refund_by_volume_only' => 'Возврат только по оставшемуся объёму (без учёта оставшегося времени)',
         'global_discount_enabled' => 'Глобальная скидка включена',
         'global_discount_percent' => 'Процент глобальной скидки',
         'global_discount_ends_at' => 'Глобальная скидка действует до',
